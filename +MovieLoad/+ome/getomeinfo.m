@@ -1,6 +1,7 @@
 function [ frameInfo, movieInfo, tfl ] = getomeinfo( path2file )
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
+warning('off','all')
 tObj = Tiff(path2file,'r');
 
 movieInfo.Width  = tObj.getTag(256);
@@ -23,20 +24,19 @@ frameInfo(il).P = [];
 frameInfo(il).File = [];
 
 
-for i = 1:il;
+for i = 1:il
     str = Idesc(k1(i):k2(i)-1);
 
     [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD, frameInfo(i).P, frameInfo(i).File ] = MovieLoad.ome.getInfoFromOMEstr( str );
 end
-tic
-warning('off','all')
+
 tfl = 0; % Total frame length
 while true
     tfl = tfl + 1; % Increase frame count
     if tObj.lastDirectory(), break; end;
     tObj.nextDirectory();
 end
-toc
+
 tObj.setDirectory(1)
 warning('on','all')
 

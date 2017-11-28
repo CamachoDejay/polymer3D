@@ -9,12 +9,16 @@ clc
 
 % at the moment this code is not great as I dont request the user for input
 % regarding the file to load.
+[fileName,folder]=uigetfile({'*.tif'},'Select a file to Open');
+[~,fileNoExt,~]=fileparts(fileName);
+[~,fileNoExt,~]=fileparts(fileNoExt);
 
-folder_path = 'path2folder';
-main_file = 'name_of_main_file.ome.tif';
+path2data = [folder fileName];
+%folder_path = 'path2folder';
+%main_file = 'name_of_main_file.ome.tif';
 % note that an ome is just a moditiaction of a tif file.
 
-path2data = [folder_path filesep main_file];
+%path2data = [folder_path filesep main_file];
 
 % getting information from header
 [frameInfo, movieInfo, ~] = MovieLoad.ome.getomeinfo(path2data);
