@@ -43,7 +43,7 @@ for iCam = 1:size(cam,2)
 %             elseif isempty(test)
 %                 disp('NOOOO')
 %             end
-        idx(fi,cam+1) = find(tmp);
+        idx(fi,iCam) = find(tmp);
     end
 end
 
