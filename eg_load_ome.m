@@ -16,9 +16,9 @@ clc
 path2data = [folder fileName];
 
 % getting information from header
-[frameInfo, movieInfo, ~] = MovieLoad.ome.getomeinfo(path2data);
+[frameInfo, movieInfo, ~] = loadMovie.ome.getInfo(path2data);
 
 
 frames2load = 1:min(movieInfo.maxFrame);%Use min in case the number of frame
 %on the two camera is not equal.
-[cam1, cam2, ~] = MovieLoad.ome.loadMulticamOME(frameInfo, movieInfo, frames2load);
+[cam1, cam2, ~] = loadMovie.ome.load(frameInfo, movieInfo, frames2load);

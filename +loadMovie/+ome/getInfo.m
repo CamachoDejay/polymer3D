@@ -1,4 +1,4 @@
-function [ frameInfo, movieInfo, tfl ] = getomeinfo( path2file )
+function [ frameInfo, movieInfo, tfl ] = getInfo( path2file )
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 warning('off','all')
@@ -27,7 +27,7 @@ frameInfo(il).File = [];
 for i = 1:il
     str = Idesc(k1(i):k2(i)-1);
 
-    [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD, frameInfo(i).P, frameInfo(i).File ] = MovieLoad.ome.getInfoFromOMEstr( str );
+    [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD, frameInfo(i).P, frameInfo(i).File ] = loadMovie.ome.getInfoFromString( str );
 end
 
 %Add info about camera, max Frame, and zStack into movieInfo
