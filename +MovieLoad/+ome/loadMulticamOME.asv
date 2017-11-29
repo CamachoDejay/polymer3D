@@ -12,13 +12,16 @@ ImL = movieInfo.Length;
 ImW = movieInfo.Width;
 path2omes = movieInfo.Path;
 
-isZStack = uni
-
+isZStack = size(unique({frameInfo.T}),2)==1;
 
 nFramres = length(frames);
 Cinfo    = {frameInfo.C};
-Finfo    = {frameInfo.T};
-%Finfo    = {frameInfo.Z};
+
+switch isZStack
+    case 0
+        Finfo    = {frameInfo.T};
+    case
+
 cam =str2double(unique(Cinfo));% Extract indexes of the camera, the size of
 %cam matches the number of camera used.
 
@@ -31,7 +34,6 @@ switch size(cam,2)
         error('Unexpected number of cam loaded');
 end
         
-
 for iCam = 1:size(cam,2)
     C = num2str(cam(iCam));
     for fi = 1:nFramres
@@ -47,7 +49,6 @@ for iCam = 1:size(cam,2)
         idx(fi,cam+1) = find(tmp);
     end
 end
-
 
 movC1 = uint16(zeros(ImL,ImW,nFramres));
 movC2 = uint16(zeros(ImL,ImW,nFramres));

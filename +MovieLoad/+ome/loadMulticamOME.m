@@ -12,10 +12,17 @@ ImL = movieInfo.Length;
 ImW = movieInfo.Width;
 path2omes = movieInfo.Path;
 
+isZStack = size(unique({frameInfo.T}),2)==1;
 
 nFramres = length(frames);
 Cinfo    = {frameInfo.C};
-Finfo    = {frameInfo.T};
+
+switch isZStack
+    case 0
+        Finfo = {frameInfo.T};
+    case 1
+        Finfo = {frameInfo.Z};
+end
 
 cam =str2double(unique(Cinfo));% Extract indexes of the camera, the size of
 %cam matches the number of camera used.
