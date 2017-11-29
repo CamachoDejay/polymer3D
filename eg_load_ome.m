@@ -14,15 +14,11 @@ clc
 [~,fileNoExt,~]=fileparts(fileNoExt);
 
 path2data = [folder fileName];
-%folder_path = 'path2folder';
-%main_file = 'name_of_main_file.ome.tif';
-% note that an ome is just a moditiaction of a tif file.
-
-%path2data = [folder_path filesep main_file];
 
 % getting information from header
 [frameInfo, movieInfo, ~] = MovieLoad.ome.getomeinfo(path2data);
 
-nFrames = max(str2double({frameInfo(:).T}));
-frames2load = 1:2;
+
+frames2load = 1:min(movieInfo.maxFrame);%Use min in case the number of frame
+%on the two camera is not equal.
 [cam1, cam2, ~] = MovieLoad.ome.loadMulticamOME(frameInfo, movieInfo, frames2load);

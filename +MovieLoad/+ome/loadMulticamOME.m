@@ -2,17 +2,15 @@ function [ movC1, movC2, idx ] = loadMulticamOME( frameInfo, movieInfo, frames )
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
-%TODO: redefine the number of frame so it changes if one or two camera are
-%used, change the corresponding assert
+assert(isvector(frames),'Frames must be a vector');
+assert(isstruct(frameInfo),'info must be a structure');
+assert(max(frames)<= min(movieInfo.maxFrame), 'your request exceeds the total number of frames');
 
-assert(min(size(frames))==1,'Frames must be a vector')
-assert(isstruct(frameInfo),'info must be a structure')
-assert(max(frames)<= length(frameInfo) / 2, 'your request exceeds the total number of frames')
-ImL = movieInfo.Length;
-ImW = movieInfo.Width;
+ImL      = movieInfo.Length; % Length of the frame
+ImW      = movieInfo.Width; %width of the Frame
+isZStack = movieInfo.isZStack; % define if zStack or not
+cam      = movieInfo.Cam; %give indexes of camera, size is number of cam
 path2omes = movieInfo.Path;
-
-isZStack = size(unique({frameInfo.T}),2)==1;
 
 nFramres = length(frames);
 Cinfo    = {frameInfo.C};
@@ -23,9 +21,6 @@ switch isZStack
     case 1
         Finfo = {frameInfo.Z};
 end
-
-cam =str2double(unique(Cinfo));% Extract indexes of the camera, the size of
-%cam matches the number of camera used.
 
 switch size(cam,2)
     case 1
