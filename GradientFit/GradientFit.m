@@ -83,21 +83,57 @@ f3 = a2;
 g3 = -sum(sum(gxy.*m.*n./P));
 
 A1 = (a2*c1-a1*c2)/(b1*c2-b2*c1);
-B1 = (c1*d2-c2*d1)/(b1*c2-b2*c1);
+testA1 = (a2*c1 - a1*c2) / (b1*c2 + c1^2);
+tmp = abs(A1-testA1)/abs(A1);
+assert(tmp<1e-10,'problems with new def of A1')
 
-A2 = (a1*(b2*c1-b1*c2)+b1*(a1*c2-a2*c1))/(c1*(b1*c2-b2*c1));
-B2 = (b1*(c2*d1-c1*d2)+d1*(b2*c1-b1*c2))/(c1*(b1*c2-b2*c1));
+B1 = (c1*d2-c2*d1)/(b1*c2-b2*c1);
+testB1 = (d2*c1 - d1*c2) / (b1*c2 +c1^2);
+tmp = abs(B1-testB1)/abs(B1);
+assert(tmp<1e-10,'problems with new def of B1')
+
+A2 = (a1*(b2*c1-b1*c2) +  b1*(a1*c2-a2*c1)) / (c1*(b1*c2-b2*c1));
+testA2 = (-1/c1) * (a1 + b1*A1);
+tmp = abs(A2-testA2)/abs(A2);
+assert(tmp<1e-10,'problems with new def of A2')
+
+B2 = (b1*(c2*d1-c1*d2) +  d1 * (b2*c1-b1*c2)) / (c1*(b1*c2-b2*c1));
+testB2 = (-1/c1) * (d1 + b1*B1);
+tmp = abs(B2-testB2)/abs(B2);
+assert(tmp<1e-10,'problems with new def of B2')
+
 
 A = a3+A1*b3+A1*A1*c3+A1*A2*e3+A2*f3;
+% A = a3 + a2*A2 -(A2*c1 + 2*a1)*A1 - b1*A1^2;
+testA = (1/c1)*(a3*c1-a2*a1-A1*(a2*b1+a1*c1));
+tmp = abs(A-testA)/abs(A);
+assert(tmp<1e-10,'problems with new def of A')
 
-B = B1*B1*c3+B1*d3+B1*B2*e3;
+
+B = B1*B1*c3 +B1*d3 +B1*B2*e3;
+% testB = -b1*B1^2 -d1*B1 - (c1*B1* B2);
+% testB = -b1*B1^2 -d1*B1 - (c1*B1* ((-1/c1) * (d1 + b1*B1)));
+% testB = -b1*B1^2 -d1*B1 - (B1* ((-1) * (d1 + b1*B1)));
+% testB = -b1*B1^2 -d1*B1 - (-d1*B1 - b1*B1^2);
+testB = 0; % !!!!!! I can prove that B should be 0
+assert(abs(B-testB)<1e-10,'problems with new def of B')
+
+
 
 C = B1*b3+2*A1*B1*c3+A1*d3+A1*B2*e3+B2*f3+g3;
+% C = g3 -2*a1*B1 -2*b1*A1*B1 -d1*A1 -c1*A1*B2 +a2*B2;
+testC = g3 -d1*(a2/c1) -B1*(2*a1 +b1*(a2/c1) +b1*A1);
+tmp = abs(C-testC)/abs(C);
+assert(tmp<1e-10,'problems with new def of C')
+
 %--------------------------------------------------------------------------
 
 % e looks like the quadratic formula for ax^2 + bx + c = 0;
 % x = [-b (+-) sqrt(b^2 - 4*a*c)]/2a
 % where C = b, A = a and B = c
 e = (-C+sqrt(C^2-4*A*B)) / (2*A);
+
 x = A1+B1/e;
-y = A2*e+B2;
+
+% y = A2*e+B2;
+y = (-1/c1) * (d1 +b1*B1 +e*(a1 +b1*A1));
