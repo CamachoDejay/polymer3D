@@ -29,38 +29,60 @@
 % -------------------------------------------------------------------------
 %%
 
-function [x,y,e] = GradientFit(ROI,RegR,GraR)
+function [x_c,y_c,elip] = GradientFit(ROI,GraR)
+
+roiSize = size(ROI);
+assert(all(mod(roiSize,2)==[1,1]),'input ROI dimentions must be odd')
 
 % estimate the initial value of [x,y,e] by using centroid based method
 [x0, y0, e0] = Centroid(ROI);
 
-% define the coordinates of the gradient gride, set the center pixel as the original point
-[m,n] = meshgrid(0.5-GraR:GraR-0.5,GraR-0.5:-1:0.5-GraR);
+% define the coordinates of the gradient grid, set the center pixel as the original point
+[m,n] = meshgrid(-GraR:GraR,-GraR:1:GraR);
 
-% define the exact gradient at each position
-% I believe here they are asuming a 2D elliptical Gaussian
+% define the exact gradient at each position. I believe here they are
+% asuming a 2D elliptical Gaussian, these numbers are only used to
+% calculate the weighting factor
 Gx = e0*(x0-m);
-Gy = (y0+n);
+Gy = (y0-n);
 G2 = (Gx.^2 + Gy.^2);
-% so far G2 is a factor that only considers the ellipticity of the psf
 
 % caculate the measured gradients - This is equation 3 in the paper
-xID = RegR-GraR:RegR+GraR-1;
-yID = xID;
+roiXc = median(1:size(ROI,1));
+roiYc = median(1:size(ROI,2));
+xID = roiXc-GraR:roiXc+GraR;
+yID = roiYc-GraR:roiYc+GraR;
+xID = xID-1;
+yID = yID-1;
+
+assert(max(xID+3)<=size(ROI,1),'decrease gradient radius')
+assert(max(yID+3)<=size(ROI,2),'decrease gradient radius')
+
 gx = ROI(yID,xID+3)+ 2*ROI(yID+1,xID+3)+ 2*ROI(yID+2,xID+3)+ ROI(yID+3,xID+3)...
     -ROI(yID,xID)  - 2*ROI(yID+1,xID)  - 2*ROI(yID+2,xID)  - ROI(yID+3,xID);
 
 gy = ROI(yID,xID)  + 2*ROI(yID,xID+1)  + 2*ROI(yID,xID+2)  + ROI(yID,xID+3)...
     -ROI(yID+3,xID)- 2*ROI(yID+3,xID+1)- 2*ROI(yID+3,xID+2)- ROI(yID+3,xID+3);
 
+% I changed the way n is defined, but to keep signs correct to previous
+% code from Hongqiang I have to change the sign of gy here
+gy = -gy;
+
 gx2 = gx.^2;
 gy2 = gy.^2;
 gxy = gx.*gy;
-% g2 = (gx2 + gy2);
 
+% calculating the weighting factor, in fact 1/Wg
+% g2 = (gx2 + gy2);
 % Wg = sqrt(G2).*(g2);  % Wg is the weight parameter
 % P = (G2.*g2)./Wg;
 P = sqrt(G2);
+if any(P(:)==0)
+    warning('There is a 0 P value, substituting by 1e-10')
+    P(P==0) = 1e-10;
+end
+% There is a problem with their definition of W, in the paper Wg has no e0
+% in the sqrt(). What is correct paper or code? probably best to mail them.
 
 % solve the equation to get the best fit [x,y,e] --------------------------
 S_gy2m = sum(sum(gy2.*m./P));
@@ -73,39 +95,9 @@ S_gx2n = sum(sum(gx2.*n./P));
 S_gy2m2 = sum(sum(gy2.*m.^2./P));
 S_gxymn = sum(sum(gxy.*m.*n./P));
 
-A1 = (S_gxym*S_gxy - S_gy2m*S_gx2) / (S_gxy^2 - S_gy2*S_gx2);
-B1 = (S_gxyn*S_gx2 - S_gx2n*S_gxy) / (S_gxy^2 - S_gy2*S_gx2);
-
-A = (1/S_gxy)*(S_gy2m2*S_gxy - S_gxym*S_gy2m - A1*(S_gy2m*S_gxy - S_gxym*S_gy2));
-
-Bzero = 0; % !!!!!! I can prove that B should be 0
-
-C = (-S_gxymn) + S_gxyn*(S_gxym/S_gxy) - B1*(2*S_gy2m - S_gy2*(S_gxym/S_gxy) - S_gy2*A1);
-
-%--------------------------------------------------------------------------
-
-% e looks like the quadratic formula for ax^2 + bx + c = 0;
-% x = [-b (+-) sqrt(b^2 - 4*a*c)]/2a
-% where C = b, A = a and B = c
-
-% the solution presented in the original code only works if C is negative.
-% If not e will be 0;
-errMsg = ['problems with C, must be negative.'...
-          ' I have to check this due to the way the program'...
-          ' was writen initially'];
-assert(C<0,errMsg)
-% e = (-C+sqrt(C^2-4*A*Bzero)) / (2*A);
-e = -C/A;
-
-x = A1+B1/e;
-
-% y = A2*e+B2;
-y = (-1/S_gxy) * ((-S_gxyn) - S_gy2*B1 +e*(S_gy2m -S_gy2*A1));
-
-% Now as I did not like the way the code was writen I decided to solve the
+% I did not like the way the code was writen I decided to solve the
 % math on my side and come with my own solutions for the system of
-% equations. These solutions are bellow and are compared with that obtained
-% by the original code.
+% equations. These solutions are consistent with previous code.
 
 % first we calculate e
 eNum = S_gy2*(S_gxym*S_gx2n - S_gxymn*S_gx2)+...
@@ -116,7 +108,7 @@ eDen = S_gy2*(S_gxym^2 - S_gy2m2*S_gx2)+...
        S_gy2m*(S_gy2m*S_gx2 - S_gxy*S_gxym) +...
        S_gxy*(S_gy2m2*S_gxy - S_gy2m*S_gxym);
    
-e_new = eNum/eDen;
+elip = eNum/eDen;
 
 % then we calculate xc and yc
 comD = (S_gy2*S_gx2-S_gxy^2);
@@ -125,17 +117,11 @@ L = (S_gy2m*S_gx2 - S_gxym*S_gxy)/comD;
 M = (S_gx2n*S_gy2 - S_gxyn*S_gxy)/comD;
 N = (S_gxy*S_gy2m - S_gxym*S_gy2)/comD;
 
-x_new = K/e_new + L;
-y_new = M+e_new * N;
+x_c = K/elip + L;
+y_c = M+elip * N;
 
-%%
-% now I report the differences:
-diffE = abs(e-e_new);
-fprintf('original e: %.4g ;\t new e: %.4g ;\t difference: %.4g\n',e,e_new,diffE)
-
-diffX = abs(x-x_new);
-fprintf('original x: %.4g ;\t new x: %.4g ;\t difference: %.4g\n',x,x_new,diffX)
-
-diffY = abs(y-y_new);
-fprintf('original y: %.4g ;\t new y: %.4g ;\t difference: %.4g\n',y,y_new,diffY)
+% now I have to add for the fact that the gradient operant is even while my
+% image is odd
+x_c = x_c +0.5;
+y_c = y_c +0.5;
 
