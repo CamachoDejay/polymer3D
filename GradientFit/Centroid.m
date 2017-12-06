@@ -54,8 +54,8 @@ sIx(floor(Xc+3*Wx)+1:end) = 0;
 
 % here there seems to be an error in the code, probably here they wanted to
 % also clean the sIy and made a typo
-sIx(1:floor(Yc-3*Wy)) = 0;
-sIx(floor(Yc+3*Wy)+1:end) = 0;
+sIy(1:floor(Yc-3*Wy)) = 0;
+sIy(floor(Yc+3*Wy)+1:end) = 0;
 
 % here they seems to refine their centroid
 Xc = sum(sIx.*X)/sum(sIx);
