@@ -5,6 +5,13 @@
 % is distributed as part of academic resource sharing for non-profit 
 % research only. Plaese see the GNU General Public License 
 % for more details.
+% 
+% Current implementation by Rafael Camacho (github: camachodejay). The
+% following code is based on the work of Hongqiang Ma (2015) which can be
+% found in http://www.pitt.edu/~liuy. Moreover the code has been heavily
+% modified by refining the math and coming with cleaner definitions of
+% e, x_c and y_c.
+%
 % -------------------------------------------------------------------------
 % -------------------------------------------------------------------------
 % Inputs
@@ -20,14 +27,6 @@
 %          Unit: pixels
 %   e    : The caculated ellipticity of the emitter's intensity distribution
 % -------------------------------------------------------------------------
-%
-%
-% Affiliation :  Departments of Medicine, University of Pittsburgh
-% Reference   :  Ma, H. et al. Fast and Precise 3D Fluorophore Localization based on 
-%                Gradient Fitting. Sci. Rep. 5, 14335; doi: 10.1038/srep14335 (2015).
-% Link        :  http://www.pitt.edu/~liuy
-%
-% Copyright 2015, Hongqiang Ma
 %%
 
 function [x,y,e] = GradientFit(ROI,RegR,GraR)
@@ -64,59 +63,79 @@ gxy = gx.*gy;
 P = sqrt(G2);
 
 % solve the equation to get the best fit [x,y,e] --------------------------
-a1 = sum(sum(gy2.*m./P));
-b1 = -sum(sum(gy2./P));
-c1 = sum(sum(gxy./P));
-d1 = -sum(sum(gxy.*n./P));
+S_gy2m = sum(sum(gy2.*m./P));
+S_gy2 = sum(sum(gy2./P));
+S_gxy = sum(sum(gxy./P));
+S_gxyn = sum(sum(gxy.*n./P));
+S_gxym = sum(sum(gxy.*m./P));
+S_gx2 = sum(sum(gx2./P));
+S_gx2n = sum(sum(gx2.*n./P));
+S_gy2m2 = sum(sum(gy2.*m.^2./P));
+S_gxymn = sum(sum(gxy.*m.*n./P));
 
-a2 = sum(sum(gxy.*m./P));
-b2 = -c1;
-c2 = sum(sum(gx2./P));
-d2 = -sum(sum(gx2.*n./P));
+A1 = (S_gxym*S_gxy - S_gy2m*S_gx2) / (S_gxy^2 - S_gy2*S_gx2);
+B1 = (S_gxyn*S_gx2 - S_gx2n*S_gxy) / (S_gxy^2 - S_gy2*S_gx2);
 
-a3 = sum(sum(gy2.*m.^2./P));
-b3 = -2*a1;
-c3 = -b1;
-d3 = -d1;
-e3 = -c1;
-f3 = a2;
-g3 = -sum(sum(gxy.*m.*n./P));
+A = (1/S_gxy)*(S_gy2m2*S_gxy - S_gxym*S_gy2m - A1*(S_gy2m*S_gxy - S_gxym*S_gy2));
 
-% A1 = (a2*c1-a1*c2)/(b1*c2-b2*c1);
-A1 = (a2*c1 - a1*c2) / (b1*c2 + c1^2);
+Bzero = 0; % !!!!!! I can prove that B should be 0
 
-% B1 = (c1*d2-c2*d1)/(b1*c2-b2*c1);
-B1 = (d2*c1 - d1*c2) / (b1*c2 +c1^2);
-
-% A2 = (a1*(b2*c1-b1*c2) +  b1*(a1*c2-a2*c1)) / (c1*(b1*c2-b2*c1));
-A2 = (-1/c1) * (a1 + b1*A1);
-
-% B2 = (b1*(c2*d1-c1*d2) +  d1 * (b2*c1-b1*c2)) / (c1*(b1*c2-b2*c1));
-B2 = (-1/c1) * (d1 + b1*B1);
-
-% A = a3+A1*b3+A1*A1*c3+A1*A2*e3+A2*f3;
-% A = a3 + a2*A2 -(A2*c1 + 2*a1)*A1 - b1*A1^2;
-A = (1/c1)*(a3*c1-a2*a1-A1*(a2*b1+a1*c1));
-
-% B = B1*B1*c3 +B1*d3 +B1*B2*e3;
-% testB = -b1*B1^2 -d1*B1 - (c1*B1* B2);
-% testB = -b1*B1^2 -d1*B1 - (c1*B1* ((-1/c1) * (d1 + b1*B1)));
-% testB = -b1*B1^2 -d1*B1 - (B1* ((-1) * (d1 + b1*B1)));
-% testB = -b1*B1^2 -d1*B1 - (-d1*B1 - b1*B1^2);
-B = 0; % !!!!!! I can prove that B should be 0
-
-% C = B1*b3+2*A1*B1*c3+A1*d3+A1*B2*e3+B2*f3+g3;
-% C = g3 -2*a1*B1 -2*b1*A1*B1 -d1*A1 -c1*A1*B2 +a2*B2;
-C = g3 -d1*(a2/c1) -B1*(2*a1 +b1*(a2/c1) +b1*A1);
+C = (-S_gxymn) + S_gxyn*(S_gxym/S_gxy) - B1*(2*S_gy2m - S_gy2*(S_gxym/S_gxy) - S_gy2*A1);
 
 %--------------------------------------------------------------------------
 
 % e looks like the quadratic formula for ax^2 + bx + c = 0;
 % x = [-b (+-) sqrt(b^2 - 4*a*c)]/2a
 % where C = b, A = a and B = c
-e = (-C+sqrt(C^2-4*A*B)) / (2*A);
+
+% the solution presented in the original code only works if C is negative.
+% If not e will be 0;
+errMsg = ['problems with C, must be negative.'...
+          ' I have to check this due to the way the program'...
+          ' was writen initially'];
+assert(C<0,errMsg)
+% e = (-C+sqrt(C^2-4*A*Bzero)) / (2*A);
+e = -C/A;
 
 x = A1+B1/e;
 
 % y = A2*e+B2;
-y = (-1/c1) * (d1 +b1*B1 +e*(a1 +b1*A1));
+y = (-1/S_gxy) * ((-S_gxyn) - S_gy2*B1 +e*(S_gy2m -S_gy2*A1));
+
+% Now as I did not like the way the code was writen I decided to solve the
+% math on my side and come with my own solutions for the system of
+% equations. These solutions are bellow and are compared with that obtained
+% by the original code.
+
+% first we calculate e
+eNum = S_gy2*(S_gxym*S_gx2n - S_gxymn*S_gx2)+...
+       S_gy2m*(S_gxyn*S_gx2 - S_gxy*S_gx2n) +...
+       S_gxy*(S_gxymn*S_gxy - S_gxyn*S_gxym);
+   
+eDen = S_gy2*(S_gxym^2 - S_gy2m2*S_gx2)+...
+       S_gy2m*(S_gy2m*S_gx2 - S_gxy*S_gxym) +...
+       S_gxy*(S_gy2m2*S_gxy - S_gy2m*S_gxym);
+   
+e_new = eNum/eDen;
+
+% then we calculate xc and yc
+comD = (S_gy2*S_gx2-S_gxy^2);
+K = (S_gx2n*S_gxy - S_gxyn*S_gx2)/comD;
+L = (S_gy2m*S_gx2 - S_gxym*S_gxy)/comD;
+M = (S_gx2n*S_gy2 - S_gxyn*S_gxy)/comD;
+N = (S_gxy*S_gy2m - S_gxym*S_gy2)/comD;
+
+x_new = K/e_new + L;
+y_new = M+e_new * N;
+
+%%
+% now I report the differences:
+diffE = abs(e-e_new);
+fprintf('original e: %.4g ;\t new e: %.4g ;\t difference: %.4g\n',e,e_new,diffE)
+
+diffX = abs(x-x_new);
+fprintf('original x: %.4g ;\t new x: %.4g ;\t difference: %.4g\n',x,x_new,diffX)
+
+diffY = abs(y-y_new);
+fprintf('original y: %.4g ;\t new y: %.4g ;\t difference: %.4g\n',y,y_new,diffY)
+
