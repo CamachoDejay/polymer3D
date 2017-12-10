@@ -2,12 +2,14 @@ clear
 close all
 clc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-noise = 'Gaussian'; %'Gaussian', 'Poisson','both?'
+noise = 'Poisson'; %'Gaussian', 'Poisson','both?'
 doPlot = false;
 nSim = 1;
 pix_size = 0.25;
 im_size = 13; % in px
-noiseFactor = 10;%For Gaussian
+gVar = 0.5;%For Gaussian
+bkg = 100;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -46,15 +48,20 @@ for i = 1: nSim
     % Adding noise onto the "perfect" gaussian
     switch noise
         case 'Gaussian'
-            bkg = 100;
+            %Add background to avoid negative value after adding noise
             ROI = ROI +bkg;
-            ROI = ROI + 10* randn(size(ROI));
-           % ROI = uint16(ROI);
             %add Gaussian distributed noise
+            ROI = imnoise(ROI,'Gaussian',0,gVar);
+           % ROI = uint16(ROI);
+
         case 'Poisson'
-            %add Poisson distributed noise
+           ROI = ROI +bkg;
+           ROI = imnoise(ROI,'poisson');
+           
         case 'both'
-            %add Gaussian and poisson noise
+           ROI = ROI +bkg;
+           ROI = imnoise(ROI,'Gaussian',0,gVar);
+           ROI = imnoise(ROI,'poisson');
         otherwise
            %  ROI = uint16(ROI);
     end
