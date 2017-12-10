@@ -4,7 +4,7 @@ clc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 noise = 'none'; %'Gaussian', 'Poisson','both?'
 doPlot = false;
-nSim = 100;
+nSim = 10000;
 pix_size = 0.25;
 im_size = 13; % in px
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -65,9 +65,8 @@ for i = 1: nSim
 end
  simResults.absErrorX = abs(simResults.fitX-simResults.realX);
  simResults.absErrorY = abs(simResults.fitY-simResults.realY);
- simResults.relErrorX = simResults.absErrorX./simResults.realX;
- simResults.relErrorY = simResults.absErrorY./simResults.realY;
- 
+ simResults.relErrorX = abs(simResults.fitY-simResults.realY);
+ simResults.relErrorY = abs(simResults.fitY-simResults.realY);
 %to Display in the command line
 %fprintf('x pos [pix]: %.4g  [fit]: %.4g [real]: %.4g \t \n',xc,(xc-1)*pix_size,pos_real(1))
 %fprintf('y pos [pix]: %.4g  [fit]: %.4g [real]: %.4g \t \n',yc,(yc-1)*pix_size,pos_real(2))
