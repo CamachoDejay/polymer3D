@@ -2,11 +2,13 @@ clear
 close all
 clc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-noise = 'none'; %'Gaussian', 'Poisson','both?'
+noise = 'Gaussian'; %'Gaussian', 'Poisson','both?'
 doPlot = false;
-nSim = 100;
+nSim = 1;
 pix_size = 0.25;
 im_size = 13; % in px
+noiseFactor = 10;%For Gaussian
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Allocate memory for storing results
@@ -32,7 +34,10 @@ for i = 1: nSim
 
     sig = [sigX,sigY];
     ROI = gaus2D(pos_real,sig,xVal,yVal); %Generate 2D gaussian
-
+    
+    %Casting to integers
+   
+    
     % ROI coor is always the center position
     ROI_coor = [median(1:size(ROI,1)),median(1:size(ROI,1))];
 
@@ -41,12 +46,17 @@ for i = 1: nSim
     % Adding noise onto the "perfect" gaussian
     switch noise
         case 'Gaussian'
+            bkg = 100;
+            ROI = ROI +bkg;
+            ROI = ROI + 10* randn(size(ROI));
+           % ROI = uint16(ROI);
             %add Gaussian distributed noise
         case 'Poisson'
             %add Poisson distributed noise
         case 'both'
             %add Gaussian and poisson noise
         otherwise
+           %  ROI = uint16(ROI);
     end
 
     [x,y,e] = GradientFit(ROI,GraR);% Do gradient fitting
