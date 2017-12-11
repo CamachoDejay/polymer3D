@@ -31,6 +31,9 @@
 
 function [x_c,y_c,elip] = GradientFit(ROI,GraR)
 
+assert(isa(ROI,'double'),'ROI image must be a double')
+% TODO: should the code not work on ints instead? 
+
 roiSize = size(ROI);
 assert(all(mod(roiSize,2)==[1,1]),'input ROI dimentions must be odd')
 
@@ -67,6 +70,7 @@ gy = ROI(yID,xID)  + 2*ROI(yID,xID+1)  + 2*ROI(yID,xID+2)  + ROI(yID,xID+3)...
 % I changed the way n is defined, but to keep signs correct to previous
 % code from Hongqiang I have to change the sign of gy here
 gy = -gy;
+% TODO: if I use ints here we can not handle negative numbers and we should. 
 
 gx2 = gx.^2;
 gy2 = gy.^2;
