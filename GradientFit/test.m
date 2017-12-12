@@ -1,18 +1,50 @@
+%%
 clear 
 close all
 clc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-noise = 'Poisson'; %'Gaussian', 'Poisson','both?'
-doPlot = false;
-nSim = 1;
+doPlot = true;
 pix_size = 0.25;
 im_size = 13; % in px
-gVar = 0.5;%For Gaussian
-bkg = 100;
 
 
+prompt = {'Enter number of simulation: ',...
+    'Enter a type of noise to add (none, Gaussian or Poisson):',...
+    'Enter variance to use for Gaussian noise: ',...
+    'Enter background:(1:1000)):'};
+dlgTitle = 'Simulation Parameters input';
+numLines = 1;
+defaultVal = {'1','none','0.1','10'};
+answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%% Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if isempty(answer)
+    warning('User canceled input dialog, Simulation will run with default input');
+    nSim  = 1;
+    noise = 'none';
+    gVar  = 0.1;
+    bkg   = 10;
+else
 
+nSim = str2double(answer(1));
+assert(~isnan(nSim),'Number of simulation should be numerical');%If not a number
+%expressed in string str2double yield NaN, isnumeric yield true on NaN so
+%isnan is the only way to check.
+
+noise = answer(2);
+noise = noise{1};
+assert(isnan(str2double(noise)),'Type of noise should not be a number'); 
+
+gVar = str2double(answer(3));
+assert(~isnan(gVar),'Variance should be numerical');
+
+bkg = str2double(answer(4));
+assert(~isnan(bkg),'Background should be numerical');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% END Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Simulation
 % Allocate memory for storing results
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1), zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
@@ -51,8 +83,9 @@ for i = 1: nSim
             %Add background to avoid negative value after adding noise
             ROI = ROI +bkg;
             %add Gaussian distributed noise
-            ROI = imnoise(ROI,'Gaussian',0,gVar);
-           % ROI = uint16(ROI);
+           % ROI = imnoise(ROI,'Gaussian',0,gVar);
+            ROI = round(ROI); %Rounded to obtain integers while keeping
+            %double type for gradient function.
 
         case 'Poisson'
            ROI = ROI +bkg;
