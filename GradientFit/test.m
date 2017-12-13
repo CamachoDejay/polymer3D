@@ -80,23 +80,27 @@ for i = 1: nSim
     % Adding noise onto the "perfect" gaussian
     switch noise
         case 'Gaussian'
-            %Add background to avoid negative value after adding noise
-            ROI = ROI +bkg;
-            %add Gaussian distributed noise
-           % ROI = imnoise(ROI,'Gaussian',0,gVar);
-            ROI = round(ROI); %Rounded to obtain integers while keeping
+            %Add background to avoid negative value after adding noise           
+            tmpROI = ROI +bkg;%to avoid negative value with Gaussian noise
+            
+            gNoise = sqrt(gVar).*randn(size(tmpROI))+ 0;%randn yield var = 1 multiplying
+            %the noise will multiply variance the same amount to the power
+            %of 2, thus we sqrt the variance demanded by the user.
+            ROI = round (tmpROI+gNoise);%Rounded to obtain integers while keeping
             %double type for gradient function.
-
+            
         case 'Poisson'
-           ROI = ROI +bkg;
-           ROI = imnoise(ROI,'poisson');
+           tmpROI = uint16(ROI +bkg);
+           ROI = double(round(imnoise(tmpROI,'poisson')));
+           disp('OK');
            
         case 'both'
-           ROI = ROI +bkg;
-           ROI = imnoise(ROI,'Gaussian',0,gVar);
-           ROI = imnoise(ROI,'poisson');
+          %ROI = ROI +bkg;
+          % ROI = imnoise(ROI,'Gaussian',0,gVar);
+          % ROI = imnoise(ROI,'poisson');
         otherwise
-           %  ROI = uint16(ROI);
+           ROI = round(ROI);%Rounded to obtain integers while keeping
+            %double type for gradient function.
     end
 
     [x,y,e] = GradientFit(ROI,GraR);% Do gradient fitting
