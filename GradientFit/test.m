@@ -2,6 +2,7 @@
 clear 
 close all
 clc
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 doPlot = true;
 pix_size = 0.25;
@@ -17,6 +18,7 @@ numLines = 1;
 defaultVal = {'1','none','0.1','10'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(answer)
@@ -44,13 +46,17 @@ assert(~isnan(bkg),'Background should be numerical');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% END Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% Simulation
+
 % Allocate memory for storing results
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1), zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
+    cell(nSim,1), zeros(nSim,1), zeros(nSim,1),...
     'VariableNames',{'realX','fitX', 'realY', 'fitY','elipticity','absErrorX',...
-    'absErrorY','relErrorX','relErrorY'}); 
+    'absErrorY','relErrorX','relErrorY','noiseType','background','gVariance'}); 
 
+%simulate data, analyze and store results 
 for i = 1: nSim
 
     pos_real = [1 + rand(1),1+rand(1)];%random number between 1 and 2. (1 yields
@@ -68,8 +74,6 @@ for i = 1: nSim
 
     sig = [sigX,sigY];
     ROI = gaus2D(pos_real,sig,xVal,yVal); %Generate 2D gaussian
-    
-    %Casting to integers
    
     
     % ROI coor is always the center position
@@ -88,35 +92,39 @@ for i = 1: nSim
             %of 2, thus we sqrt the variance demanded by the user.
             ROI = round (tmpROI+gNoise);%Rounded to obtain integers while keeping
             %double type for gradient function.
-            
+            simResults.gVariance(i) = gVar;
         case 'Poisson'
-           tmpROI = uint16(ROI +bkg);
-           ROI = double(round(imnoise(tmpROI,'poisson')));
-           disp('OK');
-           
-        case 'both'
+           tmpROI = uint16(ROI +bkg); %Cast to int for imnoise
+           ROI = double(round(imnoise(tmpROI,'poisson')));   
+           simResults.gVariance = 0;
+      %   case 'both'
           %ROI = ROI +bkg;
           % ROI = imnoise(ROI,'Gaussian',0,gVar);
           % ROI = imnoise(ROI,'poisson');
+          
         otherwise
            ROI = round(ROI);%Rounded to obtain integers while keeping
             %double type for gradient function.
+            
+           simResults.gVariance = 0;
     end
 
     [x,y,e] = GradientFit(ROI,GraR);% Do gradient fitting
     
-    xc = (ROI_coor(1) + x);
-    yc = (ROI_coor(2) + y);
+    xc = (ROI_coor(1) + x);%in px
+    yc = (ROI_coor(2) + y);%in px
     
-    simResults.realX(i) = pos_real(1);
-    simResults.realY(i) = pos_real(2);
-    simResults.fitX(i)  = (xc-1)*pix_size;
-    simResults.fitY(i)  = (yc-1)*pix_size;
+    %Store the results 
+    simResults.realX(i)      = pos_real(1);
+    simResults.realY(i)      = pos_real(2);
+    simResults.fitX(i)       = (xc-1)*pix_size;
+    simResults.fitY(i)       = (yc-1)*pix_size;
     simResults.elipticity(i) = e;
+    simResults.noiseType(i)  = {noise};
+    simResults.background(i) = bkg; 
    
-    
-
 end
+%Calculate errors and store them
  simResults.absErrorX = abs(simResults.fitX-simResults.realX);
  simResults.absErrorY = abs(simResults.fitY-simResults.realY);
  simResults.relErrorX = simResults.absErrorX./simResults.realX;
