@@ -1,4 +1,5 @@
 %%
+
 clear
 close all
 clc
@@ -45,7 +46,7 @@ assert(~isnan(maxCount),'Max count should be numerical');
 % Allocate memory for storing results
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1), zeros(nSim,1),zeros(nSim,1),...
-    zeros(nSim,1),zeros(nSim,1),cell(nSim,1), zeros(nSim,1),...
+    cell(nSim,1), zeros(nSim,1),...
     'VariableNames',{'realX','fitX', 'realY', 'fitY','elipticity',...
     'signal2Bkg','signal2Noise','absErrorX','absErrorY',...
     'noiseType','background'});
@@ -77,7 +78,6 @@ for i = 1: nSim
     
     simResults.signal2Bkg(i) = noiseProp.maxCount/bkg;
     simResults.signal2Noise(i)  = noiseProp.S2N;
-    simResults.gVariance(i)     = S2N;
     
     % Adding noise onto the "perfect" gaussian
     generateNoise(ROI,noiseType,noiseProp);
@@ -101,16 +101,6 @@ end
 %Calculate errors and store them
 simResults.absErrorX = abs(simResults.fitX-simResults.realX);
 simResults.absErrorY = abs(simResults.fitY-simResults.realY);
-simResults.relErrorX = simResults.absErrorX./simResults.realX;
-simResults.relErrorY = simResults.absErrorY./simResults.realY;
-
-%to Display in the command line
-%fprintf('x pos [pix]: %.4g  [fit]: %.4g [real]: %.4g \t \n',xc,(xc-1)*pix_size,pos_real(1))
-%fprintf('y pos [pix]: %.4g  [fit]: %.4g [real]: %.4g \t \n',yc,(yc-1)*pix_size,pos_real(2))
-%fprintf('elipt: %.4g \n',e)
-% fprintf('x out: %.4g \n',x)
-% fprintf('y out: %.4g \n',y)
-
 
 if doPlot
     figure(1)
