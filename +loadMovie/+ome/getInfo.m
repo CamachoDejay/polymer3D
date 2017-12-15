@@ -27,7 +27,7 @@ frameInfo(il).File = [];
 for i = 1:il
     str = Idesc(k1(i):k2(i)-1);
 
-    [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD, frameInfo(i).P, frameInfo(i).File ] = loadMovie.ome.getInfoFromString( str );
+    [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD, frameInfo(i).P, frameInfo(i).File ] = getInfoFromString( str );
 end
 
 %Add info about camera, max Frame, and zStack into movieInfo

@@ -10,8 +10,8 @@ clc
 % at the moment this code is not great as I dont request the user for input
 % regarding the file to load.
 [fileName,folder]=uigetfile({'*.tif'},'Select a file to Open');
-[~,fileNoExt,~]=fileparts(fileName);
-[~,fileNoExt,~]=fileparts(fileNoExt);
+[~,fileTif,~]=fileparts(fileName);
+[~,fileOME,~]=fileparts(fileTif);
 
 path2data = [folder fileName];
 

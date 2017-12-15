@@ -6,12 +6,10 @@ assert(isvector(frames),'Frames must be a vector');
 assert(isstruct(frameInfo),'info must be a structure');
 assert(max(frames)<= min(movieInfo.maxFrame), 'your request exceeds the total number of frames');
 
-ImL      = movieInfo.Length; % Length of the frame
-ImW      = movieInfo.Width; %width of the Frame
 isZStack = movieInfo.isZStack; % define if zStack or not
 cam      = movieInfo.Cam; %give indexes of camera, size is number of cam
-path2omes = movieInfo.Path;
-
+assert(~isempty(cam),'Camera information is missing.');
+assert(and(isvector(cam),length(cam)<3),'Camera must be a vector of max. length 2.');
 nFramres = length(frames);
 Cinfo    = {frameInfo.C};
 
@@ -37,107 +35,64 @@ for iCam = 1:size(cam,2)
         frame = frames(fi);
         F = num2str(frame-1);
         tmp = and(strcmp(Cinfo,{C}),strcmp(Finfo,{F}));
-%       test = find(tmp);
-%             if length(test)>1
-%                 disp('HAAAAA')
-%             elseif isempty(test)
-%                 disp('NOOOO')
-%             end
         idx(fi,iCam) = find(tmp);
     end
 end
 
-movC1 = uint16(zeros(ImL,ImW,nFramres));
-movC2 = uint16(zeros(ImL,ImW,nFramres));
-
-h = waitbar(0,'Please wait...');
-steps = nFramres*2;
-
-oldPath = '';
+% 
 warning('off','all')
+
+assert (size(idx,2) == length(movieInfo.Cam), 'Problem with number of cameras');
+%We always assume to have one camera
+camIdx = idx(:,1);
+[movC1,~] = loadSingleCam(movieInfo,frameInfo,frames,camIdx);
 
 switch size(idx,2)
     
     case 1 %Only one Cam
-        for fi = 1:nFramres
-            i      = idx(fi,1);
-            f2load = frameInfo(i).File;
-            p2file = [path2omes filesep f2load];
-
-            if ~strcmp(oldPath,p2file)
-
-                if exist( 'tObj', 'var' )
-                    tObj.close
-                end
-                tObj   = Tiff(p2file,'r');
-                oldPath = p2file;
-
-            end
-
-            TifDir = str2double( frameInfo(i).IFD ) + 1;
-        %     disp(TifDir)
-            tObj.setDirectory(TifDir)
-            movC1(:,:,fi) = tObj.read;
-            waitbar(fi / steps)
-        end
-        
-        movC2 = movC1; %We give the same movie for both camera (or leave
+         movC2 = []; %We give the same movie for both camera (or leave
         %empty?)
-        
-    case 2 %when multiCam is used
-        for fi = 1:nFramres
-            i      = idx(fi,1);
-            f2load = frameInfo(i).File;
-            p2file = [path2omes filesep f2load];
-
-            if ~strcmp(oldPath,p2file)
-
-                if exist( 'tObj', 'var' )
-                    tObj.close
-                end
-                tObj   = Tiff(p2file,'r');
-                oldPath = p2file;
-
-            end
-
-            TifDir = str2double( frameInfo(i).IFD ) + 1;
-        %     disp(TifDir)
-            tObj.setDirectory(TifDir)
-            movC1(:,:,fi) = tObj.read;
-            waitbar(fi / steps)
-        end
-        
-        for fi = 1:nFramres
-            i      = idx(fi,2);
-            f2load = frameInfo(i).File;
-            p2file = [path2omes filesep f2load];
-
-            if ~strcmp(oldPath,p2file)
-
-                if exist( 'tObj', 'var' )
-                    tObj.close
-                end
-                tObj   = Tiff(p2file,'r');
-                oldPath = p2file;
-
-            end
-
-            TifDir = str2double( frameInfo(i).IFD ) + 1;
-        %     disp(TifDir)
-            tObj.setDirectory(TifDir)
-            movC2(:,:,fi) = tObj.read; 
-            waitbar((fi + nFramres) / steps)
-        end
-        
+    case 2 %when two cameras are used
+        camIdx = idx(:,2);
+        [movC2,~] = loadSingleCam(movieInfo,frameInfo,frames,camIdx);  
         
     otherwise
-        error('Idx has an unexpected size');
+        error('Your file has more cameras than we can handle atm (max. 2)');
         
 end
-
-tObj.close
-close(h) 
 warning('on','all')
 
 end
+function [mov,oldPath] = loadSingleCam(movieInfo,frameInfo,frames,camIdx)
+    ImL      = movieInfo.Length; % Length of the frame
+    ImW      = movieInfo.Width; %width of the Frame
+    nFramres = length(frames); %frame is frame2load
+    mov = uint16(zeros(ImL,ImW,nFramres));
+    oldPath = '';
+    path2omes = movieInfo.Path;
+    h = waitbar(0,'Loading a camera');
+    steps = nFramres;
+    for fi = 1:nFramres
+        i      = camIdx(fi);
+        f2load = frameInfo(i).File;
+        p2file = [path2omes filesep f2load];
 
+        if ~strcmp(oldPath,p2file)
+
+            if exist( 'tObj', 'var' )
+                tObj.close
+            end
+            tObj   = Tiff(p2file,'r');
+            oldPath = p2file;
+
+        end
+
+        TifDir = str2double( frameInfo(i).IFD ) + 1;
+        %     disp(TifDir)
+        tObj.setDirectory(TifDir)
+        mov(:,:,fi) = tObj.read;
+        waitbar(fi / steps)
+    end
+    close (h);
+    tObj.close;
+end
