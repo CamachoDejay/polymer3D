@@ -1,4 +1,4 @@
-function [ C, T, Z, IDF, P, F ] = getInfoFromOMEstr( s )
+function [ C, T, Z, IDF, P, F ] = getInfoFromString( s )
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 

@@ -9,16 +9,16 @@ clc
 
 % at the moment this code is not great as I dont request the user for input
 % regarding the file to load.
+[fileName,folder]=uigetfile({'*.tif'},'Select a file to Open');
+[~,fileTif,~]=fileparts(fileName);
+[~,fileOME,~]=fileparts(fileTif);
 
-folder_path = 'path2folder';
-main_file = 'name_of_main_file.ome.tif';
-% note that an ome is just a moditiaction of a tif file.
-
-path2data = [folder_path filesep main_file];
+path2data = [folder fileName];
 
 % getting information from header
-[frameInfo, movieInfo, ~] = MovieLoad.ome.getomeinfo(path2data);
-nFrames = size(frameInfo,2);
+[frameInfo, movieInfo, ~] = loadMovie.ome.getInfo(path2data);
 
-frames2load = 1:2;
-[cam1, cam2, ~] = MovieLoad.ome.loadMulticamOME(frameInfo, movieInfo, frames2load);
+
+frames2load = 1:min(movieInfo.maxFrame);%Use min in case the number of frame
+%on the two camera is not equal.
+[cam1, cam2, ~] = loadMovie.ome.load(frameInfo, movieInfo, frames2load);
