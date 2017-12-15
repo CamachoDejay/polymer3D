@@ -1,7 +1,7 @@
-function [G] = gaus2D(pos, sig, xid,yid)
+function [G] = gaus2D(pos, sig, xid,yid,maxCount)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
-A = 100;
+A = maxCount;
 [x,y] = meshgrid(xid,yid);
 sigX = sig(1);
 sigY = sig(2);
