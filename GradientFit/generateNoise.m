@@ -24,7 +24,7 @@ assert(isstruct(noiseProp), 'noiseProp should be a structure');
       otherwise            
   end
    
-  noisyROI = round(ROI);%Rounded to obtain integers while keeping
+  noisyROI = double(round(abs(ROI)));%Rounded to obtain integers while keeping
             %double type for gradient function.
 
 end

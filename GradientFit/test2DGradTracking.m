@@ -80,7 +80,7 @@ for i = 1: nSim
     simResults.signal2Noise(i)  = noiseProp.S2N;
     
     % Adding noise onto the "perfect" gaussian
-    generateNoise(ROI,noiseType,noiseProp);
+    ROI = generateNoise(ROI,noiseType,noiseProp);
     
     % Do gradient fitting
     [x,y,e] = GradientFit(ROI,GraR);
@@ -89,10 +89,10 @@ for i = 1: nSim
     yc = (ROI_coor(2) + y);%in px
     
     %Store the results
-    simResults.realX(i)      = pos_real(1);
-    simResults.realY(i)      = pos_real(2);
-    simResults.fitX(i)       = (xc-1)*pix_size;
-    simResults.fitY(i)       = (yc-1)*pix_size;
+    simResults.realX(i)      = (pos_real(1)/pix_size)+1;
+    simResults.realY(i)      = (pos_real(2)/pix_size)+1;
+    simResults.fitX(i)       = xc;
+    simResults.fitY(i)       = yc;
     simResults.elipticity(i) = e;
     simResults.noiseType(i)  = {noiseType};
     simResults.background(i) = bkg;
