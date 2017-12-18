@@ -1,4 +1,25 @@
 %%
+%Description: test2DGradTracking, simulate perfect/noisy PSF and use
+%gradient fitting to find the center. A table (simResults) is output which
+%contain the real value as well as the simulation parameters and the fit 
+%value. 
+
+%1) The User will be shown a prompt where he can input some parameter for the
+%simulation:
+%- Number of PSF to simulate
+%- Type of noise to add (none,Gaussian, Poisson).
+%- Signal to noise (for Gaussian noise)
+%- Backgroud to add
+%- Max count (= Gaussian amplitude)
+
+%2) PSF is simulated and noise is added according to the user input
+
+%3) Gradient fit is performed
+
+%4) Output table is generated
+
+%TO DO : Add sigmaX and sigmaY in the table
+%TO DO : Compare Sigmas with elipticity from Values 
 
 clear
 close all
