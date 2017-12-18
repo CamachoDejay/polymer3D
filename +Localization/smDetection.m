@@ -7,7 +7,7 @@ function [ pos, inten ] = smDetection( im_in, delta, FWHM_pix, chi2 )
 
 % use GLRT to generate a new image where sharp peaks indicate the presence
 % of a SM
-BW = Localization.GLRTfiltering ( im_in, delta, FWHM_pix, chi2  );
+BW = GLRTfiltering ( im_in, delta, FWHM_pix, chi2  );
 % removing small objects - noise
 BW = bwareaopen(BW, 4,8);
 % find all isolated areas in the SM detection image
