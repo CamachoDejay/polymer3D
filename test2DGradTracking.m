@@ -104,7 +104,7 @@ for i = 1: nSim
     ROI = generateNoise(ROI,noiseType,noiseProp);
     
     % Do gradient fitting
-    [x,y,e] = GradientFit(ROI,GraR);
+    [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
     
     xc = (ROI_coor(1) + x);%in px
     yc = (ROI_coor(2) + y);%in px
