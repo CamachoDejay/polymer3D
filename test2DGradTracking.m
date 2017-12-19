@@ -27,7 +27,7 @@ clc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 doPlot = true;
-pix_size = 0.25;
+pix_size = 100; % in nm
 im_size = 13; % in px
 
 prompt = {'Enter number of simulation: ',...
@@ -66,21 +66,21 @@ assert(~isnan(maxCount),'Max count should be numerical');
 
 % Allocate memory for storing results
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1), zeros(nSim,1),zeros(nSim,1),...
-    cell(nSim,1), zeros(nSim,1),...
-    'VariableNames',{'realX','fitX', 'realY', 'fitY','elipticity',...
-    'signal2Bkg','signal2Noise','absErrorX','absErrorY',...
+    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
+    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),cell(nSim,1), zeros(nSim,1),...
+    'VariableNames',{'realX','fitX', 'realY', 'fitY','realElip','cElip','fitElip',...
+    'signal2Bkg','signal2Noise','absErrorX','absErrorY','errorFitElip',...
     'noiseType','background'});
 
 noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
 %simulate data, analyze and store results
 for i = 1: nSim
     
-    pos_real = [1 + rand(1),1+rand(1)];%random number between 1 and 2. (1 yields
+    pos_real = [400 + 400*rand(1),400+400*rand(1)];%random number between 1 and 2. (1 yields
     %px No 5 while 2 give pixel number 9 ==> center pixel +-2.
     
-    sigX = 0.6+rand(1)*0.6;%Generate random number between 0.6 and 1.2
-    sigY = 0.6+rand(1)*0.6;
+    sigX = 200+rand(1)*200;%Generate random number between 0.6 and 1.2
+    sigY = 200+rand(1)*200;
     
     xid = 0:im_size-1;
     yid = 0:im_size-1;
@@ -90,7 +90,7 @@ for i = 1: nSim
     pos_pix = (pos_real./pix_size) + 1;
     
     sig = [sigX,sigY];
-    ROI = gaus2D(pos_real,sig,xVal,yVal,noiseProp.maxCount); %Generate 2D gaussian
+    ROI = GradientFit.gaus2D(pos_real,sig,xVal,yVal,noiseProp.maxCount); %Generate 2D gaussian
     
     % ROI coor is always the center position
     ROI_coor = [median(1:size(ROI,1)),median(1:size(ROI,1))];
@@ -101,27 +101,31 @@ for i = 1: nSim
     simResults.signal2Noise(i)  = noiseProp.S2N;
     
     % Adding noise onto the "perfect" gaussian
-    ROI = generateNoise(ROI,noiseType,noiseProp);
+    ROI = GradientFit.generateNoise(ROI,noiseType,noiseProp);
     
     % Do gradient fitting
     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
-    
+   
     xc = (ROI_coor(1) + x);%in px
     yc = (ROI_coor(2) + y);%in px
-    
+
     %Store the results
     simResults.realX(i)      = (pos_real(1)/pix_size)+1;
     simResults.realY(i)      = (pos_real(2)/pix_size)+1;
     simResults.fitX(i)       = xc;
     simResults.fitY(i)       = yc;
-    simResults.elipticity(i) = e;
+    simResults.realElip(i)   = sigY/sigX;
+    simResults.cElip(i)      = centOut.e;
+    simResults.fitElip(i)    = e;
     simResults.noiseType(i)  = {noiseType};
     simResults.background(i) = bkg;
     
+    
 end
 %Calculate errors and store them
-simResults.absErrorX = abs(simResults.fitX-simResults.realX);
-simResults.absErrorY = abs(simResults.fitY-simResults.realY);
+simResults.absErrorX    = abs(simResults.fitX-simResults.realX);
+simResults.absErrorY    = abs(simResults.fitY-simResults.realY);
+simResults.errorFitElip = simResults.fitElip-simResults.realElip;
 
 if doPlot
     figure(1)
