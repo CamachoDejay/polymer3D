@@ -1,10 +1,10 @@
-%%
+
 %Description: test2DGradTracking, simulate perfect/noisy PSF and use
 %gradient fitting to find the center. A table (simResults) is output which
 %contain the real value as well as the simulation parameters and the fit 
 %value. 
 
-%1) The User will be shown a prompt where he can input some parameter for the
+%1)INPUT : The User will be shown a prompt where he can input some parameter for the
 %simulation:
 %- Number of PSF to simulate
 %- Type of noise to add (none,Gaussian, Poisson).
@@ -16,15 +16,13 @@
 
 %3) Gradient fit is performed
 
-%4) Output table is generated
-
-%TO DO : Add sigmaX and sigmaY in the table
-%TO DO : Compare Sigmas with elipticity from Values 
+%4) OUTPUT: table is generated containing simulated data and fitted results
+%as well as user input parameters
 
 clear
 close all
 clc
-
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 doPlot = true;
 pix_size = 100; % in nm
@@ -33,7 +31,7 @@ im_size = 13; % in px
 prompt = {'Enter number of simulation: ',...
     'Enter a type of noise to add (none, Gaussian or Poisson):',...
     'Enter Signal to noise ratio (for Gaussian): ',...
-    'Enter background:(1:1000)):','Enter max count:'};
+    'Enter background:','Enter max count:'};
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
 defaultVal = {'1','none','10','10','100'};
@@ -67,17 +65,18 @@ assert(~isnan(maxCount),'Max count should be numerical');
 % Allocate memory for storing results
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),cell(nSim,1), zeros(nSim,1),...
+    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
+    cell(nSim,1), zeros(nSim,1),cell(nSim,1),...
     'VariableNames',{'realX','fitX', 'realY', 'fitY','realElip','cElip','fitElip',...
-    'signal2Bkg','signal2Noise','absErrorX','absErrorY','errorFitElip',...
-    'noiseType','background'});
+    'signal2Bkg','signal2Noise','fAbsErrorX','fAbsErrorY','cAbsErrorX',...
+    'cAbsErrorY','errorFitElip','noiseType','background','XorY'});
 
 noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
 %simulate data, analyze and store results
 for i = 1: nSim
     
-    pos_real = [400 + 400*rand(1),400+400*rand(1)];%random number between 1 and 2. (1 yields
-    %px No 5 while 2 give pixel number 9 ==> center pixel +-2.
+    pos_real = [400 + 400*rand(1),400+400*rand(1)];%random number between 400 and 800. (400 yields
+    %px No 5 while 800 give pixel number 9 ==> center pixel +-2.
     
     sigX = 200+rand(1)*200;%Generate random number between 0.6 and 1.2
     sigY = 200+rand(1)*200;
@@ -105,6 +104,22 @@ for i = 1: nSim
     
     % Do gradient fitting
     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+    
+    %Test fitting output
+    if abs(x) > GraR && abs(y) > GraR
+        x = NaN;
+        y = NaN;
+        simResults.XorY(i) = {'both'};
+    elseif abs(x) > GraR
+        x = NaN;
+        %y = NaN;
+        simResults.XorY(i) = {'X'};
+        
+    elseif abs(y) > GraR
+        %x = NaN;
+        y = NaN;
+        simResults.XorY(i) = {'Y'};
+    end
    
     xc = (ROI_coor(1) + x);%in px
     yc = (ROI_coor(2) + y);%in px
@@ -119,13 +134,16 @@ for i = 1: nSim
     simResults.fitElip(i)    = e;
     simResults.noiseType(i)  = {noiseType};
     simResults.background(i) = bkg;
-    
+    simResults.cAbsErrorX(i) = (ROI_coor(1)+centOut.x)-simResults.realX(i);
+    simResults.cAbsErrorY(i) = (ROI_coor(2)+centOut.y)-simResults.realY(i);
     
 end
 %Calculate errors and store them
-simResults.absErrorX    = abs(simResults.fitX-simResults.realX);
-simResults.absErrorY    = abs(simResults.fitY-simResults.realY);
+simResults.fAbsErrorX    = simResults.fitX-simResults.realX;
+simResults.fAbsErrorY    = simResults.fitY-simResults.realY;
 simResults.errorFitElip = simResults.fitElip-simResults.realElip;
+
+disp('Simulation Done');
 
 if doPlot
     figure(1)
