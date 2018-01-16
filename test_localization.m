@@ -3,7 +3,6 @@ clear
 close all
 clc
 
-
 % Information about detector
 x_size = 100;
 pix_size = 105; %[nm/pix]
@@ -51,8 +50,15 @@ max_int = round(max(G(:)));
 bg_FWHM = round(max_int/SNR);
 
 % calculations for normal bg
-[ bg_im ] = ImageNoise.gauss_noise( size(X), mean_bg, bg_FWHM, d_range );
-
+%Generate the noise of the background in the same way Boris was generating
+%the noise in test2DGradTracking so the results are comparable.
+noiseProp.maxCount = max_int;
+noiseProp.S2N = SNR;
+noiseProp.bkg = mean_bg;
+ROI = zeros(x_size);
+bg_im = GradientFit.generateNoise(ROI,'Gaussian',noiseProp);
+bg_im = uint16(bg_im);
+%[ bg_im ] = ImageNoise.gauss_noise( size(X), mean_bg, bg_FWHM, d_range );
 
 for em_i = 1:em_n
     % get possition and intensity of the emitter
@@ -74,7 +80,8 @@ for em_i = 1:em_n
 end
 
 % add poisson noise
-ccd_frame = imnoise((im + bg_im),'poisson');
+%Boris EDIT: In this case we do not want to add both noise.
+%ccd_frame = imnoise((im + bg_im),'poisson');
 
 figure(1)
 imagesc( ccd_frame )
