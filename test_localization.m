@@ -82,7 +82,7 @@ end
 % add poisson noise
 %Boris EDIT: In this case we do not want to add both noise.
 %ccd_frame = imnoise((im + bg_im),'poisson');
-
+ccd_frame  = im+bg_im;
 figure(1)
 imagesc( ccd_frame )
 axis image
@@ -107,6 +107,7 @@ hold on
 scatter(pos(:,1),pos(:,2),'or')
 hold off
 axis image
+
 
 
 

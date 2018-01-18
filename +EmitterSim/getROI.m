@@ -7,7 +7,7 @@ x2 = round(x0_pix + delta);
 y1 = round(y0_pix - delta);
 y2 = round(y0_pix + delta);
 
-if x1 < 1;
+if x1 < 1
     x1 = 1;
 end
 

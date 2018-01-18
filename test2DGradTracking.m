@@ -75,7 +75,7 @@ noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
 %simulate data, analyze and store results
 for i = 1: nSim
     
-    pos_real = [400 + 400*rand(1),400+400*rand(1)];%random number between 400 and 800. (400 yields
+    pos_real = [400 + 400*rand(1),400+400*rand(1)];%random number between 400 and 800. (400 yields)
     %px No 5 while 800 give pixel number 9 ==> center pixel +-2.
     
     sigX = 200+rand(1)*200;%Generate random number between 0.6 and 1.2
