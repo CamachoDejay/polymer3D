@@ -17,7 +17,7 @@ FWHM_nm  = 350; %[nm]
 
 % information about normal bg
 mean_bg = 1000;
-SNR     = 3;
+SNR     = 10;
 % bg_FWHM = 100;
 d_range   = 'uint16';
 
@@ -104,9 +104,11 @@ chi2 = 24;
 figure(1)
 imagesc(im_in)
 hold on
-scatter(pos(:,1),pos(:,2),'or')
+colormap('hot');
+plot(pos(:,1),pos(:,2),'b+')
 hold off
 axis image
+
 
 
 

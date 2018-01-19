@@ -12,7 +12,7 @@ clc;
 
 %% User Input
 
-nImages  = 1000;
+nImages  = 1;
 % information about emitters
 emitter.num      = 10; %Makes at max 10000 fit ==> similar to previous simulation
 emitter.meanInt  = 10000;
@@ -25,7 +25,7 @@ detector.pxSize = 105; %[nm/pix]
 
 % information about normal bg
 bkg.mean = 1000;
-bkg.SNR  = 2;
+bkg.SNR  = 100;
 
 nSim = nImages*emitter.num;
 
@@ -106,7 +106,11 @@ for i=1:size(imStack,3)
             simResults.realY((i-1)*emitter.num+1:i*emitter.num)<yc+1 & ...
             simResults.realY((i-1)*emitter.num+1:i*emitter.num)>yc-1);
         
-        if (length(row)==1)
+        if (length(row,1)==1)
+%             {'realX','fitX', 'realY', 'fitY','realElip','cElip',...
+%     'fitElip','signal2Noise','fAbsErrorX','fAbsErrorY','cAbsErrorX',...
+%     'cAbsErrorY','errorFitElip'});
+
             simResults.fitX((i-1)*emitter.num+row)    = xc;
             simResults.fitY((i-1)*emitter.num+row)    = yc;
             simResults.fitElip((i-1)*emitter.num+row) = e;
@@ -120,9 +124,6 @@ for i=1:size(imStack,3)
                 centX-simResults.realX((i-1)*emitter.num+row);
             simResults.cAbsErrorY((i-1)*emitter.num+row) =...
                 centY-simResults.realY((i-1)*emitter.num+row);
-            
-            simResults.errorFitElip((i-1)*emitter.num+row) =...
-                e-simResults.realElip((i-1)*emitter.num+row);
         end
           
     end
