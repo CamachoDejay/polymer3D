@@ -25,7 +25,7 @@ detector.pxSize = 105; %[nm/pix]
 
 % information about normal bg
 bkg.mean = 1000;
-bkg.SNR  = 2;
+bkg.SNR  = 1;
 
 nSim = nImages*emitter.num;
 
@@ -39,7 +39,7 @@ simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     'cAbsErrorY','errorFitElip'});
 
 %% Image stack simulation 
-tic
+
 %Let us generate a stack of images
 [imStack,simPos,simElip] = GradientFit.simulateImages(nImages,emitter,detector,bkg);
 
@@ -47,7 +47,7 @@ simResults.realX(:) = simPos(:,1);
 simResults.realY(:) = simPos(:,2);
 simResults.realElip(:) = simElip(:,1);
 simResults.signal2Noise(:) = bkg.SNR;
-toc
+
 
 %% Localization and gradient Fitting
 
@@ -57,7 +57,7 @@ imBg = imBg+bkg.mean;
 xSize = size(imStack,2);
 ySize = size(imStack,1);
 GraR = 2; % The radius of Gradient used for caculation
-
+countLocMol = 0;
 tic
 for i=1:size(imStack,3)
     
@@ -68,7 +68,7 @@ for i=1:size(imStack,3)
     chi2 = 24;
     %Localzation occurs here
     [ pos, inten ] = Localization.smDetection(im_in, delta, FWHM_pix, chi2 );
-    
+    countLocMol = countLocMol + size(pos,1);
     for j=1:size(pos,1)
         %Extract a roi around the localized emitter
         [ roi_lims ] = EmitterSim.getROI(pos(j,1), pos(j,2), szWindow, xSize, ySize);
@@ -101,10 +101,10 @@ for i=1:size(imStack,3)
         centY = (round(pos(j,2)) +centOut.y);
         
         %Check to which initially simulated molecule the value correspond
-        [row,~] = find(simResults.realX((i-1)*emitter.num+1:i*emitter.num)<xc+1 & ...
-            simResults.realX((i-1)*emitter.num+1:i*emitter.num)>xc-1 & ...
-            simResults.realY((i-1)*emitter.num+1:i*emitter.num)<yc+1 & ...
-            simResults.realY((i-1)*emitter.num+1:i*emitter.num)>yc-1);
+        [row,~] = find(simResults.realX((i-1)*emitter.num+1:i*emitter.num)<xc+2 & ...
+            simResults.realX((i-1)*emitter.num+1:i*emitter.num)>xc-2 & ...
+            simResults.realY((i-1)*emitter.num+1:i*emitter.num)<yc+2 & ...
+            simResults.realY((i-1)*emitter.num+1:i*emitter.num)>yc-2);
         
         if (length(row)==1)
             simResults.fitX((i-1)*emitter.num+row)    = xc;
@@ -123,6 +123,8 @@ for i=1:size(imStack,3)
             
             simResults.errorFitElip((i-1)*emitter.num+row) =...
                 e-simResults.realElip((i-1)*emitter.num+row);
+        else
+             simResults.fitX((i-1)*emitter.num+row)    = NaN;
         end
           
     end

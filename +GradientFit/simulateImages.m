@@ -22,7 +22,8 @@ simElip = ones(emitter.num*nImages,1); %currently use no elipticity
 for i=1:nImages
     
 % calculations for emitters positions and int
-[ em_pos ] = EmitterSim.getRandPos( x_size, em_n );
+[ em_pos ] = EmitterSim.getRandPos(x_size-12, em_n );
+em_pos = em_pos+6;
 simPos((i-1)*em_n+1:i*em_n,:) = em_pos;
 int_model.name     = 'normal';
 int_model.mean_int = em_mean_int;
