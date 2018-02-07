@@ -11,8 +11,7 @@ close all;
 clc;
 
 %% User Input
-
-nImages  = 1000;
+nImages  = 1;
 % information about emitters
 emitter.num      = 10; %Makes at max 10000 fit ==> similar to previous simulation
 emitter.meanInt  = 10000;
@@ -25,7 +24,7 @@ detector.pxSize = 105; %[nm/pix]
 
 % information about normal bg
 bkg.mean = 1000;
-bkg.SNR  = 1;
+bkg.SNR  = 100;
 
 nSim = nImages*emitter.num;
 
