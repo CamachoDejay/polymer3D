@@ -66,6 +66,9 @@ fitPar = zeros(size(totPos,1),size(imStack,3),6);
 %gaussPar = zeros(size(totPos,1),size(imStack,3),3);
 GraR = 4;
  im_in = double(imStack);
+ 
+Grad = zeros(size(totPos,1),size(imStack,3));
+Grad2 = zeros(size(totPos,1),size(imStack,3));
 for i=1:size(imStack,3)    
     for j=1:size(totPos,1)
         
@@ -77,6 +80,8 @@ for i=1:size(imStack,3)
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %num and den used for calculating e have non-sense values (10^21) 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        [grad,~] = imgradient(ROI);
+        Grad(j,i) = max(max(grad,[],2),[],1);
 
         %Extracting ellipticity from 1D Gaussian Fit
 %         XData = max(ROI,[],1);
