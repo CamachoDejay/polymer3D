@@ -125,11 +125,13 @@ end
 figure
 hold on
 for j=1:size(totPos,1)
-    rawData.N = Grad(j,:);
-    rawData.binCenter = zPos(j,:);
-    params = [10*50/z_spacing,zPos(round(length(XData)/2)),max(Grad(j,:)),min(Grad(j,:))]; 
-    fun = @(x) GradientFit.fun2minGauss(rawData,x,false);
-    [out, RMSD] = fminsearch(fun,params);
+    [out,Fit]=Misc.gauss1DFit(Grad(j,:),zPos(j,:));
+%     rawData.N = Grad(j,:);
+%     rawData.binCenter = zPos(j,:);
+%     [val,ind] = max(Grad(j,:));
+%     params = [10*50/z_spacing,zPos(j,ind),val,min(Grad(j,:))]; 
+%     fun = @(x) GradientFit.fun2minGauss(rawData,x,true);
+%     [out, RMSD] = fminsearch(fun,params);
     %remove the zPos found==> shift the curve to be center around the focal
     %point (which might not match with any datapoint as 50 nm step were
     %used
