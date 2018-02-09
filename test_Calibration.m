@@ -14,7 +14,7 @@ close all;
 FWHM_nm = 350;%in nm
 pxSize  = 105;%in nm
 z_spacing = 50; %in nm
-szWindow =6;
+szWindow = 6 ;
 %% Loading of the data
 [fileName,folder]=uigetfile({'*.mat'},'Select a file to Open');
 [~,fileTif,~]=fileparts(fileName);
@@ -30,7 +30,8 @@ xSize = size(imStack,2);
 ySize = size(imStack,1);
 z_space = linspace(0,size(imStack,3)*z_spacing,size(imStack,3));
 %% Localization
-% Finds all the position that occurs in the stack
+% Finds all the position that occurs in the stack ==> some molecule are
+% seen only after the Xth frame because they're out of focus before, etc...
 totPos = [0,0];
 for i = 1:size(imStack,3)
     im_in = double(imStack(:,:,i));
@@ -60,7 +61,7 @@ for i = 1:size(imStack,3)
     end
 end
 totPos(1,:)=[];
-
+zPos = repmat(z_space,size(totPos,1),1);
 %% ROI extraction and Fitting
 fitPar = zeros(size(totPos,1),size(imStack,3),6);
 %gaussPar = zeros(size(totPos,1),size(imStack,3),3);
@@ -77,12 +78,11 @@ for i=1:size(imStack,3)
         ROI = im_in(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
         
         [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %num and den used for calculating e have non-sense values (10^21) 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         [grad,~] = imgradient(ROI);
         Grad(j,i) = max(max(grad,[],2),[],1);
-
         %Extracting ellipticity from 1D Gaussian Fit
 %         XData = max(ROI,[],1);
 %         YData = max(ROI,[],2)';
@@ -102,13 +102,13 @@ for i=1:size(imStack,3)
 %         gaussPar(j,i,1) = outX(1);
 %         gaussPar(j,i,2) = outY(1);
 %         gaussPar(j,i,3) = outX(1)/outY(1);
-        
+        %remove non-sense values
         if abs(x) > GraR || abs(y) > GraR
             x = NaN;
             y = NaN;
             e = 0;
         end
-        
+        %Get back the position in the original 
         xc = (round(totPos(j,1)) + x);%in px
         yc = (round(totPos(j,2)) + y);
         
@@ -120,3 +120,27 @@ for i=1:size(imStack,3)
         fitPar(j,i,6) = centOut.e;
     end
 end
+%% Forcing focal point to be z = 0
+%using Fit
+figure
+hold on
+for j=1:size(totPos,1)
+    rawData.N = Grad(j,:);
+    rawData.binCenter = zPos(j,:);
+    params = [10*50/z_spacing,zPos(round(length(XData)/2)),max(Grad(j,:)),min(Grad(j,:))]; 
+    fun = @(x) GradientFit.fun2minGauss(rawData,x,false);
+    [out, RMSD] = fminsearch(fun,params);
+    %remove the zPos found==> shift the curve to be center around the focal
+    %point (which might not match with any datapoint as 50 nm step were
+    %used
+    zPos(j,:) = zPos(j,:) - out(2);
+    plot(zPos(j,:),fitPar(j,:,3))
+end
+hold off
+%using centroid
+figure
+hold on
+for j=1:size(totPos,1)
+    plot(zPos(j,:),fitPar(j,:,6))
+end
+hold off
