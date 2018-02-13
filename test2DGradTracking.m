@@ -25,16 +25,16 @@ clc
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 doPlot = true;
-pix_size = 100; % in nm
-im_size = 13; % in px
-
+pxSize = 100; % in nm
+imSize = 13; % in px
+gFiltering = true;
 prompt = {'Enter number of simulation: ',...
     'Enter a type of noise to add (none, Gaussian or Poisson):',...
     'Enter Signal to noise ratio (for Gaussian): ',...
     'Enter background:','Enter max count:'};
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
-defaultVal = {'1','none','10','10','100'};
+defaultVal = {'1','none','10','10','100','1'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -58,6 +58,14 @@ assert(~isnan(bkg),'Background should be numerical');
 maxCount = str2double(answer(5));
 assert(~isnan(maxCount),'Max count should be numerical');
 
+% minPos = str2double(answer(6));
+% assert(~isnan(minPos),'Min position should be numerical');
+% 
+% maxPos = str2double(answer(7));
+% assert(~isnan(maxPos),'Max position should be numerical');
+% 
+% assert(minPos<= maxPos,'Min position should be smaller than max position');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%% END Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Simulation
@@ -75,18 +83,20 @@ noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
 %simulate data, analyze and store results
 for i = 1: nSim
     
-    pos_real = [400 + 400*rand(1),400+400*rand(1)];%random number between 400 and 800. (400 yields)
+%     pos_real = [minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize),...
+%         minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize)];%random number between 400 and 800. (400 yields)
     %px No 5 while 800 give pixel number 9 ==> center pixel +-2.
     
-    sigX = 200+rand(1)*200;%Generate random number between 0.6 and 1.2
-    sigY = 200+rand(1)*200;
+    pos_real = [600,600];
+    sigX = 200;%200+rand(1)*200;%Generate random number between 0.6 and 1.2
+    sigY = 200;%200+rand(1)*200;
     
-    xid = 0:im_size-1;
-    yid = 0:im_size-1;
+    xid = 0:imSize-1;
+    yid = 0:imSize-1;
     
-    xVal = xid.*pix_size;
-    yVal = yid.*pix_size;
-    pos_pix = (pos_real./pix_size) + 1;
+    xVal = xid.*pxSize;
+    yVal = yid.*pxSize;
+    pos_pix = (pos_real./pxSize) + 1;
     
     sig = [sigX,sigY];
     ROI = Misc.gaus2D(pos_real,sig,xVal,yVal,noiseProp.maxCount); %Generate 2D gaussian
@@ -102,6 +112,9 @@ for i = 1: nSim
     % Adding noise onto the "perfect" gaussian
     ROI = Misc.generateNoise(ROI,noiseType,noiseProp);
     
+    if gFiltering
+        ROI = imgaussfilt(ROI, 2);
+    end
     % Do gradient fitting
     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
     
@@ -125,8 +138,8 @@ for i = 1: nSim
     yc = (ROI_coor(2) + y);%in px
 
     %Store the results
-    simResults.realX(i)      = (pos_real(1)/pix_size)+1;
-    simResults.realY(i)      = (pos_real(2)/pix_size)+1;
+    simResults.realX(i)      = (pos_real(1)/pxSize)+1;
+    simResults.realY(i)      = (pos_real(2)/pxSize)+1;
     simResults.fitX(i)       = xc;
     simResults.fitY(i)       = yc;
     simResults.realElip(i)   = sigY/sigX;
