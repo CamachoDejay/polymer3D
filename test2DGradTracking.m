@@ -89,7 +89,7 @@ for i = 1: nSim
     pos_pix = (pos_real./pix_size) + 1;
     
     sig = [sigX,sigY];
-    ROI = GradientFit.gaus2D(pos_real,sig,xVal,yVal,noiseProp.maxCount); %Generate 2D gaussian
+    ROI = Misc.gaus2D(pos_real,sig,xVal,yVal,noiseProp.maxCount); %Generate 2D gaussian
     
     % ROI coor is always the center position
     ROI_coor = [median(1:size(ROI,1)),median(1:size(ROI,1))];
@@ -100,7 +100,7 @@ for i = 1: nSim
     simResults.signal2Noise(i)  = noiseProp.S2N;
     
     % Adding noise onto the "perfect" gaussian
-    ROI = GradientFit.generateNoise(ROI,noiseType,noiseProp);
+    ROI = Misc.generateNoise(ROI,noiseType,noiseProp);
     
     % Do gradient fitting
     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);

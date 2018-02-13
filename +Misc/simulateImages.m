@@ -1,29 +1,30 @@
-% test of localization algorithm
-clear
-close all
-clc
+function [imStack,simPos,simElip] = simulateImages(nImages,emitter,detector,bkg)
 
 % Information about detector
-x_size = 100;
-pix_size = 105; %[nm/pix]
+x_size = detector.xSize;
+pix_size = detector.pxSize; %[nm/pix]
 
 % information about emitters
-em_n = 20;
-em_mean_int = 10000;
-em_int_sigma = 100;
-
-% information about psf
-FWHM_nm  = 350; %[nm]
+em_n = emitter.num;
+em_mean_int = emitter.meanInt;
+em_int_sigma = emitter.intSigma;
+FWHM_nm = emitter.FWHM_nm;
 
 % information about normal bg
-mean_bg = 1000;
-SNR     = 10;
-% bg_FWHM = 100;
+mean_bg = bkg.mean;
+SNR     = bkg.SNR;
 d_range   = 'uint16';
 
-% calculations for emitters positions and int
-[ em_pos ] = EmitterSim.getRandPos( x_size, em_n );
+imStack = zeros(x_size,x_size,nImages);
+simPos  = zeros(emitter.num*nImages,2);
+simElip = ones(emitter.num*nImages,1); %currently use no elipticity
 
+for i=1:nImages
+    
+% calculations for emitters positions and int
+[ em_pos ] = EmitterSim.getRandPos(x_size-12, em_n );
+em_pos = em_pos+6;
+simPos((i-1)*em_n+1:i*em_n,:) = em_pos;
 int_model.name     = 'normal';
 int_model.mean_int = em_mean_int;
 int_model.sigma    = em_int_sigma;
@@ -47,7 +48,7 @@ psf_model.sigma_y = psf_model.sigma_x;
 G = G.*(em_mean_int);
 max_int = round(max(G(:)));
 
-bg_FWHM = round(max_int/SNR);
+%bg_FWHM = round(max_int/SNR);
 
 % calculations for normal bg
 %Generate the noise of the background in the same way Boris was generating
@@ -76,41 +77,8 @@ for em_i = 1:em_n
     % update total image
     im(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2)) = ...
               im(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2)) + im_roi;
-
 end
-
-% add poisson noise
-%Boris EDIT: In this case we do not want to add both noise.
-%ccd_frame = imnoise((im + bg_im),'poisson');
 ccd_frame  = im+bg_im;
-figure(1)
-imagesc( ccd_frame )
-axis image
-
-
-%%
-im_in = double(ccd_frame);
-delta = 4;
-% calculations for psf
-FWHM_nm  = 350; %[nm]
-pix_size = 105; %[nm/pix]
-FWHM_pix = FWHM_nm / pix_size; %[pix]
-% for GLRT
-chi2 = 24;
-
-[ pos, inten ] = Localization.smDetection(im_in, delta, FWHM_pix, chi2 );
-
-
-figure(1)
-imagesc(im_in)
-hold on
-colormap('hot');
-plot(pos(:,1),pos(:,2),'b+')
-hold off
-axis image
-
-
-
-
-
-
+imStack(:,:,i) = ccd_frame;
+end
+end

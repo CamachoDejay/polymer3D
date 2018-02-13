@@ -40,7 +40,7 @@ simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
 %% Image stack simulation 
 
 %Let us generate a stack of images
-[imStack,simPos,simElip] = GradientFit.simulateImages(nImages,emitter,detector,bkg);
+[imStack,simPos,simElip] = Misc.simulateImages(nImages,emitter,detector,bkg);
 
 simResults.realX(:) = simPos(:,1);
 simResults.realY(:) = simPos(:,2);
