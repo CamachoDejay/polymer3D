@@ -27,14 +27,14 @@ clc
 doPlot = true;
 pxSize = 100; % in nm
 imSize = 13; % in px
-gFiltering = true;
+gFiltering = false;
 prompt = {'Enter number of simulation: ',...
     'Enter a type of noise to add (none, Gaussian or Poisson):',...
     'Enter Signal to noise ratio (for Gaussian): ',...
-    'Enter background:','Enter max count:'};
+    'Enter background:','Enter max count:', 'Enter Min pos', 'Enter Max pos'};
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
-defaultVal = {'1','none','10','10','100','1'};
+defaultVal = {'1','none','10','10','100','5','9'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -58,13 +58,13 @@ assert(~isnan(bkg),'Background should be numerical');
 maxCount = str2double(answer(5));
 assert(~isnan(maxCount),'Max count should be numerical');
 
-% minPos = str2double(answer(6));
-% assert(~isnan(minPos),'Min position should be numerical');
-% 
-% maxPos = str2double(answer(7));
-% assert(~isnan(maxPos),'Max position should be numerical');
-% 
-% assert(minPos<= maxPos,'Min position should be smaller than max position');
+minPos = str2double(answer(6));
+assert(~isnan(minPos),'Min position should be numerical');
+
+maxPos = str2double(answer(7));
+assert(~isnan(maxPos),'Max position should be numerical');
+
+assert(minPos<= maxPos,'Min position should be smaller than max position');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% END Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,13 +83,13 @@ noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
 %simulate data, analyze and store results
 for i = 1: nSim
     
-%     pos_real = [minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize),...
-%         minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize)];%random number between 400 and 800. (400 yields)
+    pos_real = [minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize),...
+        minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize)];%random number between 400 and 800. (400 yields)
     %px No 5 while 800 give pixel number 9 ==> center pixel +-2.
     
-    pos_real = [600,600];
-    sigX = 200;%200+rand(1)*200;%Generate random number between 0.6 and 1.2
-    sigY = 200;%200+rand(1)*200;
+   % pos_real = [600,600];
+    sigX = 200+rand(1)*200;
+    sigY = 200+rand(1)*200;
     
     xid = 0:imSize-1;
     yid = 0:imSize-1;
