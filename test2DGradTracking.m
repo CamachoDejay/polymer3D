@@ -1,8 +1,7 @@
-
 %Description: test2DGradTracking, simulate perfect/noisy PSF and use
 %gradient fitting to find the center. A table (simResults) is output which
-%contain the real value as well as the simulation parameters and the fit 
-%value. 
+%contain the real value as well as the simulation parameters and the fit
+%value.
 
 %1)INPUT : The User will be shown a prompt where he can input some parameter for the
 %simulation:
@@ -27,14 +26,17 @@ clc
 doPlot = true;
 pxSize = 100; % in nm
 imSize = 13; % in px
-gFiltering = false;
+filtering = false;
+setupPSFWidth = 220; %in nm (Calculated in Focus using PSFE plate, on the
+%15/02/2018 Exc wavelength = 532nm;
+
 prompt = {'Enter number of simulation: ',...
     'Enter a type of noise to add (none, Gaussian or Poisson):',...
     'Enter Signal to noise ratio (for Gaussian): ',...
     'Enter background:','Enter max count:', 'Enter Min pos', 'Enter Max pos'};
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
-defaultVal = {'1','none','10','10','100','5','9'};
+defaultVal = {'10000','Gaussian','8','1000','100','5','9'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -74,28 +76,41 @@ assert(minPos<= maxPos,'Min position should be smaller than max position');
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    cell(nSim,1), zeros(nSim,1),cell(nSim,1),...
+    cell(nSim,1), zeros(nSim,1),cell(nSim,1),zeros(nSim,1),zeros(nSim,1),...
+    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     'VariableNames',{'realX','fitX', 'realY', 'fitY','realElip','cElip','fitElip',...
     'signal2Bkg','signal2Noise','fAbsErrorX','fAbsErrorY','cAbsErrorX',...
-    'cAbsErrorY','errorFitElip','noiseType','background','XorY'});
+    'cAbsErrorY','errorFitElip','noiseType','background','XorY','cFitX',...
+    'cFitY','fitElip2','M','L','N'});
 
 noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
 %simulate data, analyze and store results
+halfWay = round(nSim/2);
+xid = 0:imSize-1;
+yid = 0:imSize-1;
+
+xVal = xid.*pxSize;
+yVal = yid.*pxSize;
+GraR = 4; % The radius of Gradient used for caculation
+tic
 for i = 1: nSim
     
     pos_real = [minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize),...
         minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize)];%random number between 400 and 800. (400 yields)
-    %px No 5 while 800 give pixel number 9 ==> center pixel +-2.
+    %     %px No 5 while 800 give pixel number 9 ==> center pixel +-2.
+    if i <halfWay
+        % pos_real = [600,600];
+        sigX = setupPSFWidth+rand(1)*setupPSFWidth*2;
+        sigY = setupPSFWidth+rand(1)*10;
+        %           sigX = setupPSFWidth;
+        %           sigY = setupPSFWidth;
+    else
+        sigX = setupPSFWidth+rand(1)*10;
+        sigY = setupPSFWidth+rand(1)*setupPSFWidth*2;
+        %           sigX = setupPSFWidth;
+        %           sigY = setupPSFWidth;
+    end
     
-   % pos_real = [600,600];
-    sigX = 200+rand(1)*200;
-    sigY = 200+rand(1)*200;
-    
-    xid = 0:imSize-1;
-    yid = 0:imSize-1;
-    
-    xVal = xid.*pxSize;
-    yVal = yid.*pxSize;
     pos_pix = (pos_real./pxSize) + 1;
     
     sig = [sigX,sigY];
@@ -103,17 +118,15 @@ for i = 1: nSim
     
     % ROI coor is always the center position
     ROI_coor = [median(1:size(ROI,1)),median(1:size(ROI,1))];
-    
-    GraR = 4; % The radius of Gradient used for caculation
-    
+
     simResults.signal2Bkg(i) = noiseProp.maxCount/bkg;
     simResults.signal2Noise(i)  = noiseProp.S2N;
     
     % Adding noise onto the "perfect" gaussian
     ROI = Misc.generateNoise(ROI,noiseType,noiseProp);
     
-    if gFiltering
-        ROI = imgaussfilt(ROI, 2);
+    if filtering
+        ROI = smooth3(ROI);
     end
     % Do gradient fitting
     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
@@ -122,40 +135,45 @@ for i = 1: nSim
     if abs(x) > GraR && abs(y) > GraR
         x = NaN;
         y = NaN;
+        e = NaN;
         simResults.XorY(i) = {'both'};
     elseif abs(x) > GraR
         x = NaN;
-        %y = NaN;
+        y = NaN;
+        e = NaN;
         simResults.XorY(i) = {'X'};
         
     elseif abs(y) > GraR
-        %x = NaN;
+        x = NaN;
         y = NaN;
+        e = NaN;
         simResults.XorY(i) = {'Y'};
     end
-   
+    
     xc = (ROI_coor(1) + x);%in px
     yc = (ROI_coor(2) + y);%in px
-
+    
     %Store the results
     simResults.realX(i)      = (pos_real(1)/pxSize)+1;
     simResults.realY(i)      = (pos_real(2)/pxSize)+1;
     simResults.fitX(i)       = xc;
     simResults.fitY(i)       = yc;
+    simResults.cFitX(i)      = (ROI_coor(1) + centOut(1).x);
+    simResults.cFitY(i)      = (ROI_coor(2) + centOut(1).y);
     simResults.realElip(i)   = sigY/sigX;
     simResults.cElip(i)      = centOut.e;
     simResults.fitElip(i)    = e;
     simResults.noiseType(i)  = {noiseType};
     simResults.background(i) = bkg;
-    simResults.cAbsErrorX(i) = (ROI_coor(1)+centOut.x)-simResults.realX(i);
-    simResults.cAbsErrorY(i) = (ROI_coor(2)+centOut.y)-simResults.realY(i);
+    simResults.cAbsErrorX(i) = (ROI_coor(1)+centOut(1).x)-simResults.realX(i);
+    simResults.cAbsErrorY(i) = (ROI_coor(2)+centOut(1).y)-simResults.realY(i);
     
 end
 %Calculate errors and store them
 simResults.fAbsErrorX    = simResults.fitX-simResults.realX;
 simResults.fAbsErrorY    = simResults.fitY-simResults.realY;
 simResults.errorFitElip = simResults.fitElip-simResults.realElip;
-
+toc
 disp('Simulation Done');
 
 if doPlot
