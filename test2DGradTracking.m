@@ -126,7 +126,7 @@ for i = 1: nSim
     ROI = Misc.generateNoise(ROI,noiseType,noiseProp);
     
     if filtering
-        ROI = smooth3(ROI);
+        ROI = imgaussfilt(ROI,2);
     end
     % Do gradient fitting
     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
