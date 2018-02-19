@@ -38,16 +38,13 @@ assert(isa(ROI,'double'),'ROI image must be a double')
 roiSize = size(ROI);
 assert(all(mod(roiSize,2)==[1,1]),'input ROI dimentions must be odd')
 
-% We generate 2 ROI, one is the transpose of the other
-im = cat(3,ROI,ROI');
-
+% estimate the initial value of [x,y,e] by using centroid based method
+[centOut.x, centOut.y, centOut.e] = centLocalize(ROI);
 
 elip = zeros(2,1);
 xLoc = zeros(2,1);
 yLoc = zeros(2,1);
-centOut(2).x =[];
-centOut(2).y =[];
-centOut(2).e =[];
+
 % define the coordinates of the gradient grid, set the center pixel as the original point
 [m,n] = meshgrid(-GraR:GraR,-GraR:1:GraR);
 %[m,n] = meshgrid(-GraR:GraR,GraR:-1:-GraR);
@@ -63,47 +60,81 @@ yID = yID+diaShift;
 assert(max(xID+4)<=size(ROI,1),'decrease gradient radius')
 assert(max(yID+4)<=size(ROI,2),'decrease gradient radius')
 
+gx = ROI(yID,xID+4)+ 2*ROI(yID+1,xID+4)+ 3*ROI(yID+2,xID+4)+ 2*ROI(yID+3,xID+4)+ ROI(yID+4,xID+4)...
+    -ROI(yID,xID)  - 2*ROI(yID+1,xID)  - 3*ROI(yID+2,xID)  - 2*ROI(yID+3,xID) - ROI(yID+4,xID);
+
+gy = ROI(yID,xID)  + 2*ROI(yID,xID+1)  + 3*ROI(yID,xID+2)  + 2*ROI(yID,xID+3) + ROI(yID,xID+4)...
+    -ROI(yID+4,xID)- 2*ROI(yID+4,xID+1)- 3*ROI(yID+4,xID+2)- 2*ROI(yID+4,xID+3)- ROI(yID+4,xID+4);
+% I changed the way n is defined, but to keep signs correct to previous
+% code from Hongqiang I have to change the sign of gy here
+gy = -gy;
+
 for i = 1:2
-    ROI = im(:,:,i);
-    % estimate the initial value of [x,y,e] by using centroid based method
-    [x0, y0, e0] = centLocalize(ROI);
-    centOut(i).x = x0;
-    centOut(i).y = y0;
-    centOut(i).e = e0;
     
-    % define the exact gradient at each position. I believe here they are
-    % asuming a 2D elliptical Gaussian, these numbers are only used to
-    % calculate the weighting factor
+    switch i
+        case 1 % we do not rotate the ROI
+            % guess values of x y and elip to calculate weight parameter.
+            x0 = centOut.x;
+            y0 = centOut.y;
+            e0 = centOut.e;
+            gxTmp = gx;
+            gyTmp = gy;
+            
+        case 2 % we do ROTATE the ROI
+            % guess values of x y and elip to calculate weight parameter.
+            x0 = centOut.y;
+            y0 = centOut.x;
+            e0 = 1/centOut.e;
+            gxTmp = gy';
+            gyTmp = gx';
+                  
+        otherwise
+            error('unexpected behaviour')
+    end
+    
+    % calculating the weighting factor, in fact 1/Wg
+    %%%%% USER INPUT %%%%%
+    wUs = true;
+    %%%%%%%%%%%%%%%%%%%%%%
+     
+    % define some sort of epsilon corrected eucledian distance, see coments
+    % below. These numbers are only used to calculate the weighting factor,
+    % Gx and Gy are only used to calculate G2.
     Gx = e0*(x0-m);
     Gy = (y0-n);
     G2 = (Gx.^2 + Gy.^2);
+         
+    % Now P only depends on x0 y0 and e0 so we should be able to alculate
+    % it outside of the loop. However, it not simetric after doing
+    % ROI'because of the way Gx is calculated. imagine that e is smaller
+    % than 0, then the first time Gx will a matrix multiplied by a number
+    % <0 while the second time it will be a matrix multiplied by a number
+    % >0, this means that the sum(P(:)) will be different for each loop
+    % iteration. This should change the overal numbers but not the
+    % calculation done after as they are ratios. 
     
-    gx = ROI(yID,xID+4)+ 2*ROI(yID+1,xID+4)+ 3*ROI(yID+2,xID+4)+ 2*ROI(yID+3,xID+4)+ ROI(yID+4,xID+4)...
-        -ROI(yID,xID)  - 2*ROI(yID+1,xID)  - 3*ROI(yID+2,xID)  - 2*ROI(yID+3,xID) - ROI(yID+4,xID);
-    
-    gy = ROI(yID,xID)  + 2*ROI(yID,xID+1)  + 3*ROI(yID,xID+2)  + 2*ROI(yID,xID+3) + ROI(yID,xID+4)...
-        -ROI(yID+4,xID)- 2*ROI(yID+4,xID+1)- 3*ROI(yID+4,xID+2)- 2*ROI(yID+4,xID+3)- ROI(yID+4,xID+4);
-    
-    % I changed the way n is defined, but to keep signs correct to previous
-    % code from Hongqiang I have to change the sign of gy here
-    gy = -gy;
-    % TODO: if I use ints here we can not handle negative numbers and we should.
-    gx2 = gx.^2;
-    gy2 = gy.^2;
-    gxy = gx.*gy;
-    
-    wUs = true;
-    % calculating the weighting factor, in fact 1/Wg
     if wUs
-        g2 = (gx2 + gy2);
-        Wg = sqrt((x0-m).^2 + (y0-n).^2).*(g2);  % Wg is the weight parameter
-        if any(Wg(:)==0)
-            warning('There is a 0 Wg value, substituting by 1e-10 - probably no noise data')
-            Wg(Wg==0) = 1e-10;
-        end
-        
-        P = (G2.*g2)./Wg;
+        euDist = sqrt((x0-m).^2 + (y0-n).^2);
+%         g2 = (gx2 + gy2);
+%         Wg = euDist.*(g2);  % Wg is the weight parameter
+%         if any(Wg(:)==0)
+%             warning('There is a 0 Wg value, x0 and/or y0 are integers')
+%             Wg(Wg==0) = 1e-10;
+%         end
+%         
+%         P = (G2.*g2)./Wg;
+        % as g2 cancels out is better to calculate this way. NOTE that
+        % sqrt(G2) is very close to an eucledian distance corrected by the
+        % epsilon value
+        P = (G2)./euDist; 
     else
+        % There is a problem with their definition of W, in the paper Wg
+        % has no e0 in the sqrt(). What is correct paper or code? probably
+        % best to mail them.
+        
+        % NOTE that in this simple deffinition and for e0=1, P is nothing
+        % else than the eucledian distance between the ROI pixel and the
+        % guess for the center of the molecule [x0, y0]
         P = sqrt(G2);
     end
     
@@ -111,9 +142,12 @@ for i = 1:2
         warning('There is a 0 P value, substituting by 1e-10')
         P(P==0) = 1e-10;
     end
-    % There is a problem with their definition of W, in the paper Wg has no e0
-    % in the sqrt(). What is correct paper or code? probably best to mail them.
     
+    
+    % define some usefull numbers used below, so eq are easier to read
+    gx2 = gxTmp.^2;
+    gy2 = gyTmp.^2;
+    gxy = gxTmp.*gyTmp;
     % solve the equation to get the best fit [x,y,e] --------------------------
     S_gy2m = sum(sum(gy2.*m./P));
     S_gy2 = sum(sum(gy2./P));
@@ -125,9 +159,8 @@ for i = 1:2
     S_gy2m2 = sum(sum(gy2.*m.^2./P));
     S_gxymn = sum(sum(gxy.*m.*n./P));
     
-    % I did not like the way the code was writen I decided to solve the
-    % math on my side and come with my own solutions for the system of
-    % equations. These solutions are consistent with previous code.
+    % to understand the equations go to:
+    % https://camachodejay.github.io/GradientFit/
     
     % first we calculate elipticity (el)
     eNum = S_gy2*(S_gxym*S_gx2n - S_gxymn*S_gx2)+...
@@ -142,14 +175,15 @@ for i = 1:2
     
     % then we calculate xc and yc
     comD = (S_gy2*S_gx2-S_gxy^2);
-    K = (S_gx2n*S_gxy - S_gxyn*S_gx2)/comD;
-    L = (S_gy2m*S_gx2 - S_gxym*S_gxy)/comD;
-    M = (S_gx2n*S_gy2 - S_gxyn*S_gxy)/comD;
-    N = (S_gxy*S_gy2m - S_gxym*S_gy2)/comD;
-    
-    xLoc(i) = K/el + L;
-    yLoc(i) = M + el*N;
+    K = (S_gx2n*S_gxy - S_gxyn*S_gx2);
+    L = (S_gy2m*S_gx2 - S_gxym*S_gxy);
+    M = (S_gx2n*S_gy2 - S_gxyn*S_gxy);
+    N = (S_gxy*S_gy2m - S_gxym*S_gy2);
+
+    xLoc(i) = (K/el + L)/comD;
+    yLoc(i) = (M + el*N)/comD;
     elip(i) = el;
+    
 end
 
 x = xLoc(1);

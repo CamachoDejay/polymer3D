@@ -23,9 +23,7 @@ assert(mod(sizeY,2)==1,'input ROI dimentions must be odd')
 
 % radius of the ROI, we assume that the emitter's PSF is centered in the
 % ROI. Thus we are interested in the 'radious of the ROI
-ROIrad = (sizeY-1)/2;
-
-
+% ROIrad = (sizeY-1)/2;
 
 % pixIdx: pixel indices, notice that as x and y dim are the same I just
 % have to define one vector for both X and Y
