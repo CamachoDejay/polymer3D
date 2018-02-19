@@ -14,7 +14,7 @@ close all;
 FWHM_nm = 350;%in nm
 pxSize  = 105;%in nm
 z_spacing = 50; %in nm
-szWindow = 6 ;
+szWindow = 6;
 %% Loading of the data
 [fileName,folder]=uigetfile({'*.mat'},'Select a file to Open');
 [~,fileTif,~]=fileparts(fileName);
@@ -69,7 +69,6 @@ GraR = 4;
  im_in = double(imStack);
  
 Grad = zeros(size(totPos,1),size(imStack,3));
-Grad2 = zeros(size(totPos,1),size(imStack,3));
 for i=1:size(imStack,3)    
     for j=1:size(totPos,1)
         
@@ -77,31 +76,13 @@ for i=1:size(imStack,3)
         [roi_lims] = EmitterSim.getROI(totPos(j,1), totPos(j,2), szWindow, xSize, ySize);
         ROI = im_in(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
         
+        %Gradient Fitting
         [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %num and den used for calculating e have non-sense values (10^21) 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        %Gradient to determine focus
         [grad,~] = imgradient(ROI);
         Grad(j,i) = max(max(grad,[],2),[],1);
-        %Extracting ellipticity from 1D Gaussian Fit
-%         XData = max(ROI,[],1);
-%         YData = max(ROI,[],2)';
-%         rawDataX.N = XData;
-%         rawDataX.binCenter = 1:1:length(XData);
-%         paramsX = [FWHM_pix/2.3,round(length(XData)/2),max(XData),min(XData)]; 
-%         paramsY = [FWHM_pix/2.3,round(length(YData)/2),max(YData),min(YData)]; 
-%         rawDataY.N = YData;
-%         rawDataY.binCenter = 1:1:length(YData);
         
-%         funX = @(x) GradientFit.fun2minGauss(rawDataX,x,false);
-%         funY = @(x) GradientFit.fun2minGauss(rawDataY,x,false);
-%         % then we can do:
-%         [outX, RMSDX] = fminsearch(funX,paramsX);
-%         [outY,RMSDY]  = fminsearch(funY,paramsY);
-%         
-%         gaussPar(j,i,1) = outX(1);
-%         gaussPar(j,i,2) = outY(1);
-%         gaussPar(j,i,3) = outX(1)/outY(1);
         %remove non-sense values
         if abs(x) > GraR || abs(y) > GraR
             x = NaN;
@@ -115,34 +96,39 @@ for i=1:size(imStack,3)
         fitPar(j,i,1) = xc;
         fitPar(j,i,2) = yc;
         fitPar(j,i,3) = e;
-        fitPar(j,i,4) = centOut.x;
-        fitPar(j,i,5) = centOut.y;
-        fitPar(j,i,6) = centOut.e;
+        fitPar(j,i,4) = centOut(1).x;
+        fitPar(j,i,5) = centOut(1).y;
+        fitPar(j,i,6) = centOut(1).e;
     end
 end
-%% Forcing focal point to be z = 0
+%% Forcing focal point to be z = 0 & Extracting data point
 %using Fit
+elipAxis = [];
+zAxis    = [];
 figure
 hold on
 for j=1:size(totPos,1)
-    [out,Fit]=Misc.gauss1DFit(Grad(j,:),zPos(j,:));
-%     rawData.N = Grad(j,:);
-%     rawData.binCenter = zPos(j,:);
-%     [val,ind] = max(Grad(j,:));
-%     params = [10*50/z_spacing,zPos(j,ind),val,min(Grad(j,:))]; 
-%     fun = @(x) GradientFit.fun2minGauss(rawData,x,true);
-%     [out, RMSD] = fminsearch(fun,params);
-    %remove the zPos found==> shift the curve to be center around the focal
-    %point (which might not match with any datapoint as 50 nm step were
-    %used
+    [out,Fit] = Misc.gauss1DFit(Grad(j,:),zPos(j,:));
     zPos(j,:) = zPos(j,:) - out(2);
     plot(zPos(j,:),fitPar(j,:,3))
+    currentPar = fitPar(j,:,3);
+    currentZ   = zPos(j,:);
+    elipAxis   = [elipAxis, currentPar(and(and(currentZ>-1000,currentZ<1000),currentPar~=0))];
+    zAxis      = [zAxis, currentZ(and(and(currentZ>-1000,currentZ<1000),currentPar~=0))];
 end
+
 hold off
 %using centroid
+% figure
+% hold on
+% for j=1:size(totPos,1)
+%     plot(zPos(j,:),fitPar(j,:,6))
+% end
+% hold off
+
+%%
 figure
-hold on
-for j=1:size(totPos,1)
-    plot(zPos(j,:),fitPar(j,:,6))
-end
-hold off
+scatter(zAxis,elipAxis);
+
+
+
