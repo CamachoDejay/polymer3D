@@ -76,7 +76,7 @@ for i=1:size(imStack,3)
         %Extract a roi around the localized emitter
         [roi_lims] = EmitterSim.getROI(totPos(j,1), totPos(j,2), szWindow, xSize, ySize);
         ROI = im_in(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
-        ROI = imgaussfilt(ROI,2);
+        %ROI = imgaussfilt(ROI,2);
         %Gradient Fitting
         [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
         
