@@ -1,5 +1,6 @@
 function [ frameInfo, movieInfo, tfl ] = getInfo( path2file )
-%UNTITLED2 Summary of this function goes here
+%GETINFO receives as input the path to the file and gives back all
+%infromation about the frames, the movie and total number of frames
 %   Detailed explanation goes here
 warning('off','all')
 tObj = Tiff(path2file,'r');
@@ -15,19 +16,28 @@ Idesc = tObj.getTag(270);
 k1 = strfind(Idesc, '<TiffData');
 k2 = strfind(Idesc, '</TiffData>');
 
+k3 = strfind(Idesc, '<Plane');
+k4 = strfind(Idesc, '"/>');
+k4(k4<min(k3)) = [];
+
+
 il = size(k1,2);
+assert(all([length(k2), length(k3), length(k4)]==il),'Plane and tif information do not match');
+
 frameInfo(il).C = [];
 frameInfo(il).T = [];
 frameInfo(il).Z = [];
 frameInfo(il).IFD = [];
 frameInfo(il).P = [];
 frameInfo(il).File = [];
+frameInfo(il).Pos = [];
 
 
 for i = 1:il
-    str = Idesc(k1(i):k2(i)-1);
+    str1 = Idesc(k1(i):k2(i)-1);
+    str2 = Idesc(k3(i):k4(i));
 
-    [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD, frameInfo(i).P, frameInfo(i).File ] = getInfoFromString( str );
+    [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD, frameInfo(i).P, frameInfo(i).File, frameInfo(i).Pos ] = getInfoFromString( str1, str2 );
 end
 
 %Add info about camera, max Frame, and zStack into movieInfo
@@ -39,13 +49,13 @@ switch movieInfo.isZStack
     case 0
         for i = 1: size(movieInfo.Cam,2)
             idx2Cam = strcmp({frameInfo(:).C},num2str(movieInfo.Cam(i)));
-            maxFrame = max(str2double({frameInfo(idx2Cam).T}));
+            maxFrame = max(str2double({frameInfo(idx2Cam).T}))+1;
             movieInfo.maxFrame(i) = maxFrame;
         end
     case 1
          for i = 1: size(movieInfo.Cam,2)
             idx2Cam = strcmp({frameInfo(:).C},num2str(movieInfo.Cam(i)));
-            maxFrame = max(str2double({frameInfo(idx2Cam).Z}));
+            maxFrame = max(str2double({frameInfo(idx2Cam).Z}))+1;
             movieInfo.maxFrame(i) = maxFrame;
         end
 end
@@ -58,7 +68,7 @@ end
 tfl = 0; % Total frame length
 while true
     tfl = tfl + 1; % Increase frame count
-    if tObj.lastDirectory(), break; end;
+    if tObj.lastDirectory(), break; end
     tObj.nextDirectory();
 end
 
