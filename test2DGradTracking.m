@@ -26,7 +26,7 @@ clc
 doPlot = true;
 pxSize = 100; % in nm
 imSize = 13; % in px
-filtering = false;
+filtering = true;
 setupPSFWidth = 220; %in nm (Calculated in Focus using PSFE plate, on the
 %15/02/2018 Exc wavelength = 532nm;
 
@@ -126,7 +126,8 @@ for i = 1: nSim
     ROI = Misc.generateNoise(ROI,noiseType,noiseProp);
     
     if filtering
-        ROI = imgaussfilt(ROI,2);
+        %ROI = imgaussfilt(ROI,2);
+        ROI = medfilt2(ROI,[2 2],'symmetric');
     end
     % Do gradient fitting
     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
