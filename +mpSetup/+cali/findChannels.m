@@ -1,78 +1,84 @@
-function [ ch_c, bg_c, common_w ] = findChannels( ave_im )
+function [ chC, bgC, common_w ] = findChannels( im, doFigure )
 %FINDCHANNELS finds where the channels are in the calibration files for
-%multiplane setup
+%multiplane setup. We take as input an time -average or -max image of a
+%camera and then use simple integration to find the areas of fluorescence
+%and background
 
-    assert(size(ave_im,2)==2048, 'unexpected movie size')
-    s1 = sum(ave_im,1);
-    ch_p = find_cp(s1,'bottom',4);
-    x1 = ch_p(:,1);
-    x2 = ch_p(:,2);
+    switch nargin
+        case 1
+            doFigure = false;
+    end
     
-    ch_xw = x2-x1 +1;
-    ch_c  = x1 + ch_xw./2;
-    
-    bg_w  = x1(2:end)-x2(1:end-1);
-    bg_c  = round(x2(1:end-1) + (bg_w./2));
-    
-%     t_w = [bg_c; 2048] - [1; bg_c];
-    
-    common_xw = min(ch_xw);
-%%
-    ch1 = ave_im(:,1:bg_c(1));
-    s2 =  sum(ch1,2);
-    ch_p = find_cp(s2,'top',1);
-    ch1_y1 = ch_p(:,1);
-    ch1_y2 = ch_p(:,2);
-    ch_yw(1) =  ch1_y2 - ch1_y1 + 1;
-    ch_c(1,2) = ch1_y1 + ch_yw(1)/2;
-    
-    ch2 = ave_im(:,bg_c(1):bg_c(2));
-    s2 =  sum(ch2,2);
-    ch_p = find_cp(s2,'top',1);
-    ch2_y1 = ch_p(:,1);
-    ch2_y2 = ch_p(:,2);
-    ch_yw(2) =  ch2_y2 - ch2_y1 + 1;
-    ch_c(2,2) = ch2_y1 + ch_yw(2)/2;
-    
-    ch3 = ave_im(:,bg_c(2):bg_c(3));
-    s2 =  sum(ch3,2);
-    ch_p = find_cp(s2,'top',1);
-    ch3_y1 = ch_p(:,1);
-    ch3_y2 = ch_p(:,2);
-    ch_yw(3) =  ch3_y2 - ch3_y1 + 1;
-    ch_c(3,2) = ch3_y1 + ch_yw(3)/2;
-    
-    ch4 = ave_im(:,bg_c(3):end);
-    s2 =  sum(ch4,2);
-    ch_p = find_cp(s2,'top',1);
-    ch4_y1 = ch_p(:,1);
-    ch4_y2 = ch_p(:,2);
-    ch_yw(4) =  ch4_y2 - ch4_y1 + 1;
-    ch_c(4,2) = ch4_y1 + ch_yw(4)/2;
-    
-    common_yw = min(ch_yw);
-    
-    common_w = [common_xw common_yw];
-    ch_c = round(ch_c);
-    
+    assert(size(im,2)==2048, 'unexpected movie size, are you working with the sCMOS?')
+    % integration over the cols, here we expect to find 4 channels
+    s1 = sum(im,1);
+    % find change points between fluorescence and bg
+    chP = findCp(s1,'bottom',4);
+    % now we want to find the size of the window and its center, also that
+    % of the bg
+    x1 = chP(:,1);
+    x2 = chP(:,2);
+    % channels x width
+    chXw = x2-x1 +1;
+    % channels center point
+    chC = zeros(4,2);
+    chC(:,1) = x1 + chXw./2;
+    % width and center of the bg
+    bgW  = x1(2:end)-x2(1:end-1);
+    bgC  = round(x2(1:end-1) + (bgW./2));
+    % minimun window size that can be used to set the ROI.
+    commonXw = min(chXw);
 
+    % now we look at the different channels in the rows. We know that there
+    % are small vertical shift that we whish to compensate in a rowgh way.
+    chLims = [1; bgC; size(im,2)];
+    chYw = zeros(4,1);
+    for i = 1:4
+        chIm = im(:,chLims(i):chLims(i+1));
+        % integration
+        s2 =  sum(chIm,2);
+        % change points
+        chP = findCp(s2,'top',1);
+        % windown size
+        chYw(i) =  chP(2) - chP(1) + 1;
+        chC(i,2) = chP(1) + chYw(i)/2;
+    end
+    
+    
+    % min win size that can be used to set the ROI
+    commonYw = min(chYw);
+    % storing the window sized used
+    common_w = [commonXw commonYw];
+    
+    if doFigure
+        corner = round(chC - [chXw, chYw]./2);
+        figure()
+        imagesc(im)
+        axis image
+        for i = 1:4
+            rectangle('Position', [corner(i,1) corner(i,2) chXw(i), chYw(i)])
+        end
+    end
 end
 
-function ch_p = find_cp(y_in,sCase,nCP)
+function ch_p = findCp(trace_in,sCase,nCP)
     % nCP number of expected change points
-    y_in = y_in(:);
-    yy = smooth(y_in,20);
-    yy = yy - min(yy);
-    yy = yy ./ max(yy);
+    trace_in = trace_in(:);
+    % smoothing the trace
+    sT = smooth(trace_in,20);
+    % normalizing the trace
+    sT = sT - min(sT);
+    sT = sT ./ max(sT);
     upCP = nan;
     doCP = nan;
+    % choosing the staring point
     switch sCase
         case 'bottom'
             thVal = 0.0;
             dTh   = 0.01;
             
         case 'top'
-            thVal = mean(yy);
+            thVal = mean(sT);
             dTh   = -0.01;
             
         otherwise
@@ -80,18 +86,42 @@ function ch_p = find_cp(y_in,sCase,nCP)
     end
     
     go = true;
+    % iterative thresholding up to the point that we get the right results
     while go
+        % threshold value
         thVal = thVal+dTh;
-        yl = yy > (thVal);
-        yl(1) = false;
-        yl(end) = false;
-        dYl = diff(yl);
-        upCP = find(dYl==1);
-        doCP = find(dYl==-1);
-        go = ~and(length(upCP)==nCP, length(doCP)==nCP);
         if or(thVal<=0, thVal>=1)
             error('could not find the channels')
         end
+        
+        % binarized trace
+        binT = sT > (thVal);
+        % forcing the ends to be false - this is important so we alway have
+        % at least a CP at the firts and last row
+%         binT(1) = false;
+%         binT(end) = false;
+        dYl   = diff(binT);
+        upCP  = find(dYl==1);
+        doCP  = find(dYl==-1);
+        if and(~isempty(upCP), ~isempty(doCP))
+            tmp1 = upCP(1);
+            tmp2 = doCP(end);
+            doCP(doCP < tmp1) = [];
+            upCP(upCP > tmp2) = [];
+        end
+        nUp   = length(upCP);
+        nDo   = length(doCP);
+        
+        
+        if nUp==nDo
+            wSize = doCP-upCP;
+            if and(nUp==nCP, all(wSize>0))
+                % we are finish, so we stop
+                go = false;
+                
+            end
+        end
+
     end
     
     ch_p = [upCP+1, doCP+1];

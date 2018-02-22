@@ -1,16 +1,14 @@
-function [ neworder, in_focus ] = getNewOrder( in_focus )
+function [ neworder, inFocus ] = getNewOrder( inFocus )
 %GETNEWORDER get the correct order to place consecutive planes together
 %   Detailed explanation goes here
 
-    or_zpos = sort([in_focus.zpos]);
+    ordZpos = sort([inFocus.zpos]);
     for i = 1:8
-        in_focus([in_focus.zpos] == or_zpos(i)).globalch = i;        
+        inFocus([inFocus.zpos] == ordZpos(i)).globalch = i;        
     end
     
-    neworder = zeros(8,1);
-    for i = 1:8
-        neworder(i) = find([in_focus.globalch]==i);
-    end
-
+    focus = cat(1,inFocus.frame);
+    [~,neworder] = sort(focus);
+    
 end
 

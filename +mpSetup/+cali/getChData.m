@@ -1,9 +1,8 @@
 function [ chData1c, chData2c ] = getChData( data1c, data2c, ROI )
-%GETCHDATA get channel data from cam data and ROI
-%   Detailed explanation goes here
-
-    
-    
+%GETCHDATA get channel data from cam data and ROI, for historical reasons
+%it can work on a single cam data, Im not sure if I want to keep this later
+%on
+ 
     if and(~isempty(data1c),~isempty(data2c))
         im_size1 = size(data1c);
         im_size2 = size(data2c);
@@ -12,6 +11,7 @@ function [ chData1c, chData2c ] = getChData( data1c, data2c, ROI )
     
     if isempty(data1c)
         chData1c = [];
+        warning ('No cam 1 data, weird, returning empty')
     else
         im_size1 = size(data1c);
         c_win = ROI(1,3);

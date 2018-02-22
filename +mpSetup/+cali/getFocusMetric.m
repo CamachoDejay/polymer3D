@@ -1,6 +1,6 @@
 function [ focus_met, in_focus ] = getFocusMetric( chData1c, chData2c, Z1, Z2 )
 %GETFOCUSMETRIC gets information about when the channels are in focus.
-%   Detailed explanation goes here
+%Inspired in the work done in EPFL for 3D SOFI
 
     N = size(chData1c,4);
     focus_met = zeros(N, 8);
