@@ -19,64 +19,20 @@ currentFolderName = regexprep(currentFolderName,'\.','_');
 
 %Extract the part of the folder that is a tif file
 Folder_Content = dir(mainFolderName);
-Folders  = Folder_Content(3:end,:);
-folderContent = Folders([Folders.isdir]==1);
+index2Images   = contains({Folder_Content.name},'.tif');
+images2Analyze = Folder_Content(index2Images);
 
-for j = 1:size(folderContent,1)
-    currentFolderPath = strcat(folderContent(j).folder,'\',folderContent(j).name);
-    currentFolderContent = dir(currentFolderPath);
-    
-    index2Images      = contains({currentFolderContent.name},'.tif');
-    images2Analyze = currentFolderContent(index2Images);
-    path2Images = strcat(images2Analyze(1).folder,'\');
-    
-    if j == 1
-        % Loading image 1
-        p2file = strcat(path2Images,images2Analyze(1).name);
-        fileInfo = loadMovie.tif.getinfo(p2file);
-        IM = loadMovie.tif.getframes(p2file, 1);
-
-
-        % Displaying the First image of stack
-        figure(1)
-        imagesc(IM(:,:,1))
-        colormap('hot')
-
-        % Image Processing, Histogram
-        I = imgaussfilt(IM, 2);
-        % double to do division
-        I = double(I);
-        I = I./max(max(I));
-
-        vIm = I(:);
-        figure(2)
-        histogram(vIm);
-        % Binary Image and Threshold
-
-        %extract the network as a binary image
-        BW_network = I>Threshold;
-        %extract the pores
-        BW_pores = I<Threshold;
-        BW_pores = imclearborder(BW_pores);
-
-        %plot the Figure
-        figure(3)
-        subplot(1,3,1)
-        imagesc(I)
-        colormap('hot')
-        axis image
-
-        subplot(1,3,2)
-        imagesc(BW_network)
-        % colormap('hot')
-        axis image
-
-        subplot(1,3,3)
-        imagesc(BW_pores)
-        axis image
-    end
-% Loop through all files
-
+h = waitbar(0);
+for j = 1:size(images2Analyze,1)
+    hMessage = sprintf('Loading image stack number %d/%d',j,size(images2Analyze,1));
+    waitbar(0,h,hMessage);
+    path2Stacks = strcat(images2Analyze(j).folder,'\');
+    p2file      = strcat(path2Stacks,images2Analyze(j).name);
+    warning('off');
+    fileInfo    = loadMovie.tif.getinfo(p2file);
+    frames2Load = 1:1:fileInfo.Frame_n;
+    IMStack     = loadMovie.tif.getframes(p2file, frames2Load);
+    warning('on');
     Results = struct('numPores',cell(1,size(images2Analyze,1)),'numBigPores',cell(1,size(images2Analyze,1)),'Area',...
         cell(1,size(images2Analyze,1)),'areaBigPores',cell(1,size(images2Analyze,1)),...
         'meanArea',cell(1,size(images2Analyze,1)),'meanAreaBigPores',cell(1,size(images2Analyze,1)),...
@@ -84,13 +40,11 @@ for j = 1:size(folderContent,1)
         'MajorAxis',cell(1,size(images2Analyze,1)),'MinorAxis',cell(1,size(images2Analyze,1)),...
         'meanElip',cell(1,size(images2Analyze,1)),'medElip',cell(1,size(images2Analyze,1)));
 
-    h = waitbar(0, 'Analyzing images');
-    for i=1:size(images2Analyze,1)
-
+    hMessage = sprintf('Analysis of Stack Number %d/%d',j,size(images2Analyze,1));
+    for i=1:size(IMStack,3)
+    waitbar(i/size(IMStack,3),h,hMessage);
         %loading image number i
-        p2file = strcat(path2Images,images2Analyze(i).name);
-        fileInfo = loadMovie.tif.getinfo(p2file);
-        IM = loadMovie.tif.getframes(p2file, 1);
+        IM = IMStack(:,:,i);
         I = imgaussfilt(IM, 2);
         I = double(I);
         I = I./max(max(I));
@@ -109,7 +63,7 @@ for j = 1:size(folderContent,1)
             stats.Area = NaN;
             stats.MajorAxisLength = NaN;
             stats.MinorAxisLength = NaN;
-            Results(i).numPores = NaN;
+            Results(i).numPores = 0;
             
         else
         Results(i).numPores = size(stats,1);
@@ -133,30 +87,28 @@ for j = 1:size(folderContent,1)
         Results(i).Ellipticity = [stats.MinorAxisLength]./[stats.MajorAxisLength];
         Results(i).meanElip = mean(Results(i).Ellipticity);
         Results(i).medElip = median(Results(i).Ellipticity);
-        waitbar(i/size(images2Analyze,1));
+        
     end
     close(h);
     %% Save results to excel sheets
 
-    fileNameExcel = sprintf('%s%s%s-ResultsSummary',mainFolderName,'\',...
-        currentFolderName);
-    matName =  regexprep(folderContent(j).name,'\.','_');
-    fileNameMat   = sprintf('%s%s%s-FullResults',folderContent(j).folder,'\',...
+    fileNameExcel = sprintf('%s%sResultsSummary',mainFolderName,'\');
+    matName =  regexprep(Folder_Content(j).name,'\.','_');
+    fileNameMat   = sprintf('%s%s%s-FullResults',Folder_Content(j).folder,'\',...
         matName);
     save(fileNameMat,'Results');
-
+    sheetName = sprintf('Stack%d',j);
     Title=[ 'numPores    ';'numBigPores ';'meanArea    ';'meanBigPores';...
         'medArea     ';'medBigPores '; 'meanEllip   ';'medEllip    '];
         Titletable=cellstr(Title)';
-        xlswrite(fileNameExcel,Titletable,folderContent(j).name,'A1:H1');
+        xlswrite(fileNameExcel,Titletable,sheetName,'A1:H1');
 
     Result2print = [[Results.numPores]', [Results.numBigPores]',...
         [Results.meanArea]',[Results.meanAreaBigPores]',[Results.medArea]',...
         [Results.medAreaBigPores]',[Results.meanElip]',[Results.medElip]'];
         sizeRes = size(Results,2);
         Range = sprintf('A2:H%d',sizeRes+1);
-        xlswrite(fileNameExcel,Result2print,folderContent(j).name,Range);
-
-    
+        
+        xlswrite(fileNameExcel,Result2print, sheetName,Range);
 end
 h = msgbox('The Data were succesfully saved !', 'Success');
