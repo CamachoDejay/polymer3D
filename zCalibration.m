@@ -1,4 +1,4 @@
-function [z,ellip] = zCalibration(setupInfo,imStack)
+function [z,ellip] = zCalibration(setupInfo,imStack,filter)
 
 FWHM_nm = setupInfo.FWHM;
 pxSize  = setupInfo.pxSize;
@@ -55,19 +55,31 @@ for i=1:size(imStack,3)
         %Extract a roi around the localized emitter
         [roi_lims] = EmitterSim.getROI(totPos(j,1), totPos(j,2), szWindow, xSize, ySize);
         ROI = im_in(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
-        %ROI = imgaussfilt(ROI,2);
-        %Gradient Fitting
-        [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
         
+        if filter
+        ROI = imgaussfilt(ROI,2);
+        end
+        
+        %Gradient Fitting
+        if size(ROI,1)~= szWindow*2+1 || size(ROI,2)~= szWindow*2+1
+            x = NaN;
+            y = NaN;
+            e = NaN;
+            centOut.x = NaN;
+            centOut.y = NaN;
+            centOut.e = NaN;
+        else
+        [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+        end
         %Gradient to determine focus
         [grad,~] = imgradient(ROI);
         Grad(j,i) = max(max(grad,[],2),[],1);
         
         %remove non-sense values
-        if abs(x) > GraR || abs(y) > GraR
+        if abs(x) > GraR || abs(y) > GraR || e <=0
             x = NaN;
             y = NaN;
-            e = 0;
+            e = NaN;
         end
         %Get back the position in the original 
         xc = (round(totPos(j,1)) + x);%in px
