@@ -25,7 +25,7 @@ clc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 doPlot = true;
 pxSize = 100; % in nm
-imSize = 13; % in px
+imSize = 21; % in px
 filtering = true;
 setupPSFWidth = 220; %in nm (Calculated in Focus using PSFE plate, on the
 %15/02/2018 Exc wavelength = 532nm;
@@ -76,12 +76,11 @@ assert(minPos<= maxPos,'Min position should be smaller than max position');
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    cell(nSim,1), zeros(nSim,1),cell(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
+    cell(nSim,1), zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     'VariableNames',{'realX','fitX', 'realY', 'fitY','realElip','cElip','fitElip',...
     'signal2Bkg','signal2Noise','fAbsErrorX','fAbsErrorY','cAbsErrorX',...
-    'cAbsErrorY','errorFitElip','noiseType','background','XorY','cFitX',...
-    'cFitY','fitElip2','M','L','N'});
+    'cAbsErrorY','errorFitElip','noiseType','background','cFitX',...
+    'cFitY'});
 
 noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
 %simulate data, analyze and store results
@@ -133,22 +132,10 @@ for i = 1: nSim
     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
     
     %Test fitting output
-    if abs(x) > GraR && abs(y) > GraR
+    if abs(x) > GraR || abs(y) > GraR
         x = NaN;
         y = NaN;
         e = NaN;
-        simResults.XorY(i) = {'both'};
-    elseif abs(x) > GraR
-        x = NaN;
-        y = NaN;
-        e = NaN;
-        simResults.XorY(i) = {'X'};
-        
-    elseif abs(y) > GraR
-        x = NaN;
-        y = NaN;
-        e = NaN;
-        simResults.XorY(i) = {'Y'};
     end
     
     xc = (ROI_coor(1) + x);%in px
