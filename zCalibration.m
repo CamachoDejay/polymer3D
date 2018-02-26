@@ -1,4 +1,4 @@
-function [z,ellip] = zCalibration(setupInfo,imStack,filter)
+function [output] = zCalibration(setupInfo,imStack,filter)
 
 FWHM_nm = setupInfo.FWHM;
 pxSize  = setupInfo.pxSize;
@@ -56,9 +56,7 @@ for i=1:size(imStack,3)
         [roi_lims] = EmitterSim.getROI(totPos(j,1), totPos(j,2), szWindow, xSize, ySize);
         ROI = im_in(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
         
-        if filter
-        ROI = imgaussfilt(ROI,2);
-        end
+      
         
         %Gradient Fitting
         if size(ROI,1)~= szWindow*2+1 || size(ROI,2)~= szWindow*2+1
@@ -70,6 +68,12 @@ for i=1:size(imStack,3)
             centOut.e = NaN;
         else
         [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+        
+        if filter
+        ROI = imgaussfilt(ROI,2);
+        [~,~,e,~] = Localization.gradFit(ROI,GraR);
+        end
+        
         end
         %Gradient to determine focus
         [grad,~] = imgradient(ROI);
@@ -96,13 +100,25 @@ end
 %% Forcing focal point to be z = 0 & Extracting data point
 %using Fit
 ellip = [];
-z    = [];
+z     = [];
+x     = [];
+y     = [];
+
 for j=1:size(totPos,1)
     [out,~] = Misc.gauss1DFit(Grad(j,:),zPos(j,:));
     zPos(j,:) = zPos(j,:) - out(2);
     currentPar = fitPar(j,:,3);
     currentZ   = zPos(j,:);
-    ellip   = [ellip, currentPar(and(and(currentZ>-1000,currentZ<1000),currentPar~=0))];
-    z      = [z, currentZ(and(and(currentZ>-1000,currentZ<1000),currentPar~=0))];
+    currentX   = fitPar(j,:,1);
+    currentY   = fitPar(j,:,2);
+    ellip(j,:)      = currentPar(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
+    z(j,:)          = currentZ(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
+    x(j,:)          = currentX(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
+    y(j,:)          = currentY(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
 end
+
+output.x = x;
+output.y = y;
+output.z = z;
+output.ellip = ellip;
 end

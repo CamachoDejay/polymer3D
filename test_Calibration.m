@@ -54,11 +54,25 @@ switch toAnalyze
         zAxis(size(images2Analyze,1)).cam1All = [];
         zAxis(size(images2Analyze,1)).cam2All = [];
         zAxis(size(images2Analyze,1)).all = [];
+        
         ellipAxis(size(images2Analyze,1)).cam1 = [];
         ellipAxis(size(images2Analyze,1)).cam2 = [];
         ellipAxis(size(images2Analyze,1)).cam1All = [];
         ellipAxis(size(images2Analyze,1)).cam2All = [];
         ellipAxis(size(images2Analyze,1)).all = [];
+
+        xAxis(size(images2Analyze,1)).cam1 = [];
+        xAxis(size(images2Analyze,1)).cam2 = [];
+        xAxis(size(images2Analyze,1)).cam1All = [];
+        xAxis(size(images2Analyze,1)).cam2All = [];
+        xAxis(size(images2Analyze,1)).all = [];
+
+        yAxis(size(images2Analyze,1)).cam1 = [];
+        yAxis(size(images2Analyze,1)).cam2 = [];
+        yAxis(size(images2Analyze,1)).cam1All = [];
+        yAxis(size(images2Analyze,1)).cam2All = [];
+        yAxis(size(images2Analyze,1)).all = [];
+        
         h = waitbar(0,'Z-Calibration...');
         for i=1:size(images2Analyze,1)
             
@@ -66,21 +80,35 @@ switch toAnalyze
             tmp = load(file2Load);
             name=cellstr(fields(tmp));
             imStack=tmp.(name{1});
-            [z,ellip] = zCalibration(setupInfo,imStack,filter);
+            
+            [output] = zCalibration(setupInfo,imStack,filter);
             
             if contains(file2Load,'Cam1')
-                zAxis(i).cam1     = z;
-                ellipAxis(i).cam1 = ellip;
-                zAxis(1).cam1All = [[zAxis(1).cam1All] z];
-                ellipAxis(1).cam1All = [[ellipAxis(1).cam1All] ellip];
+                zAxis(i).cam1     = output.z;
+                xAxis(i).cam1     = output.x;
+                yAxis(i).cam1     = output.y;
+                ellipAxis(i).cam1 = output.ellip;
+                
+                zAxis(1).cam1All = [[zAxis(1).cam1All] output.z];
+                xAxis(1).cam1All = [[xAxis(1).cam1All] output.x];
+                yAxis(1).cam1All = [[yAxis(1).cam1All] output.y];
+                ellipAxis(1).cam1All = [[ellipAxis(1).cam1All] output.ellip];
+                
             elseif contains(file2Load,'Cam2')
-                zAxis(i).cam2     = z;
-                ellipAxis(i).cam2 = ellip;
-                zAxis(1).cam2All = [[zAxis(1).cam2All] z];
-                ellipAxis(1).cam2All = [[ellipAxis(1).cam2All] ellip];
+                zAxis(i).cam2     = output.z;
+                xAxis(i).cam2     = output.x;
+                yAxis(i).cam2     = output.y;
+                ellipAxis(i).cam2 = output.ellip;
+                
+                zAxis(1).cam2All = [[zAxis(1).cam2All] output.z];
+                xAxis(1).cam2All = [[xAxis(1).cam2All] output.x];
+                yAxis(1).cam2All = [[yAxis(1).cam2All] output.y];
+                ellipAxis(1).cam2All = [[ellipAxis(1).cam2All] output.ellip];
             end
-            zAxis(1).all = [[zAxis(1).all] z];
-            ellipAxis(1).all = [[ellipAxis(1).all] ellip];
+            zAxis(1).all = [[zAxis(1).all] output.z];
+            xAxis(1).all = [[xAxis(1).all] output.x];
+            yAxis(1).all = [[yAxis(1).all] output.y];
+            ellipAxis(1).all = [[ellipAxis(1).all] output.ellip];
             waitbar(i/size(images2Analyze,1),h);
         end
         %Sorting

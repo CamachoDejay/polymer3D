@@ -25,8 +25,8 @@ clc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 doPlot = true;
 pxSize = 100; % in nm
-imSize = 21; % in px
-filtering = true;
+imSize = 13; % in px
+filtering = false;
 setupPSFWidth = 220; %in nm (Calculated in Focus using PSFE plate, on the
 %15/02/2018 Exc wavelength = 532nm;
 
