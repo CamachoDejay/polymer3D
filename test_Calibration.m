@@ -12,7 +12,7 @@ close all;
 
 %% User input
 toAnalyze = 'folder';
-filter    = false; %use or not pre-processing Gaussian filter
+filter    = true; %use or not pre-processing Gaussian filter
 FWHM_nm   = 350;%in nm
 pxSize    = 105;%in nm
 szWindow  = 6;
@@ -31,9 +31,9 @@ switch toAnalyze
         
         path2data = [folder fileName];
         
-        tmp=load(path2data);
-        name=fields(tmp);
-        imStack=tmp.(name{1});
+        tmp     = load(path2data);
+        name    = fields(tmp);
+        imStack = tmp.(name{1});
         
         %% Z-Calibration
         [zAxis,ellipAxis] = zCalibration(setupInfo,imStack,filter);
@@ -43,7 +43,9 @@ switch toAnalyze
     case 'folder'
         mainFolderName = uigetdir;
         assert(ischar(mainFolderName),'User canceled the selection of file, excecution aborted');
-        
+        mkdir(mainFolderName,'Results');
+        newdir         = sprintf('%s%s',mainFolderName,'\Results\');
+
         %Extract the part of the folder that is a tif file
         Folder_Content = dir(mainFolderName);
         index2Images      = contains({Folder_Content.name},'.mat');
@@ -111,21 +113,33 @@ switch toAnalyze
             ellipAxis(1).all = [[ellipAxis(1).all] output.ellip];
             waitbar(i/size(images2Analyze,1),h);
         end
+        close(h);
+        
         %Sorting
-        [zAxis(1).all,B] = sort([zAxis(1).all]);
-        ellipAxis(1).all = [ellipAxis(1).all(B)];
+%         [zAxis(1).all,B] = sort([zAxis(1).all]);
+%         ellipAxis(1).all = [ellipAxis(1).all(B)];
+%         
+%         [zAxis(1).cam1All,C] = sort([zAxis(1).cam1All]);
+%         ellipAxis(1).cam1All = [ellipAxis(1).cam1All(C)];
+%         
+%         [zAxis(1).cam2All,D] = sort([zAxis(1).cam2All]);
+%         ellipAxis(1).cam2All = [ellipAxis(1).cam2All(D)];
+%         
+%         figure
+%         scatter(zAxis(1).all,ellipAxis(1).all);
         
-        [zAxis(1).cam1All,C] = sort([zAxis(1).cam1All]);
-        ellipAxis(1).cam1All = [ellipAxis(1).cam1All(C)];
+        fileXAxis = sprintf('%sxAxis.mat',newdir);
+        fileYAxis = sprintf('%syAxis.mat',newdir);
+        fileZAxis = sprintf('%szAxis.mat',newdir);
+        fileEllipAxis = sprintf('%sellipAxis.mat',newdir);
         
-        [zAxis(1).cam2All,D] = sort([zAxis(1).cam2All]);
-        ellipAxis(1).cam2All = [ellipAxis(1).cam2All(D)];
-        
-        figure
-        scatter(zAxis(1).all,ellipAxis(1).all);
+        save(fileXAxis,'xAxis');
+        save(fileYAxis,'yAxis');
+        save(fileZAxis,'zAxis');
+        save(fileEllipAxis,'ellipAxis');
         
 end
-close(h);
+
 
 
 

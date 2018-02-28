@@ -99,26 +99,25 @@ for i=1:size(imStack,3)
 end
 %% Forcing focal point to be z = 0 & Extracting data point
 %using Fit
-ellip = [];
-z     = [];
-x     = [];
-y     = [];
 
+figure
+hold on
 for j=1:size(totPos,1)
     [out,~] = Misc.gauss1DFit(Grad(j,:),zPos(j,:));
+    plot(Grad(j,:))
     zPos(j,:) = zPos(j,:) - out(2);
     currentPar = fitPar(j,:,3);
     currentZ   = zPos(j,:);
     currentX   = fitPar(j,:,1);
     currentY   = fitPar(j,:,2);
-    ellip(j,:)      = currentPar(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
-    z(j,:)          = currentZ(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
-    x(j,:)          = currentX(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
-    y(j,:)          = currentY(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
+    ellip{j}   = currentPar(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
+    zcell{j}   = currentZ(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
+    xcell{j}   = currentX(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
+    ycell{j}   = currentY(and(and(currentZ>-1000,currentZ<1000),currentPar~=0));
 end
 
-output.x = x;
-output.y = y;
-output.z = z;
+output.x = xcell;
+output.y = ycell;
+output.z = zcell;
 output.ellip = ellip;
 end
