@@ -77,12 +77,11 @@ assert(minPos<= maxPos,'Min position should be smaller than max position');
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    cell(nSim,1), zeros(nSim,1),cell(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
+    cell(nSim,1), zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),cell(nSim,1),...
     'VariableNames',{'realX','fitX', 'realY', 'fitY','realElip','cElip','fitElip',...
     'signal2Bkg','signal2Noise','fAbsErrorX','fAbsErrorY','cAbsErrorX',...
-    'cAbsErrorY','errorFitElip','noiseType','background','XorY','cFitX',...
-    'cFitY','fitElip2','M','L','N'});
+    'cAbsErrorY','errorFitElip','noiseType','background','cFitX',...
+    'cFitY','fittingMethod'});
 
 noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
 %simulate data, analyze and store results
@@ -135,25 +134,15 @@ for i = 1: nSim
      
      if strcmp(fitting,'phasor')
      [x,y,e] = Localization.phasor(ROI);
+     else
+         fitting = 'gradient';
      end
      
     %Test fitting output
-    if abs(x) > GraR && abs(y) > GraR
+    if abs(x) > GraR || abs(y) > GraR || e<=0
         x = NaN;
         y = NaN;
         e = NaN;
-        simResults.XorY(i) = {'both'};
-    elseif abs(x) > GraR
-        x = NaN;
-        y = NaN;
-        e = NaN;
-        simResults.XorY(i) = {'X'};
-        
-    elseif abs(y) > GraR
-        x = NaN;
-        y = NaN;
-        e = NaN;
-        simResults.XorY(i) = {'Y'};
     end
     
     xc = (ROI_coor(1) + x);%in px
@@ -170,6 +159,7 @@ for i = 1: nSim
     simResults.cElip(i)      = centOut.e;
     simResults.fitElip(i)    = e;
     simResults.noiseType(i)  = {noiseType};
+    simResults.fittingMethod = {fitting};
     simResults.background(i) = bkg;
     simResults.cAbsErrorX(i) = (ROI_coor(1)+centOut(1).x)-simResults.realX(i);
     simResults.cAbsErrorY(i) = (ROI_coor(2)+centOut(1).y)-simResults.realY(i);
