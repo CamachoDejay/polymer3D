@@ -23,6 +23,7 @@ close all
 clc
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fitting = 'phasor';%'gradient'
 doPlot = true;
 pxSize = 100; % in nm
 imSize = 13; % in px
@@ -126,12 +127,16 @@ for i = 1: nSim
     ROI = Misc.generateNoise(ROI,noiseType,noiseProp);
     
     if filtering
-        %ROI = imgaussfilt(ROI,2);
-        ROI = medfilt2(ROI,[2 2],'symmetric');
+        ROI = imgaussfilt(ROI,2);
     end
     % Do gradient fitting
-    [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
-    
+  
+     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+     
+     if strcmp(fitting,'phasor')
+     [x,y,e] = Localization.phasor(ROI);
+     end
+     
     %Test fitting output
     if abs(x) > GraR && abs(y) > GraR
         x = NaN;
