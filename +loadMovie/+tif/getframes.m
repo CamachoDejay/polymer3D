@@ -20,7 +20,8 @@ mov = zeros(w,l,f_n,nClass);
 for i = 1:f_n
     f_i = frames(i);
     tObj.setDirectory(f_i)
-    mov(:,:,i) = tObj.read;    
+    movTmp = tObj.read;  
+    mov(:,:,i) = movTmp(:,:,1);    
 end
 tObj.close
 
