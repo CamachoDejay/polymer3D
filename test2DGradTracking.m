@@ -125,14 +125,13 @@ for i = 1: nSim
     ROI = Misc.generateNoise(ROI,noiseType,noiseProp);
     
     if filtering
-        %ROI = imgaussfilt(ROI,2);
-        ROI = medfilt2(ROI,[2 2],'symmetric');
+        ROI = imgaussfilt(ROI,2);
     end
     % Do gradient fitting
     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
     
     %Test fitting output
-    if abs(x) > GraR || abs(y) > GraR
+    if abs(x) > GraR || abs(y) > GraR || e<=0
         x = NaN;
         y = NaN;
         e = NaN;
