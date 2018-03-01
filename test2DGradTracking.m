@@ -23,11 +23,11 @@ close all
 clc
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-fitting = 'phasor';%'gradient'
+fitting = 'gradient';%'phasor'
 doPlot = true;
 pxSize = 100; % in nm
 imSize = 13; % in px
-filtering = true;
+filtering = false;
 setupPSFWidth = 220; %in nm (Calculated in Focus using PSFE plate, on the
 %15/02/2018 Exc wavelength = 532nm;
 
@@ -159,7 +159,7 @@ for i = 1: nSim
     simResults.cElip(i)      = centOut.e;
     simResults.fitElip(i)    = e;
     simResults.noiseType(i)  = {noiseType};
-    simResults.fittingMethod = {fitting};
+    simResults.fittingMethod(i) = {fitting};
     simResults.background(i) = bkg;
     simResults.cAbsErrorX(i) = (ROI_coor(1)+centOut(1).x)-simResults.realX(i);
     simResults.cAbsErrorY(i) = (ROI_coor(2)+centOut(1).y)-simResults.realY(i);
