@@ -60,8 +60,8 @@ waitbar(.3,h,'getting channel data')
 waitbar(.4,h,'getting focus metric')
 % getting the focus metric as used in EPFL we might want to change this to
 % a gradient method.
-[ focusMet, cal.inFocus ] = mpSetup.cali.getFocusMetric( chData1c, chData2c , Z1, Z2 );
-
+[ cal.focusMet, cal.inFocus ] = mpSetup.cali.getFocusMetric( chData1c, chData2c , Z1, Z2 );
+cal.Zpos = Z1;
 % figure(2)
 % for i = 1:4
 %     plot(Z1,focusMet(:,i))
