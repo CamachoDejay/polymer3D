@@ -6,14 +6,30 @@ clear
 close all
 clc
 
-fPath = '/Users/rafa/Documents/MATLAB/data/multi-plane/Beads - MC_4';
-fName = 'Beads - MC_4_MMStack_Pos0.ome.tif';
+fPath = 'C:\Users\Boris\Dropbox\MultiPlane Data\2018\03 - Mar\ZstackCalibration-100nmBeads-640nm_2';
+fName = 'ZstackCalibration-100nmBeads-640nm_2_MMStack_Pos0.ome.tif';
 
 fPath = [fPath filesep fName];
 
 % Calculate calibration
 [cal] = mpSetup.cali.calculate(fPath, false);
 
+%TODO: Improve the calculation of distance between the plane, Move it to
+%calculate ?
+zFocus = zeros(1,size(cal.focusMet,2));
+zFocus2 = zeros(1,size(cal.focusMet,2));
+for k=1:size(cal.focusMet,2)
+    [out,Fit] = Misc.gauss1DFit(cal.focusMet(:,k),cal.Zpos);
+    zFocus(k) = out(2);
+    [~,ind] = max(cal.focusMet(:,k));
+    zFocus2(k) = cal.Zpos(ind);
+end
+dist2Firstplane = zFocus(1)-zFocus;
+dist2Firstplane2 = zFocus2(1)-zFocus2;
+distanceBetweenCamA = zFocus(1:4) - zFocus(5:8);
+distanceBetweenCamB = zFocus(5:7) - zFocus(2:4);
+distanceBetweenCam2A = zFocus2(1:4) - zFocus2(5:8);
+distanceBetweenCam2B = zFocus2(5:7) - zFocus2(2:4);
 % load and calibrate, when applied to the calibration data then we should
 % be able to demonstrate that it works
 [data] = mpSetup.loadAndCal( fPath, cal );
