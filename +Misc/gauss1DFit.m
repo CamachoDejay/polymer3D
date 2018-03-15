@@ -4,9 +4,9 @@ domain =domain(:);
 [val,ind] = max(A);
 
 %                   Sigma                       mu             A        y0           
-lb        = [0.1                             -domain(end)      0        0];
-ub        = [5                                domain(end)     3*val      val];
-initguess = [0.6                               domain(ind)     val-min(A) min(A)];
+lb        = [abs(domain(1)-domain(2))/10    -domain(end)      0        0];
+ub        = [abs(domain(1)-domain(2))*20     domain(end)     3*val      val];
+initguess = [(domain(1)-domain(2))          domain(ind)     val-min(A) min(A)];
 
 FitPar=lsqcurvefit(@Misc.gauss1D,initguess,domain,A,lb,ub);
 

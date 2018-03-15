@@ -1,4 +1,4 @@
-function [output] = zCalibration(setupInfo,imStack,filter)
+function [output] = zCalibration(setupInfo,imStack,filter,method)
 
 FWHM_nm = setupInfo.FWHM;
 pxSize  = setupInfo.pxSize;
@@ -14,13 +14,13 @@ z_space = linspace(0,size(imStack,3)*zSpacing,size(imStack,3));
 totPos = [0,0];
 for i = 1:size(imStack,3)
     im_in = double(imStack(:,:,i));
-   
-     delta = 4;
-     FWHM_pix = FWHM_nm / pxSize; %[pix]
-     % for GLRT
-     chi2 = 24;
-[ pos, ~] = Localization.smDetection(im_in, delta, FWHM_pix, chi2 );
-
+    
+    delta = 4;
+    FWHM_pix = FWHM_nm / pxSize; %[pix]
+    % for GLRT
+    chi2 = 24;
+    [ pos, ~] = Localization.smDetection(im_in, delta, FWHM_pix, chi2 );
+    
     for j=1:size(pos,1)
         testX = and(totPos(:,1) < pos(j,1)+4,totPos(:,1) > pos(j,1)-4);
         testY = and(totPos(:,2) < pos(j,2)+4,totPos(:,2) > pos(j,2)-4);
@@ -29,15 +29,15 @@ for i = 1:size(imStack,3)
         add2Pos = true;
         if(~isempty(idxX))
             for k = 1:size(idxX)
-            testidxY = idxY == idxX(k);
-            if(size(testidxY==1)>=1)
-                add2Pos = false;
+                testidxY = idxY == idxX(k);
+                if(size(testidxY==1)>=1)
+                    add2Pos = false;
+                end
             end
-            end
-       end
-       if(add2Pos)
-           totPos(end+1,:) = pos(j,:);
-       end
+        end
+        if(add2Pos)
+            totPos(end+1,:) = pos(j,:);
+        end
     end
 end
 totPos(1,:)=[];
@@ -46,17 +46,17 @@ zPos = repmat(z_space,size(totPos,1),1);
 fitPar = zeros(size(totPos,1),size(imStack,3),6);
 %gaussPar = zeros(size(totPos,1),size(imStack,3),3);
 GraR = 4;
- im_in = double(imStack);
- 
+im_in = double(imStack);
+
 Grad = zeros(size(totPos,1),size(imStack,3));
-for i=1:size(imStack,3)    
+for i=1:size(imStack,3)
     for j=1:size(totPos,1)
         
         %Extract a roi around the localized emitter
         [roi_lims] = EmitterSim.getROI(totPos(j,1), totPos(j,2), szWindow, xSize, ySize);
         ROI = im_in(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
         
-      
+        
         
         %Gradient Fitting
         if size(ROI,1)~= szWindow*2+1 || size(ROI,2)~= szWindow*2+1
@@ -67,13 +67,20 @@ for i=1:size(imStack,3)
             centOut.y = NaN;
             centOut.e = NaN;
         else
-        [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
-        
-        if filter
-        ROI = imgaussfilt(ROI,2);
-        [~,~,e,~] = Localization.gradFit(ROI,GraR);
-        end
-        
+            switch method
+                case 'gradient'
+                    [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+                    if filter
+                        ROI = imgaussfilt(ROI,2);
+                        [~,~,e,~] = Localization.gradFit(ROI,GraR);
+                    end
+                otherwise
+                    [x,y,e] = Localization.phasor(ROI);
+                    centOut.x = NaN;
+                    centOut.y = NaN;
+                    centOut.e = NaN;
+            end
+            
         end
         %Gradient to determine focus
         [grad,~] = imgradient(ROI);
@@ -85,7 +92,7 @@ for i=1:size(imStack,3)
             y = NaN;
             e = NaN;
         end
-        %Get back the position in the original 
+        %Get back the position in the original
         xc = (round(totPos(j,1)) + x);%in px
         yc = (round(totPos(j,2)) + y);
         
@@ -103,8 +110,9 @@ end
 figure
 hold on
 for j=1:size(totPos,1)
-    [out,~] = Misc.gauss1DFit(Grad(j,:),zPos(j,:));
-    plot(Grad(j,:))
+    [out,fit] = Misc.gauss1DFit(Grad(j,:),zPos(j,:));
+    plot(Grad(j,:),'--')
+    plot(fit)
     zPos(j,:) = zPos(j,:) - out(2);
     currentPar = fitPar(j,:,3);
     currentZ   = zPos(j,:);
