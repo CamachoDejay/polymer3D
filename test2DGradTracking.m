@@ -23,6 +23,7 @@ close all
 clc
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fitting = 'gradient';%'phasor'
 doPlot = true;
 pxSize = 100; % in nm
 imSize = 13; % in px
@@ -76,11 +77,11 @@ assert(minPos<= maxPos,'Min position should be smaller than max position');
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    cell(nSim,1), zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
+    cell(nSim,1), zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),cell(nSim,1),...
     'VariableNames',{'realX','fitX', 'realY', 'fitY','realElip','cElip','fitElip',...
     'signal2Bkg','signal2Noise','fAbsErrorX','fAbsErrorY','cAbsErrorX',...
     'cAbsErrorY','errorFitElip','noiseType','background','cFitX',...
-    'cFitY'});
+    'cFitY','fittingMethod'});
 
 noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
 %simulate data, analyze and store results
@@ -128,8 +129,15 @@ for i = 1: nSim
         ROI = imgaussfilt(ROI,2);
     end
     % Do gradient fitting
-    [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
-    
+  
+     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+     
+     if strcmp(fitting,'phasor')
+     [x,y,e] = Localization.phasor(ROI);
+     else
+         fitting = 'gradient';
+     end
+     
     %Test fitting output
     if abs(x) > GraR || abs(y) > GraR || e<=0
         x = NaN;
@@ -151,6 +159,7 @@ for i = 1: nSim
     simResults.cElip(i)      = centOut.e;
     simResults.fitElip(i)    = e;
     simResults.noiseType(i)  = {noiseType};
+    simResults.fittingMethod(i) = {fitting};
     simResults.background(i) = bkg;
     simResults.cAbsErrorX(i) = (ROI_coor(1)+centOut(1).x)-simResults.realX(i);
     simResults.cAbsErrorY(i) = (ROI_coor(2)+centOut(1).y)-simResults.realY(i);
