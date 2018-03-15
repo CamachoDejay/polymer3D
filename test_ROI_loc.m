@@ -6,13 +6,13 @@ clc
 
 % simple sim of PSF in the ROI
 imSize = 17;
-pos_real = [2,2];
+pos_real = [1.8,2.3];
 
 xid = 0:imSize-1;
 yid = 0:imSize-1;
 pix_size = 0.25;
 sigX = .6;
-sigY = .65;
+sigY = .95;
 xVal = xid.*pix_size;
 yVal = yid.*pix_size;
 pos_pix = (pos_real./pix_size) + 1;
@@ -25,20 +25,33 @@ ROI_coor = [median(1:size(ROI,1)),median(1:size(ROI,1))];
 GraR = 6; % The radius of Gradient used for caculation
 
 % gradient fit for localization
+tic
 [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+toc
+
+tic
+[xp,yp,ep] = Localization.phasor(ROI);
+toc
 % shifting system of reference back to corner pixel
 gfitX = ROI_coor(1)+x;
 gfitY = ROI_coor(2)+y;
+
+pfitX = ROI_coor(1)+xp;
+pfitY = ROI_coor(2)+yp;
+
 cfitX = ROI_coor(1)+centOut.x;
 cfitY = ROI_coor(2)+centOut.y;
 
 % printing results
 fprintf('Simulated emitter position [pix]: \t\t%.4f, \t%.4f \n', pos_pix(1), pos_pix(2))
-fprintf('Gradient fitted emitter position [pix]: \t%.4f, \t%.4f \n', gfitX, gfitY)
 fprintf('Centroid fitted emitter position [pix]: \t%.4f, \t%.4f \n', cfitX, cfitY)
+fprintf('Gradient fitted emitter position [pix]: \t%.4f, \t%.4f \n', gfitX, gfitY)
+fprintf('Phasor fitted emitter position [pix]: \t\t%.4f, \t%.4f \n', pfitX, pfitY)
+
 fprintf('Simulated PSF Ellipticity: \t\t%.4f\n', sigY/sigX)
-fprintf('Gradient fitted PSF Ellipticity: \t%.4f\n', e)
 fprintf('Centroid fitted PSF Ellipticity: \t%.4f\n', centOut.e)
+fprintf('Gradient fitted PSF Ellipticity: \t%.4f\n', e)
+fprintf('Phasor fitted PSF Ellipticity: \t\t%.4f\n', ep)
 
 % making figure
 figure(1)
