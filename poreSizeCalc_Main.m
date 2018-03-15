@@ -5,7 +5,7 @@ close all;
 pxSize = 100; %in nm
 Threshold = 0.4; %number between 0 and 1 (% of max intensity)
 bigPores = 50; %in px ("draw a line" between small pores and big pores);
-
+nBins = 20; %For histogram
 %% Loading Data
 pxArea = pxSize*pxSize*1e-6; %in µm^2
 bigPores = bigPores*pxArea;
@@ -64,8 +64,9 @@ axis image
 %% Looping through the Data
 
 h = waitbar(0);
-figure(10)
-hold on
+bins = zeros(nBins,size(images2Analyze,1)); %Store Bins
+occurrences = bins; % Store occurences
+
 for j = 1:size(images2Analyze,1)
     hMessage = sprintf('Loading image stack number %d/%d',j,size(images2Analyze,1));
     waitbar(0,h,hMessage);
@@ -73,7 +74,8 @@ for j = 1:size(images2Analyze,1)
     p2file      = strcat(path2Stacks,images2Analyze(j).name);
     warning('off');
     fileInfo    = loadMovie.tif.getinfo(p2file);
-    frames2Load = 1:1:fileInfo.Frame_n;
+    %frames2Load = 1:1:fileInfo.Frame_n;
+    frames2Load  = 1:1:10; 
     IMStack     = loadMovie.tif.getframes(p2file, frames2Load);
     warning('on');
     Results = struct('numPores',cell(1,size(images2Analyze,1)),'numBigPores',cell(1,size(images2Analyze,1)),'Area',...
@@ -166,12 +168,42 @@ for j = 1:size(images2Analyze,1)
         Range = sprintf('A2:H%d',sizeRes+1);
         
         xlswrite(fileNameExcel,Result2print, sheetName,Range);
-        
-    title('Pore size Distribution')
-    histogram(dataForHistogram);
-    set(gca,'YScale','log');
-    set(gca,'XScale','log');
-    ylabel('Number of Pores');
-    xlabel('Pore area');
+    
+    [midBin, ~,occurrence]=Misc.lnbin(dataForHistogram,20);
+    bins(:,j) = midBin;
+    occurrences(:,j) = occurrence;
+   % title(mainFolderName)
+%     histogram(dataForHistogram);
+%     set(gca,'YScale','log');
+%     set(gca,'XScale','log');
+%     ylabel('Number of Pores');
+%     xlabel('Pore area');
+    
+%     figure
+    
+    
+%     figure
+%     bar(midBin,occurrence)
+%     set(gca,'YScale','log');
+%     set(gca,'XScale','log');
 end
 h = msgbox('The Data were succesfully saved !', 'Success');
+
+figure(10)
+hold on
+title(currentFolderName)
+set(gca,'YScale','log');
+set(gca,'XScale','log');
+ylabel('Number of Pores');
+xlabel('Pore area');
+leg = sprintf('Stack %d',i);
+for i = 1:size(images2Analyze,1)
+    plot(bins(:,i),occurrence(:,i));
+    if i>1  
+    leg = {leg, sprintf('Stack %d',i)};
+    end
+end
+
+legend(leg)
+
+
