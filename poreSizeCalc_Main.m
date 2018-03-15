@@ -172,20 +172,6 @@ for j = 1:size(images2Analyze,1)
     [midBin, ~,occurrence]=Misc.lnbin(dataForHistogram,20);
     bins(:,j) = midBin;
     occurrences(:,j) = occurrence;
-   % title(mainFolderName)
-%     histogram(dataForHistogram);
-%     set(gca,'YScale','log');
-%     set(gca,'XScale','log');
-%     ylabel('Number of Pores');
-%     xlabel('Pore area');
-    
-%     figure
-    
-    
-%     figure
-%     bar(midBin,occurrence)
-%     set(gca,'YScale','log');
-%     set(gca,'XScale','log');
 end
 h = msgbox('The Data were succesfully saved !', 'Success');
 
