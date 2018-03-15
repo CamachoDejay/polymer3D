@@ -6,8 +6,8 @@ clear
 close all
 clc
 
-fPath = 'C:\Users\Boris\Dropbox\MultiPlane Data\2018\03 - Mar\ZstackCalibration-100nmBeads-640nm_2';
-fName = 'ZstackCalibration-100nmBeads-640nm_2_MMStack_Pos0.ome.tif';
+fPath = 'D:\Documents\Unif\PhD\2018-Data\03 - March\13\ZstackCalibration-100nmBeads-640nm_1';
+fName = 'ZstackCalibration-100nmBeads-640nm_1_MMStack_Pos0.ome.tif';
 
 fPath = [fPath filesep fName];
 
@@ -21,15 +21,16 @@ zFocus2 = zeros(1,size(cal.focusMet,2));
 for k=1:size(cal.focusMet,2)
     [out,Fit] = Misc.gauss1DFit(cal.focusMet(:,k),cal.Zpos);
     zFocus(k) = out(2);
-    [~,ind] = max(cal.focusMet(:,k));
-    zFocus2(k) = cal.Zpos(ind);
 end
-dist2Firstplane = zFocus(1)-zFocus;
-dist2Firstplane2 = zFocus2(1)-zFocus2;
-distanceBetweenCamA = zFocus(1:4) - zFocus(5:8);
-distanceBetweenCamB = zFocus(5:7) - zFocus(2:4);
-distanceBetweenCam2A = zFocus2(1:4) - zFocus2(5:8);
-distanceBetweenCam2B = zFocus2(5:7) - zFocus2(2:4);
+zFocus = zFocus(cal.neworder); %give the right order to the channels
+distBetweenCamPlanes = abs(mean(diff(zFocus(1:2:end))) + mean(diff(zFocus(2:2:end))))/2;
+target    = distBetweenCamPlanes/2;
+distBetweenPlane = diff(zFocus);
+offTarget1 = distBetweenPlane - target;
+offTarget = mean(abs(offTarget1));
+
+message = sprintf('The difference between the target and the current plane conformation is %d',offTarget);
+disp(message);
 % load and calibrate, when applied to the calibration data then we should
 % be able to demonstrate that it works
 [data] = mpSetup.loadAndCal( fPath, cal );
