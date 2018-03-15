@@ -1,135 +1,145 @@
-%% 
+%%
 %The aim of this code is to receive a z-stack/ a serie of z-stack and to
 %calculate the relation between the z-position and the ellipticity to serva
 %as a calibration in 3D particle tracking.
 
 % It is currently written to take .mat file (the file are prealably cropped
-% as we do no consider multiplane data yet.
+% as we do not consider multiplane data yet.
 
 clear;
 clc;
 close all;
 
-%% User input 
-FWHM_nm = 350;%in nm
-pxSize  = 105;%in nm
-z_spacing = 50; %in nm
-szWindow = 6;
+%% User input
+toAnalyze = 'folder';
+filter    = true; %use or not pre-processing Gaussian filter
+FWHM_nm   = 350;%in nm
+pxSize    = 105;%in nm
+szWindow  = 6;
+zSpacing  = 50; %in nm
+
+setupInfo.FWHM     = FWHM_nm;
+setupInfo.pxSize   = pxSize;
+setupInfo.szWindow = szWindow;
+setupInfo.zSpacing = zSpacing;
 %% Loading of the data
-[fileName,folder]=uigetfile({'*.mat'},'Select a file to Open');
-[~,fileTif,~]=fileparts(fileName);
-[~,fileOME,~]=fileparts(fileTif);
+switch toAnalyze
+    case 'file'
+        [fileName,folder]=uigetfile({'*.mat'},'Select a file to Open');
+        [~,fileTif,~]=fileparts(fileName);
+        [~,fileOME,~]=fileparts(fileTif);
+        
+        path2data = [folder fileName];
+        
+        tmp     = load(path2data);
+        name    = fields(tmp);
+        imStack = tmp.(name{1});
+        
+        %% Z-Calibration
+        [zAxis,ellipAxis] = zCalibration(setupInfo,imStack,filter);
+        
+        figure
+        scatter(zAxis,ellipAxis);
+    case 'folder'
+        mainFolderName = uigetdir;
+        assert(ischar(mainFolderName),'User canceled the selection of file, excecution aborted');
+        mkdir(mainFolderName,'Results');
+        newdir         = sprintf('%s%s',mainFolderName,'\Results\');
 
-path2data = [folder fileName];
+        %Extract the part of the folder that is a tif file
+        Folder_Content = dir(mainFolderName);
+        index2Images      = contains({Folder_Content.name},'.mat');
+        images2Analyze = Folder_Content(index2Images);
+        
+        zAxis(size(images2Analyze,1)).cam1 = [];
+        zAxis(size(images2Analyze,1)).cam2 = [];
+        zAxis(size(images2Analyze,1)).cam1All = [];
+        zAxis(size(images2Analyze,1)).cam2All = [];
+        zAxis(size(images2Analyze,1)).all = [];
+        
+        ellipAxis(size(images2Analyze,1)).cam1 = [];
+        ellipAxis(size(images2Analyze,1)).cam2 = [];
+        ellipAxis(size(images2Analyze,1)).cam1All = [];
+        ellipAxis(size(images2Analyze,1)).cam2All = [];
+        ellipAxis(size(images2Analyze,1)).all = [];
 
-tmp=load(path2data);
-name=fields(tmp);
-imStack=tmp.(name{1});
+        xAxis(size(images2Analyze,1)).cam1 = [];
+        xAxis(size(images2Analyze,1)).cam2 = [];
+        xAxis(size(images2Analyze,1)).cam1All = [];
+        xAxis(size(images2Analyze,1)).cam2All = [];
+        xAxis(size(images2Analyze,1)).all = [];
 
-xSize = size(imStack,2);
-ySize = size(imStack,1);
-z_space = linspace(0,size(imStack,3)*z_spacing,size(imStack,3));
-%% Localization
-% Finds all the position that occurs in the stack ==> some molecule are
-% seen only after the Xth frame because they're out of focus before, etc...
-totPos = [0,0];
-for i = 1:size(imStack,3)
-    im_in = double(imStack(:,:,i));
-   
-     delta = 4;
-     FWHM_pix = FWHM_nm / pxSize; %[pix]
-     % for GLRT
-     chi2 = 24;
-[ pos, inten ] = Localization.smDetection(im_in, delta, FWHM_pix, chi2 );
-
-    for j=1:size(pos,1)
-        testX = and(totPos(:,1) < pos(j,1)+4,totPos(:,1) > pos(j,1)-4);
-        testY = and(totPos(:,2) < pos(j,2)+4,totPos(:,2) > pos(j,2)-4);
-        idxX  = find(testX == 1);
-        idxY  = find(testY == 1);
-        add2Pos = true;
-        if(~isempty(idxX))
-            for k = 1:size(idxX)
-            testidxY = idxY == idxX(k);
-            if(size(testidxY==1)>=1)
-                add2Pos = false;
+        yAxis(size(images2Analyze,1)).cam1 = [];
+        yAxis(size(images2Analyze,1)).cam2 = [];
+        yAxis(size(images2Analyze,1)).cam1All = [];
+        yAxis(size(images2Analyze,1)).cam2All = [];
+        yAxis(size(images2Analyze,1)).all = [];
+        
+        h = waitbar(0,'Z-Calibration...');
+        for i=1:size(images2Analyze,1)
+            
+            file2Load = sprintf('%s%s%s',images2Analyze(i).folder,'\',images2Analyze(i).name);
+            tmp = load(file2Load);
+            name=cellstr(fields(tmp));
+            imStack=tmp.(name{1});
+            
+            [output] = zCalibration(setupInfo,imStack,filter);
+            
+            if contains(file2Load,'Cam1')
+                zAxis(i).cam1     = output.z;
+                xAxis(i).cam1     = output.x;
+                yAxis(i).cam1     = output.y;
+                ellipAxis(i).cam1 = output.ellip;
+                
+                zAxis(1).cam1All = [[zAxis(1).cam1All] output.z];
+                xAxis(1).cam1All = [[xAxis(1).cam1All] output.x];
+                yAxis(1).cam1All = [[yAxis(1).cam1All] output.y];
+                ellipAxis(1).cam1All = [[ellipAxis(1).cam1All] output.ellip];
+                
+            elseif contains(file2Load,'Cam2')
+                zAxis(i).cam2     = output.z;
+                xAxis(i).cam2     = output.x;
+                yAxis(i).cam2     = output.y;
+                ellipAxis(i).cam2 = output.ellip;
+                
+                zAxis(1).cam2All = [[zAxis(1).cam2All] output.z];
+                xAxis(1).cam2All = [[xAxis(1).cam2All] output.x];
+                yAxis(1).cam2All = [[yAxis(1).cam2All] output.y];
+                ellipAxis(1).cam2All = [[ellipAxis(1).cam2All] output.ellip];
             end
-            end
-       end
-       if(add2Pos)
-           totPos(end+1,:) = pos(j,:);
-       end
-    end
-end
-totPos(1,:)=[];
-zPos = repmat(z_space,size(totPos,1),1);
-%% ROI extraction and Fitting
-fitPar = zeros(size(totPos,1),size(imStack,3),6);
-%gaussPar = zeros(size(totPos,1),size(imStack,3),3);
-GraR = 4;
- im_in = double(imStack);
- 
-Grad = zeros(size(totPos,1),size(imStack,3));
-for i=1:size(imStack,3)    
-    for j=1:size(totPos,1)
-        
-        %Extract a roi around the localized emitter
-        [roi_lims] = EmitterSim.getROI(totPos(j,1), totPos(j,2), szWindow, xSize, ySize);
-        ROI = im_in(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
-        %ROI = imgaussfilt(ROI,2);
-        %Gradient Fitting
-        [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
-        
-        %Gradient to determine focus
-        [grad,~] = imgradient(ROI);
-        Grad(j,i) = max(max(grad,[],2),[],1);
-        
-        %remove non-sense values
-        if abs(x) > GraR || abs(y) > GraR
-            x = NaN;
-            y = NaN;
-            e = 0;
+            zAxis(1).all = [[zAxis(1).all] output.z];
+            xAxis(1).all = [[xAxis(1).all] output.x];
+            yAxis(1).all = [[yAxis(1).all] output.y];
+            ellipAxis(1).all = [[ellipAxis(1).all] output.ellip];
+            waitbar(i/size(images2Analyze,1),h);
         end
-        %Get back the position in the original 
-        xc = (round(totPos(j,1)) + x);%in px
-        yc = (round(totPos(j,2)) + y);
+        close(h);
         
-        fitPar(j,i,1) = xc;
-        fitPar(j,i,2) = yc;
-        fitPar(j,i,3) = e;
-        fitPar(j,i,4) = centOut(1).x;
-        fitPar(j,i,5) = centOut(1).y;
-        fitPar(j,i,6) = centOut(1).e;
-    end
-end
-%% Forcing focal point to be z = 0 & Extracting data point
-%using Fit
-elipAxis = [];
-zAxis    = [];
-figure
-hold on
-for j=1:size(totPos,1)
-    [out,Fit] = Misc.gauss1DFit(Grad(j,:),zPos(j,:));
-    zPos(j,:) = zPos(j,:) - out(2);
-    plot(zPos(j,:),fitPar(j,:,3))
-    currentPar = fitPar(j,:,3);
-    currentZ   = zPos(j,:);
-    elipAxis   = [elipAxis, currentPar(and(and(currentZ>-1000,currentZ<1000),currentPar~=0))];
-    zAxis      = [zAxis, currentZ(and(and(currentZ>-1000,currentZ<1000),currentPar~=0))];
+        %Sorting
+%         [zAxis(1).all,B] = sort([zAxis(1).all]);
+%         ellipAxis(1).all = [ellipAxis(1).all(B)];
+%         
+%         [zAxis(1).cam1All,C] = sort([zAxis(1).cam1All]);
+%         ellipAxis(1).cam1All = [ellipAxis(1).cam1All(C)];
+%         
+%         [zAxis(1).cam2All,D] = sort([zAxis(1).cam2All]);
+%         ellipAxis(1).cam2All = [ellipAxis(1).cam2All(D)];
+%         
+%         figure
+%         scatter(zAxis(1).all,ellipAxis(1).all);
+        
+        fileXAxis = sprintf('%sxAxis.mat',newdir);
+        fileYAxis = sprintf('%syAxis.mat',newdir);
+        fileZAxis = sprintf('%szAxis.mat',newdir);
+        fileEllipAxis = sprintf('%sellipAxis.mat',newdir);
+        
+        save(fileXAxis,'xAxis');
+        save(fileYAxis,'yAxis');
+        save(fileZAxis,'zAxis');
+        save(fileEllipAxis,'ellipAxis');
+        
 end
 
-hold off
-%using centroid
-% figure
-% hold on
-% for j=1:size(totPos,1)
-%     plot(zPos(j,:),fitPar(j,:,6))
-% end
-% hold off
-
-%%
-figure
-scatter(zAxis,elipAxis);
 
 
 
