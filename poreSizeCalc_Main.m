@@ -188,7 +188,7 @@ ylabel('Number of Pores');
 xlabel('Pore area');
 leg = cell(1,size(images2Analyze,1));
 for i = 1:size(images2Analyze,1)
-    scatter(bins(:,i),occurrences(:,i));
+    plot(bins(:,i),occurrences(:,i));
     leg{i} = sprintf('Stack %d',i);
 
 end
