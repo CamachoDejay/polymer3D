@@ -11,7 +11,7 @@ clc;
 close all;
 
 %% User input
-toAnalyze = 'file';
+toAnalyze = 'folder';
 method    = 'phasor';
 filter    = false; %use or not pre-processing Gaussian filter
 FWHM_nm   = 350;%in nm
