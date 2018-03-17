@@ -5,7 +5,8 @@ close all;
 pxSize = 100; %in nm
 Threshold = 0.4; %number between 0 and 1 (% of max intensity)
 bigPores = 50; %in px ("draw a line" between small pores and big pores);
-
+nBins = 20; %For histogram
+nFrame =10;
 %% Loading Data
 pxArea = pxSize*pxSize*1e-6; %in µm^2
 bigPores = bigPores*pxArea;
@@ -47,8 +48,8 @@ IM3(~BW) = mean(mean(IM(~BW)));
 IM4 = IM2;
 IM4(IM4>0) = 1;
 
-figure(1)
-
+H0 = figure(1);
+hold(gca,'on')
 subplot(1,3,1)
 imagesc(IM)
 axis image
@@ -60,12 +61,13 @@ axis image
 subplot(1,3,3)
 imagesc(IM3)
 axis image
-
+hold off
 %% Looping through the Data
 
 h = waitbar(0);
-figure(10)
-hold on
+bins = zeros(nBins,size(images2Analyze,1)); %Store Bins
+occurrences = bins; % Store occurences
+
 for j = 1:size(images2Analyze,1)
     hMessage = sprintf('Loading image stack number %d/%d',j,size(images2Analyze,1));
     waitbar(0,h,hMessage);
@@ -73,7 +75,8 @@ for j = 1:size(images2Analyze,1)
     p2file      = strcat(path2Stacks,images2Analyze(j).name);
     warning('off');
     fileInfo    = loadMovie.tif.getinfo(p2file);
-    frames2Load = 1:1:fileInfo.Frame_n;
+    %frames2Load = 1:1:fileInfo.Frame_n;
+    frames2Load  = 1:1:nFrame; 
     IMStack     = loadMovie.tif.getframes(p2file, frames2Load);
     warning('on');
     Results = struct('numPores',cell(1,size(images2Analyze,1)),'numBigPores',cell(1,size(images2Analyze,1)),'Area',...
@@ -142,12 +145,12 @@ for j = 1:size(images2Analyze,1)
         Results(i).medElip = median(Results(i).Ellipticity);
         dataForHistogram = [dataForHistogram [stats.Area].*pxArea];
     end
-    close(h);
+   
     %% Save results to excel sheets
 
     fileNameExcel = sprintf('%s%sResultsSummary',mainFolderName,'\');
-    matName =  regexprep(Folder_Content(j).name,'\.','_');
-    fileNameMat   = sprintf('%s%s%s-FullResults',Folder_Content(j).folder,'\',...
+    matName =  regexprep(images2Analyze(j).name,'\.','_');
+    fileNameMat   = sprintf('%s%s%s-FullResults',mainFolderName,'\',...
         matName);
     save(fileNameMat,'Results');
     sheetName = sprintf('Stack%d',j);
@@ -166,12 +169,60 @@ for j = 1:size(images2Analyze,1)
         Range = sprintf('A2:H%d',sizeRes+1);
         
         xlswrite(fileNameExcel,Result2print, sheetName,Range);
-        
-    title('Pore size Distribution')
-    histogram(dataForHistogram);
-    set(gca,'YScale','log');
-    set(gca,'XScale','log');
-    ylabel('Number of Pores');
-    xlabel('Pore area');
+    
+    [midBin, ~,occurrence]=Misc.lnbin(dataForHistogram,20);
+    bins(:,j) = midBin;
+    occurrences(:,j) = occurrence;
+    histData(j).bins = midBin;
+    histData(j).occurrences = occurrences;
 end
+ close(h);
 h = msgbox('The Data were succesfully saved !', 'Success');
+%% Plotting
+H1 = figure(10);
+hold (gca,'on')
+title(currentFolderName)
+set(gca,'YScale','log');
+set(gca,'XScale','log');
+ylabel('Number of Pores');
+xlabel('Pore area');
+leg = cell(1,size(images2Analyze,1));
+for i = 1:size(images2Analyze,1)
+    scatter(bins(:,i),occurrences(:,i));
+    leg{i} = sprintf('Stack %d',i);
+
+end
+
+legend(leg)
+hold (gca,'off')
+
+
+H2 = figure(11);
+hold(gca,'on')
+title(sprintf('%s - Overview',currentFolderName))
+scatter(median(bins,2),median(occurrences,2))
+errorbar(median(bins,2),median(occurrences,2),std(occurrences,1,2),'LineStyle','none')
+set(gca,'YScale','log');
+set(gca,'XScale','log');
+ylabel('Number of Pores');
+xlabel('Pore area');
+legend('median','Standard deviation')
+
+hold(gca,'off')
+
+histData(1).medBins = median(bins,2);
+histData(1).medOcc  = median(occurrences,2);
+histData(1).STD     = std(occurrences,1,2);
+%% Saving figures & Data
+fileName0 = sprintf('%s%s%s-Pores',mainFolderName,'\',currentFolderName);
+savefig(H0,fileName0)
+
+fileName1 = sprintf('%s%s%s-AllCurves',mainFolderName,'\',currentFolderName);
+savefig(H1,fileName1)
+
+fileName2 = sprintf('%s%s%s-AverageCurve',mainFolderName,'\',currentFolderName);
+savefig(H2,fileName2)
+
+fileNameMat = sprintf('%s%s%s-histData',mainFolderName,'\',currentFolderName);
+save(fileNameMat,'histData');
+
