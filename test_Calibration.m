@@ -12,7 +12,8 @@ close all;
 
 %% User input
 toAnalyze = 'folder';
-filter    = true; %use or not pre-processing Gaussian filter
+method    = 'phasor';
+filter    = false; %use or not pre-processing Gaussian filter
 FWHM_nm   = 350;%in nm
 pxSize    = 105;%in nm
 szWindow  = 6;
@@ -36,7 +37,15 @@ switch toAnalyze
         imStack = tmp.(name{1});
         
         %% Z-Calibration
-        [zAxis,ellipAxis] = zCalibration(setupInfo,imStack,filter);
+        [output]  = zCalibration(setupInfo,imStack,filter,method);
+        zAxis =[];
+        ellipAxis = [];
+        for i = 1: size(output.z,2)
+            zAxis = [zAxis [output.z{i}]];
+            ellipAxis = [ellipAxis [output.ellip{i}]];
+        end
+        [zAxis,Ind] = sort(zAxis);
+        ellipAxis = ellipAxis(Ind);
         
         figure
         scatter(zAxis,ellipAxis);
@@ -83,7 +92,7 @@ switch toAnalyze
             name=cellstr(fields(tmp));
             imStack=tmp.(name{1});
             
-            [output] = zCalibration(setupInfo,imStack,filter);
+            [output] = zCalibration(setupInfo,imStack,filter,method);
             
             if contains(file2Load,'Cam1')
                 zAxis(i).cam1     = output.z;
