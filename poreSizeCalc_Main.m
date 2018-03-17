@@ -6,6 +6,7 @@ pxSize = 100; %in nm
 Threshold = 0.4; %number between 0 and 1 (% of max intensity)
 bigPores = 50; %in px ("draw a line" between small pores and big pores);
 nBins = 20; %For histogram
+nFrame =10;
 %% Loading Data
 pxArea = pxSize*pxSize*1e-6; %in µm^2
 bigPores = bigPores*pxArea;
@@ -75,7 +76,7 @@ for j = 1:size(images2Analyze,1)
     warning('off');
     fileInfo    = loadMovie.tif.getinfo(p2file);
     %frames2Load = 1:1:fileInfo.Frame_n;
-    frames2Load  = 1:1:10; 
+    frames2Load  = 1:1:nFrame; 
     IMStack     = loadMovie.tif.getframes(p2file, frames2Load);
     warning('on');
     Results = struct('numPores',cell(1,size(images2Analyze,1)),'numBigPores',cell(1,size(images2Analyze,1)),'Area',...
@@ -148,7 +149,7 @@ for j = 1:size(images2Analyze,1)
     %% Save results to excel sheets
 
     fileNameExcel = sprintf('%s%sResultsSummary',mainFolderName,'\');
-    matName =  regexprep(images2Analyze.name,'\.','_');
+    matName =  regexprep(images2Analyze(j).name,'\.','_');
     fileNameMat   = sprintf('%s%s%s-FullResults',mainFolderName,'\',...
         matName);
     save(fileNameMat,'Results');
@@ -209,9 +210,9 @@ legend('median','Standard deviation')
 
 hold(gca,'off')
 
-histData.medBins = median(bins,2);
-histData.medOcc  = median(occurrences,2);
-histData.STD     = std(occurrences,1,2);
+histData(1).medBins = median(bins,2);
+histData(1).medOcc  = median(occurrences,2);
+histData(1).STD     = std(occurrences,1,2);
 %% Saving figures & Data
 fileName0 = sprintf('%s%s%s-Pores',mainFolderName,'\',currentFolderName);
 savefig(H0,fileName0)
