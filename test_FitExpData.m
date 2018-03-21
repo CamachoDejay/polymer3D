@@ -11,7 +11,7 @@ clc;
 close all;
 
 %% User input 
-toAnalyze = 'folder';
+toAnalyze = 'file';
 filter    = true; %use or not pre-processing Gaussian filter
 FWHM_nm   = 350;%in nm
 pxSize    = 105;%in nm
@@ -36,10 +36,11 @@ switch toAnalyze
         imStack=tmp.(name{1});
 
         %% Z-Calibration
-        [zAxis,ellipAxis] = zCalibration(setupInfo,imStack,filter);
+        %[zAxis,ellipAxis] = zCalibration(setupInfo,imStack,filter);
+        [Loc] = Fitting_ExpData(setupInfo,imStack);
 
-        figure
-        scatter(zAxis,ellipAxis);
+%         figure
+%         scatter(zAxis,ellipAxis);
     case 'folder'
         mainFolderName = uigetdir;
         assert(ischar(mainFolderName),'User canceled the selection of file, excecution aborted');
@@ -69,6 +70,7 @@ switch toAnalyze
             Results(i).label = Loc.label;
             waitbar(i/size(images2Analyze,1),h);
         end
+        close(h);
 end
-close(h);
+
 

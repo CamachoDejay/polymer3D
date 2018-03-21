@@ -33,9 +33,9 @@ for i = 1:size(imStack,3)
             if(~isempty(idxX)) && ~isempty(idxY)
                 for k = 1:size(idxX,1)
                     testidxY = idxY == idxX(k);
-                    if(size(testidxY(testidxY==1))>1)
+                    if(max(size(testidxY(testidxY==1)))>1)
                         add2Pos = false;
-                    elseif size(testidxY(testidxY==1)==1)
+                    elseif (max(size(testidxY(testidxY==1)))==1)
                         testidx = testidxY;
                     end
                 end
@@ -57,16 +57,18 @@ fitPar = zeros(size(imStack,3),max(label),3);
 %gaussPar = zeros(size(totPos,1),size(imStack,3),3);
 GraR = 4;
 im_in = double(imStack);
-    Frame = 1;
+    Frame = 0;
     for j=1:size(label,1)%max num of molecule found
         if j~=size(label,1)
-            if and(label(j)>floor(max(label)/2),label(j+1)<floor(max(label)/2))
+            if and(label(j)>floor(max(label)/2),label(j+1)<=ceil(max(label)/2))
                 Frame = Frame+1;
             end
+        else
+            Frame =size(label,1);
         end
         %Extract a roi around the localized emitter
         [roi_lims] = EmitterSim.getROI(totPos(j,1), totPos(j,2), szWindow, xSize, ySize);
-        ROI = im_in(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
+        ROI = im_in(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),j);
         
         %Gradient Fitting
         if size(ROI,1)~= szWindow*2+1 || size(ROI,2)~= szWindow*2+1
