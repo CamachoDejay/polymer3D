@@ -21,7 +21,7 @@ zSpacing  = 50; %in nm
 setupInfo.FWHM     = FWHM_nm;
 setupInfo.pxSize   = pxSize;
 setupInfo.szWindow = szWindow;
-setupInfo.zCalibration = [-556.26 592.31 -58.293];
+setupInfo.zCalibration = [-674.06 677.81 -77.022];
 %% Loading of the data
 switch toAnalyze
     case 'file'

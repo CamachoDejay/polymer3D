@@ -77,9 +77,10 @@ im_in = double(imStack);
             centOut.y = NaN;
             centOut.e = NaN;
         else
-            [x,y,~,~] = Localization.gradFit(ROI,GraR);
-            ROI = imgaussfilt(ROI,2);
-            [~,~,e,~] = Localization.gradFit(ROI,GraR);
+%             [x,y,~,~] = Localization.gradFit(ROI,GraR);
+%             ROI = imgaussfilt(ROI,2);
+%             [~,~,e,~] = Localization.gradFit(ROI,GraR);
+              [x,y,e] = Localization.phasor(ROI);
         end
 
         %remove non-sense values
