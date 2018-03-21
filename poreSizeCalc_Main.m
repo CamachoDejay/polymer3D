@@ -67,7 +67,7 @@ axis image
 title(sprintf('Frame %d',frame2Load(n)))
 hold off
 
-fileName0 = sprintf('%s%s%s-PoresFrame%d',mainFolderName,'\',currentFolderName,frame2Load(n));
+fileName0 = sprintf('%s%s%s-PoresFrame-%d_Threshold-%d',mainFolderName,'\',currentFolderName,frame2Load(n),Threshold*100);
 savefig(H0,fileName0)
 
 end
