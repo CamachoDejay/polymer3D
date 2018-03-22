@@ -29,7 +29,7 @@ B = B(idx);
 assert(length(B)==2,'We seem to find more than 2 contours, we dont handle that at the moment but it can be done')
 
 %resample and smooth
-np = 500;
+np = 1000;
 B{1} = SDcalc.smoothBoundary( B{1} );
 B{1} = SDcalc.resampleBoundary( B{1}, np );
 B{1} = SDcalc.smoothBoundary( B{1} );
