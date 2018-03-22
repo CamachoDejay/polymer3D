@@ -12,16 +12,16 @@ close all;
 
 %% User input 
 toAnalyze = 'folder';
-filter    = true; %use or not pre-processing Gaussian filter
 FWHM_nm   = 350;%in nm
-pxSize    = 105;%in nm
+pxSize    = 95;%in nm
 szWindow  = 6;
 zSpacing  = 50; %in nm
 
 setupInfo.FWHM     = FWHM_nm;
 setupInfo.pxSize   = pxSize;
 setupInfo.szWindow = szWindow;
-setupInfo.zCalibration = [-556.26 592.31 -58.293];
+setupInfo.zCalibration1 = [-476.21 561.33 -56.497];
+setupInfo.zCalibration2 = [-674.06 677.81 -77.022];
 %% Loading of the data
 switch toAnalyze
     case 'file'
@@ -35,11 +35,32 @@ switch toAnalyze
         name=fields(tmp);
         imStack=tmp.(name{1});
 
-        %% Z-Calibration
-        [zAxis,ellipAxis] = zCalibration(setupInfo,imStack,filter);
-
+        %% Fitting
+        %[zAxis,ellipAxis] = zCalibration(setupInfo,imStack,filter);
+        [Loc] = Fitting_ExpData(setupInfo,imStack);
+        Loc.xc = (Loc.xc-Loc.xc(1))*pxSize;
+        Loc.yc = (Loc.yc-Loc.yc(1))*pxSize;
+        Loc.zc = (Loc.zc-Loc.zc(1));
+        Loc.x1c = (Loc.x1c-Loc.x1c(1))*pxSize;
+        Loc.y1c = (Loc.y1c-Loc.y1c(1))*pxSize;
+        Loc.z1c = (Loc.z1c-Loc.z1c(1));
+        
         figure
-        scatter(zAxis,ellipAxis);
+        plot(Loc.xc)
+        hold on
+        plot(Loc.yc)
+        plot(Loc.x1c)
+        plot(Loc.y1c)
+        title('X-Y movement of beads with stage')
+        xlabel('Frames')
+        plot(Loc.zc)
+        plot(Loc.z1c)
+        legend('XPhasor', 'YPhasor', 'XGrad','YGrad','ZPhasor','ZGrad');
+        ylabel('Distance (nm)')
+        
+        
+%         figure
+%         scatter(zAxis,ellipAxis);
     case 'folder'
         mainFolderName = uigetdir;
         assert(ischar(mainFolderName),'User canceled the selection of file, excecution aborted');
@@ -53,6 +74,11 @@ switch toAnalyze
         Results(size(images2Analyze,1)).xc = [];
         Results(size(images2Analyze,1)).yc = [];
         Results(size(images2Analyze,1)).zc = [];
+        Results(size(images2Analyze,1)).e = [];
+        Results(size(images2Analyze,1)).xcGrad = [];
+        Results(size(images2Analyze,1)).ycGrad = [];
+        Results(size(images2Analyze,1)).zcGrad = [];
+        Results(size(images2Analyze,1)).e1 = [];
         Results(size(images2Analyze,1)).label = [];
         h = waitbar(0,'Localization...');
         for i=1:size(images2Analyze,1)
@@ -63,12 +89,21 @@ switch toAnalyze
             imStack=tmp.(name{1});
             [Loc] = Fitting_ExpData(setupInfo,imStack);
             Results(i).fileName = images2Analyze(i).name;
-            Results(i).xc = Loc.xc;
-            Results(i).yc = Loc.yc;
-            Results(i).zc = Loc.zc;
+            for j = 1 : size(Loc.xc,2)
+            
+            Results(i).xc(:,j) = (Loc.xc(:,j)-Loc.xc(1,j))*pxSize;
+            Results(i).yc(:,j) = (Loc.yc(:,j)-Loc.yc(1,j))*pxSize;
+            Results(i).zc(:,j) = (Loc.zc(:,j)-Loc.zc(1,j));
+            Results(i).e(:,j)  = Loc.e(:,j);
+            Results(i).xcGrad(:,j) = (Loc.x1c(:,j)-Loc.x1c(1,j))*pxSize;
+            Results(i).ycGrad(:,j) = (Loc.y1c(:,j)-Loc.y1c(1,j))*pxSize;
+            Results(i).zcGrad(:,j) = (Loc.z1c(:,j)-Loc.z1c(1,j));
+            Results(i).e1(:,j)  = Loc.e1(:,j);
+            end
             Results(i).label = Loc.label;
             waitbar(i/size(images2Analyze,1),h);
         end
+        close(h);
 end
-close(h);
+
 
