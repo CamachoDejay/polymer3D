@@ -52,6 +52,7 @@ holesAdapt = ~BWadapt;
 % IM4 = IM2;
 % IM4(IM4>0) = 1;
 
+% plot and save the figure
 H0 = figure;
 hold(gca,'on')
 subplot(1,3,1)
@@ -103,6 +104,7 @@ occurrences = bins; % Store occurences
 for j = 1:size(images2Analyze,1)
     hMessage = sprintf('Loading image stack number %d/%d',j,size(images2Analyze,1));
     waitbar(0,h,hMessage);
+    %Data loading
     path2Stacks = strcat(images2Analyze(j).folder,'\');
     p2file      = strcat(path2Stacks,images2Analyze(j).name);
     warning('off');
@@ -111,15 +113,12 @@ for j = 1:size(images2Analyze,1)
     frames2Load  = 1:1:nFrame; 
     IMStack     = loadMovie.tif.getframes(p2file, frames2Load);
     warning('on');
-    Results = struct('numPores',cell(1,size(images2Analyze,1)),'numBigPores',cell(1,size(images2Analyze,1)),'Area',...
-        cell(1,size(images2Analyze,1)),'areaBigPores',cell(1,size(images2Analyze,1)),...
-        'meanArea',cell(1,size(images2Analyze,1)),'meanAreaBigPores',cell(1,size(images2Analyze,1)),...
-        'medArea',cell(1,size(images2Analyze,1)),'medAreaBigPores',cell(1,size(images2Analyze,1)),...
-        'CVArea',cell(1,size(images2Analyze,1)),'CVAreaBigPores',cell(1,size(images2Analyze,1)),...
-        'MajorAxis',cell(1,size(images2Analyze,1)),'MinorAxis',cell(1,size(images2Analyze,1)),...
-        'meanElip',cell(1,size(images2Analyze,1)),'medElip',cell(1,size(images2Analyze,1)));
+    
+  
     dataForHistogram = [];
+    
     hMessage = sprintf('Analysis of Stack Number %d/%d',j,size(images2Analyze,1));
+    %loop through the image of the current stack
     for i=1:size(IMStack,3)
     waitbar(i/size(IMStack,3),h,hMessage);
         % Loading image number i
@@ -129,6 +128,17 @@ for j = 1:size(images2Analyze,1)
         I  = I./max(max(I));
         % Gaussian filtering (smooth image)
         I  = imgaussfilt(I,3);
+        
+        %%%%%%%%%%%%%%%%%%%%NOTE TO RAFA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %TO DO: I tried to make it work with the leas amount of code
+        %repeated for the two method, hoping we could use the same processing
+        %e.g. looping through all the pore in both case. However it seems
+        %quite long if we take High concentration data that usually give
+        %better results with adaptive threshold and then loop through the
+        %pore. (e.g. couple of minute and it was not done for a single
+        %frame).
+        
+        %%%%%%%%%%%%%%%%%%%%END NOTE TO RAFA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         if strcmp(method2Use,'adaptThreshold')
         % Get an adaptive threshold (~depends on local intensity levels)
@@ -150,9 +160,7 @@ for j = 1:size(images2Analyze,1)
         %size)
         %Need to change this so it does not always clear pores
         BW_pores = imclearborder(BW_pores);
-        
         [L,n] = bwlabel(BW_pores);
-
         outData = zeros(n,3);
         for k = 1:n
         tmpBW = L==k;
@@ -169,7 +177,6 @@ for j = 1:size(images2Analyze,1)
         boundary = B{1};
         [ vals, names ] = SDcalc.solidity( boundary' );
         outData(k,3) = vals{1};
-
         end
         
 %         %Get properties of the pores on the image.
@@ -178,59 +185,60 @@ for j = 1:size(images2Analyze,1)
 
 %         dataForHistogram = [dataForHistogram [stats.Area].*pxArea];
     end
-    
-    [midBin, ~,occurrence]=Misc.lnbin(dataForHistogram,20);
-    bins(:,j) = midBin;
-    occurrences(:,j) = occurrence;
-    histData(j).bins = midBin;
-    histData(j).occurrences = occurrences;
+    %need to fix the above part before this
+%     [midBin, ~,occurrence]=Misc.lnbin(dataForHistogram,20);
+%     bins(:,j) = midBin;
+%     occurrences(:,j) = occurrence;
+%     histData(j).bins = midBin;
+%     histData(j).occurrences = occurrences;
 end
  close(h);
 h = msgbox('The Data were succesfully saved !', 'Success');
-%% Plotting
-H1 = figure(10);
-hold (gca,'on')
-title(currentFolderName)
-set(gca,'YScale','log');
-set(gca,'XScale','log');
-ylabel('Number of Pores');
-xlabel('Pore area');
-leg = cell(1,size(images2Analyze,1));
-for i = 1:size(images2Analyze,1)
-    plot(bins(:,i),occurrences(:,i));
-    leg{i} = sprintf('Stack %d',i);
 
-end
-
-legend(leg)
-hold (gca,'off')
-
-
-H2 = figure(11);
-hold(gca,'on')
-title(sprintf('%s - Overview',currentFolderName))
-scatter(median(bins,2),median(occurrences,2))
-errorbar(median(bins,2),median(occurrences,2),std(occurrences,1,2),'LineStyle','none')
-set(gca,'YScale','log');
-set(gca,'XScale','log');
-ylabel('Number of Pores');
-xlabel('Pore area');
-legend('median','Standard deviation')
-
-hold(gca,'off')
-
-histData(1).medBins = median(bins,2);
-histData(1).medOcc  = median(occurrences,2);
-histData(1).STD     = std(occurrences,1,2);
-%% Saving figures & Data
-
-
-fileName1 = sprintf('%s%s%s-AllCurves',mainFolderName,'\',currentFolderName);
-savefig(H1,fileName1)
-
-fileName2 = sprintf('%s%s%s-AverageCurve',mainFolderName,'\',currentFolderName);
-savefig(H2,fileName2)
-
-fileNameMat = sprintf('%s%s%s-histData',mainFolderName,'\',currentFolderName);
-save(fileNameMat,'histData');
-
+ %% Plotting
+% H1 = figure(10);
+% hold (gca,'on')
+% title(currentFolderName)
+% set(gca,'YScale','log');
+% set(gca,'XScale','log');
+% ylabel('Number of Pores');
+% xlabel('Pore area');
+% leg = cell(1,size(images2Analyze,1));
+% for i = 1:size(images2Analyze,1)
+%     plot(bins(:,i),occurrences(:,i));
+%     leg{i} = sprintf('Stack %d',i);
+% 
+% end
+% 
+% legend(leg)
+% hold (gca,'off')
+% 
+% 
+% H2 = figure(11);
+% hold(gca,'on')
+% title(sprintf('%s - Overview',currentFolderName))
+% scatter(median(bins,2),median(occurrences,2))
+% errorbar(median(bins,2),median(occurrences,2),std(occurrences,1,2),'LineStyle','none')
+% set(gca,'YScale','log');
+% set(gca,'XScale','log');
+% ylabel('Number of Pores');
+% xlabel('Pore area');
+% legend('median','Standard deviation')
+% 
+% hold(gca,'off')
+% 
+% histData(1).medBins = median(bins,2);
+% histData(1).medOcc  = median(occurrences,2);
+% histData(1).STD     = std(occurrences,1,2);
+% %% Saving figures & Data
+% 
+% 
+% fileName1 = sprintf('%s%s%s-AllCurves',mainFolderName,'\',currentFolderName);
+% savefig(H1,fileName1)
+% 
+% fileName2 = sprintf('%s%s%s-AverageCurve',mainFolderName,'\',currentFolderName);
+% savefig(H2,fileName2)
+% 
+% fileNameMat = sprintf('%s%s%s-histData',mainFolderName,'\',currentFolderName);
+% save(fileNameMat,'histData');
+% 
