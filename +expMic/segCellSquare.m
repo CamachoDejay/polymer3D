@@ -26,8 +26,11 @@ Blength = cellfun(@length,B);
 [~, idx] = maxk(Blength,2);
 B = B(idx);
 % Blength = Blength(idx);
-assert(length(B)==2,'We seem to find more than 2 contours, we dont handle that at the moment but it can be done')
-
+if length(B)<2
+    error('We seem to find less than 2 contours, we dont handle that at the moment but it can be done')
+elseif length(B)>2,
+    error('We seem to find more than 2 contours, we dont handle that at the moment but it can be done')
+end
 %resample and smooth
 np = 1000;
 B{1} = SDcalc.smoothBoundary( B{1} );

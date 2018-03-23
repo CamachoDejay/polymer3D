@@ -40,10 +40,37 @@ for i = 1:2
 end
 
 % find the best fit
-[errVal,idx] = min(meanD);
+[~,idx] = min(meanD);
 % store best values
 theta = theta(idx);
+% regCont = regCont(:,:,idx);
+
+% fine tune of the angle
+% we have to check which one is the right angle
+dAng = 5;
+nTest = dAng*2*10+1;
+tTest = linspace(theta-dAng,theta+dAng, nTest);
+% mean deviation storage
+meanD = nan(nTest,1);
+% registered contour storage
+regCont = zeros([size(Post.contNorm), nTest]);
+
+for i = 1:nTest
+    % apply registration
+    [regPost] = expMic.appReg(Post.contNorm,tTest(i),scaling);
+    % registered contour
+    regCont(:,:,i) = regPost;
+    % mean deviation based on closest neighbour
+    [~, D] = knnsearch(fixed',regPost');
+    meanD(i) = mean(D);
+end
+
+% find the best fit
+[errVal,idx] = min(meanD);
+% store best values
+theta = tTest(idx);
 regCont = regCont(:,:,idx);
+
 
 % storing registration information
 reg.scaling = scaling;
