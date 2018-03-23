@@ -3,10 +3,10 @@ clc;
 close all;
 %% User Input
 pxSize = 100; %in nm
-Threshold = 0.4; %number between 0 and 1 (% of max intensity)
-bigPores = 50; %in px ("draw a line" between small pores and big pores);
-nBins = 20; %For histogram
-nFrame =10;
+Threshold = 0.5; %number between 0 and 1 (% of max intensity)
+bigPores = 25; %in px ("draw a line" between small pores and big pores);
+nBins = 20; %For Log histogram
+nFrame =10; %n of frame to analyze
 %% Loading Data
 pxArea = pxSize*pxSize*1e-6; %in µm^2
 bigPores = bigPores*pxArea;
