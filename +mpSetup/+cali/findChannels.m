@@ -4,6 +4,13 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure )
 %camera and then use simple integration to find the areas of fluorescence
 %and background
 
+    sig = im(20:end-20,:);
+    sig = sig(:);
+    bg = im([1:20 end-20:end],:);
+    bg = bg(:);
+    tHold = Misc.tholdSigBg(bg,sig);
+    im = im>tHold;
+    
     switch nargin
         case 1
             doFigure = false;
@@ -38,7 +45,7 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure )
         % integration
         s2 =  sum(chIm,2);
         % change points
-        chP = findCp(s2,'top',1);
+        chP = findCp(s2,'bottom',1);
         % windown size
         chYw(i) =  chP(2) - chP(1) + 1;
         chC(i,2) = chP(1) + chYw(i)/2;
@@ -71,10 +78,13 @@ function ch_p = findCp(trace_in,sCase,nCP)
     sT = sT ./ max(sT);
     upCP = nan;
     doCP = nan;
+    % clearing edge effects
+    sT(1:10) = min(sT);
+    sT(end-9:end) = min(sT);
     % choosing the staring point
     switch sCase
         case 'bottom'
-            thVal = 0.0;
+            thVal = 0.09;
             dTh   = 0.01;
             
         case 'top'
@@ -96,6 +106,11 @@ function ch_p = findCp(trace_in,sCase,nCP)
         
         % binarized trace
         binT = sT > (thVal);
+        if strcmp(sCase,'bottom')
+%             disp('ok')
+            binT(1) = 0;
+            binT(end) = 0;
+        end
         % forcing the ends to be false - this is important so we alway have
         % at least a CP at the firts and last row
 %         binT(1) = false;
@@ -117,7 +132,9 @@ function ch_p = findCp(trace_in,sCase,nCP)
             wSize = doCP-upCP;
             if and(nUp==nCP, all(wSize>0))
                 % we are finish, so we stop
-                go = false;
+                if all(wSize>200)
+                    go = false;
+                end
                 
             end
         end
