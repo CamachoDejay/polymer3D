@@ -27,10 +27,14 @@ xf = xi + rect(4);
 yi = rect(1);
 yf = yi + rect(3);
 sig = IM(xi:xf,yi:yf);
+bgV = bg(:);
+sigV = sig(:);
 mBg = mean(bg(:));
 mSig = mean(sig(:));
 
-% calculate treshold based on the mean of the BG and signal values
-tHold = mBg+(mBg+mSig)/2;
+%%
+[tHold] = Misc.tholdSigBg(bgV,sigV);
+% old method based on the mean of the BG and signal values
+% tHold = mBg+(mBg+mSig)/2;
 end
 

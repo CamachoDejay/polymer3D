@@ -11,7 +11,9 @@ function [data] = apply( cam1, cam2, cal )
     end
     waitbar(.2,h,'Gettingg channel data')
     [ chC1, chC2 ] = mpSetup.cali.getChData( cam1, cam2, cal.ROI );
-    data = ones(size(chC1)+[0 0 4 0]);
+    sTmp = size(chC1);
+    sTmp(3) = sTmp(3) + 4;
+    data = ones(sTmp);
     
     if cal.correctInt
         C = cal.Icorrf;
