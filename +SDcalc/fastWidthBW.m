@@ -1,8 +1,7 @@
-function [ cell_width ] = fastWidthBW( BW )
+function [ cell_width ] = fastWidthBW( im )
 %CELLWIDTH Summary of this function goes here
 %   c is the cell contour
 
-im = BW;
 % skelotanized image to look for center line
 skeletonizedImage = bwmorph(im, 'skel', inf);
 % eucledian distance from border image
