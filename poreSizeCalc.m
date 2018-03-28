@@ -4,11 +4,11 @@ close all;
 
 %% User Input
 pxSize = 100; %in nm
-Threshold = 0.5; %number between 0 and 1 (% of max intensity)
+Threshold = 0.7; %number between 0 and 1 (% of max intensity)
 bigPores = 25; %in px ("draw a line" between small pores and big pores);
 nBins = 20; %For Log histogram
-% used during testing
-nFrame = 2; %n of frame to analyze
+% used during testing 2, normal should 244
+nFrame = 244; %n of frame to analyze
 %% Loading Data
 % conversion from pixel to area
 pxArea = pxSize*pxSize*1e-6; %in µm^2
@@ -50,13 +50,7 @@ BWadapt = imclose(BWadapt,se);
 BW = imbinarize(IM);
 holes = ~BW;
 holes = bwareaopen(holes,9);
-
-% IM2 = IM;
-% IM3 = IM;
 holesAdapt = ~BWadapt;
-% IM3(~BWadapt) = mean(mean(IM(~BWadapt))); 
-% IM4 = IM2;
-% IM4(IM4>0) = 1;
 
 % plot and save the figure
 H0 = figure;
@@ -78,8 +72,8 @@ title('Automated Threshold')
 axis image
 hold off
 
-% fileName0 = sprintf('%s%s%s-Pores_Threshold-%d',mainFolderName,filesep,currentFolderName,Threshold*100);
-% savefig(H0,fileName0)
+fileName0 = sprintf('%s%sIm0-Pores_Threshold-%d.png',mainFolderName,filesep,Threshold*100);
+saveas(H0,fileName0)
 
 
 answer = questdlg('Which method should be use?', ...
@@ -111,25 +105,32 @@ for j = 1:nImStacks
     waitbar(0,h,hMessage);
     %Data loading
     path2Stacks = strcat(images2Analyze(j).folder,filesep);
-    p2file      = strcat(path2Stacks,images2Analyze(j).name);
-    warning('off');
+    tmpName = images2Analyze(j).name;
+    p2file      = strcat(path2Stacks,tmpName);
+    warning('off','all')
     fileInfo    = loadMovie.tif.getinfo(p2file);
-    %frames2Load = 1:1:fileInfo.Frame_n;
-    frames2Load  = 1:1:nFrame; 
-    IMStack     = loadMovie.tif.getframes(p2file, frames2Load);
-    warning('on');
     
-  
-    % init stack data
-    stackData = [];
+    % segmented images
+    segIm = false(fileInfo.Width, fileInfo.Length, nFrame);
+    
+    warning('on','all')
+    tNframes = fileInfo.Frame_n;
+    assert(tNframes>=nFrame,'you dont have the expected number of frames')
+    
+     
+    % init data that contains all infor for a single tif file
+    tifStackData = [];
     
     hMessage = sprintf('Analysis of Stack Number %d/%d',j,nImStacks);
-    %loop through the image of the current stack
-    nIM = size(IMStack,3);
+    %loop through the frames of the current stack
+    nIM = nFrame;
     for i=1:nIM
-        waitbar(i/size(IMStack,3),h,hMessage);
+        waitbar(i/nIM,h,hMessage);
         % Loading image number i
-        IM = IMStack(:,:,i);
+        warning('off','all')
+        IM     = loadMovie.tif.getframes(p2file, i);
+        warning('on','all')
+        disp(['loaded frame: ' num2str(i)])
         I  = double(IM);
         % Normalize the image
         I  = I./max(max(I));
@@ -167,20 +168,22 @@ for j = 1:nImStacks
                 error('Unexpected!')
         end
         
+        segIm(:,:,i) = BW_pores;
         %Remove pores that are in touch with the edges(uncertainty about
         %size)
         %Need to change this so it does not always clear pores
 %         BW_pores = imclearborder(BW_pores);
         [L,n] = bwlabel(BW_pores);
-        
+              
         % regions data is: width, size, solidity, isBorder
         regData = zeros(n,4);
 %         hi = waitbar(0,'iterating over regions');
         
         % the par for is not super clean at the moment as it will also init
         % the workes, I can fix that later on
-                
-        for k = 1:n %parfor can be placed here
+        
+        % Iterating over each region
+        parfor k = 1:n %parfor can be placed here
             
             tmpBW = L==k;
             % this one is the time consuming step -  are there any faster
@@ -226,7 +229,7 @@ for j = 1:nImStacks
 %             waitbar(k / n)
         end
         disp(['Done for Image ' num2str(i) '/' num2str(nIM)])
-        disp('---------------------NEXT IMAGE ----------')
+        disp('---------------------NEXT FRAME ----------')
 %         close(hi)
 %         %Get properties of the pores on the image.
 %         stats = regionprops(BW_pores,'Area','MajorAxisLength',...
@@ -234,16 +237,41 @@ for j = 1:nImStacks
         regData(:,1:2) = regData(:,1:2).*pxArea;
         % add info about image index
         regData = cat(2,ones(n,1).*i,regData);
-        stackData = cat(1,stackData, regData);
+        tifStackData = cat(1,tifStackData, regData);
     end
     
     % add info about tif index
-    stackData = cat(2,ones(size(stackData,1),1).*j,stackData);
+    tifStackData = cat(2,ones(size(tifStackData,1),1).*j,tifStackData);
     
-    disp(['Done for Tif file ' num2str(j) '/' num2str(nImStacks)])
+    disp(['Done for Tif file ' num2str(j) '/' num2str(nImStacks) ', now saving'])
+    
+    % now we save segmented images
+    tifName = sprintf('%s%sSegmented_%s',mainFolderName,filesep,tmpName);
+    t = Tiff(tifName, 'w');
+    setTag(t,'ImageLength',size(segIm,1))
+    setTag(t,'ImageWidth',size(segIm,2))
+    setTag(t,'Photometric',Tiff.Photometric.MinIsBlack)
+    setTag(t,'BitsPerSample',1)
+    setTag(t,'SamplesPerPixel',1)
+    setTag(t,'PlanarConfiguration',Tiff.PlanarConfiguration.Chunky)
+    t.write(segIm(:,:,1))
+
+    for i = 2:size(segIm,3)
+%         disp(i)
+        t.writeDirectory
+        setTag(t,'ImageLength',size(segIm,1))
+        setTag(t,'ImageWidth',size(segIm,2))
+        setTag(t,'Photometric',Tiff.Photometric.MinIsBlack)
+        setTag(t,'BitsPerSample',1)
+        setTag(t,'SamplesPerPixel',1)
+        setTag(t,'PlanarConfiguration',Tiff.PlanarConfiguration.Chunky)
+        t.write(segIm(:,:,i))
+    end
+    t.close 
+
     disp('---------------------NEXT TIF ----------')
         
-    allData = cat(1,allData, stackData);
+    allData = cat(1,allData, tifStackData);
 
 end
 close(h);
@@ -256,7 +284,23 @@ save([ path2Stacks 'poreProps.mat'],'T')
 
 h = msgbox('The Data were succesfully saved !', 'Success');
 return
- %% Plotting
+%% Plotting
+totalV = T.Area;
+totalV = totalV(:);
+[CDF,CCDF] = Misc.getCDF(totalV);
+
+figure()
+plot(CCDF.x,CCDF.y)
+a = gca;
+a.XScale = 'log';
+a.YScale = 'log';
+title({'CCDF for AREA',' for all tif files in folder'})
+xlabel('Pore size')
+ylabel('CCDF - prob [0 1]')
+a.FontSize = 14;
+ 
+ 
+%%
 % H1 = figure(10);
 % hold (gca,'on')
 % title(currentFolderName)
@@ -303,3 +347,6 @@ return
 % fileNameMat = sprintf('%s%s%s-histData',mainFolderName,'\',currentFolderName);
 % save(fileNameMat,'histData');
 % 
+
+%%
+
