@@ -7,14 +7,16 @@ pxSize = 100; %in nm
 Threshold = 0.5; %number between 0 and 1 (% of max intensity)
 bigPores = 25; %in px ("draw a line" between small pores and big pores);
 nBins = 20; %For Log histogram
-nFrame = 10; %n of frame to analyze
+% used during testing
+nFrame = 2; %n of frame to analyze
 %% Loading Data
+% conversion from pixel to area
 pxArea = pxSize*pxSize*1e-6; %in µm^2
 bigPores = bigPores*pxArea;
 mainFolderName = uigetdir;
 assert(ischar(mainFolderName),'User canceled the selection of file, excecution aborted');
 %extract the name of the current folder
-idx = strfind(mainFolderName,'\') ;
+idx = strfind(mainFolderName,filesep) ;
 currentFolderName = mainFolderName(idx(end)+1:end) ;
 %Remove dots from the name
 currentFolderName = regexprep(currentFolderName,'\.','_');
@@ -25,18 +27,22 @@ index2Images   = contains({Folder_Content.name},'.tif');
 images2Analyze = Folder_Content(index2Images);
 %% Displaying First image
 stack2Load  = 1;
-path2Stacks = strcat(images2Analyze(stack2Load).folder,'\');
+path2Stacks = strcat(images2Analyze(stack2Load).folder,filesep);
 p2file      = strcat(path2Stacks,images2Analyze(stack2Load).name);
 warning('off');
 fileInfo    = loadMovie.tif.getinfo(p2file);
 IM     = loadMovie.tif.getframes(p2file, 10); %Loading on of the frame
 warning('on');
 
+% smoothing the image
 IM = imgaussfilt(IM,2);
 %Adaptive threshold (usually better for high conc)
 T = adaptthresh(IM,Threshold,'ForegroundPolarity','dark','Statistic','mean');
+% binarization
 BWadapt = imbinarize(IM,T);
+% removing small pores
 BWadapt = bwareaopen(BWadapt,4);
+% smoothing
 se = strel('disk',2);
 BWadapt = imclose(BWadapt,se);
 
@@ -45,8 +51,8 @@ BW = imbinarize(IM);
 holes = ~BW;
 holes = bwareaopen(holes,9);
 
-IM2 = IM;
-IM3 = IM;
+% IM2 = IM;
+% IM3 = IM;
 holesAdapt = ~BWadapt;
 % IM3(~BWadapt) = mean(mean(IM(~BWadapt))); 
 % IM4 = IM2;
@@ -63,7 +69,7 @@ axis image
 
 subplot(1,3,2)
 imagesc(holesAdapt)
-title('Adaptive Threshold')
+title(['Adaptive, sen: ' num2str(Threshold,2)])
 axis image
 
 subplot(1,3,3)
@@ -72,40 +78,39 @@ title('Automated Threshold')
 axis image
 hold off
 
-fileName0 = sprintf('%s%s%s-Pores_Threshold-%d',mainFolderName,'\',currentFolderName,Threshold*100);
-savefig(H0,fileName0)
+% fileName0 = sprintf('%s%s%s-Pores_Threshold-%d',mainFolderName,filesep,currentFolderName,Threshold*100);
+% savefig(H0,fileName0)
 
-%TODO: allow User to change threshold (e.g. sliding bar?)
-%% Asking for User input
-prompt = {'Based on the Figure shown, do you want to use adaptive threshold (yes/no)'};
-dlgTitle = 'Method to use for the analysis';
-numLines = 1;
-defaultVal = {'yes'};
-answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 
-%% testing and storing user input
-assert(~isempty(answer{1}),'User cancel dialog, calculation aborted');
-assert(ischar(answer{1}), 'Unexpected answer, valid answer are: yes, no, y, n');
-
-if (or(strcmp(answer{1},'yes'),strcmp(answer{1},'y')))
-    method2Use = 'adaptThreshold';
-elseif or(strcmp(answer{1},'no'),strcmp(answer{1},'n'))
-    method2Use = 'normThreshold';
-else
-    error('Unexpected answer, valid answer are: yes, no, y, n');
+answer = questdlg('Which method should be use?', ...
+	'Threshold method', ...
+	'Adaptive','Automated','None - cancel','Adaptive');
+% Handle response
+switch answer
+    case 'Adaptive'
+        disp([answer ' coming right up.'])
+        method2Use = 'adaptThreshold';
+    case 'Automated'
+        disp([answer ' coming right up.'])
+        method2Use = 'normThreshold';
+    case 'None - cancel'
+        disp([answer ' we get out now'])
+        return
 end
 
 %% Looping through the Data
 
 h = waitbar(0);
-bins = zeros(nBins,size(images2Analyze,1)); %Store Bins
+nImStacks = size(images2Analyze,1);
+bins = zeros(nBins,nImStacks); %Store Bins
 occurrences = bins; % Store occurences
 
-for j = 1:size(images2Analyze,1)
-    hMessage = sprintf('Loading image stack number %d/%d',j,size(images2Analyze,1));
+allData = [];
+for j = 1:nImStacks
+    hMessage = sprintf('Loading image stack number %d/%d',j,nImStacks);
     waitbar(0,h,hMessage);
     %Data loading
-    path2Stacks = strcat(images2Analyze(j).folder,'\');
+    path2Stacks = strcat(images2Analyze(j).folder,filesep);
     p2file      = strcat(path2Stacks,images2Analyze(j).name);
     warning('off');
     fileInfo    = loadMovie.tif.getinfo(p2file);
@@ -115,12 +120,14 @@ for j = 1:size(images2Analyze,1)
     warning('on');
     
   
-    dataForHistogram = [];
+    % init stack data
+    stackData = [];
     
-    hMessage = sprintf('Analysis of Stack Number %d/%d',j,size(images2Analyze,1));
+    hMessage = sprintf('Analysis of Stack Number %d/%d',j,nImStacks);
     %loop through the image of the current stack
-    for i=1:size(IMStack,3)
-    waitbar(i/size(IMStack,3),h,hMessage);
+    nIM = size(IMStack,3);
+    for i=1:nIM
+        waitbar(i/size(IMStack,3),h,hMessage);
         % Loading image number i
         IM = IMStack(:,:,i);
         I  = double(IM);
@@ -137,64 +144,118 @@ for j = 1:size(images2Analyze,1)
         %better results with adaptive threshold and then loop through the
         %pore. (e.g. couple of minute and it was not done for a single
         %frame).
-        
         %%%%%%%%%%%%%%%%%%%%END NOTE TO RAFA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        if strcmp(method2Use,'adaptThreshold')
-        % Get an adaptive threshold (~depends on local intensity levels)
-        T  = adaptthresh(I,Threshold,'ForegroundPolarity','dark','Statistic','mean');
-        % Binarization of image and cleaning
-        BWadapt = imbinarize(I,T);
-        BWadapt = bwareaopen(BWadapt,4);
-        se = strel('disk',2);
-        BWadapt = imclose(BWadapt,se);
-        BW_pores = ~BWadapt;
-        
-        elseif strcmp(method2Use,'normThreshold')
-        BW = imbinarize(IM2proc);
-        BW_pores = ~BW;
-        BW_pores = bwareaopen(BW_pores,9); 
+        switch answer
+            case 'Adaptive'
+                disp([answer ' coming right up.'])
+                % Get an adaptive threshold (~depends on local intensity levels)
+                T  = adaptthresh(I,Threshold,'ForegroundPolarity','dark','Statistic','mean');
+                % Binarization of image and cleaning
+                BWadapt = imbinarize(I,T);
+                BWadapt = bwareaopen(BWadapt,4);
+                se = strel('disk',2);
+                BWadapt = imclose(BWadapt,se);
+                BW_pores = ~BWadapt;
+
+            case 'Automated'
+                disp([answer ' coming right up.'])
+                BW = imbinarize(I);
+                BW_pores = ~BW;
+                BW_pores = bwareaopen(BW_pores,9); 
+            otherwise
+                error('Unexpected!')
         end
         
         %Remove pores that are in touch with the edges(uncertainty about
         %size)
         %Need to change this so it does not always clear pores
-        BW_pores = imclearborder(BW_pores);
+%         BW_pores = imclearborder(BW_pores);
         [L,n] = bwlabel(BW_pores);
-        outData = zeros(n,3);
-        for k = 1:n
-        tmpBW = L==k;
-        [ fWidth ] = SDcalc.fastWidthBW( tmpBW );
-        tmpSize = sum(sum(tmpBW));
-        outData(k,1) = fWidth;
-        outData(k,2) = tmpSize;
-
-        [B] = bwboundaries(tmpBW,'noholes');
-        Blength = cellfun(@length,B);
-        [~, idx] = maxk(Blength,2);
-        B = B(idx);
-        assert(length(B)==1,'problems');
-        boundary = B{1};
-        [ vals, names ] = SDcalc.solidity( boundary' );
-        outData(k,3) = vals{1};
-        end
         
+        % regions data is: width, size, solidity, isBorder
+        regData = zeros(n,4);
+%         hi = waitbar(0,'iterating over regions');
+        
+        % the par for is not super clean at the moment as it will also init
+        % the workes, I can fix that later on
+                
+        for k = 1:n %parfor can be placed here
+            
+            tmpBW = L==k;
+            % this one is the time consuming step -  are there any faster
+            % options?
+            % calculating width
+            [ fWidth ] = SDcalc.fastWidthBW( tmpBW );
+            
+            % calculating area
+            tmpSize = sum(sum(tmpBW));
+            
+            % getting boundary
+            [B] = bwboundaries(tmpBW,'noholes');
+            % make sure we get the largest shape in case there are children
+            Blength = cellfun(@length,B);
+            [~, idx] = maxk(Blength,2);
+            B = B(idx);
+            Blength = Blength(idx);
+            assert(length(B)==1,'problems');
+            boundary = B{1};
+            
+            % calculating solidity
+            % test for colinearity
+            tmp = sum(abs(diff(boundary)));
+            isColi = any(tmp==0);
+            if and(Blength >3,~isColi)
+                [ vals, names ] = SDcalc.solidity( boundary' );
+                sol = vals{1};
+            else
+                % if it is small or colinear then sol is 1
+                sol = 1;
+            end
+            
+            % checking if contour is at the border
+            test = imclearborder(tmpBW);
+            isBorder = sum(test(:)) == 0;
+            
+            % clean way of indexing so parfor works
+            tmpOut = [fWidth, tmpSize, sol, isBorder];
+            regData(k,:) = tmpOut;
+            
+            disp(['Done for region ' num2str(k) '/' num2str(n)...
+                   '; with b: ' num2str(length(boundary))])
+%             waitbar(k / n)
+        end
+        disp(['Done for Image ' num2str(i) '/' num2str(nIM)])
+        disp('---------------------NEXT IMAGE ----------')
+%         close(hi)
 %         %Get properties of the pores on the image.
 %         stats = regionprops(BW_pores,'Area','MajorAxisLength',...
 %         'MinorAxisLength');
-
-%         dataForHistogram = [dataForHistogram [stats.Area].*pxArea];
+        regData(:,1:2) = regData(:,1:2).*pxArea;
+        % add info about image index
+        regData = cat(2,ones(n,1).*i,regData);
+        stackData = cat(1,stackData, regData);
     end
-    %need to fix the above part before this
-%     [midBin, ~,occurrence]=Misc.lnbin(dataForHistogram,20);
-%     bins(:,j) = midBin;
-%     occurrences(:,j) = occurrence;
-%     histData(j).bins = midBin;
-%     histData(j).occurrences = occurrences;
-end
- close(h);
-h = msgbox('The Data were succesfully saved !', 'Success');
+    
+    % add info about tif index
+    stackData = cat(2,ones(size(stackData,1),1).*j,stackData);
+    
+    disp(['Done for Tif file ' num2str(j) '/' num2str(nImStacks)])
+    disp('---------------------NEXT TIF ----------')
+        
+    allData = cat(1,allData, stackData);
 
+end
+close(h);
+
+%%
+T = array2table(allData,...
+    'VariableNames',{'TifIDX','ImageIDX','Width','Area', 'Solidity','IsAtBorder'});
+
+save([ path2Stacks 'poreProps.mat'],'T')
+
+h = msgbox('The Data were succesfully saved !', 'Success');
+return
  %% Plotting
 % H1 = figure(10);
 % hold (gca,'on')
@@ -203,8 +264,8 @@ h = msgbox('The Data were succesfully saved !', 'Success');
 % set(gca,'XScale','log');
 % ylabel('Number of Pores');
 % xlabel('Pore area');
-% leg = cell(1,size(images2Analyze,1));
-% for i = 1:size(images2Analyze,1)
+% leg = cell(1,nImStacks);
+% for i = 1:nImStacks
 %     plot(bins(:,i),occurrences(:,i));
 %     leg{i} = sprintf('Stack %d',i);
 % 
