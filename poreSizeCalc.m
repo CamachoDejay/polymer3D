@@ -4,7 +4,7 @@ close all;
 
 %% User Input
 pxSize = 100; %in nm
-Threshold = 0.7; %number between 0 and 1 (% of max intensity)
+Threshold = 0.5; %number between 0 and 1 (% of max intensity)
 bigPores = 25; %in px ("draw a line" between small pores and big pores);
 nBins = 20; %For Log histogram
 % used during testing 2, normal should 244
@@ -21,6 +21,10 @@ currentFolderName = mainFolderName(idx(end)+1:end) ;
 %Remove dots from the name
 currentFolderName = regexprep(currentFolderName,'\.','_');
 
+% generate folder to store output
+segDir = [mainFolderName filesep 'SegementedStacks'];
+status = mkdir(segDir);
+
 %Extract the part of the folder that is a tif file
 Folder_Content = dir(mainFolderName);
 index2Images   = contains({Folder_Content.name},'.tif');
@@ -29,10 +33,10 @@ images2Analyze = Folder_Content(index2Images);
 stack2Load  = 1;
 path2Stacks = strcat(images2Analyze(stack2Load).folder,filesep);
 p2file      = strcat(path2Stacks,images2Analyze(stack2Load).name);
-warning('off');
+warning('off','all');
 fileInfo    = loadMovie.tif.getinfo(p2file);
 IM     = loadMovie.tif.getframes(p2file, 10); %Loading on of the frame
-warning('on');
+warning('on','all');
 
 % smoothing the image
 IM = imgaussfilt(IM,2);
@@ -124,8 +128,10 @@ for j = 1:nImStacks
     hMessage = sprintf('Analysis of Stack Number %d/%d',j,nImStacks);
     %loop through the frames of the current stack
     nIM = nFrame;
-    for i=1:nIM
-        waitbar(i/nIM,h,hMessage);
+    waitbar(j/nImStacks,h,hMessage);
+    
+    parfor i=1:nIM %% PARFOR CAN BE PLACED HERE
+        
         % Loading image number i
         warning('off','all')
         IM     = loadMovie.tif.getframes(p2file, i);
@@ -169,84 +175,105 @@ for j = 1:nImStacks
         end
         
         segIm(:,:,i) = BW_pores;
-        %Remove pores that are in touch with the edges(uncertainty about
-        %size)
-        %Need to change this so it does not always clear pores
-%         BW_pores = imclearborder(BW_pores);
-        [L,n] = bwlabel(BW_pores);
-              
-        % regions data is: width, size, solidity, isBorder
-        regData = zeros(n,4);
-%         hi = waitbar(0,'iterating over regions');
         
-        % the par for is not super clean at the moment as it will also init
-        % the workes, I can fix that later on
+        % pores not conected to the border
+        im_clean = imclearborder(BW_pores);
+        % pores conected to the border
+        im_border = and(BW_pores,~im_clean);
         
-        % Iterating over each region
-        parfor k = 1:n %parfor can be placed here
-            
-            tmpBW = L==k;
-            % this one is the time consuming step -  are there any faster
-            % options?
-            % calculating width
-            [ fWidth ] = SDcalc.fastWidthBW( tmpBW );
-            
-            % calculating area
-            tmpSize = sum(sum(tmpBW));
-            
-            % getting boundary
-            [B] = bwboundaries(tmpBW,'noholes');
-            % make sure we get the largest shape in case there are children
-            Blength = cellfun(@length,B);
-            [~, idx] = maxk(Blength,2);
-            B = B(idx);
-            Blength = Blength(idx);
-            assert(length(B)==1,'problems');
-            boundary = B{1};
-            
-            % calculating solidity
-            % test for colinearity
-            tmp = sum(abs(diff(boundary)));
-            isColi = any(tmp==0);
-            if and(Blength >3,~isColi)
-                [ vals, names ] = SDcalc.solidity( boundary' );
-                sol = vals{1};
-            else
-                % if it is small or colinear then sol is 1
-                sol = 1;
-            end
-            
-            % checking if contour is at the border
-            test = imclearborder(tmpBW);
-            isBorder = sum(test(:)) == 0;
-            
-            % clean way of indexing so parfor works
-            tmpOut = [fWidth, tmpSize, sol, isBorder];
-            regData(k,:) = tmpOut;
-            
-            disp(['Done for region ' num2str(k) '/' num2str(n)...
-                   '; with b: ' num2str(length(boundary))])
-%             waitbar(k / n)
-        end
+        
+        % quick calculation of shape descriptors
+        stats1 = regionprops('table',im_clean,'Area','MajorAxisLength','MinorAxisLength','Orientation','Solidity','Eccentricity');
+        stats1.IsBorder = zeros(size(stats1,1),1);
+
+        stats2 = regionprops('table',im_border,'Area','MajorAxisLength','MinorAxisLength','Orientation','Solidity','Eccentricity');
+        stats2.IsBorder = ones(size(stats2,1),1);
+
+        regData = [];
+        regData = [stats1;stats2];
+        
+% % %         %Remove pores that are in touch with the edges(uncertainty about
+% % %         %size)
+% % %         %Need to change this so it does not always clear pores
+% % % %         BW_pores = imclearborder(BW_pores);
+% % %         [L,n] = bwlabel(BW_pores);
+% % %               
+% % %         % regions data is: width, size, solidity, isBorder
+% % %         regData = zeros(n,4);
+% % % %         hi = waitbar(0,'iterating over regions');
+% % %         
+% % %         % the par for is not super clean at the moment as it will also init
+% % %         % the workes, I can fix that later on
+% % %         
+% % %         % Iterating over each region
+% % %         parfor k = 1:n %parfor can be placed here
+% % %             
+% % %             tmpBW = L==k;
+% % %             % this one is the time consuming step -  are there any faster
+% % %             % options?
+% % %             % calculating width
+% % %             [ fWidth ] = SDcalc.fastWidthBW( tmpBW );
+% % %             
+% % %             % calculating area
+% % %             tmpSize = sum(sum(tmpBW));
+% % %             
+% % %             % getting boundary
+% % %             [B] = bwboundaries(tmpBW,'noholes');
+% % %             % make sure we get the largest shape in case there are children
+% % %             Blength = cellfun(@length,B);
+% % %             [~, idx] = maxk(Blength,2);
+% % %             B = B(idx);
+% % %             Blength = Blength(idx);
+% % %             assert(length(B)==1,'problems');
+% % %             boundary = B{1};
+% % %             
+% % %             % calculating solidity
+% % %             % test for colinearity
+% % %             tmp = sum(abs(diff(boundary)));
+% % %             isColi = any(tmp==0);
+% % %             if and(Blength >3,~isColi)
+% % %                 [ vals, names ] = SDcalc.solidity( boundary' );
+% % %                 sol = vals{1};
+% % %             else
+% % %                 % if it is small or colinear then sol is 1
+% % %                 sol = 1;
+% % %             end
+% % %             
+% % %             % checking if contour is at the border
+% % %             test = imclearborder(tmpBW);
+% % %             isBorder = sum(test(:)) == 0;
+% % %             
+% % %             % clean way of indexing so parfor works
+% % %             tmpOut = [fWidth, tmpSize, sol, isBorder];
+% % %             regData(k,:) = tmpOut;
+% % %             
+% % %             disp(['Done for region ' num2str(k) '/' num2str(n)...
+% % %                    '; with b: ' num2str(length(boundary))])
+% % % %             waitbar(k / n)
+% % %         end
         disp(['Done for Image ' num2str(i) '/' num2str(nIM)])
         disp('---------------------NEXT FRAME ----------')
-%         close(hi)
-%         %Get properties of the pores on the image.
-%         stats = regionprops(BW_pores,'Area','MajorAxisLength',...
-%         'MinorAxisLength');
-        regData(:,1:2) = regData(:,1:2).*pxArea;
-        % add info about image index
-        regData = cat(2,ones(n,1).*i,regData);
-        tifStackData = cat(1,tifStackData, regData);
+
+        % changing from pixel^2 to micron^2
+        regData.Area = regData.Area.*pxArea;
+        % changing form pixel to micron
+        regData.MajorAxisLength = regData.MajorAxisLength.*(pxSize*1e-3);
+        regData.MinorAxisLength = regData.MinorAxisLength.*(pxSize*1e-3);
+        % add frame index
+        tTmp = table(ones(size(regData,1),1).*i,'VariableNames',{'FrameIDX'});
+        regData = [tTmp, regData];
+        % store
+        tifStackData = [tifStackData; regData];
     end
     
     % add info about tif index
-    tifStackData = cat(2,ones(size(tifStackData,1),1).*j,tifStackData);
+    tTmp = table(ones(size(tifStackData,1),1).*j,'VariableNames',{'TifIDX'});
+    tifStackData = [tTmp, tifStackData];
     
     disp(['Done for Tif file ' num2str(j) '/' num2str(nImStacks) ', now saving'])
     
     % now we save segmented images
-    tifName = sprintf('%s%sSegmented_%s',mainFolderName,filesep,tmpName);
+    tifName = [segDir filesep 'Segmented_' tmpName];
     t = Tiff(tifName, 'w');
     setTag(t,'ImageLength',size(segIm,1))
     setTag(t,'ImageWidth',size(segIm,2))
@@ -270,22 +297,23 @@ for j = 1:nImStacks
     t.close 
 
     disp('---------------------NEXT TIF ----------')
-        
-    allData = cat(1,allData, tifStackData);
+    
+    % store in main table
+    allData = [allData; tifStackData];
 
 end
 close(h);
 
 %%
-T = array2table(allData,...
-    'VariableNames',{'TifIDX','ImageIDX','Width','Area', 'Solidity','IsAtBorder'});
+% % % T = array2table(allData,...
+% % %     'VariableNames',{'TifIDX','ImageIDX','Width','Area', 'Solidity','IsAtBorder'});
 
-save([ path2Stacks 'poreProps.mat'],'T')
+save([ path2Stacks 'poreProps.mat'],'allData')
 
 h = msgbox('The Data were succesfully saved !', 'Success');
 return
 %% Plotting
-totalV = T.Area;
+totalV = allData.Area;
 totalV = totalV(:);
 [CDF,CCDF] = Misc.getCDF(totalV);
 
