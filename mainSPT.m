@@ -41,27 +41,99 @@ fPath = [fPath filesep fName];
 %%
 delta = 4;
 pxSize = 100;
-FWHM_nm = 200;
+FWHM_nm = 300;
 FWHM_pix = FWHM_nm / pxSize;
 % for GLRT
-chi2 = 24;
+chi2 = 50;
 
-tPos{8,1}=[];
-
-figure(1)
-clf
+% generate a list of all localized molecules per im plane, together with a
+% common list for all im planes
+tLoc{8,1}=[];
+rTh = 4;
+consLoc = [];
 
 for i = 1:8
+    
     im = data(:,:,i);
     im = double(im);
     [ pos, inten ] = Localization.smDetection( im, delta, FWHM_pix, chi2 );
-    tPos{i} = [pos,inten];
+    tLoc{i} = [pos,inten];
+    
+    if isempty(consLoc)
+        consLoc = pos;
+    else
+        if ~isempty (pos)
+            [ consLoc ] = Localization.consolidatePos( consLoc, pos, rTh );
+        end
+        
+    end
+    
+end
+%%
+% build ROIs
+ROIcent = round(consLoc);
+ROIcent(end,:) = [457,670];
+molRad = 5;
+nLoc   = size(ROIcent,1);
+imSize = [size(data,1),size(data,2)];
+
+% test for molecules to close to the im edges
+tVal = (ROIcent(:,1) - molRad);
+test = tVal < 1;
+ROIcent(test,1) = molRad +1;
+
+tVal = (ROIcent(:,2) - molRad);
+test = tVal < 1;
+ROIcent(test,2) = molRad +1;
+
+tVal = (ROIcent(:,1) + molRad);
+test = tVal > imSize(2);
+ROIcent(test,1) = imSize(2) - molRad;
+
+tVal = (ROIcent(:,2) + molRad);
+test = tVal > imSize(1);
+ROIcent(test,2) = imSize(1) - molRad;
+
+
+ROIs = zeros(nLoc,4);
+ROIs(:,1) = round(ROIcent(:,1))-molRad;
+ROIs(:,2) = round(ROIcent(:,1))+molRad;
+ROIs(:,3) = round(ROIcent(:,2))-molRad;
+ROIs(:,4) = round(ROIcent(:,2))+molRad;
+
+imLims = repmat([1 imSize(2) 1 imSize(1)],nLoc,1);
+test = [ROIs(:,1)>=imLims(:,1), ROIs(:,2)<=imLims(:,2),...
+        ROIs(:,3)>=imLims(:,3), ROIs(:,4)<=imLims(:,4)];
+    
+assert(all(test(:)), 'Problems, unexpected issues during ROI definition')
+
+
+%%
+
+% figure to check
+figure(1)
+clf
+for i = 1:8
+    im = data(:,:,i);
+    pos = tLoc{i};
+
     subplot(2,4,i)
     imagesc(im)
     axis image
     hold on
-    plot(pos(:,1),pos(:,2),'xr')
+    if ~isempty(pos)
+        plot(pos(:,1),pos(:,2),'og','markersize',20)
+    end
+    plot(consLoc(:,1),consLoc(:,2),'xr','markersize',5) 
+%     for j=1 : nLoc
+%         plot(ROI(1:2,j),ROI(3:4,j),'-b')
+%     end
     hold off
+%     colormap hot
+%     title(['Im Channel: ' num2str(i)])
+%     a = gca;
+%     a.FontSize = 14;
+    
 end
 
 % make a common list of sm detections? should I have a test for seeing a
