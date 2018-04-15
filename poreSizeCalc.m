@@ -4,8 +4,8 @@ close all;
 
 %% User Input
 pxSize = 100; %in nm
-Threshold = 0.5; %number between 0 and 1 (% of max intensity)
-bigPores = 25; %in px ("draw a line" between small pores and big pores);
+Threshold = 0.6; %number between 0 and 1 (% of max intensity)
+
 % used during testing 2, normal should 244
 nFrame = 244; %n of frame to analyze
 fileExt = '.tif';
@@ -13,7 +13,6 @@ outputName = 'PoreSize-Results';
 %% Loading Data
 % conversion from pixel to area
 pxArea = pxSize*pxSize*1e-6; %in µm^2
-bigPores = bigPores*pxArea;
 
 [file2Analyze,currentFolderName,outDir] = Misc.loadFolder(fileExt,outputName);
 
@@ -82,6 +81,8 @@ for j = 1:nImStacks
         regData = [tTmp, regData];
         % store
         tifStackData = [tifStackData; regData];
+        %TODO:
+        %Calculate pore volume fraction
     end
     
     % add info about tif index

@@ -70,7 +70,7 @@ for i = 1 : size(file2Analyze,2)
     [XX, YY] = meshgrid(xf,xi);
     IDX(:,2) = XX(:);
     IDX(:,3) = YY(:);
-    clear XX YY xi xf dIDX
+    clear XX YY xi xf 
 
     lastIDX = size(IDX,1);
     lastStr = num2str(lastIDX);
@@ -122,12 +122,12 @@ for i = 1 : size(file2Analyze,2)
     fprintf(fid,'Adaptive Threshold sensitivity: %0.1f\n',Threshold);
     fprintf(fid,'Three-dimensional connectivity - BWareaopen: %d\n',connectivity);
     fprintf(fid,'strel disk dimension for imopen: %d\n',diskDim);
-    fprintf(fid,'Image partition in chunck: %d\n',dIDX);
+    fprintf(fid,'Image partition in chunck: %d x %d x %d \n',dIDX,dIDX,nFrame);
     
     fclose(fid);
 
     %%%%%%%%%%%%%%% Plotting %%%%%%%%%%%%%%%
-    if i==1
+    if i==1 %only plot for the first stack
         figure(1)
         shg
         SE = strel('disk',3);
