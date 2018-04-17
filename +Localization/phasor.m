@@ -1,5 +1,7 @@
 function [x,y,e] = phasor(ROI)
-%PHASOR Summary of this function goes here
+%PHASOR calculates the sub-pixel localization of a single particle in the
+%ROI. NOTE, x: position along the first dimention, y: position alog the
+%second dimention.
 %   Detailed explanation goes here
 
 % I did a quick test and fft2 can work on integers and gives back doubles.
@@ -23,7 +25,7 @@ roiCenter = median([1,roiSize]);
 
 % calculate the angle of the x-phasor from the first fourier coefficient in
 % X;
-angX = angle(fftROI(1,2));
+angX = angle(fftROI(2,1));
 % correct the angle
 if angX>0
     angX = angX -2*pi;
@@ -34,7 +36,7 @@ PositionX = (abs(angX) / (2*pi/roiSize) + 1);
 
 % calculate the angle of the x-phasor from the first fourier coefficient in
 % X;
-angY = angle(fftROI(2,1));
+angY = angle(fftROI(1,2));
 % correct the angle
 if angY>0
     angY = angY -2*pi;

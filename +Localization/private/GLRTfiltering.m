@@ -1,4 +1,4 @@
-function [ BW, L0mL1 ] = GLRTfiltering( imIn, delta, FWHM_pix, chi2  )
+function [ BW, L0mL1, FAR ] = GLRTfiltering( imIn, delta, FWHM_pix, chi2  )
 %GLRTfiltering does a Generalized Likelihood Ratio Test on the input image.
 %The null hypothesis being that the pixel and its sourranding can be
 %explained by noise, and the test hypothesis that it can be explained by a
@@ -27,7 +27,7 @@ Ws = 1+delta*2;
 % calculations for estimating the PSF of the emitter -G-, which we
 % approximate by a gaussian.
 %   calculating the sigma of the gaussian from the FWHM
-sigma_pix = FWHM_pix / (2*((2*log(2))^0.5));
+sigma_pix = FWHM_pix / sqrt(8*log(2));
 %   calculating a gaussian PSF located in the middle of the ROI
 psf_model.name = 'gaussian';
 psf_model.sigma_x = sigma_pix;
@@ -63,6 +63,8 @@ X_sqr_win_mean = imboxfilt(imIn.^2,Ws);
 % calculating the image of the variance
 X_win_var      = X_sqr_win_mean - X_win_mean.^2;
 % Image that contains the sum of the variance squared
+% sXbar2 is variance of image multiplied by Ws^2, the name sXbar2 might not
+% be very accurate: TODO FIX NAME
 sXbar2 = X_win_var.*(Ws^2);
 % removing the useless part of the image
 sXbar2 = sXbar2(delta+1:1:s1-delta,delta+1:1:s2-delta);
@@ -73,11 +75,12 @@ I_hat = conv2(imIn,G_bar,'valid')./sGbar2;
 % explained by random noise or by a gaussian. L(H_0)-L(H_1)
 L0mL1   = ( (Ws^2)/2 ) * (log(1-(((I_hat.^2) .* sGbar2)./sXbar2)));
 % Detection at constant false alarm rate (CFAR)
+FAR = -2*(L0mL1);
 BW = true([ud_s1,ud_s2]);
-BW(-2*(L0mL1) > chi2) = false;
+BW(FAR > chi2) = false;
 BW = (~BW);
 BW = padarray(BW,[delta delta]);
-
+FAR = padarray(FAR,[delta delta]);
 % post conditions
 assert(all(size(BW) == size(imIn)),'Ups, problems! size of output image makes no sense')
 

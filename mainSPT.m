@@ -6,7 +6,7 @@ clear
 close all
 clc
 
-%% path to the callibration
+% path to the callibration
 fPath = '/Users/rafa/Documents/MATLAB/data/Boris/180322-Boris-Calmultiplane/BeadsCalibrationZStack_2';
 fName = 'BeadsCalibrationZStack_2_MMStack_Pos0.ome.tif';
 
@@ -15,6 +15,7 @@ fPath = [fPath filesep fName];
 % Calculate calibration
 [cal] = mpSetup.cali.calculate(fPath, false);
 
+disp('Done with calibration')
 %%
 % load and calibrate, when applied to the calibration data then we should
 % be able to demonstrate that it works
@@ -22,119 +23,104 @@ fPath = [fPath filesep fName];
 fPath = '/Users/rafa/Documents/MATLAB/data/Boris/180322-Boris-Calmultiplane/TL-OD2-200msExposureR2_1';
 fName = 'TL-OD2-200msExposureR2_1_MMStack_Pos0.ome.tif';
 fPath = [fPath filesep fName];
-[data, frameInfo, movInfo] = mpSetup.loadAndCal( fPath, cal, 1);
 
-% figure to show that it works
-% f = 1
-% for i =1:8
-%     subplot(2,4,i)
-%     imagesc(data(:,:,i,f))
-%     axis image
-%     grid on
+ff = 1;
+frame = 1:250;
+[data, frameInfo, movInfo] = mpSetup.loadAndCal( fPath, cal, frame);
+
+%%
+% for ii = 1:250
+%     for jj = 1:8
+%         subplot(2,4,jj)
+%         imagesc(data(:,:,jj,ii))
+%         axis image
+%     end
+%     waitforbuttonpress
 %     
-%     title(['Ordered channel ' num2str(i)])
-%     a = gca;
-%     a.XTickLabel = [];
-%     a.YTickLabel = [];
 % end
 
-%%
-delta = 4;
-pxSize = 100;
-FWHM_nm = 300;
-FWHM_pix = FWHM_nm / pxSize;
-% for GLRT
-chi2 = 50;
+%% detect particles
+% for a water immersion obj the best-fit gasuss to the PSF has 
+% sigma = 0.25 wavelength / NA
+objNA  = 1.2;
+emWave = 600;
+sigma_nm = 0.25 * emWave/objNA;
+FWHMnm = sigma_nm * sqrt(8*log(2));         
 
-% generate a list of all localized molecules per im plane, together with a
-% common list for all im planes
-tLoc{8,1}=[];
-rTh = 4;
-consLoc = [];
+GLRTprops.delta  = 6;
+GLRTprops.pxSnm  = 100;
+GLRTprops.FWHMnm = FWHMnm;
+GLRTprops.chi2   = 80;
 
-for i = 1:8
+rTh = 5; % in pixels
+ROIrad = 10;
+
+pList = [];
+p = [];
+
+for fIdx = frame
     
-    im = data(:,:,i);
-    im = double(im);
-    [ pos, inten ] = Localization.smDetection( im, delta, FWHM_pix, chi2 );
-    tLoc{i} = [pos,inten];
+    sfData = data(:,:,:,fIdx);
+    imSize = size(sfData);
+    % detect particles
+    [consLoc,totLoc] = mpSetup.localize(sfData, rTh, GLRTprops);
+    % build ROIs
+    [ROIs] = Misc.getROIs(consLoc,ROIrad,imSize);
     
-    if isempty(consLoc)
-        consLoc = pos;
-    else
-        if ~isempty (pos)
-            [ consLoc ] = Localization.consolidatePos( consLoc, pos, rTh );
-        end
-        
+    for i = 1:size(consLoc,1)
+        tmpLoc = consLoc(i,:);
+        tmpROI = ROIs(i,:);
+        p = mpSetup.particle(tmpLoc,fIdx,tmpROI,sfData);
+
+        pList = [pList, p];
     end
+    disp(['done for frame ' num2str(fIdx)])
+
+end
+
+%%
+objNA    = 1.2;
+emWave   = 600;
+pxSizeNm = 100;
+pList.setPSFprops(objNA, emWave, pxSizeNm);
+%%
+
+tic
+pList.superResolve;
+disp('Done with SR-loc')
+toc
+tic
+p.superResolve;
+toc
+
+%%
+test = findobj(pList,'frame',1);
+tmpVal = cat(1,test.superResLoc);
+tmpX = tmpVal(:,1);
+tmpY = tmpVal(:,2);
+tmpZ = tmpVal(:,3);
+% scatter3 (tmpX,tmpY, tmpZ)
+scatter (tmpX,tmpY,'kx')
+
+% axis image
+shg
+
+cols = {'k','r','g','b','y'};
+hold on
+for ii = 2:250
+    test = findobj(pList,'frame',ii);
+    cidx = ceil(ii/50);
+    tmpVal = cat(1,test.superResLoc);
+    tmpX = tmpVal(:,1);
+    tmpY = tmpVal(:,2);
+    tmpZ = tmpVal(:,3);
+%     scatter3 (tmpX,tmpY, tmpZ)
+    scatter (tmpX,tmpY,[cols{cidx} 'x '])
     
 end
-%%
-% build ROIs
-ROIcent = round(consLoc);
-ROIcent(end,:) = [457,670];
-molRad = 5;
-nLoc   = size(ROIcent,1);
-imSize = [size(data,1),size(data,2)];
+hold off
+axis image
 
-% test for molecules to close to the im edges
-tVal = (ROIcent(:,1) - molRad);
-test = tVal < 1;
-ROIcent(test,1) = molRad +1;
-
-tVal = (ROIcent(:,2) - molRad);
-test = tVal < 1;
-ROIcent(test,2) = molRad +1;
-
-tVal = (ROIcent(:,1) + molRad);
-test = tVal > imSize(2);
-ROIcent(test,1) = imSize(2) - molRad;
-
-tVal = (ROIcent(:,2) + molRad);
-test = tVal > imSize(1);
-ROIcent(test,2) = imSize(1) - molRad;
-
-
-ROIs = zeros(nLoc,4);
-ROIs(:,1) = round(ROIcent(:,1))-molRad;
-ROIs(:,2) = round(ROIcent(:,1))+molRad;
-ROIs(:,3) = round(ROIcent(:,2))-molRad;
-ROIs(:,4) = round(ROIcent(:,2))+molRad;
-
-imLims = repmat([1 imSize(2) 1 imSize(1)],nLoc,1);
-test = [ROIs(:,1)>=imLims(:,1), ROIs(:,2)<=imLims(:,2),...
-        ROIs(:,3)>=imLims(:,3), ROIs(:,4)<=imLims(:,4)];
-    
-assert(all(test(:)), 'Problems, unexpected issues during ROI definition')
-
-
-%%
-
-% figure to check
-figure(1)
-clf
-for i = 1:8
-    im = data(:,:,i);
-    pos = tLoc{i};
-
-    subplot(2,4,i)
-    imagesc(im)
-    axis image
-    hold on
-    if ~isempty(pos)
-        plot(pos(:,1),pos(:,2),'og','markersize',20)
-    end
-    plot(consLoc(:,1),consLoc(:,2),'xr','markersize',5) 
-%     for j=1 : nLoc
-%         plot(ROI(1:2,j),ROI(3:4,j),'-b')
-%     end
-    hold off
-%     colormap hot
-%     title(['Im Channel: ' num2str(i)])
-%     a = gca;
-%     a.FontSize = 14;
-    
-end
 
 % make a common list of sm detections? should I have a test for seeing a
 % molecule in at least 3 (or X) planes? once I have the common list I have
