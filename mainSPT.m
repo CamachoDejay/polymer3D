@@ -6,6 +6,9 @@ clear
 close all
 clc
 
+% ad general paths that can be usefull
+addpath(genpath('Ext'));
+
 % path to the callibration
 fPath = '/Users/rafa/Documents/MATLAB/data/Boris/180322-Boris-Calmultiplane/BeadsCalibrationZStack_2';
 fName = 'BeadsCalibrationZStack_2_MMStack_Pos0.ome.tif';
@@ -24,20 +27,22 @@ fPath = '/Users/rafa/Documents/MATLAB/data/Boris/180322-Boris-Calmultiplane/TL-O
 fName = 'TL-OD2-200msExposureR2_1_MMStack_Pos0.ome.tif';
 fPath = [fPath filesep fName];
 
-ff = 1;
-frame = 1:250;
+
+% load general information about the multi-plane movie
+[~, movInfo, ~ ]= loadMovie.ome.getInfo( fPath );
+
+frame = 1:movInfo.maxFrame(1);
 [data, frameInfo, movInfo] = mpSetup.loadAndCal( fPath, cal, frame);
 
-%%
-% for ii = 1:250
-%     for jj = 1:8
-%         subplot(2,4,jj)
-%         imagesc(data(:,:,jj,ii))
-%         axis image
-%     end
-%     waitforbuttonpress
-%     
-% end
+%% example of a frame list I will grow this into the frame object
+frameList = mcodekit.list.dl_list();
+for i = 1:8
+    tmp = data(:,:,i,1);
+    imP = Core.imPlane(tmp);
+    imP.setPixSizeNm(100);
+    imP.setTime(uint16(1)); 
+    frameList.append_key(imP);   
+end
 
 %% detect particles
 % for a water immersion obj the best-fit gasuss to the PSF has 
@@ -57,8 +62,9 @@ ROIrad = 10;
 
 pList = [];
 p = [];
+partList = mcodekit.list.dl_list();
 
-for fIdx = frame
+for fIdx = frame(1:10)
     
     sfData = data(:,:,:,fIdx);
     imSize = size(sfData);
@@ -70,9 +76,11 @@ for fIdx = frame
     for i = 1:size(consLoc,1)
         tmpLoc = consLoc(i,:);
         tmpROI = ROIs(i,:);
-        p = mpSetup.particle(tmpLoc,fIdx,tmpROI,sfData);
+        p = Core.particle(tmpLoc,fIdx,tmpROI,sfData);
 
         pList = [pList, p];
+        partList.append_key(p);
+        
     end
     disp(['done for frame ' num2str(fIdx)])
 
@@ -82,45 +90,123 @@ end
 objNA    = 1.2;
 emWave   = 600;
 pxSizeNm = 100;
+tic
 pList.setPSFprops(objNA, emWave, pxSizeNm);
+toc
+
+tic
+iterator = partList.get_iterator(); 
+            
+while (iterator.has_next())
+
+    pTmp = iterator.next();
+    pTmp.setPSFprops(objNA, emWave, pxSizeNm);
+%     idx = idx + 1;
+
+end
+toc
+
+%%
+ptest = partList.get_key(10);
 %%
 
 tic
 pList.superResolve;
 disp('Done with SR-loc')
 toc
+
 tic
-p.superResolve;
+iterator = partList.get_iterator(); 
+            
+while (iterator.has_next())
+
+    pTmp = iterator.next();
+    pTmp.superResolve();
+%     idx = idx + 1;
+
+end
 toc
 
-%%
-test = findobj(pList,'frame',1);
-tmpVal = cat(1,test.superResLoc);
-tmpX = tmpVal(:,1);
-tmpY = tmpVal(:,2);
-tmpZ = tmpVal(:,3);
-% scatter3 (tmpX,tmpY, tmpZ)
-scatter (tmpX,tmpY,'kx')
+ptest1 = pList(2);
+ptest2 = partList.get_key(2);
 
-% axis image
-shg
+%%
+tic
+test = findobj(pList,'frame',1);
+toc
+
+tic
+iterator = partList.get_iterator(); 
+ftotal = zeros(partList.size_,1);
+idx = 0;
+while (iterator.has_next())
+
+    idx = idx + 1;
+    pTmp = iterator.next();
+    ftotal(idx) = pTmp.frame;
+
+end
+
+idxList = find(ftotal==1);
+toc
+bla = [];
+for idx = idxList'
+    idx
+    tmp = partList.get_key(idx);
+    bla = [bla tmp];
+end
+%%
+% test = findobj(pList,'frame',1);
+% tmpVal = cat(1,test.superResLoc);
+% tmpX = tmpVal(:,1);
+% tmpY = tmpVal(:,2);
+% tmpZ = tmpVal(:,3);
+% % scatter3 (tmpX,tmpY, tmpZ)
+% scatter (tmpX,tmpY,'kx')
+% 
+% % axis image
+% shg
 
 cols = {'k','r','g','b','y'};
-hold on
-for ii = 2:250
+
+for ii = 1:250
+    
     test = findobj(pList,'frame',ii);
     cidx = ceil(ii/50);
     tmpVal = cat(1,test.superResLoc);
+    
     tmpX = tmpVal(:,1);
     tmpY = tmpVal(:,2);
     tmpZ = tmpVal(:,3);
 %     scatter3 (tmpX,tmpY, tmpZ)
-    scatter (tmpX,tmpY,[cols{cidx} 'x '])
-    
+    subplot(1,2,1)
+    scatter (tmpX,tmpY,[cols{cidx} 'x'])
+    hold on
+    subplot(1,2,2)
+    scatter (tmpX,tmpY,[cols{cidx} 'x'])
+    hold on
 end
+subplot(1,2,1)
 hold off
 axis image
+d = .6;
+c = [270.5,243.6];
+xlim([c(1)-d c(1)+d])
+ylim([c(2)-d c(2)+d])
+% ylim([242 243])
 
+subplot(1,2,2)
+hold off
+axis image
+d = .6;
+c = [430.3,277.2];
+xlim([c(1)-d c(1)+d])
+ylim([c(2)-d c(2)+d])
+shg
+%%
+% subplot(1,2,1)
+% xlim([269.5,271.5])
+% ylim([243, 244])
 
 % make a common list of sm detections? should I have a test for seeing a
 % molecule in at least 3 (or X) planes? once I have the common list I have
@@ -129,6 +215,3 @@ axis image
 % matrix between all channels. This should be generated in order to use
 % info from multiple planes to increase fit accuracy. it is from z tacks of
 % beads that we can create such a registration.
-
-
-
