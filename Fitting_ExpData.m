@@ -109,8 +109,8 @@ im_in = double(imStack);
       
         
         %Calculating z:
-        fitPar(Frame,label(j),3) = zCalibration2(3)*e^2+zCalibration2(2)*e+zCalibration2(1);
-        fitPar(Frame,label(j),7) = zCalibration1(3)*e1^2+zCalibration1(2)*e1+zCalibration1(1);
+        fitPar(Frame,label(j),3) = (e+zCalibration1(1))/zCalibration1(2);
+        fitPar(Frame,label(j),7) = (e+zCalibration1(1))/zCalibration1(2);
         
     end
 

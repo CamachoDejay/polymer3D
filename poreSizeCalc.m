@@ -113,9 +113,9 @@ totalAdapt = allDataAdapt.Area;
 totalAdapt = totalAdapt(:);
 [CDF,CCDF] = Misc.getCDF(totalAdapt);
 
-totalGlobal = allDataAdapt.Area;
+totalGlobal = allDataAuto.Area;
 totalGlobal  = totalGlobal (:);
-[CDF2,CCDF2] = Misc.getCDF(totalAdapt);
+[CDF2,CCDF2] = Misc.getCDF(totalGlobal);
 
 figure()
 subplot(1,2,1)
