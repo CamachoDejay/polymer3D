@@ -16,15 +16,16 @@ SNR     = bkg.SNR;
 d_range   = 'uint16';
 
 imStack = zeros(x_size,x_size,nImages);
-simPos  = zeros(emitter.num*nImages,2);
-simElip = ones(emitter.num*nImages,1); %currently use no elipticity
-
-for i=1:nImages
+simPos  = zeros(emitter.num,2,nImages);
+simElip = ones(emitter.num,nImages,1); %currently use no elipticity
+h = waitbar(0, 'Simulations of images...');
+for i = 1:nImages
     
 % calculations for emitters positions and int
 [ em_pos ] = EmitterSim.getRandPos(x_size-12, em_n );
 em_pos = em_pos+6;
-simPos((i-1)*em_n+1:i*em_n,:) = em_pos;
+[simPos(1:em_n,1,i),ind] = sort(em_pos(:,1));
+simPos(1:em_n,2,i) = em_pos(ind,2);
 int_model.name     = 'normal';
 int_model.mean_int = em_mean_int;
 int_model.sigma    = em_int_sigma;
@@ -51,15 +52,30 @@ max_int = round(max(G(:)));
 %bg_FWHM = round(max_int/SNR);
 
 % calculations for normal bg
+
 %Generate the noise of the background in the same way Boris was generating
 %the noise in test2DGradTracking so the results are comparable.
-noiseProp.maxCount = max_int;
-noiseProp.S2N = SNR;
-noiseProp.bkg = mean_bg;
-ROI = zeros(x_size);
-bg_im = Misc.generateNoise(ROI,'Gaussian',noiseProp);
+switch emitter.noiseType
+   
+    case 'Gaussian'
+        noiseProp.maxCount = max_int;
+        noiseProp.S2N = SNR;
+        noiseProp.bkg = mean_bg;
+        ROI = zeros(x_size);
+        bg_im = ImageNoise.generateNoise(ROI,'Gaussian',noiseProp);
+       
+    case 'Poisson'
+        noiseProp.maxCount = max_int;
+        noiseProp.S2N = SNR;
+        noiseProp.bkg = mean_bg;
+        ROI = zeros(x_size);
+        bg_im = ImageNoise.generateNoise(ROI,'Poisson',noiseProp);
+        
+    otherwise
+        bg_im = ones(size(im))*mean_bg;
+end
+
 bg_im = uint16(bg_im);
-%[ bg_im ] = ImageNoise.gauss_noise( size(X), mean_bg, bg_FWHM, d_range );
 
 for em_i = 1:em_n
     % get possition and intensity of the emitter
@@ -80,5 +96,7 @@ for em_i = 1:em_n
 end
 ccd_frame  = im+bg_im;
 imStack(:,:,i) = ccd_frame;
+waitbar( i/nImages, h, sprintf('Simulations of images... - %d / %d percent achieved',round(i/nImages*100),100));
 end
+close(h)
 end
