@@ -6,10 +6,6 @@
 %We will then check how the results look like for different signal to noise
 %ratio and check if gradientFit performs better than the centroid method
 
-clear;
-close all;
-clc;
-
 %% User Input
 nImages  = 1;
 % information about emitters
