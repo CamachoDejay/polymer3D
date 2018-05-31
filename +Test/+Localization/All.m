@@ -11,7 +11,7 @@ function fullLocalization()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 doPlot = true;
 pxSize = 95; % in nm
-imSize = 13; % in px
+imSize = 100; % in px
 setupPSFWidth = 220; %in nm (Calculated in Focus using PSFE plate, on the
 %15/02/2018 Exc wavelength = 532nm;
 
@@ -19,11 +19,13 @@ prompt = {'Enter number of frame to simulate: ',...
     'Enter number of molecules/frame: ',...
     'Enter a type of noise to add (none, Gaussian or Poisson):',...
     'Enter Signal to noise ratio (for Gaussian): ',...
-    'Enter background:','Enter number of counts:','Enter emitter intensity distribution width',...
+    'Enter background:','Enter number of counts:',...
+    'Enter emitter intensity distribution width',...
+    'Enter the maximum Ellipticity:',...
     'Enter the method to be used (Phasor or Gradient):'};
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
-defaultVal = {'100','10','Gaussian','10','500','10000','1000','Phasor'};
+defaultVal = {'100','10','Gaussian','20','500','10000','100','3','Phasor'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -57,16 +59,20 @@ assert(~isnan(maxCount),'Max count should be numerical');
 emIntSigma = str2double(answer(7));
 assert(~isnan(emIntSigma),'Intensity distribution width should be numerical');
 
-fitting = answer(8);
+emMaxSigma = str2double(answer(8));
+assert(~isnan(emMaxSigma),'Maximum ellipticity should be numerical');
+
+fitting = answer(9);
 assert(or(or(strcmp(fitting,'Phasor'),strcmp(fitting,'phasor')),...
     or(strcmp(fitting,'Gradient'),strcmp(fitting,'gradient'))),...
     'The requested algorithm is unknown, please check spelling');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%% END Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Allocation memory for results storage
 % Allocate memory for storing results
-simResults = table(zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),...
-    zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),...
-    zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),...
+simResults = table(zeros(nImages*nEm,1),zeros(nImages*nEm,1),zeros(nImages*nEm,1),zeros(nImages*nEm,1),...
+    zeros(nImages*nEm,1),zeros(nImages*nEm,1),zeros(nImages*nEm,1),zeros(nImages*nEm,1),zeros(nImages*nEm,1),...
+    zeros(nImages*nEm,1),zeros(nImages*nEm,1),zeros(nImages*nEm,1),zeros(nImages*nEm,1),...
     'VariableNames',{'realX','fitX', 'realY', 'fitY','realElip','cElip',...
     'fitElip','signal2Noise','fAbsErrorX','fAbsErrorY','cAbsErrorX',...
     'cAbsErrorY','errorFitElip'});
@@ -79,16 +85,18 @@ emitter.intSigma = emIntSigma;
 emitter.FWHM_nm  = setupPSFWidth;
 emitter.noiseType    = noiseType;
 emitter.posRange = [1+round(0.1*imSize) imSize-round(0.1*imSize)];
-emitter. sigmaY  = setupPSFWidth/pxSize;
-emitter. sigmaX  = setupPSFWidth/pxSize;
+emitter.maxSigma = emMaxSigma;
+detector.xSize   = imSize;
+detector.pxSize  = pxSize; %[nm/pix]
+bkg.mean = bckg;
+bkg.SNR = S2N;
 
 [imStack,simPos,simElip] = EmitterSim.simulateImages(nImages,emitter,detector,bkg);
 
 simResults.realX(:) = simPos(:,1,:);
-simResults.realY(:) = simPos(:,2);
-simResults.realElip(:) = simElip(:,1);
+simResults.realY(:) = simPos(:,2,:);
+simResults.realElip(:) = simElip;
 simResults.signal2Noise(:) = bkg.SNR;
-
 
 %% Localization and gradient Fitting
 
@@ -97,7 +105,7 @@ imBg = zeros(2*szWindow+1,2*szWindow+1);
 imBg = imBg+bkg.mean;
 xSize = size(imStack,2);
 ySize = size(imStack,1);
-GraR = 2; % The radius of Gradient used for caculation
+GraR = 4; % The radius of Gradient used for caculation
 countLocMol = 0;
 tic
 for i=1:size(imStack,3)
@@ -108,32 +116,29 @@ for i=1:size(imStack,3)
     % for GLRT
     chi2 = 24;
     %Localzation occurs here
-    [ pos, inten ] = Localization.smDetection(im_in, delta, FWHM_pix, chi2 );
+    [ pos, ~ ] = Localization.smDetection(im_in, delta, FWHM_pix, chi2 );
     countLocMol = countLocMol + size(pos,1);
     for j=1:size(pos,1)
         %Extract a roi around the localized emitter
         [ roi_lims ] = EmitterSim.getROI(pos(j,1), pos(j,2), szWindow, xSize, ySize);
-        % im(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2)) = ...
-          %            im(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2)) + im_roi;
-       
-        
-        %Check if full Roi could be taken
+
         if(abs(roi_lims(1)-roi_lims(2))~=2*szWindow || abs(roi_lims(3)-roi_lims(4))~=2*szWindow)
-            %if not give some padding
-%             padX = 2*szWindow - (roi_lims(2)-roi_lims(1));
-%             padY = 2*szWindow - (roi_lims(4)-roi_lims(3));
             ROI = imBg;
             ROI(1:abs(roi_lims(3)-roi_lims(4))+1,1:abs(roi_lims(1)-roi_lims(2))+1) =...
                 imStack(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
             
         else
             ROI = imStack(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2),i);
-%             padX = 0;
-%             padY = 0;
         end 
               
-        % Do gradient fitting
-        [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+        if or(strcmp(fitting,'gradient'),strcmp(fitting,'Gradient'))
+            [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+        else
+            [x,y,e] = Localization.phasor(ROI);
+            centOut.x = NaN;
+            centOut.y = NaN;
+            centOut.e = NaN;
+        end
         
         % Position in the initial referential
         xc = (round(pos(j,1)) + x);%in px

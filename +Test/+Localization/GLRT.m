@@ -98,9 +98,9 @@ title('Examplary simulated frame and results of the localization')
 axis image
 end
 
-disp('------------------------ TEST RESULTS ----------------------------\n')
+disp('------------------------ TEST RESULTS ----------------------------')
 fprintf('--------- %d / %d molecules localized \n', size(find(totPos),1),size(find(simPos),1));
-fprintf('--------- Center of localization deviated on average from %0.2f pixels\n',mean(abs(avgPos-avgSimPos)));
+fprintf('--------- Center of localization deviated on average from %0.2f pixels\n\n',mean(abs(avgPos-avgSimPos)));
 
 close(h);
 end

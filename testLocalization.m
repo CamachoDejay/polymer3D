@@ -30,16 +30,15 @@ close(fig);
 switch ind
     case 1
         disp('Starting the test of GLRT localization---------------------');
-        Test.GLRTLocalization;
-        disp('\n--------------------- Test Done ! ---------------------');
+        Test.Localization.GLRT;
+        disp('--------------------- Test Done ! ---------------------');
     case 2
         disp('Starting the test of subdiffraction localization-----------');
-        Test.SRLocalization;
+        Test.Localization.SR;
         disp('--------------------- Test Done ! ---------------------');
     case 3
         disp('Starting the full localization test------------------------');
-        Test.fullLocalization;
+        Test.Localization.All;
         disp('--------------------- Test Done ! ---------------------');
 end
-
 end

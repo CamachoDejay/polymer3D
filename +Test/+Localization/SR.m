@@ -165,7 +165,7 @@ disp('------------------------ TEST RESULTS ----------------------------')
 fprintf('--------- %d / %d molecules succesfully localized \n', size(find(~isnan(simResults.fitX)),1),nSim);
 fprintf('--------- Center of localization deviated on average from %0.4f pixels in X\n',nanmedian(abs(simResults.fAbsErrorX)));
 fprintf('--------- Center of localization deviated on average from %0.4f pixels in Y\n',nanmedian(abs(simResults.fAbsErrorY)));
-fprintf('--------- Ellipticity deviated on average from %0.2f\n',nanmedian(abs(simResults.errorFitElip)));
+fprintf('--------- Ellipticity deviated on average from %0.2f\n\n',nanmedian(abs(simResults.errorFitElip)));
 
 if doPlot
     figure(1)
