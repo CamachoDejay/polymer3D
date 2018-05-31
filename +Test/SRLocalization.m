@@ -1,5 +1,6 @@
-%Description: test2DGradTracking, simulate perfect/noisy PSF and use
-%gradient fitting to find the center. A table (simResults) is output which
+function SRLocalization()
+%Description: SRLocalization, simulate perfect/noisy PSF and use the chosen
+%algorithm to fit it. A table (simResults) is output which
 %contain the real value as well as the simulation parameters and the fit
 %value.
 
@@ -10,34 +11,30 @@
 %- Signal to noise (for Gaussian noise)
 %- Backgroud to add
 %- Max count (= Gaussian amplitude)
+%- Fitting method to use (Phasor or Gradient)
 
 %2) PSF is simulated and noise is added according to the user input
 
-%3) Gradient fit is performed
+%3) Fit is performed
 
 %4) OUTPUT: table is generated containing simulated data and fitted results
 %as well as user input parameters
-
-clear
-close all
-clc
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-fitting = 'gradient';%'phasor'
 doPlot = true;
-pxSize = 100; % in nm
+pxSize = 95; % in nm
 imSize = 13; % in px
-filtering = false;
-setupPSFWidth = 220; %in nm (Calculated in Focus using PSFE plate, on the
+setupPSFWidth = 300; %in nm (Calculated in Focus using PSFE plate, on the
 %15/02/2018 Exc wavelength = 532nm;
 
 prompt = {'Enter number of simulation: ',...
     'Enter a type of noise to add (none, Gaussian or Poisson):',...
     'Enter Signal to noise ratio (for Gaussian): ',...
-    'Enter background:','Enter max count:', 'Enter Min pos', 'Enter Max pos'};
+    'Enter background:','Enter max count:', 'Enter Min pos',...
+    'Enter Max pos', 'Enter the method to be used (Phasor or Gradient):'};
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
-defaultVal = {'10000','Gaussian','8','1000','100','5','9'};
+defaultVal = {'10000','Gaussian','8','500','10000','5','9','Phasor'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -56,8 +53,8 @@ assert(isnan(str2double(noiseType)),'Type of noise should not be a number');
 S2N = str2double(answer(3));
 assert(~isnan(S2N),'Variance should be numerical');
 
-bkg = str2double(answer(4));
-assert(~isnan(bkg),'Background should be numerical');
+bckg = str2double(answer(4));
+assert(~isnan(bckg),'Background should be numerical');
 maxCount = str2double(answer(5));
 assert(~isnan(maxCount),'Max count should be numerical');
 
@@ -69,6 +66,10 @@ assert(~isnan(maxPos),'Max position should be numerical');
 
 assert(minPos<= maxPos,'Min position should be smaller than max position');
 
+fitting = answer(8);
+assert(or(or(strcmp(fitting,'Phasor'),strcmp(fitting,'phasor')),...
+    or(strcmp(fitting,'Gradient'),strcmp(fitting,'gradient'))),...
+    'The requested algorithm is unknown, please check spelling');
 %%%%%%%%%%%%%%%%%%%%%%%%%% END Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Simulation
@@ -83,21 +84,29 @@ simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
     'cAbsErrorY','errorFitElip','noiseType','background','cFitX',...
     'cFitY','fittingMethod'});
 
-noiseProp = struct('S2N',S2N,'bkg',bkg,'maxCount',maxCount);
+noiseProp = struct('S2N',S2N,'bkg',bckg,'maxCount',maxCount);
+
 %simulate data, analyze and store results
 halfWay = round(nSim/2);
 xid = 0:imSize-1;
 yid = 0:imSize-1;
 
-xVal = xid.*pxSize;
-yVal = yid.*pxSize;
 GraR = 4; % The radius of Gradient used for caculation
-tic
+
+%Info for simulation
+emitter.num = 1;
+emitter.meanInt = maxCount;
+emitter.intSigma = 0.1 * maxCount;
+emitter.FWHM_nm = setupPSFWidth;
+emitter.posRange = [minPos maxPos];
+emitter.noiseType = noiseType;
+detector.xSize = imSize;
+detector.pxSize = pxSize; %[nm/pix]
+bkg.mean = bckg;
+bkg.SNR = S2N;
+
+h = waitbar(0, 'Simulations and Fitting...');
 for i = 1: nSim
-    
-    pos_real = [minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize),...
-        minPos*pxSize-pxSize+ rand(1)*((maxPos-minPos)*pxSize)];%random number between 400 and 800. (400 yields)
-    %     %px No 5 while 800 give pixel number 9 ==> center pixel +-2.
     if i <halfWay
         % pos_real = [600,600];
         sigX = setupPSFWidth+rand(1)*setupPSFWidth*2;
@@ -110,33 +119,27 @@ for i = 1: nSim
         %           sigX = setupPSFWidth;
         %           sigY = setupPSFWidth;
     end
+       
+    emitter.sigmaX = sigX/pxSize;
+    emitter.sigmaY = sigY/pxSize;
     
-    pos_pix = (pos_real./pxSize) + 1;
-    
-    sig = [sigX,sigY];
-    ROI = Misc.gaus2D(pos_real,sig,xVal,yVal,noiseProp.maxCount); %Generate 2D gaussian
+    [ROI,simPos,~] = EmitterSim.simulateImages(1,emitter,detector,bkg);
     
     % ROI coor is always the center position
     ROI_coor = [median(1:size(ROI,1)),median(1:size(ROI,1))];
 
-    simResults.signal2Bkg(i) = noiseProp.maxCount/bkg;
-    simResults.signal2Noise(i)  = noiseProp.S2N;
-    
-    % Adding noise onto the "perfect" gaussian
-    ROI = Misc.generateNoise(ROI,noiseType,noiseProp);
-    
-    if filtering
-        ROI = imgaussfilt(ROI,2);
-    end
-    % Do gradient fitting
-  
-     [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
-     
-     if strcmp(fitting,'phasor')
+    simResults.signal2Bkg(i) = noiseProp.maxCount/bckg;
+    simResults.signal2Noise(i)  = noiseProp.S2N; 
+ 
+    if or(strcmp(fitting,'gradient'),strcmp(fitting,'Gradient'))
+      [x,y,e,centOut] = Localization.gradFit(ROI,GraR);
+
+    else
      [x,y,e] = Localization.phasor(ROI);
-     else
-         fitting = 'gradient';
-     end
+     centOut.x = NaN;
+     centOut.y = NaN;
+     centOut.e = NaN;
+    end
      
     %Test fitting output
     if abs(x) > GraR || abs(y) > GraR || e<=0
@@ -149,8 +152,8 @@ for i = 1: nSim
     yc = (ROI_coor(2) + y);%in px
     
     %Store the results
-    simResults.realX(i)      = (pos_real(1)/pxSize)+1;
-    simResults.realY(i)      = (pos_real(2)/pxSize)+1;
+    simResults.realX(i)      = simPos(1);
+    simResults.realY(i)      = simPos(2);
     simResults.fitX(i)       = xc;
     simResults.fitY(i)       = yc;
     simResults.cFitX(i)      = (ROI_coor(1) + centOut(1).x);
@@ -160,32 +163,47 @@ for i = 1: nSim
     simResults.fitElip(i)    = e;
     simResults.noiseType(i)  = {noiseType};
     simResults.fittingMethod(i) = {fitting};
-    simResults.background(i) = bkg;
+    simResults.background(i) = bckg;
     simResults.cAbsErrorX(i) = (ROI_coor(1)+centOut(1).x)-simResults.realX(i);
     simResults.cAbsErrorY(i) = (ROI_coor(2)+centOut(1).y)-simResults.realY(i);
     
+    waitbar(i/nSim,h, sprintf('Simulation and fitting... %d /100 percent done',round(100*i/nSim)));
 end
 %Calculate errors and store them
 simResults.fAbsErrorX    = simResults.fitX-simResults.realX;
 simResults.fAbsErrorY    = simResults.fitY-simResults.realY;
 simResults.errorFitElip = simResults.fitElip-simResults.realElip;
-toc
-disp('Simulation Done');
+
+%% Plotting and displaying test results
+
+disp('------------------------ TEST RESULTS ----------------------------')
+fprintf('--------- %d / %d molecules succesfully localized \n', size(find(~isnan(simResults.fitX)),1),nSim);
+fprintf('--------- Center of localization deviated on average from %0.4f pixels in X\n',nanmedian(abs(simResults.fAbsErrorX)));
+fprintf('--------- Center of localization deviated on average from %0.4f pixels in Y\n',nanmedian(abs(simResults.fAbsErrorY)));
+fprintf('--------- Ellipticity deviated on average from %0.2f pixels in Y\n',nanmedian(simResults.errorFitElip));
 
 if doPlot
     figure(1)
-    % surf(xid,yid,G)
-    subplot(1,2,1)
-    surf(ROI)
-    % contourf(xid,yid,G)
+    subplot(1,3,1)
+    imagesc(ROI);
     xlabel('x-pos')
     ylabel('y-pos')
     axis image
-    view(2)
-    subplot(1,2,2)
-    imagesc(ROI);
-    ca = gca;
-    ca.YDir = 'normal';
-    axis image
-    shg
+    title('Example of simulated ROI')
+    
+    subplot(1,3,2)
+    histogram(simResults.fAbsErrorX)
+    hold on
+    histogram(simResults.fAbsErrorY)
+    xlabel('Error (pixel)')
+    ylabel('Occurrence')
+    
+    subplot(1,3,3)
+    scatter(simResults.realElip,simResults.fitElip)
+    xlabel('Simulated ellipticity')
+    ylabel('Fitted ellipticity')
+end
+
+close(h)
+
 end

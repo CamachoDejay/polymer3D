@@ -34,6 +34,7 @@ switch ind
         disp('--------------------- Test Done ! ---------------------');
     case 2
         disp('Starting the test of subdiffraction localization-----------');
+        Test.SRLocalization;
         disp('--------------------- Test Done ! ---------------------');
     case 3
         disp('Starting the full localization test------------------------');

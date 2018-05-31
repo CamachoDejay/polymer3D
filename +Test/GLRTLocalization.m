@@ -2,7 +2,7 @@ function GLRTLocalization()
 doPlot = true;
 pxSize = 95; % in nm
 imSize = 200; % in px
-setupPSFWidth = 350; %in nm (Calculated in Focus using PSFE plate, on the
+setupPSFWidth = 220; %in nm (Calculated in Focus using PSFE plate, on the
 %15/02/2018 Exc wavelength = 532nm;
 
 prompt = {'Enter number of frame to simulate: ',...
@@ -14,7 +14,7 @@ prompt = {'Enter number of frame to simulate: ',...
 
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
-defaultVal = {'500','10','Gaussian','8','1000','1000','100'};
+defaultVal = {'500','10','Gaussian','10','500','10000','100'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -52,6 +52,9 @@ emitter.meanInt  = maxCount;
 emitter.intSigma = emIntSigma;
 emitter.FWHM_nm  = setupPSFWidth;
 emitter.noiseType    = noiseType;
+emitter.posRange = [1+round(0.1*imSize) imSize-round(0.1*imSize)];
+emitter. sigmaY  = setupPSFWidth/pxSize;
+emitter. sigmaX  = setupPSFWidth/pxSize;
 bkg.mean = bkgMean;
 bkg.SNR  = S2N;
 
@@ -60,7 +63,7 @@ bkg.SNR  = S2N;
 %%
 h = waitbar(0,'Localization...');
 totPos = zeros(size(simPos));
-avgPos = zeros(1,size(simPos,3));
+avgPos = zeros(1,size(imStack,3));
 avgSimPos = avgPos;
 
 for i = 1 : size(imStack,3)
@@ -70,7 +73,7 @@ delta = 4;
 FWHM_pix = setupPSFWidth / pxSize; %[pix]
 % for GLRT
 chi2 = 24;
-[ pos, intensity ] = Localization.smDetection(im_in, delta, FWHM_pix, chi2 );
+[ pos, ~ ] = Localization.smDetection(im_in, delta, FWHM_pix, chi2 );
 totPos(1:size(pos,1),:,i) = pos;
 avgPos(1,i) = sqrt(mean(pos(:,1))^2 + mean(pos(:,2))^2);
 avgSimPos(1,i) = sqrt(mean(simPos(:,1,i))^2 + mean(simPos(:,2,i))^2);
@@ -93,7 +96,7 @@ end
 
 disp('------------------------ TEST RESULTS ----------------------------')
 fprintf('--------- %d / %d molecules localized \n', size(find(totPos),1),size(find(simPos),1));
-fprintf('--------- Center of localization deviated on average from %0.2f pixels',mean(avgPos-avgSimPos));
+fprintf('--------- Center of localization deviated on average from %0.2f pixels',mean(abs(avgPos-avgSimPos)));
 
 close(h);
 end

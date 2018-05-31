@@ -1,3 +1,4 @@
+function fullLocalization()
 %Aim of the code:
 %Test out the whole procedure that shall be performed in data analysis:
 % A) Receiving a stack of images (here simulated)
@@ -6,24 +7,59 @@
 %We will then check how the results look like for different signal to noise
 %ratio and check if gradientFit performs better than the centroid method
 
-%% User Input
-nImages  = 1;
-% information about emitters
-emitter.num      = 10; %Makes at max 10000 fit ==> similar to previous simulation
-emitter.meanInt  = 10000;
-emitter.intSigma = 100;
-emitter.FWHM_nm  = 350;
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+doPlot = true;
+pxSize = 95; % in nm
+imSize = 13; % in px
+setupPSFWidth = 300; %in nm (Calculated in Focus using PSFE plate, on the
+%15/02/2018 Exc wavelength = 532nm;
 
-% Information about detector
-detector.xSize  = 100;
-detector.pxSize = 105; %[nm/pix]
+prompt = {'Enter number of simulation: ',...
+    'Enter a type of noise to add (none, Gaussian or Poisson):',...
+    'Enter Signal to noise ratio (for Gaussian): ',...
+    'Enter background:','Enter max count:', 'Enter Min pos',...
+    'Enter Max pos', 'Enter the method to be used (Phasor or Gradient):'};
+dlgTitle = 'Simulation Parameters input';
+numLines = 1;
+defaultVal = {'10000','Gaussian','8','500','10000','5','9','Phasor'};
+answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% information about normal bg
-bkg.mean = 1000;
-bkg.SNR  = 100;
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%% Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+assert(~isempty(answer),'User canceled input dialog, Simulation was aborted')
+nSim = str2double(answer(1));
+assert(~isnan(nSim),'Number of simulation should be numerical');%If not a number
+%expressed in string str2double yield NaN, isnumeric yield true on NaN so
+%isnan is the only way to check.
 
-nSim = nImages*emitter.num;
+noiseType = answer(2);
+noiseType = noiseType{1};
+assert(isnan(str2double(noiseType)),'Type of noise should not be a number');
 
+S2N = str2double(answer(3));
+assert(~isnan(S2N),'Variance should be numerical');
+
+bckg = str2double(answer(4));
+assert(~isnan(bckg),'Background should be numerical');
+
+maxCount = str2double(answer(5));
+assert(~isnan(maxCount),'Max count should be numerical');
+
+minPos = str2double(answer(6));
+assert(~isnan(minPos),'Min position should be numerical');
+
+maxPos = str2double(answer(7));
+assert(~isnan(maxPos),'Max position should be numerical');
+
+assert(minPos<= maxPos,'Min position should be smaller than max position');
+
+fitting = answer(8);
+assert(or(or(strcmp(fitting,'Phasor'),strcmp(fitting,'phasor')),...
+    or(strcmp(fitting,'Gradient'),strcmp(fitting,'gradient'))),...
+    'The requested algorithm is unknown, please check spelling');
+%%%%%%%%%%%%%%%%%%%%%%%%%% END Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Allocation memory for results storage
 % Allocate memory for storing results
 simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
@@ -126,3 +162,4 @@ for i=1:size(imStack,3)
 
 end
 toc
+end

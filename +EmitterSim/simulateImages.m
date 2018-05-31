@@ -9,6 +9,7 @@ em_n = emitter.num;
 em_mean_int = emitter.meanInt;
 em_int_sigma = emitter.intSigma;
 FWHM_nm = emitter.FWHM_nm;
+posRange = emitter.posRange;
 
 % information about normal bg
 mean_bg = bkg.mean;
@@ -17,13 +18,15 @@ d_range   = 'uint16';
 
 imStack = zeros(x_size,x_size,nImages);
 simPos  = zeros(emitter.num,2,nImages);
-simElip = ones(emitter.num,nImages,1); %currently use no elipticity
+simElip = ones(emitter.num,nImages,1) * emitter.sigmaY/emitter.sigmaX; %currently use no elipticity
+if nImages > 10
 h = waitbar(0, 'Simulations of images...');
+end
 for i = 1:nImages
     
 % calculations for emitters positions and int
-[ em_pos ] = EmitterSim.getRandPos(x_size-12, em_n );
-em_pos = em_pos+6;
+[ em_pos ] = EmitterSim.getRandPos(posRange(2)-posRange(1), em_n );
+em_pos = em_pos+posRange(1);
 [simPos(1:em_n,1,i),ind] = sort(em_pos(:,1));
 simPos(1:em_n,2,i) = em_pos(ind,2);
 int_model.name     = 'normal';
@@ -42,8 +45,8 @@ im = uint16(zeros(size(X)));
 FWHM_pix = FWHM_nm / pix_size; %[pix]
 sigma_pix = FWHM_pix / (2*((2*log(2))^0.5));
 psf_model.name = 'gaussian';
-psf_model.sigma_x = sigma_pix;
-psf_model.sigma_y = psf_model.sigma_x;
+psf_model.sigma_x = emitter.sigmaX;
+psf_model.sigma_y = emitter.sigmaY;
 
 [ G ] = EmitterSim.getPSF( X, Y, round(mean(xv)), round(mean(yv)), psf_model);
 G = G.*(em_mean_int);
@@ -96,7 +99,13 @@ for em_i = 1:em_n
 end
 ccd_frame  = im+bg_im;
 imStack(:,:,i) = ccd_frame;
+if nImages > 10
 waitbar( i/nImages, h, sprintf('Simulations of images... - %d / %d percent achieved',round(i/nImages*100),100));
 end
+end
+
+if nImages > 10
 close(h)
+end
+
 end
