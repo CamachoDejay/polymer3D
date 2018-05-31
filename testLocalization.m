@@ -31,13 +31,14 @@ switch ind
     case 1
         disp('Starting the test of GLRT localization---------------------');
         Test.GLRTLocalization;
-        disp('--------------------- Test Done ! ---------------------');
+        disp('\n--------------------- Test Done ! ---------------------');
     case 2
         disp('Starting the test of subdiffraction localization-----------');
         Test.SRLocalization;
         disp('--------------------- Test Done ! ---------------------');
     case 3
         disp('Starting the full localization test------------------------');
+        Test.fullLocalization;
         disp('--------------------- Test Done ! ---------------------');
 end
 

@@ -10,7 +10,7 @@ em_mean_int = emitter.meanInt;
 em_int_sigma = emitter.intSigma;
 FWHM_nm = emitter.FWHM_nm;
 posRange = emitter.posRange;
-
+maxEllip = emitter.maxSigma;
 % information about normal bg
 mean_bg = bkg.mean;
 SNR     = bkg.SNR;
@@ -18,7 +18,8 @@ d_range   = 'uint16';
 
 imStack = zeros(x_size,x_size,nImages);
 simPos  = zeros(emitter.num,2,nImages);
-simElip = ones(emitter.num,nImages,1) * emitter.sigmaY/emitter.sigmaX; %currently use no elipticity
+simElip = zeros(emitter.num,nImages);
+
 if nImages > 10
 h = waitbar(0, 'Simulations of images...');
 end
@@ -29,6 +30,7 @@ for i = 1:nImages
 em_pos = em_pos+posRange(1);
 [simPos(1:em_n,1,i),ind] = sort(em_pos(:,1));
 simPos(1:em_n,2,i) = em_pos(ind,2);
+
 int_model.name     = 'normal';
 int_model.mean_int = em_mean_int;
 int_model.sigma    = em_int_sigma;
@@ -44,22 +46,19 @@ im = uint16(zeros(size(X)));
 % calculations for psf
 FWHM_pix = FWHM_nm / pix_size; %[pix]
 sigma_pix = FWHM_pix / (2*((2*log(2))^0.5));
+[sigX,sigY] = EmitterSim.getRandSigma(sigma_pix, maxEllip, em_n);
+simElip(1:em_n,i) = sigY./sigX;
 psf_model.name = 'gaussian';
-psf_model.sigma_x = emitter.sigmaX;
-psf_model.sigma_y = emitter.sigmaY;
+psf_model.sigma_x = sigma_pix;
+psf_model.sigma_y = psf_model.sigma_x;
 
 [ G ] = EmitterSim.getPSF( X, Y, round(mean(xv)), round(mean(yv)), psf_model);
 G = G.*(em_mean_int);
 max_int = round(max(G(:)));
 
-%bg_FWHM = round(max_int/SNR);
-
-% calculations for normal bg
-
 %Generate the noise of the background in the same way Boris was generating
 %the noise in test2DGradTracking so the results are comparable.
 switch emitter.noiseType
-   
     case 'Gaussian'
         noiseProp.maxCount = max_int;
         noiseProp.S2N = SNR;
@@ -85,7 +84,8 @@ for em_i = 1:em_n
     x0_pix = em_pos(em_i,1);
     y0_pix = em_pos(em_i,2);
     n_counts = em_int(em_i);
-
+    psf_model.sigma_x = sigX(em_i);
+    psf_model.sigma_y = sigY(em_i);
     % get psf pdf of emitter
     [ psf ] = EmitterSim.getPSF( X, Y, x0_pix, y0_pix, psf_model );
     % get out only area of interest

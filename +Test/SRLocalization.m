@@ -27,14 +27,15 @@ imSize = 13; % in px
 setupPSFWidth = 300; %in nm (Calculated in Focus using PSFE plate, on the
 %15/02/2018 Exc wavelength = 532nm;
 
-prompt = {'Enter number of simulation: ',...
+prompt = {'Enter number of simulations: ',...
     'Enter a type of noise to add (none, Gaussian or Poisson):',...
     'Enter Signal to noise ratio (for Gaussian): ',...
-    'Enter background:','Enter max count:', 'Enter Min pos',...
-    'Enter Max pos', 'Enter the method to be used (Phasor or Gradient):'};
+    'Enter background:','Enter max count:','Enter the maximum Ellipticity:',...
+    'Enter Min pos', 'Enter Max pos',...
+    'Enter the method to be used (Phasor or Gradient):'};
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
-defaultVal = {'10000','Gaussian','8','500','10000','5','9','Phasor'};
+defaultVal = {'10000','Gaussian','8','1000','10000','3','5','9','Phasor'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -55,18 +56,22 @@ assert(~isnan(S2N),'Variance should be numerical');
 
 bckg = str2double(answer(4));
 assert(~isnan(bckg),'Background should be numerical');
+
 maxCount = str2double(answer(5));
 assert(~isnan(maxCount),'Max count should be numerical');
 
-minPos = str2double(answer(6));
+emMaxSigma = str2double(answer(6));
+assert(~isnan(emMaxSigma),'Emitter width should be numerical');
+
+minPos = str2double(answer(7));
 assert(~isnan(minPos),'Min position should be numerical');
 
-maxPos = str2double(answer(7));
+maxPos = str2double(answer(8));
 assert(~isnan(maxPos),'Max position should be numerical');
 
 assert(minPos<= maxPos,'Min position should be smaller than max position');
 
-fitting = answer(8);
+fitting = answer(9);
 assert(or(or(strcmp(fitting,'Phasor'),strcmp(fitting,'phasor')),...
     or(strcmp(fitting,'Gradient'),strcmp(fitting,'gradient'))),...
     'The requested algorithm is unknown, please check spelling');
@@ -86,44 +91,24 @@ simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
 
 noiseProp = struct('S2N',S2N,'bkg',bckg,'maxCount',maxCount);
 
-%simulate data, analyze and store results
-halfWay = round(nSim/2);
-xid = 0:imSize-1;
-yid = 0:imSize-1;
-
 GraR = 4; % The radius of Gradient used for caculation
 
 %Info for simulation
 emitter.num = 1;
-emitter.meanInt = maxCount;
+emitter.meanInt  = maxCount;
 emitter.intSigma = 0.1 * maxCount;
-emitter.FWHM_nm = setupPSFWidth;
+emitter.FWHM_nm  = setupPSFWidth;
 emitter.posRange = [minPos maxPos];
-emitter.noiseType = noiseType;
-detector.xSize = imSize;
-detector.pxSize = pxSize; %[nm/pix]
+emitter.noiseType= noiseType;
+emitter.maxSigma = emMaxSigma;
+detector.xSize   = imSize;
+detector.pxSize  = pxSize; %[nm/pix]
 bkg.mean = bckg;
 bkg.SNR = S2N;
 
 h = waitbar(0, 'Simulations and Fitting...');
-for i = 1: nSim
-    if i <halfWay
-        % pos_real = [600,600];
-        sigX = setupPSFWidth+rand(1)*setupPSFWidth*2;
-        sigY = setupPSFWidth+rand(1)*10;
-        %           sigX = setupPSFWidth;
-        %           sigY = setupPSFWidth;
-    else
-        sigX = setupPSFWidth+rand(1)*10;
-        sigY = setupPSFWidth+rand(1)*setupPSFWidth*2;
-        %           sigX = setupPSFWidth;
-        %           sigY = setupPSFWidth;
-    end
-       
-    emitter.sigmaX = sigX/pxSize;
-    emitter.sigmaY = sigY/pxSize;
-    
-    [ROI,simPos,~] = EmitterSim.simulateImages(1,emitter,detector,bkg);
+for i = 1: nSim    
+    [ROI,simPos,simElip] = EmitterSim.simulateImages(1,emitter,detector,bkg);
     
     % ROI coor is always the center position
     ROI_coor = [median(1:size(ROI,1)),median(1:size(ROI,1))];
@@ -158,7 +143,7 @@ for i = 1: nSim
     simResults.fitY(i)       = yc;
     simResults.cFitX(i)      = (ROI_coor(1) + centOut(1).x);
     simResults.cFitY(i)      = (ROI_coor(2) + centOut(1).y);
-    simResults.realElip(i)   = sigY/sigX;
+    simResults.realElip(i)   = simElip;
     simResults.cElip(i)      = centOut.e;
     simResults.fitElip(i)    = e;
     simResults.noiseType(i)  = {noiseType};
@@ -180,7 +165,7 @@ disp('------------------------ TEST RESULTS ----------------------------')
 fprintf('--------- %d / %d molecules succesfully localized \n', size(find(~isnan(simResults.fitX)),1),nSim);
 fprintf('--------- Center of localization deviated on average from %0.4f pixels in X\n',nanmedian(abs(simResults.fAbsErrorX)));
 fprintf('--------- Center of localization deviated on average from %0.4f pixels in Y\n',nanmedian(abs(simResults.fAbsErrorY)));
-fprintf('--------- Ellipticity deviated on average from %0.2f pixels in Y\n',nanmedian(simResults.errorFitElip));
+fprintf('--------- Ellipticity deviated on average from %0.2f\n',nanmedian(abs(simResults.errorFitElip)));
 
 if doPlot
     figure(1)

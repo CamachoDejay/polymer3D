@@ -12,48 +12,50 @@ function fullLocalization()
 doPlot = true;
 pxSize = 95; % in nm
 imSize = 13; % in px
-setupPSFWidth = 300; %in nm (Calculated in Focus using PSFE plate, on the
+setupPSFWidth = 220; %in nm (Calculated in Focus using PSFE plate, on the
 %15/02/2018 Exc wavelength = 532nm;
 
-prompt = {'Enter number of simulation: ',...
+prompt = {'Enter number of frame to simulate: ',...
+    'Enter number of molecules/frame: ',...
     'Enter a type of noise to add (none, Gaussian or Poisson):',...
     'Enter Signal to noise ratio (for Gaussian): ',...
-    'Enter background:','Enter max count:', 'Enter Min pos',...
-    'Enter Max pos', 'Enter the method to be used (Phasor or Gradient):'};
+    'Enter background:','Enter number of counts:','Enter emitter intensity distribution width',...
+    'Enter the method to be used (Phasor or Gradient):'};
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
-defaultVal = {'10000','Gaussian','8','500','10000','5','9','Phasor'};
+defaultVal = {'100','10','Gaussian','10','500','10000','1000','Phasor'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assert(~isempty(answer),'User canceled input dialog, Simulation was aborted')
-nSim = str2double(answer(1));
-assert(~isnan(nSim),'Number of simulation should be numerical');%If not a number
+
+nImages = str2double(answer(1));
+assert(~isnan(nImages),'Number of Frame should be numerical');%If not a number
 %expressed in string str2double yield NaN, isnumeric yield true on NaN so
 %isnan is the only way to check.
 
-noiseType = answer(2);
+nEm = str2double(answer(2));
+assert(~isnan(nEm),'Number of emitters should be numerical');%If not a number
+%expressed in string str2double yield NaN, isnumeric yield true on NaN so
+%isnan is the only way to check.
+
+noiseType = answer(3);
 noiseType = noiseType{1};
 assert(isnan(str2double(noiseType)),'Type of noise should not be a number');
 
-S2N = str2double(answer(3));
+S2N = str2double(answer(4));
 assert(~isnan(S2N),'Variance should be numerical');
 
-bckg = str2double(answer(4));
+bckg = str2double(answer(5));
 assert(~isnan(bckg),'Background should be numerical');
 
-maxCount = str2double(answer(5));
+maxCount = str2double(answer(6));
 assert(~isnan(maxCount),'Max count should be numerical');
 
-minPos = str2double(answer(6));
-assert(~isnan(minPos),'Min position should be numerical');
-
-maxPos = str2double(answer(7));
-assert(~isnan(maxPos),'Max position should be numerical');
-
-assert(minPos<= maxPos,'Min position should be smaller than max position');
+emIntSigma = str2double(answer(7));
+assert(~isnan(emIntSigma),'Intensity distribution width should be numerical');
 
 fitting = answer(8);
 assert(or(or(strcmp(fitting,'Phasor'),strcmp(fitting,'phasor')),...
@@ -62,19 +64,27 @@ assert(or(or(strcmp(fitting,'Phasor'),strcmp(fitting,'phasor')),...
 %%%%%%%%%%%%%%%%%%%%%%%%%% END Check USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Allocation memory for results storage
 % Allocate memory for storing results
-simResults = table(zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
-    zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),zeros(nSim,1),...
+simResults = table(zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),...
+    zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),...
+    zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),zeros(nImages,1),...
     'VariableNames',{'realX','fitX', 'realY', 'fitY','realElip','cElip',...
     'fitElip','signal2Noise','fAbsErrorX','fAbsErrorY','cAbsErrorX',...
     'cAbsErrorY','errorFitElip'});
 
-%% Image stack simulation 
-
+%% Image stack simulation
 %Let us generate a stack of images
-[imStack,simPos,simElip] = Misc.simulateImages(nImages,emitter,detector,bkg);
+emitter.num = nEm;
+emitter.meanInt  = maxCount;
+emitter.intSigma = emIntSigma;
+emitter.FWHM_nm  = setupPSFWidth;
+emitter.noiseType    = noiseType;
+emitter.posRange = [1+round(0.1*imSize) imSize-round(0.1*imSize)];
+emitter. sigmaY  = setupPSFWidth/pxSize;
+emitter. sigmaX  = setupPSFWidth/pxSize;
 
-simResults.realX(:) = simPos(:,1);
+[imStack,simPos,simElip] = EmitterSim.simulateImages(nImages,emitter,detector,bkg);
+
+simResults.realX(:) = simPos(:,1,:);
 simResults.realY(:) = simPos(:,2);
 simResults.realElip(:) = simElip(:,1);
 simResults.signal2Noise(:) = bkg.SNR;

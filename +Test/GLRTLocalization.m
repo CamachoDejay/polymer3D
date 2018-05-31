@@ -10,11 +10,12 @@ prompt = {'Enter number of frame to simulate: ',...
     'Enter a type of noise to add (none, Gaussian or Poisson):',...
     'Enter Signal to noise ratio (for Gaussian): ',...
     'Enter background:','Enter emitter intensity:',...
-    'Enter emitter intensity distribution width'};
+    'Enter emitter intensity distribution width:',...
+    'Enter emitter max ellipticity:'};
 
 dlgTitle = 'Simulation Parameters input';
 numLines = 1;
-defaultVal = {'500','10','Gaussian','10','500','10000','100'};
+defaultVal = {'500','10','Gaussian','10','500','10000','100','1'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -42,6 +43,9 @@ assert(~isnan(maxCount),'Max count should be numerical');
 
 emIntSigma = str2double(answer(7));
 assert(~isnan(emIntSigma),'Max count should be numerical');
+
+emMaxSigma = str2double(answer(8));
+assert(~isnan(emMaxSigma),' emitter width should be numerical');
 %%%%%%%%%%%%%%%%%%%%%%% END CHECK USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 detector.xSize = imSize;
@@ -51,10 +55,9 @@ emitter.num = nEm;
 emitter.meanInt  = maxCount;
 emitter.intSigma = emIntSigma;
 emitter.FWHM_nm  = setupPSFWidth;
-emitter.noiseType    = noiseType;
+emitter.noiseType= noiseType;
 emitter.posRange = [1+round(0.1*imSize) imSize-round(0.1*imSize)];
-emitter. sigmaY  = setupPSFWidth/pxSize;
-emitter. sigmaX  = setupPSFWidth/pxSize;
+emitter.maxSigma = emMaxSigma;
 bkg.mean = bkgMean;
 bkg.SNR  = S2N;
 
@@ -83,7 +86,7 @@ end
 
 if doPlot
 figure(1)
-title('Examplary simulated frame and results of the localization')
+
 imagesc(im_in(:,:,1))
 hold on
 colormap('hot');
@@ -91,12 +94,13 @@ plot(pos(:,1,1),pos(:,2,1),'b+')
 hold off
 xlabel('Pixel')
 ylabel('Pixel')
+title('Examplary simulated frame and results of the localization')
 axis image
 end
 
-disp('------------------------ TEST RESULTS ----------------------------')
+disp('------------------------ TEST RESULTS ----------------------------\n')
 fprintf('--------- %d / %d molecules localized \n', size(find(totPos),1),size(find(simPos),1));
-fprintf('--------- Center of localization deviated on average from %0.2f pixels',mean(abs(avgPos-avgSimPos)));
+fprintf('--------- Center of localization deviated on average from %0.2f pixels\n',mean(abs(avgPos-avgSimPos)));
 
 close(h);
 end
