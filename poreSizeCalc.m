@@ -1,15 +1,25 @@
 clear;
 clc;
 close all;
-
 %% User Input
-pxSize = 100; %in nm
-Threshold = 0.6; %number between 0 and 1 (% of max intensity)
+prompt = {'Enter the pixel size: ','Enter number of frame to analyze: '};
+dlgTitle = 'User input for Pore size calculation';
+numLines = 1;
+defaultVal = {'100','244'};
+answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 
-% used during testing 2, normal should 244
-nFrame = 244; %n of frame to analyze
+%% Checking user input
+assert(~isempty(answer),'User canceled input dialog, Simulation was aborted')
+
+pxSize = str2double(answer(1));
+assert(~isnan(pxSize),'Number of Frame should be numerical');%If not a number
+
+nFrame = str2double(answer(2));
+assert(~isnan(nFrame),'Number of Frame should be numerical');%If not a number
+
 fileExt = '.tif';
 outputName = 'PoreSize-Results';
+
 %% Loading Data
 % conversion from pixel to area
 pxArea = pxSize*pxSize*1e-6; %in µm^2
@@ -35,7 +45,7 @@ for j = 1:nImStacks
     
     warning('on','all')
     tNframes = fileInfo.Frame_n;
-    assert(tNframes>=nFrame,'you dont have the expected number of frames')
+    assert(tNframes>=nFrame,'Requested number of frame is larger than the number of frame in the file')
     
     % init data that contains all infor for a single tif file
     tifStackData = [];
@@ -100,12 +110,20 @@ for j = 1:nImStacks
 end
 close(h);
 
-%%
+%% saving data
 % % % T = array2table(allData,...
 % % %     'VariableNames',{'TifIDX','ImageIDX','Width','Area', 'Solidity','IsAtBorder'});
 
-save([ path2Stacks 'Adaptive-poreProps.mat'],'allDataAdapt')
-save([ path2Stacks 'Automated-poreProps.mat'],'allDataAuto')
+infoFileName = [outDir filesep 'info.txt'];
+    fid = fopen(infoFileName,'wt');
+    fprintf(fid,'This file contains information intended for the user of poreSizeCalc\n');
+    fprintf(fid,' In such a way that the user knows what variable value were used.\n\n');
+    fprintf(fid,'Pixel size used: %d',pxSize);
+    fprintf(fid,'Number of frame analyzed: %d/%d\n',nFrame,tNframes);
+    fclose(fid);
+
+save([ outDir 'Adaptive-poreProps.mat'],'allDataAdapt')
+save([ outDir 'Automated-poreProps.mat'],'allDataAuto')
 h = msgbox('The Data were succesfully saved !', 'Success');
 
 %% Plotting
