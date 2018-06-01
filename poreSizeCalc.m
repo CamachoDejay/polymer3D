@@ -14,7 +14,7 @@ outputName = 'PoreSize-Results';
 % conversion from pixel to area
 pxArea = pxSize*pxSize*1e-6; %in µm^2
 
-[file2Analyze,currentFolderName,outDir] = Misc.loadFolder(fileExt,outputName);
+[file2Analyze,currentFolderName,outDir] = Load.Folder(fileExt,outputName);
 
 %% Looping through the Data
 
@@ -31,7 +31,7 @@ for j = 1:nImStacks
     tmpName = file2Analyze(j).name;
     p2file      = strcat(path2Stacks,tmpName);
     warning('off','all')
-    fileInfo    = loadMovie.tif.getinfo(p2file);
+    fileInfo    = Load.Movie.tif.getinfo(p2file);
     
     warning('on','all')
     tNframes = fileInfo.Frame_n;
@@ -49,7 +49,7 @@ for j = 1:nImStacks
         
         % Loading image number i
         warning('off','all')
-        IM     = loadMovie.tif.getframes(p2file, i);
+        IM     = Load.Movie.tif.getframes(p2file, i);
         warning('on','all')
         disp(['loaded frame: ' num2str(i)])
         
@@ -111,11 +111,11 @@ h = msgbox('The Data were succesfully saved !', 'Success');
 %% Plotting
 totalAdapt = allDataAdapt.Area;
 totalAdapt = totalAdapt(:);
-[CDF,CCDF] = Misc.getCDF(totalAdapt);
+[CDF,CCDF] = Plotting.getCDF(totalAdapt);
 
 totalGlobal = allDataAuto.Area;
 totalGlobal  = totalGlobal (:);
-[CDF2,CCDF2] = Misc.getCDF(totalGlobal);
+[CDF2,CCDF2] = Plotting.getCDF(totalGlobal);
 
 figure()
 subplot(1,2,1)
@@ -126,6 +126,7 @@ a.YScale = 'log';
 title({'CCDF for AREA',' for all tif files in folder using adaptive threshold'})
 xlabel('Pore size')
 ylabel('CCDF - prob [0 1]')
+xlim([0 10^5])
 a.FontSize = 14;
 
 subplot(1,2,2)
@@ -134,6 +135,7 @@ a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
 title({'CCDF for AREA',' for all tif files in folder using automated threshold'})
+xlim([0 10^5])
 xlabel('Pore size')
 ylabel('CCDF - prob [0 1]')
 a.FontSize = 14;

@@ -18,7 +18,7 @@ fileExt = '.tif'; %Extension of the files to be analyze
 outputName  = 'SegmentedStacks';
 %% Loading Data
 %Load folder, and create a folder for data output.
-[file2Analyze,currentFolderName,outDir] = Misc.loadFolder(fileExt,outputName);
+[file2Analyze,currentFolderName,outDir] = Load.Folder(fileExt,outputName);
 
 %% load full stack
 
@@ -30,9 +30,9 @@ for i = 1 : size(file2Analyze,2)
     path2Stacks = strcat(file2Analyze(i).folder,filesep);
     tmpName = file2Analyze(i).name;
     p2file      = strcat(path2Stacks,tmpName);
-    fileInfo    = loadMovie.tif.getinfo(p2file);
+    fileInfo    = Load.Movie.tif.getinfo(p2file);
     warning('off','all');
-    IM     = loadMovie.tif.getframes(p2file, 1:nFrame); %Loading on of the frame
+    IM     = Load.Movie.tif.getframes(p2file, 1:nFrame); %Loading on of the frame
     warning('on','all');
     toc
     disp('DONE with loading --------------')
@@ -108,11 +108,11 @@ for i = 1 : size(file2Analyze,2)
     % now we save segmented images
     disp('Storing global results')
     tifName = [outDir filesep 'Seg_global_' tmpName];
-    dataStorage.saveBinaryTiff(tifName,BWglobal);
+    dataStorage.BinaryTiff(tifName,BWglobal);
 
     disp('Storing adaptive results')
     tifName = [outDir filesep 'Seg_adapt_' tmpName];
-    dataStorage.saveBinaryTiff(tifName,BWglobal);
+    dataStorage.BinaryTiff(tifName,BWadapt);
     
     %Save useful information about how the binarization was done
     infoFileName = [outDir filesep 'info.txt'];
