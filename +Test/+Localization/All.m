@@ -1,4 +1,4 @@
-function fullLocalization()
+function All()
 %Aim of the code:
 %Test out the whole procedure that shall be performed in data analysis:
 % A) Receiving a stack of images (here simulated)
@@ -107,7 +107,8 @@ xSize = size(imStack,2);
 ySize = size(imStack,1);
 GraR = 4; % The radius of Gradient used for caculation
 countLocMol = 0;
-tic
+
+h = waitbar(0, 'Rough Localization and Fitting...');
 for i=1:size(imStack,3)
     
     im_in = double(imStack(:,:,i));
@@ -174,7 +175,15 @@ for i=1:size(imStack,3)
         end
           
     end
-
+waitbar(i/size(imStack,3),h,sprintf('Rough Localization and fitting... %d /100 percent done',round(100*i/size(imStack,3))));
 end
-toc
+
+disp('------------------------ TEST RESULTS ----------------------------')
+fprintf('--------- %d / %d molecules localized \n', size(find(~isnan(simResults.fitX)),1),nImages*nEm);
+fprintf('--------- %d / %d molecules succesfully fitted \n', size(simResults(and(~isnan(simResults.fitX),...
+    simResults.fitX~=0),:).fitX,1),nImages*nEm);
+fprintf('--------- Center of localization deviated on average from %0.4f pixels in X\n',nanmedian(abs(simResults(simResults.fitX~=0,:).fAbsErrorX)));
+fprintf('--------- Center of localization deviated on average from %0.4f pixels in Y\n',nanmedian(abs(simResults(simResults.fitX~=0,:).fAbsErrorY)));
+fprintf('--------- Ellipticity deviated on average from %0.2f\n\n',nanmedian(abs(simResults(simResults.fitX~=0,:).errorFitElip)));
+
 end

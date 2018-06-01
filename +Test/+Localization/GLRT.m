@@ -1,4 +1,4 @@
-function GLRTLocalization()
+function GLRT()
 doPlot = true;
 pxSize = 95; % in nm
 imSize = 200; % in px

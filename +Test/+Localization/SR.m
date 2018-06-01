@@ -1,4 +1,4 @@
-function SRLocalization()
+function SR()
 %Description: SRLocalization, simulate perfect/noisy PSF and use the chosen
 %algorithm to fit it. A table (simResults) is output which
 %contain the real value as well as the simulation parameters and the fit
