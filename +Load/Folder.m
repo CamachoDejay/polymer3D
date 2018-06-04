@@ -7,7 +7,7 @@
 %the encoded extension and the path to the current folder and the output 
 %folder.
 
-function [file2Analyze,currentFolderName,outDir] = loadFolder(fileExt,output)
+function [file2Analyze,currentFolderName,outDir] = Folder(fileExt,output)
 
 %Open UI to select folder
 mainFolderName = uigetdir;
@@ -30,7 +30,7 @@ index2Images   = contains({Folder_Content.name},fileExt);
 file2Analyze = Folder_Content(index2Images);
 
 if isempty(file2Analyze)
-    warning('No %s file found in the selected directory');
+    warning('No %s file found in the selected directory')
 end
 
 end
