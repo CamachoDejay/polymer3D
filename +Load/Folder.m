@@ -29,4 +29,8 @@ Folder_Content = dir(mainFolderName);
 index2Images   = contains({Folder_Content.name},fileExt);
 file2Analyze = Folder_Content(index2Images);
 
+if isempty(file2Analyze)
+    warning('No %s file found in the selected directory');
+end
+
 end
