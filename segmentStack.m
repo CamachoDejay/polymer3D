@@ -33,7 +33,7 @@ outputName  = 'SegmentedStacks';
 %% Loading Data
 %Load folder, and create a folder for data output.
 [file2Analyze,currentFolderName,outDir] = Load.Folder(fileExt,outputName);
-
+assert(~isempty(file2Analyze),'no %s file found in the directory', fileExt);
 %% load full stack
 
 for i = 1 : size(file2Analyze,2)
