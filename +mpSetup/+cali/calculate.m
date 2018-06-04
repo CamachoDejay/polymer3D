@@ -1,4 +1,4 @@
-function [cal] = calculate(fPath, correctInt, flipCam2)
+function [cal, movInfo] = calculate(fPath, correctInt, flipCam2)
 %CALCULATE calculates calibration for the multiplane setup. NOTE that if
 %you choose to correct for intensity differences the data changes form
 %uint16 to double because we have to multiply by a correction factor

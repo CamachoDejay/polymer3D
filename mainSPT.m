@@ -10,29 +10,34 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-fPath = '/Users/rafa/Documents/MATLAB/data/Boris/180322-Boris-Calmultiplane/BeadsCalibrationZStack_2';
-fName = 'BeadsCalibrationZStack_2_MMStack_Pos0.ome.tif';
+fPath = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
+fName = 'BeadsCalibrationZStack_1_MMStack_Pos0.ome.tif';
 
 fPath = [fPath filesep fName];
 
 % Calculate calibration
-[cal] = mpSetup.cali.calculate(fPath, false);
-
+[cal, info] = mpSetup.cali.calculate(fPath, false);
+calib.path = fPath;
+calib.file = cal;
+calib.info = info;
 disp('Done with calibration')
 %%
 % load and calibrate, when applied to the calibration data then we should
 % be able to demonstrate that it works
 
-fPath = '/Users/rafa/Documents/MATLAB/data/Boris/180322-Boris-Calmultiplane/TL-OD2-200msExposureR2_1';
-fName = 'TL-OD2-200msExposureR2_1_MMStack_Pos0.ome.tif';
+fPath = '..\data\Multiplane\Data\TL-OD2-200msExposure_1';
+fName = 'TL-OD2-200msExposure_1_MMStack_Pos0.ome.tif';
 fPath = [fPath filesep fName];
-
 
 % load general information about the multi-plane movie
 [~, movInfo, ~ ]= loadMovie.ome.getInfo( fPath );
 
+raw.path = fPath;
+raw.info = movInfo;
+testMov = Core.Movie(raw,calib);
+
 frame = 1:movInfo.maxFrame(1);
-[data, frameInfo, movInfo] = mpSetup.loadAndCal( fPath, cal, frame);
+[data, frameInfo, movInfo] = mpSetup.loadAndCal( testMov.raw.path, testMov.cal.file, frame);
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
