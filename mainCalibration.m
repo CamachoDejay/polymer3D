@@ -6,8 +6,8 @@ clear
 close all
 clc
 
-fPath = 'D:\Documents\Unif\PhD\2018-Data\03 - March\13\ZstackCalibration-100nmBeads-640nm_1';
-fName = 'ZstackCalibration-100nmBeads-640nm_1_MMStack_Pos0.ome.tif';
+fPath = 'E:\Data\Leuven Data\2018\03-Mar\22\PlaneCaibration\BeadsCalibrationZStack_1';
+fName = 'BeadsCalibrationZStack_1_MMStack_Pos0.ome.tif';
 
 fPath = [fPath filesep fName];
 

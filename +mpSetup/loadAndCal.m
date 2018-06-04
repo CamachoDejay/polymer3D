@@ -5,7 +5,7 @@ function [data, frameInfo, movInfo] = loadAndCal( fPath, cal, frames )
     
 
 % load general information about the multi-plane movie
-[frameInfo, movInfo, ~ ]= loadMovie.ome.getInfo( fPath );
+[frameInfo, movInfo, ~ ]= Load.Movie.ome.getInfo( fPath );
 
 
 switch nargin
@@ -19,7 +19,7 @@ switch nargin
 end
 
 % load the raw data 
-[ movC1, movC2] = loadMovie.ome.load( frameInfo, movInfo, frames );
+[ movC1, movC2] = Load.Movie.ome.load( frameInfo, movInfo, frames );
 
 [data] = mpSetup.cali.apply( movC1, movC2, cal );
 

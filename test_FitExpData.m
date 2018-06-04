@@ -20,7 +20,7 @@ zSpacing  = 50; %in nm
 setupInfo.FWHM     = FWHM_nm;
 setupInfo.pxSize   = pxSize;
 setupInfo.szWindow = szWindow;
-setupInfo.zCalibration1 = [-476.21 561.33 -56.497];
+setupInfo.zCalibration1 = [+1.077 0.00131];
 setupInfo.zCalibration2 = [-674.06 677.81 -77.022];
 %% Loading of the data
 switch toAnalyze
