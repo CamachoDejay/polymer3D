@@ -18,8 +18,8 @@ filePath = [filePath filesep fName];
 % Calculate calibration
 [cal, info] = mpSetup.cali.calculate(filePath, false);
 calib.path = filePath;
-calib.file = cal;
 calib.info = info;
+calib.file = cal;
 disp('Done with calibration')
 %%
 % load and calibrate, when applied to the calibration data then we should
