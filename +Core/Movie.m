@@ -67,6 +67,12 @@ classdef Movie <  handle
             end
         end
         
+        function set.info(obj,info)
+            %TO DO write the needed assertion.
+            
+            obj.info = info;
+        end
+        
         function set.cal(obj,cal)
             [checkRes] = obj.checkCal(cal);
             if checkRes == false
@@ -85,23 +91,15 @@ classdef Movie <  handle
         end
         
         function set.status(obj,status)
-            %TO DO write check functions to see if the data in the object
-            %make sense with the current status.
-            switch status
-                case 'none'
-                case 'raw'
-                case 'rawCalc'
-                case 'Calibrated'
-            end
+            %TO DO Check with Rafa how 
+            [checkRes] = obj.checkStatus(obj,status);
+            if checkRes
             obj.status = status;
+            else
+                error('There is a mismatch between the current experimental status and the content of the movie object, please check.')
+            end 
         end
-        
-        function set.info(obj,info)
-            %TO DO write the needed assertion.
-            
-            obj.info = info;
-        end
-        
+
         function set.calibrated(obj,calibrated)
             %TO DO write the needed assertion.
             obj.calibrated = calibrated;
@@ -139,6 +137,7 @@ classdef Movie <  handle
                 end
             end
         end
+        %TODO CheckInfo
         
         function [checkRes] = checkCal(~,cal)
             checkRes = false;
@@ -165,6 +164,42 @@ classdef Movie <  handle
                 else
                     checkRes = true;
                 end
+            end
+        end
+        
+        function [checkRes] = checkStatus(obj,status)
+            checkRes = false;
+            switch status
+                case 'none'
+                    if(isfield(obj,'raw'))
+                    else
+                        checkRes = true;
+                    end
+                case 'raw'
+                    if(isfield(obj,'raw'))
+                    [checkRes] = obj.checkRaw(obj.raw);
+                    end
+                case 'rawCalc'
+                    if(and(isfield(obj,'raw'),isfield(obj,'cal')))
+                        [checkRes] = obj.checkRaw(obj.raw);
+                        [checkRes2] = obj.checkCal(obj.cal);
+                        checkRes = checkRes*checkRes2;                        
+                    end
+                case 'Calibrated'
+                    if(and(isfield(obj,'raw'),isfield(obj,'cal')))
+                        [checkRes] = obj.checkRaw(obj.raw);
+                        [checkRes2] = obj.checkCal(obj.cal);
+                        %add checkCalibrated
+                        checkRes = checkRes*checkRes2;                        
+                    end
+                case 'SRCalibrated'
+                    if(and(isfield(obj,'raw'),isfield(obj,'cal')))
+                        [checkRes] = obj.checkRaw(obj.raw);
+                        [checkRes2] = obj.checkCal(obj.cal);
+                        %add checkCalibrated
+                        %addCheckSRCalibrated
+                        checkRes = checkRes*checkRes2;                        
+                    end
             end
         end
         
