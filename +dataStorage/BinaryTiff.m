@@ -3,7 +3,13 @@
 
 %There is no output to this function.
 
-function saveBinaryTiff(tifName,BW)
+function BinaryTiff(tifName,BW)
+    assert(ischar(tifName),'Filename needs to be a char');
+    assert(ismember(length(size(BW)),[2 3]), 'The data you are trying to save has an unexpected dimension');
+    %TODO Assert logicals
+    if(~logical(BW))
+        warning('The data you are trying to save is not binary, unexpected behavior can occur')
+    end
 
     t = Tiff(tifName, 'w');
     setTag(t,'ImageLength',size(BW,1))

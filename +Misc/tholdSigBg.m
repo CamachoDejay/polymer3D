@@ -8,8 +8,8 @@ bgV  = bg(:);
 assert(mean(bgV)<mean(sigV),'strange your background looks larger than your signal')
 
 % find CDF of signal and CCDF of background
-[sigCDF] = Misc.getCDF(sigV);
-[~, bgCCDF]  = Misc.getCDF(bgV);
+[sigCDF] = Plotting.getCDF(sigV);
+[~, bgCCDF]  = Plotting.getCDF(bgV);
 
 % find optimal tHold that separates two distributions
 allX = [sigCDF.x; bgCCDF.x];

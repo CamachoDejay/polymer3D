@@ -10,14 +10,14 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-fPath = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
+filePath = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 fName = 'BeadsCalibrationZStack_1_MMStack_Pos0.ome.tif';
 
-fPath = [fPath filesep fName];
+filePath = [filePath filesep fName];
 
 % Calculate calibration
-[cal, info] = mpSetup.cali.calculate(fPath, false);
-calib.path = fPath;
+[cal, info] = mpSetup.cali.calculate(filePath, false);
+calib.path = filePath;
 calib.file = cal;
 calib.info = info;
 disp('Done with calibration')
@@ -25,19 +25,37 @@ disp('Done with calibration')
 % load and calibrate, when applied to the calibration data then we should
 % be able to demonstrate that it works
 
-fPath = '..\data\Multiplane\Data\TL-OD2-200msExposure_1';
+folderPath = '..\data\Multiplane\Data\TL-OD2-200msExposure_1';
 fName = 'TL-OD2-200msExposure_1_MMStack_Pos0.ome.tif';
-fPath = [fPath filesep fName];
+filePath = [folderPath filesep fName];
 
 % load general information about the multi-plane movie
-[~, movInfo, ~ ]= loadMovie.ome.getInfo( fPath );
+[~, movInfo, ~ ]= Load.Movie.ome.getInfo( filePath );
 
-raw.path = fPath;
+raw.path = filePath;
 raw.info = movInfo;
 testMov = Core.Movie(raw,calib);
 
 frame = 1:movInfo.maxFrame(1);
 [data, frameInfo, movInfo] = mpSetup.loadAndCal( testMov.raw.path, testMov.cal.file, frame);
+step = 100;
+for i = 1:size(data,3)
+    
+    fName = sprintf('calibratedPlane%d.tif',i);
+    fPathTiff = [folderPath filesep fName];
+    t = Tiff(fPathTiff, 'w');
+    for j = 1:step:size(data,4)
+        range = j:j+step-1;
+        if max(range)>= size(data,4)
+            range = j:size(data,4);
+        end
+    t = dataStorage.writeTiff(t,squeeze(data(:,:,i,range)),16);
+    
+    end
+    t.close;
+end
+
+
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();

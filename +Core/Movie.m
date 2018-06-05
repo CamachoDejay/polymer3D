@@ -8,7 +8,7 @@ classdef Movie < handle
        
        raw
        cal
-       status
+       status = 'none';
        info
        calibrated
        superResCal
