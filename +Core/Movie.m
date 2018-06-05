@@ -16,37 +16,104 @@ classdef Movie <  handle
     end
     
     methods
-        function obj = Movie(raw, cal, info, calibrated, superResCal)
+        function obj = Movie(raw, info, cal, calibrated, superResCal)
             %MOVIE Construct an instance of this class
-            %   Detailed explanation goes here
-
+            %   We allow the user to create this object with various number
+            %   of input allowing therefore to restart the analysis at any
+            %   steps in the process.
             obj.raw = raw;
-            obj.cal = cal;
-      
             %Give a status depending on input.
             switch nargin
-                case 1
+                case 1 
                     obj.status = 'raw';
                 case 2
-                    obj.status = 'rawCal';
-                case 3
-                    obj.status = 'rawCal';
                     obj.info = info;
+                    obj.status = 'raw';
+                case 3
+                    obj.info = info;
+                    obj.cal = cal;
+                    obj.status = 'rawCal';
                 case 4
+                     obj.cal = cal;
+                     obj.info = info;
+                     obj.calibrated = calibrated;
                      obj.status = 'calibrated';
-                     obj.info = info;
-                     obj.calibrated = calibrated;
                 case 5
-                     obj.status = 'SRcalibrated';
-                     obj.superResCal = superResCal;
+                     obj.cal = cal;
                      obj.info = info;
                      obj.calibrated = calibrated;
+                     obj.superResCal = superResCal;
+                     obj.status = 'SRcalibrated';
                 otherwise 
                     error('Unexpected number of argument');
             end
         end
         
         function  set.raw(obj,raw)
+            [checkRes] = obj.checkRaw(raw);
+            %When every check/modification is performed, raw is finally
+            %store into the movie object
+            if checkRes == false
+                answer = questdlg('Path of raw file seems fine but something is wrong with the info, should we re-extract it?',...
+                    'Question to user','Yes','No','Yes');
+                switch answer
+                    case 'Yes'
+                        [~, movInfo, ~ ] = Load.Movie.ome.getInfo(raw.path);
+                        raw.info = movInfo;
+                        obj.raw = raw;
+                    case 'No'
+                        error('Something is wrong with raw file, request aborted.')
+                end
+            end
+        end
+        
+        function set.cal(obj,cal)
+            [checkRes] = obj.checkCal(cal);
+            if checkRes == false
+                answer = questdlg('Path of calibration seems fine but something is wrong with the info, should we re-extract it?',...
+                    'Question to user','Yes','No','Yes');
+                switch answer
+                    case 'Yes'             
+                        [cal, movInfo] = mpSetup.cali.calculate(cal.path, false);
+                        cal.info = movInfo;
+                        cal.file = cal;
+                        obj.cal = cal;
+                    case 'No' 
+                        error('Something is wrong with calibration, request aborted.')
+                end
+            end
+        end
+        
+        function set.status(obj,status)
+            %TO DO write check functions to see if the data in the object
+            %make sense with the current status.
+            switch status
+                case 'none'
+                case 'raw'
+                case 'rawCalc'
+                case 'Calibrated'
+            end
+            obj.status = status;
+        end
+        
+        function set.info(obj,info)
+            %TO DO write the needed assertion.
+            
+            obj.info = info;
+        end
+        
+        function set.calibrated(obj,calibrated)
+            %TO DO write the needed assertion.
+            obj.calibrated = calibrated;
+        end
+        
+        function set.superResCal(obj,superResCal)
+            %TO DO write the needed assertion.
+            obj.superResCal = superResCal;
+        end
+        
+        function [checkRes] = checkRaw(~,raw)
+            checkRes = false;
             %check that raw is not empty
             assert(~isempty(raw), 'Raw data should not be empty');
             %check that raw isa struct with no more than 2 fields
@@ -62,25 +129,19 @@ classdef Movie <  handle
              'File specified in raw cannot be found')
             %if only one field extract and store movInfo into raw.info
             if (length(fields)==1)
-                warning('Info missing in raw, extracting info')
-                [~, movInfo, ~ ]= Load.Movie.ome.getInfo(raw.path);
-                raw.info = movInfo;
             else %if 2 fields check that the format of raw.info is correct 
                 %otherwise reextract it based on the raw.path
                 assert(isfield(raw,'info'),'Unexpected field names in raw')
                 if(and(~isstruct(raw.info),or(isempty(raw.info),...
                         numel(fieldnames(raw.info)) ~= 6)))
-                  [~, movInfo, ~ ] = Load.Movie.ome.getInfo(raw.path);
-                  warning('Info missing  or unexpected format in raw, re-extracting info based on the path')
-                  raw.info = movInfo;
+                else
+                    checkRes = true;
                 end
             end
-            %When every check/modification is performed, raw is finally
-            %store into the movie object
-            obj.raw = raw;
         end
         
-        function set.cal(obj,cal)
+        function [checkRes] = checkCal(~,cal)
+            checkRes = false;
             %check that raw is not empty
             assert(~isempty(cal), 'Calibration data should not be empty');
             %check that cal is a struct with no more than 2 fields
@@ -96,34 +157,15 @@ classdef Movie <  handle
              'File specified in cal.path cannot be found')
          
             if (length(fields)<3)
-                warning('Info and/or calibration missing in cal, extracting info and calibration file based on the path')
-                [cal, movInfo] = mpSetup.cali.calculate(filePath, false);
-                cal.info = movInfo;
-                cal.file = cal;
             else
                 assert(and(isfield(cal,'info'),isfield(cal,'file')),...
                 'Something is wrong in the fieldnames in cal');
                 if(or(and(~isstruct(cal.info),or(isempty(cal.info),...
                         numel(fieldnames(cal.info)) ~= 6)),and(~isstruct(cal.file),or(isempty(cal.file),numel(fieldnames(cal.file)) ~= 9))))
-                    warning('something is wrong with cal.info and/or cal.file, re-extracting these based on the path')
-                    [cal, movInfo] = mpSetup.cali.calculate(cal.path, false);
-                    cal.info = movInfo;
-                    cal.file = cal;
+                else
+                    checkRes = true;
                 end
             end
-            obj.cal = cal;
-        end
-        
-        function set.status(obj,status)
-            %TO DO write check function to see if the data in the object
-            %make sense with the current status.
-            switch status
-                case 'none'
-                case 'raw'
-                case 'rawCalc'
-                case 'Calibrated'
-            end
-            obj.status = status;
         end
         
         function outputArg = method1(obj,inputArg)
