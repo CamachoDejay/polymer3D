@@ -60,17 +60,22 @@ classdef Movie <  handle
                     case 'Yes'
                         [~, movInfo, ~ ] = Load.Movie.ome.getInfo(raw.path);
                         raw.info = movInfo;
-                        obj.raw = raw;
                     case 'No'
                         error('Something is wrong with raw file, request aborted.')
                 end
+                
             end
+            obj.raw = raw;
         end
         
         function set.info(obj,info)
             %TO DO write the needed assertion.
-            
-            obj.info = info;
+            [checkRes] = obj.checkInfo(info);
+            if checkRes
+                obj.info = info;
+            else
+                error('Something is wrong with the format of the info provided by the user')
+            end
         end
         
         function set.cal(obj,cal)
@@ -83,16 +88,16 @@ classdef Movie <  handle
                         [cal, movInfo] = mpSetup.cali.calculate(cal.path, false);
                         cal.info = movInfo;
                         cal.file = cal;
-                        obj.cal = cal;
                     case 'No' 
                         error('Something is wrong with calibration, request aborted.')
                 end
             end
+            obj.cal = cal;
         end
         
         function set.status(obj,status)
             %TO DO Check with Rafa how 
-            [checkRes] = obj.checkStatus(obj,status);
+            [checkRes] = obj.checkStatus(status);
             if checkRes
             obj.status = status;
             else
@@ -113,10 +118,7 @@ classdef Movie <  handle
         function [checkRes] = checkRaw(~,raw)
             checkRes = false;
             %check that raw is not empty
-            assert(~isempty(raw), 'Raw data should not be empty');
-            %check that raw isa struct with no more than 2 fields
-            assert(and(isstruct(raw),numel(fieldnames(raw))<3),...
-                'raw should be a structure with no more than 2 fields');
+            assert(~isempty(raw), 'Raw data should not be empty, a path should at least be provided');
             %Extract the fields names
             fields = fieldnames(raw);
             %Check that the first fields is path
@@ -124,32 +126,37 @@ classdef Movie <  handle
                     'no filepath provided in Raw');
             %Check that the file path exist
             assert(exist(raw.path,'file') == 2,...
-             'File specified in raw cannot be found')
-            %if only one field extract and store movInfo into raw.info
+             'File specified in raw cannot be found');
             if (length(fields)==1)
             else %if 2 fields check that the format of raw.info is correct 
-                %otherwise reextract it based on the raw.path
-                assert(isfield(raw,'info'),'Unexpected field names in raw')
-                if(and(~isstruct(raw.info),or(isempty(raw.info),...
-                        numel(fieldnames(raw.info)) ~= 6)))
+                if(or(isfield(raw,'info'),and(~isstruct(raw.info),...
+                        or(isempty(raw.info),...
+                        numel(fieldnames(raw.info)) ~= 6))))
                 else
                     checkRes = true;
                 end
             end
         end
-        %TODO CheckInfo
+    
+        function [checkRes] = checkInfo(~,info)
+            checkRes = true;
+            if(isempty(info))
+                warning('You did not provide info to the movie')
+            else
+                if ~isstruct(info)
+                    checkRes = false;
+                end
+            end
+        end
         
         function [checkRes] = checkCal(~,cal)
             checkRes = false;
             %check that raw is not empty
-            assert(~isempty(cal), 'Calibration data should not be empty');
-            %check that cal is a struct with no more than 2 fields
-            assert(and(isstruct(cal),numel(fieldnames(cal))<4),...
-                'Cal should be a structure with no more than 3 fields'); 
+            assert(~isempty(cal), 'Calibration data should not be empty'); 
             %Extract the fields names
             fields = fieldnames(cal);
             %Check that the first fields is path
-            assert(and(isfield(cal,'path'),~isempty(cal.(fields{1}))),...
+            assert(and(isfield(cal,'path'),~isempty(cal.cal)),...
                     'no filepath provided in Cal');
             %Check that the file path exist
             assert(exist(cal.path,'file') == 2,...
@@ -157,49 +164,44 @@ classdef Movie <  handle
          
             if (length(fields)<3)
             else
-                assert(and(isfield(cal,'info'),isfield(cal,'file')),...
-                'Something is wrong in the fieldnames in cal');
-                if(or(and(~isstruct(cal.info),or(isempty(cal.info),...
-                        numel(fieldnames(cal.info)) ~= 6)),and(~isstruct(cal.file),or(isempty(cal.file),numel(fieldnames(cal.file)) ~= 9))))
+                if(or(and(isfield(cal,'info'),isfield(cal,'file')),...
+                        or(and(~isstruct(cal.info),...
+                        or(isempty(cal.info),numel(fieldnames(cal.info)) ~= 6)),...
+                        and(~isstruct(cal.file),...
+                        or(isempty(cal.file),numel(fieldnames(cal.file)) ~= 9)))))
                 else
                     checkRes = true;
                 end
             end
         end
-        
+         
         function [checkRes] = checkStatus(obj,status)
             checkRes = false;
             switch status
                 case 'none'
-                    if(isfield(obj,'raw'))
+                    if(isprop(obj,'raw'))
                     else
                         checkRes = true;
                     end
                 case 'raw'
-                    if(isfield(obj,'raw'))
+                    if(isprop(obj,'raw'))
                     [checkRes] = obj.checkRaw(obj.raw);
                     end
-                case 'rawCalc'
-                    if(and(isfield(obj,'raw'),isfield(obj,'cal')))
-                        [checkRes] = obj.checkRaw(obj.raw);
+                case 'rawCal'
+                    [checkRes] = obj.checkStatus('raw');
+                    if(isprop(obj,'cal'))
                         [checkRes2] = obj.checkCal(obj.cal);
                         checkRes = checkRes*checkRes2;                        
                     end
                 case 'Calibrated'
-                    if(and(isfield(obj,'raw'),isfield(obj,'cal')))
-                        [checkRes] = obj.checkRaw(obj.raw);
-                        [checkRes2] = obj.checkCal(obj.cal);
+                    [checkRes] = obj.checkStatus('rawCal');
                         %add checkCalibrated
-                        checkRes = checkRes*checkRes2;                        
-                    end
+                   % checkRes = checkRes*checkRes2;                        
+                   
                 case 'SRCalibrated'
-                    if(and(isfield(obj,'raw'),isfield(obj,'cal')))
-                        [checkRes] = obj.checkRaw(obj.raw);
-                        [checkRes2] = obj.checkCal(obj.cal);
-                        %add checkCalibrated
+                    [checkRes] = obj.checkStatus('Calibrated');
                         %addCheckSRCalibrated
-                        checkRes = checkRes*checkRes2;                        
-                    end
+                        %checkRes = checkRes*checkRes2;                        
             end
         end
         
@@ -208,6 +210,27 @@ classdef Movie <  handle
             %   Detailed explanation goes here
             outputArg = obj.Property1 + inputArg;
         end
+    end
+    
+    methods (Access = private)
+        
+        
+        function updateStatus(obj)
+            
+            if(isempty(obj.raw))
+                obj.status = 'none';
+            elseif (isempty(obj.cal))
+                obj.status = 'raw';
+            elseif (isempty(obj.calibrated))
+                obj.status = 'rawCalc';
+            elseif (isempty(obj.superResCal))
+                obj.status = 'calibrated';
+            else
+                obj.status = 'SRCalibrated';
+            end
+
+        end
+        
     end
 end
 

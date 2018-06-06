@@ -34,7 +34,7 @@ filePath = [folderPath filesep fName];
 
 raw.path = filePath;
 raw.info = movInfo;
-testMov = Core.Movie(raw,calib);
+testMov = Core.Movie(raw,[],calib);
 
 frame = 1:movInfo.maxFrame(1);
 [data, frameInfo, movInfo] = mpSetup.loadAndCal( testMov.raw.path, testMov.cal.file, frame);
