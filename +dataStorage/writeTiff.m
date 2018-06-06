@@ -9,7 +9,11 @@ function [tifObject] = writeTiff(tifObject,mov,bit)
     assert(isa(tifObject,'Tiff'),'Input 1 should be a tiff');
     assert(ismember(length(size(mov)),[2 3]), 'The data you are trying to save has an unexpected dimension');
     assert(ismember(bit,[2 4 8 16 32]), 'Unexpected number of bit for saving tiff');
-
+    cFrame = currentDirectory(tifObject);
+    if cFrame ~=0
+        tifObject.writeDirectory;
+        disp('File is not empty, appending');
+    end
     setTag(tifObject,'ImageLength',size(mov,1))
     setTag(tifObject,'ImageWidth',size(mov,2))
     setTag(tifObject,'Photometric',Tiff.Photometric.MinIsBlack)
