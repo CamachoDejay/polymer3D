@@ -22,6 +22,13 @@ mov.getCalibration(path2Cal);
 %% Calibrate
 mov.getCalibrated(path2File);
 
+%% getFrame
+
+[data] = mov.getFrame(22);
+
+%% showFrame
+mov.showFrame(22);
+
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
 for i = 1:8

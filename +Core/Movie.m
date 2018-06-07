@@ -190,12 +190,54 @@ classdef Movie <  handle
      
         end
         
+        function getRaw(obj,path)
+            obj.raw = path;
+        end
+        
         function getCalibration(obj,path)
             obj.cal = path;
         end
         
         function getCalibrated(obj,path)
             obj.calibrated = path;
+        end
+        
+        function [data] = getFrame(obj,idx)
+            assert(length(idx)==1,'Error too many frame requested, please load one at a time');
+            if or(strcmp(obj.status,'raw'),strcmp(obj.status,'rawCalc'))
+                [movC1,movC2,test] = Load.Movie.ome.load(obj.frameInfo,obj.movieInfo,idx);
+                data.Cam1 = movC1;
+                data.Cam2 = movC2;
+                
+            elseif or(strcmp(obj.status,'calibrated'),strcmp(obj.status,'SRCalibrated'))
+                for i = 1:numel(fields(obj.calibrated.filePath))
+                    [mov] = Load.Movie.tif.getframes(obj.calibrated.filePath.(sprintf('plane%d',i)),idx);
+                    data.(sprintf('plane%d',i)) = mov;
+                end
+            end
+                
+        end
+        
+        function showFrame(obj,idx)
+            assert(length(idx)==1,'Error too many frame requested, please load one at a time');
+            [frame] = getFrame(obj,idx);
+            assert(isstruct(frame),'Error unknown data format, data should be a struct');
+            nImages = numel(fields(obj.calibrated.filePath));
+            fNames = fieldnames(frame);
+            if nImages > 2 
+                nsFig = 2;
+            else
+                nsFig = 1;
+            end
+            
+            figure(10)
+            for i = 1:nImages
+                subplot(nsFig,nImages/nsFig,i)
+                imagesc(frame.(fNames{i}))
+                axis image;
+                title(fNames(i));
+                colormap('hot')
+            end
         end
         
         function [file2Analyze] = getOMETIF(obj,path)
@@ -244,20 +286,7 @@ classdef Movie <  handle
                     end
             end
         end
-        
-%         function getRaw(obj,raw)
-%             if(isempty(obj.raw))
-%                 obj.raw = raw;
-%             else
-%                 obj.raw = raw;
-%             end
-%             
-%         end
-%         
-%         function getRCal(obj,cal)
-%             obj.cal;
-%         end
-        
+               
         function outputArg = method1(obj,inputArg)
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
