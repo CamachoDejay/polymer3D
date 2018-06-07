@@ -53,6 +53,8 @@ classdef Movie <  handle
                 path = raw;
                 clear raw
                 raw.path = path;
+            else
+                error('Unexpected format for raw');
             end
             %Thorough check of the raw
             [checkRes] = obj.checkRaw(raw);
@@ -89,6 +91,8 @@ classdef Movie <  handle
                 path = cal;
                 clear raw
                 cal.path = path;
+            else
+                error('Unexpected format for raw');
             end
             
             [checkRes] = obj.checkCal(cal);
@@ -140,11 +144,12 @@ classdef Movie <  handle
              'File specified in raw cannot be found');
             if (length(fields)==1)
             else %if 2 fields check that the format of raw.info is correct 
-                if(or(isfield(raw,'info'),and(~isstruct(raw.info),...
-                        or(isempty(raw.info),...
-                        numel(fieldnames(raw.info)) ~= 6))))
+                if(and(isfield(raw,'info'), isstruct(raw.info)))
+                    if (and(isempty(raw.info), numel(fieldnames(raw.info)) ~= 6))
+                        checkRes = true;
+                    else
+                    end
                 else
-                    checkRes = true;
                 end
             end
         end
@@ -175,16 +180,17 @@ classdef Movie <  handle
          
             if (length(fields)<3)
             else
-                %TODO: Making it more readable?
                 %check if the field exist, if the field is a struct and if
                 %it has the expected number of fields.
-                if(or(and(isfield(cal,'info'),isfield(cal,'file')),...
-                        or(and(~isstruct(cal.info),...
-                        or(isempty(cal.info),numel(fieldnames(cal.info)) ~= 6)),...
-                        and(~isstruct(cal.file),...
-                        or(isempty(cal.file),numel(fieldnames(cal.file)) ~= 9)))))
-                else
-                    checkRes = true;
+                if(and(isfield(cal,'info'),isfield(cal,'file')))
+                    if(and(~isempty(cal.info),~isempty(cal.file)))
+                        if (and(isstruct(cal.info),isstruct(cal.file)))
+                            if and(numel(fieldnames(cal.info)) ~= 6,...
+                                   numel(fieldnames(cal.file)) ~= 9)
+                                checkRes = true;
+                            end
+                        end
+                    end
                 end
             end
         end
