@@ -10,65 +10,17 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-filePath = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
-fName = 'BeadsCalibrationZStack_1_MMStack_Pos0.ome.tif';
 
-fullfilePath = [filePath filesep fName];
+path2File = '..\data\Multiplane\Data\TL-OD2-200msExposure_1';
+path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
-% Calculate calibration
-[cal, info] = mpSetup.cali.calculate(fullfilePath, false);
-calib.path = filePath;
-calib.info = info;
-calib.file = cal;
-disp('Done with calibration')
-%%
-% load and calibrate, when applied to the calibration data then we should
-% be able to demonstrate that it works
+%% create a Movie Object
+mov = Core.Movie(path2File);
+%% Calculate calibration
+mov.getCalibration(path2Cal);
 
-folderPath = '..\data\Multiplane\Data\TL-OD2-200msExposure_1';
-%fName = 'TL-OD2-200msExposure_1_MMStack_Pos0.ome.tif';
-%filePath = [folderPath filesep fName];
-
-% % load general information about the multi-plane movie
-% [~, movInfo, ~ ]= Load.Movie.ome.getInfo( filePath );
-% 
-% raw.path = filePath;
-% raw.info = movInfo;
-raw = folderPath;
-testMov = Core.Movie(raw,[],calib.path);
-%%
-frame = 1:movInfo.maxFrame(1);
-[data, frameInfo, movInfo] = mpSetup.loadAndCal( testMov.raw.Path, testMov.cal.file, frame);
-step = 100;
-fid = fopen([folderPath filesep 'CalibratedInfo.txt'],'w');
-fprintf(fid,'The information in this file are intended to the user. They are generated automatically so please do not edit them\n');
-for i = 1:size(data,3)
-    
-    fName = sprintf('calibratedPlane%d.tif',i);
-    fPathTiff = [folderPath filesep fName];
-    t = Tiff(fPathTiff, 'w');
-    for j = 1:step:size(data,4)
-        range = j:j+step-1;
-        if max(range)>= size(data,4)
-            range = j:size(data,4);
-        end
-    t = dataStorage.writeTiff(t,squeeze(data(:,:,i,range)),16);
-    
-    end
-    t.close;
-    fprintf(fid,...
-        'Image plane %d: Cam %d, Channel %d Col1: %d Col2: %d, Rel. Zpos: %0.3f \n ',...
-        i,testMov.cal.file.inFocus(testMov.cal.file.neworder==i).cam,...
-        testMov.cal.file.inFocus(testMov.cal.file.neworder==i).ch,...
-        testMov.cal.file.ROI(testMov.cal.file.neworder==i,1),...
-        testMov.cal.file.ROI(testMov.cal.file.neworder==i,1)+...
-        testMov.cal.file.ROI(testMov.cal.file.neworder==i,3),...
-        testMov.cal.file.inFocus(testMov.cal.file.neworder==i).zpos-...
-        testMov.cal.file.inFocus(testMov.cal.file.neworder==1).zpos);
-        
-end
-fclose(fid);
-
+%% Calibrate
+mov.getCalibrated(path2File);
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();

@@ -46,36 +46,25 @@ classdef Movie <  handle
         end
         
         function  set.raw(obj,raw)
-            %Check if the raw is a struct(full info) or a char
-            %(only path)
-            if isstruct(raw)
-            elseif ischar(raw)
-                path = raw;
-                clear raw
-                raw.path = path;
-            else
-                error('Unexpected format for raw');
+          
+            %Check Given path
+            [file2Analyze] = getOMETIF(obj,raw);
+      
+            if length(file2Analyze)>1
+                fprintf('More than one Tiff, Loading %s \n', file2Analyze(1).name);
             end
-            %Thorough check of the raw
-            [checkRes] = obj.checkRaw(raw);
-            %Depending on how the check went we propose the user to 
-            %recalculate the parts that are wrong.
-            if checkRes == false
-                answer = questdlg('Path of raw file seems fine but something is wrong with the info, should we re-extract it?',...
-                    'Question to user','Yes','No','Yes');
-                switch answer
-                    case 'Yes'
-                        [~, movInfo, ~ ] = Load.Movie.ome.getInfo(raw.path);
-                        raw.info = movInfo;
-                    case 'No'
-                        error('Something is wrong with raw file, request aborted.')
-                end
-            end
-            obj.raw = raw;
+            fullPath = [file2Analyze.folder filesep file2Analyze(1).name];
+            [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
+            %Check info for 2 cam
+            assert(length(movInfo.Cam)==2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
+            obj.raw.movInfo = movInfo;
+            obj.raw.frameInfo = frameInfo;
+            obj.raw.fullPath = fullPath;
+            
+            obj.updateStatus;
         end
         
         function set.info(obj,info)
-            [checkRes] = obj.checkInfo(info);
             if checkRes
                 obj.info = info;
             else
@@ -84,146 +73,190 @@ classdef Movie <  handle
         end
         
         function set.cal(obj,cal)
-            %Check if the calibration is a struct(full info) or a char
-            %(only path)
-            if isstruct(cal)
-            elseif ischar(cal)
-                path = cal;
-                clear raw
-                cal.path = path;
+            assert(obj.checkStatus('raw'),'Experimental status is too early to get the calibration, probably raw is missing');
+            [file2Analyze] = getFileInPath(obj, cal, '.mat');
+            
+            if (~isempty(file2Analyze))
+                fullPath = [file2Analyze.folder filesep file2Analyze.name];
+                tmp = load(fullPath);
+                cal = tmp.calibration;
+                obj.cal = cal;
             else
-                error('Unexpected format for raw');
+                [calibration] = obj.calcCalibration(cal);
+                obj.cal = calibration;
             end
             
-            [checkRes] = obj.checkCal(cal);
-            if checkRes == false
-                answer = questdlg('Path of calibration seems fine but something is wrong with the info, should we re-extract it?',...
-                    'Question to user','Yes','No','Yes');
-                switch answer
-                    case 'Yes'             
-                        [cal, movInfo] = mpSetup.cali.calculate(cal.path, false);
-                        cal.info = movInfo;
-                        cal.file = cal;
-                    case 'No' 
-                        error('Something is wrong with calibration, request aborted.')
-                end
-            end
-            obj.cal = cal;
+            
+            obj.updateStatus;
         end
-        %What to do with this one?
-%         function set.status(obj,status)
-%             [checkRes] = obj.checkStatus(status);
-%             if checkRes
-%             obj.status = status;
-%             else
-%                 error('There is a mismatch between the current experimental status and the content of the movie object, please check.')
-%             end 
-%         end
 
         function set.calibrated(obj,calibrated)
-            %TO DO write the needed assertion.
+          assert(obj.checkStatus('rawCal'),'Experiment status is too early to calibrate, probably calibration and/or raw file missing');
+          folderContent = dir(calibrated);
+          idx2Calibrated = contains({folderContent.name}, 'calibrated');
+          
+          if length(unique(idx2Calibrated))<2
+              [calibrated] = obj.calibrate;
+          elseif length(unique(idx2Calibrated))==2
+              fullPath = [calibrated filesep 'calibrated'];
+              [file2Analyze] = getFileInPath(obj, fullPath, '.mat');           
+              if (~isempty(file2Analyze))
+                fullpath = [file2Analyze.folder filesep file2Analyze.name];
+                tmp = load(fullpath);
+                calibrated = tmp.calib;
+              else
+                [calibrated] = obj.calibrate;
+              end
+          else
+              error('Something is wrong with your calibrated directory');
+          end
             obj.calibrated = calibrated;
+            obj.updateStatus;
         end
         
         function set.superResCal(obj,superResCal)
-            %TO DO write the needed assertion.
             obj.superResCal = superResCal;
         end
         
-        function [checkRes] = checkRaw(~,raw)
-            checkRes = false;
-            %check that raw is not empty
-            assert(~isempty(raw), 'Raw data should not be empty, a path should at least be provided');
-            %Extract the fields names
-            fields = fieldnames(raw);
-            %Check that the first fields is path
-            assert(and(isfield(raw,'path'),~isempty(raw.path)),...
-                    'no filepath provided in Raw');
-            %Check that the file path exist
-            assert(exist(raw.path,'file') == 2,...
-             'File specified in raw cannot be found');
-            if (length(fields)==1)
-            else %if 2 fields check that the format of raw.info is correct 
-                if(and(isfield(raw,'info'), isstruct(raw.info)))
-                    if (and(isempty(raw.info), numel(fieldnames(raw.info)) ~= 6))
-                        checkRes = true;
-                    else
-                    end
-                else
-                end
-            end
-        end
-    
-        function [checkRes] = checkInfo(~,info)
-            checkRes = true;
-            if(isempty(info))
-                warning('You did not provide info to the movie')
-            else
-                if ~isstruct(info)
-                    checkRes = false;
-                end
-            end
+        function [file2Analyze] = getFileInPath(~, path, ext)
+            
+            assert(ischar(path),'The given path should be a char');
+            assert(ischar(ext),'The given extension should be a char');
+            folderContent = dir(path);
+            index2Images   = contains({folderContent.name},ext);
+            file2Analyze = folderContent(index2Images);
         end
         
-        function [checkRes] = checkCal(~,cal)
-            checkRes = false;
-            %check that raw is not empty
-            assert(~isempty(cal), 'Calibration data should not be empty'); 
-            %Extract the fields names
-            fields = fieldnames(cal);
-            %Check that the first fields is path
-            assert(and(isfield(cal,'path'),~isempty(cal.path)),...
-                    'no filepath provided in Cal');
-            %Check that the file path exist
-            assert(exist(cal.path,'file') == 2,...
-             'File specified in cal.path cannot be found')
-         
-            if (length(fields)<3)
-            else
-                %check if the field exist, if the field is a struct and if
-                %it has the expected number of fields.
-                if(and(isfield(cal,'info'),isfield(cal,'file')))
-                    if(and(~isempty(cal.info),~isempty(cal.file)))
-                        if (and(isstruct(cal.info),isstruct(cal.file)))
-                            if and(numel(fieldnames(cal.info)) ~= 6,...
-                                   numel(fieldnames(cal.file)) ~= 9)
-                                checkRes = true;
-                            end
-                        end
-                    end
-                end
-            end
+        function [calibration] = calcCalibration(obj,path)
+            
+            [file2Analyze] = obj.getOMETIF(path);
+            fullPath = [file2Analyze.folder filesep file2Analyze.name];
+            [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
+            assert(length(movInfo.Cam)==2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
+            assert(length(unique(cellfun(@str2num,{frameInfo.Z})))>2,'Z position is not changing across the selected calibration file, this is strange.');
+            
+            [calib, inform] = mpSetup.cali.calculate(fullPath);
+            
+            calibration.info = inform;
+            calibration.file = calib;
+            
+            filename = [file2Analyze.folder filesep 'calibration.mat'];
+            calibration.fullPath = filename;
+            save(filename,'calibration');
+   
         end
-         
+        
+        function [calib] = calibrate(obj)
+           
+            frame = 1:obj.raw.movInfo.maxFrame(1);
+            [data, ~, ~] = mpSetup.loadAndCal( obj.raw.fullPath, obj.cal.file, frame);
+            step = 100;
+            calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
+            mkdir(calDir);
+            
+            fid = fopen([calDir filesep 'CalibratedInfo.txt'],'w');
+            fprintf(fid,'The information in this file are intended to the user. They are generated automatically so please do not edit them\n');
+            calib.mainPath = calDir;
+            for i = 1:size(data,3)
+
+                fName = sprintf('calibratedPlane%d.tif',i);
+                fPathTiff = [calDir filesep fName];
+                fieldN = sprintf('plane%d',i);
+                calib.filePath.(fieldN) = fPathTiff;
+                t = Tiff(fPathTiff, 'w');
+                    for j = 1:step:size(data,4)
+                    range = j:j+step-1;
+                        if max(range)>= size(data,4)
+                        range = j:size(data,4);
+                        end
+                    t = dataStorage.writeTiff(t,squeeze(data(:,:,i,range)),16);
+                    end
+                t.close;
+                fprintf(fid,...
+                'Image plane %d: Cam %d, Channel %d Col1: %d Col2: %d, Rel. Zpos: %0.3f \n ',...
+                i,obj.cal.file.inFocus(obj.cal.file.neworder(i)).cam,...
+                obj.cal.file.inFocus(obj.cal.file.neworder(i)).ch,...
+                obj.cal.file.ROI(obj.cal.file.neworder(i),1),...
+                obj.cal.file.ROI(obj.cal.file.neworder(i),1)+...
+                obj.cal.file.ROI(obj.cal.file.neworder(i),3),...
+                obj.cal.file.inFocus(obj.cal.file.neworder(i)).zpos-...
+                obj.cal.file.inFocus(obj.cal.file.neworder(1)).zpos);
+                
+                
+            end
+            fclose(fid);
+            fName = [calDir filesep 'calibrated.mat'];
+            save(fName,'calib');
+     
+        end
+        
+        function getCalibration(obj,path)
+            obj.cal = path;
+        end
+        
+        function getCalibrated(obj,path)
+            obj.calibrated = path;
+        end
+        
+        function [file2Analyze] = getOMETIF(obj,path)
+            expExt = '.ome.tif';
+            %Check Given path
+            [file2Analyze] = obj.getFileInPath(path, expExt);
+            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
+        end
+        
         function [checkRes] = checkStatus(obj,status)
+            %This function check whether the "condition status" is at least
+            %reach. e.g. When loading a calibration file we want to make
+            %sure that the status is raw or higher.
+
             checkRes = false;
             switch status
                 case 'none'
-                    if(isprop(obj,'raw'))
-                    else
                         checkRes = true;
-                    end
                 case 'raw'
-                    if(isprop(obj,'raw'))
-                    [checkRes] = obj.checkRaw(obj.raw);
+                    if(strcmp(obj.status,status))
+                    checkRes = true;
+                    else
+                        [checkRes] = obj.checkStatus('rawCal');
                     end
                 case 'rawCal'
-                    [checkRes] = obj.checkStatus('raw');
-                    if(isprop(obj,'cal'))
-                        [checkRes2] = obj.checkCal(obj.cal);
-                        checkRes = checkRes*checkRes2;                        
+                    
+                    if(strcmp(obj.status,status))
+                    checkRes = true;
+                    else
+                        [checkRes] = obj.checkStatus('calibrated');
+                        cond2 = ~isempty(obj.raw);
+                        checkRes = logical(checkRes*cond2);
+                        
                     end
-                case 'Calibrated'
-                    [checkRes] = obj.checkStatus('rawCal');
-                        %add checkCalibrated
-                   % checkRes = checkRes*checkRes2;                        
+                    
+                case 'calibrated'
+                    if(strcmp(obj.status,status))
+                        checkRes = true;
+                    else    
+                        [checkRes] = obj.checkStatus('SRCalibrated');
+                    end
                    
                 case 'SRCalibrated'
-                    [checkRes] = obj.checkStatus('Calibrated');
-                        %addCheckSRCalibrated
-                        %checkRes = checkRes*checkRes2;                        
+                    if(strcmp(obj.status,status))
+                        checkRes = true;
+                    end
             end
         end
+        
+%         function getRaw(obj,raw)
+%             if(isempty(obj.raw))
+%                 obj.raw = raw;
+%             else
+%                 obj.raw = raw;
+%             end
+%             
+%         end
+%         
+%         function getRCal(obj,cal)
+%             obj.cal;
+%         end
         
         function outputArg = method1(obj,inputArg)
             %METHOD1 Summary of this method goes here
@@ -234,7 +267,6 @@ classdef Movie <  handle
     
     methods (Access = private)
         
-        
         function updateStatus(obj)
             %Cascade, as long as nothing empty is found we keep looking at
             %the next element to know which status it is. 
@@ -243,7 +275,7 @@ classdef Movie <  handle
             elseif (isempty(obj.cal))
                 obj.status = 'raw';
             elseif (isempty(obj.calibrated))
-                obj.status = 'rawCalc';
+                obj.status = 'rawCal';
             elseif (isempty(obj.superResCal))
                 obj.status = 'calibrated';
             elseif (~isempty(obj.superResCal))
