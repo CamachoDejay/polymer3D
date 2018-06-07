@@ -13,7 +13,7 @@ switch nargin
         flipCam2 = true;
 end
 
-cal.correctInt = correctInt;
+cal.correctInt = false;
 
 
 cal.reorder    = true;
