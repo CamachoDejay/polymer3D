@@ -11,6 +11,7 @@ classdef Movie <  handle
        status = 'none';
        info
        calibrated
+       candidatePos
        superResCal
  
     end
@@ -44,7 +45,7 @@ classdef Movie <  handle
             end
             obj.updateStatus;
         end
-        
+%%%%%%%%%%%%%%%%%%%%%%%%%%% SETTER FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function  set.raw(obj,raw)
           
             %Check Given path
@@ -64,12 +65,12 @@ classdef Movie <  handle
             obj.updateStatus;
         end
         
-        function set.info(obj,info)
-            if checkRes
-                obj.info = info;
-            else
-                warning('Something is wrong with the format of the info provided by the user, storage aborted')
-            end
+        function set.info(obj,inform)
+            names = fieldnames(inform);
+          for i = 1:numel(fields(inform))
+              obj.info.(names{i}) = inform.(names{i});
+          end
+          
         end
         
         function set.cal(obj,cal)
@@ -124,10 +125,17 @@ classdef Movie <  handle
             obj.updateStatus;
         end
         
+        function set.candidatePos(obj,candidatePos)
+            assert(iscell(candidatePos), 'Expecting a cell containing candidate positions');
+            
+            obj.candidatePos = candidatePos;
+        end
+        
         function set.superResCal(obj,superResCal)
             obj.superResCal = superResCal;
         end
-        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% GET PATH  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
         function [file2Analyze] = getFileInPath(~, path, ext)
             
             assert(ischar(path),'The given path should be a char');
@@ -137,6 +145,13 @@ classdef Movie <  handle
             file2Analyze = folderContent(index2Images);
         end
         
+        function [file2Analyze] = getOMETIF(obj,path)
+            expExt = '.ome.tif';
+            %Check Given path
+            [file2Analyze] = obj.getFileInPath(path, expExt);
+            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
+        end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Calibration  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%      
         function [calibration] = calcCalibration(obj,path)
             
             [file2Analyze] = obj.getOMETIF(path);
@@ -167,17 +182,19 @@ classdef Movie <  handle
             fid = fopen([calDir filesep 'CalibratedInfo.txt'],'w');
             fprintf(fid,'The information in this file are intended to the user. They are generated automatically so please do not edit them\n');
             calib.mainPath = calDir;
+            calib.nPlanes   = size(data,3);
             for i = 1:size(data,3)
 
                 fName = sprintf('calibratedPlane%d.tif',i);
                 fPathTiff = [calDir filesep fName];
                 fieldN = sprintf('plane%d',i);
                 calib.filePath.(fieldN) = fPathTiff;
+                calib.nFrames = size(data,4);
                 t = Tiff(fPathTiff, 'w');
-                    for j = 1:step:size(data,4)
+                    for j = 1:step:calib.nFrames
                     range = j:j+step-1;
-                        if max(range)>= size(data,4)
-                        range = j:size(data,4);
+                        if max(range)>= calib.nFrames
+                        range = j:calib.nFrames;
                         end
                     t = dataStorage.writeTiff(t,squeeze(data(:,:,i,range)),16);
                     end
@@ -201,7 +218,7 @@ classdef Movie <  handle
             save(fName,'calib');
      
         end
-        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%GETTER FUNCTION%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
         function getRaw(obj,path)
             obj.raw = path;
         end
@@ -212,6 +229,83 @@ classdef Movie <  handle
         
         function getCalibrated(obj,path)
             obj.calibrated = path;
+        end
+        
+        function giveInfo(obj)
+            prompt = {'Enter the pixel size: ','Enter the NA of the objective ',...
+                'Enter the emission wavelength', 'Any comment about experiment?'};
+            dlgTitle = 'Information about experimental parameters';
+            numLines = 1;
+            defaultVal = {'95','1.2','520',''};
+            answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
+            
+            assert(~isempty(answer),'User canceled input dialog, Simulation was aborted')
+
+            pxSize = str2double(answer(1));
+            assert(~isnan(pxSize),'Number of Frame should be numerical');%If not a number
+            
+            NA = str2double(answer(2));
+            assert(~isnan(NA),'NA should be numerical');
+            
+            emW = str2double(answer(3));
+            assert(~isnan(emW),'Emission wavelength should be numerical');
+            
+            comment = answer(4);
+            
+            inform.pxSize = pxSize;
+            inform.NA = NA;
+            inform.emW = emW;
+            inform.comment = comment;
+            obj.info = inform;
+        end
+        
+        function getCandidatePos(obj,detectParam, frames)
+            switch nargin
+                case 3
+                    assert(obj.checkStatus('calibrated'),'Data should be calibrated to detect candidate');
+                    assert(isvector(frames),'Frames should be a vector of integers');
+                    assert(isstruct(detectParam),'Detection parameter should be a struct with two fields');
+                    nFrames = length(frames);
+
+                    currentCandidate = obj.candidatePos;
+                    if(isempty(currentCandidate))
+                        candidate = cell(obj.calibrated.nFrames,1);
+                    else
+                        candidate = currentCandidate;
+                    end
+
+                    %parameter for localization
+                    objNA  = obj.info.NA;
+                    emWave = obj.info.emW;
+                    sigma_nm = 0.25 * emWave/objNA;
+                    FWHMnm = sigma_nm * sqrt(8*log(2));
+                    pxSnm  = obj.info.pxSize;
+                    FWHM_pix = FWHMnm/pxSnm;
+                    delta  = detectParam.delta;
+                    chi2   = detectParam.chi2;
+
+                    position = zeros(200,3);
+                    for i = 1 : 1:nFrames
+                        [volIm] = obj.getFrame(frames(i)); 
+                        nameFields = fieldnames(volIm);
+                        for j = 1:length(nameFields)
+                            [ pos, ~, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
+                                delta, FWHM_pix, chi2 );
+                            startIdx = find(position==0,1,'First');
+                            pos(:,3) = j;
+                            position(startIdx:startIdx+size(pos,1)-1,:) = pos;
+                        end
+                        candidate{frames(i)} = position;
+                    end
+
+                    obj.candidatePos = candidate;
+                otherwise
+                    disp('getCandidatePos is a function that detects features in a movie');
+                    disp('To work, it needs to receive a structure containing 2 detection parameter:');
+                    disp('delta which is the radius around which detection is performed? usually 6 pixels');
+                    disp('chi2 which characterize how certain you want to be about the fact that there is a molecule there');
+                    disp('Usually between 20 and 200');
+            end
         end
         
         function [data] = getFrame(obj,idx)
@@ -229,7 +323,7 @@ classdef Movie <  handle
             end
                 
         end
-        
+%%%%%%%%%%%%%%%%%%%%%%%%%%% DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
         function showFrame(obj,idx)
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
             [frame] = getFrame(obj,idx);
@@ -248,18 +342,49 @@ classdef Movie <  handle
                 subplot(2,nImages/nsFig,i)
                 imagesc(frame.(fNames{i}))
                 axis image;
+                grid on;
+                a = gca;
+                a.XTickLabel = [];
+                a.YTickLabel = [];
+                a.GridColor = [1 1 1];
                 title({fNames{i},sprintf(' Zpos = %0.3f',zPos(i))});
                 colormap('jet')
             end
         end
         
-        function [file2Analyze] = getOMETIF(obj,path)
-            expExt = '.ome.tif';
-            %Check Given path
-            [file2Analyze] = obj.getFileInPath(path, expExt);
-            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
+        function showCandidate(obj,idx)
+            assert(length(idx)==1, 'Only one frame can be displayed at once');
+            assert(~isempty(obj.candidatePos{idx}),'There is no candidate found in that frame, check that you ran the detection for that frame');
+            
+            [frame] = getFrame(obj,idx);
+            assert(isstruct(frame),'Error unknown data format, data should be a struct');
+            
+            nImages = numel(fields(frame));
+            fNames = fieldnames(frame);
+            nsFig = 2;
+            rowPos = obj.candidatePos{idx}(:,1);
+            colPos = obj.candidatePos{idx}(:,2);
+            planeIdx = obj.candidatePos{idx}(:,3);
+            h = figure(10);
+            h.Name = sprintf('Frame %d',idx);
+            for i = 1:nImages
+                
+                subplot(2,nImages/nsFig,i)
+                hold on
+                imagesc(frame.(fNames{i}))
+                scatter(colPos(planeIdx==i),rowPos(planeIdx==i))
+                axis image;
+                grid on;
+                a = gca;
+                a.XTickLabel = [];
+                a.YTickLabel = [];
+                a.GridColor = [1 1 1];
+                title({fNames{i},sprintf(' Zpos = %0.3f',obj.calibrated.oRelZPos(i))});
+                colormap('jet')
+                hold off
+            end
         end
-        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%                
         function [checkRes] = checkStatus(obj,status)
             %This function check whether the "condition status" is at least
             %reach. e.g. When loading a calibration file we want to make

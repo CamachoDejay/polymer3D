@@ -32,6 +32,16 @@ mov.getCalibrated(path2File);
 %% showFrame
 mov.showFrame(22);
 
+%% GiveInfo
+mov.giveInfo;
+%% getCandidatePos
+detectParam.delta = 6;
+detectParam.chi2 = 80;
+mov.getCandidatePos(detectParam,22);
+
+%% showCandidate
+mov.showCandidate(22);
+
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
 for i = 1:8

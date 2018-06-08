@@ -1,4 +1,4 @@
-function [ pos, inten ] = smDetection( im, delta, FWHM_pix, chi2 )
+function [ pos, inten, FAR ] = smDetection( im, delta, FWHM_pix, chi2 )
 %smDetection finds the positions where a single molecule is most probably
 %located in the input image using the generalized likelihood ratio test.
 %   These postions should be further tested to ensure that a SM is in fact
