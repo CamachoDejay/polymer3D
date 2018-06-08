@@ -16,6 +16,9 @@ path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
 %% create a Movie Object
 mov = Core.Movie(path2File);
+
+%% showFrame
+mov.showFrame(22);
 %% Calculate calibration
 mov.getCalibration(path2Cal);
 

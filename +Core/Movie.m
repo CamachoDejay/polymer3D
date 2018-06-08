@@ -181,10 +181,12 @@ classdef Movie <  handle
                 obj.cal.file.ROI(obj.cal.file.neworder(i),3),...
                 obj.cal.file.inFocus(obj.cal.file.neworder(i)).zpos-...
                 obj.cal.file.inFocus(obj.cal.file.neworder(1)).zpos);
-                
+                calib.oRelZPos(i) =  obj.cal.file.inFocus(obj.cal.file.neworder(i)).zpos-...
+                obj.cal.file.inFocus(obj.cal.file.neworder(1)).zpos;
                 
             end
             fclose(fid);
+           
             fName = [calDir filesep 'calibrated.mat'];
             save(fName,'calib');
      
@@ -205,7 +207,7 @@ classdef Movie <  handle
         function [data] = getFrame(obj,idx)
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
             if or(strcmp(obj.status,'raw'),strcmp(obj.status,'rawCalc'))
-                [movC1,movC2,test] = Load.Movie.ome.load(obj.frameInfo,obj.movieInfo,idx);
+                [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
                 data.Cam1 = movC1;
                 data.Cam2 = movC2;
                 
@@ -222,21 +224,21 @@ classdef Movie <  handle
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
             [frame] = getFrame(obj,idx);
             assert(isstruct(frame),'Error unknown data format, data should be a struct');
-            nImages = numel(fields(obj.calibrated.filePath));
+            nImages = numel(fields(frame));
             fNames = fieldnames(frame);
-            if nImages > 2 
-                nsFig = 2;
+            nsFig = 2;
+            if obj.checkStatus('calibrated')
+                zPos = obj.calibrated.oRelZPos;
             else
-                nsFig = 1;
+                zPos = zeros(size(fNames));
             end
-            
             figure(10)
             for i = 1:nImages
-                subplot(nsFig,nImages/nsFig,i)
+                subplot(2,nImages/nsFig,i)
                 imagesc(frame.(fNames{i}))
                 axis image;
-                title(fNames(i));
-                colormap('hot')
+                title({fNames{i},sprintf(' Zpos = %0.3f',zPos(i))});
+                colormap('jet')
             end
         end
         
