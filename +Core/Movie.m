@@ -47,7 +47,7 @@ classdef Movie <  handle
         end
 %%%%%%%%%%%%%%%%%%%%%%%%%%% SETTER FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function  set.raw(obj,raw)
-          
+            assert(isfolder(raw), 'The given path is not a folder');
             %Check Given path
             [file2Analyze] = getOMETIF(obj,raw);
       
@@ -66,17 +66,20 @@ classdef Movie <  handle
         end
         
         function set.info(obj,inform)
+            assert(isstruct(inform),'Information is expected to be a structure');
             names = fieldnames(inform);
           for i = 1:numel(fields(inform))
               obj.info.(names{i}) = inform.(names{i});
           end
-          
+          obj.updateStatus;
         end
         
         function set.cal(obj,cal)
             assert(obj.checkStatus('raw'),'Experimental status is too early to get the calibration, probably raw is missing');
+            assert(isfolder(cal), 'The given path is not a folder');
             [file2Analyze] = getFileInPath(obj, cal, '.mat');
-            
+            %if there is a .mat in the folder, the calibration was already
+            %calculated, we just load it
             if (~isempty(file2Analyze))
                 disp('The calibration was already calculated, Loading from existing file');
                 fullPath = [file2Analyze.folder filesep file2Analyze.name];
@@ -84,6 +87,7 @@ classdef Movie <  handle
                 cal = tmp.calibration;
                 obj.cal = cal;
                 disp('Done');
+            %otherwise we calculate it
             else
                 disp('Calculating the calibration from calibration data');
                 [calibration] = obj.calcCalibration(cal);
@@ -91,28 +95,39 @@ classdef Movie <  handle
                 disp('Calibration is now saved');
             end
             
-            
             obj.updateStatus;
         end
 
         function set.calibrated(obj,calibrated)
           assert(obj.checkStatus('rawCal'),'Experiment status is too early to calibrate, probably calibration and/or raw file missing');
+          assert(isfolder(calibrated), 'The given path is not a folder');
           folderContent = dir(calibrated);
           idx2Calibrated = contains({folderContent.name}, 'calibrated');
-          
+          %if there is only 1 diff value, this value must be 0 and thus
+          %calibrated folder does not exist thus, we calibrate
           if length(unique(idx2Calibrated))<2
               disp('Calibrating the dataset');
               [calibrated] = obj.calibrate;
               disp('Data is now calibrated');
+          %if there is 2 value, then calibrated folder exist and then we
+          %check if a calibration file is in there.
           elseif length(unique(idx2Calibrated))==2
               fullPath = [calibrated filesep 'calibrated'];
               [file2Analyze] = getFileInPath(obj, fullPath, '.mat');           
               if (~isempty(file2Analyze))
+                [file] = getFileInPath (obj,fullPath,'.tif');
+                if length(file) == 8
                 disp('The dataset is already calibrated, Loading from existing file');
                 fullpath = [file2Analyze.folder filesep file2Analyze.name];
                 tmp = load(fullpath);
                 calibrated = tmp.calib;
                 disp('Done');
+                else
+                    error('Some planes are missing (expect 8), recalibrating...');
+%                     disp('Some planes are missing (expect 8), recalibrating...');
+%                     [calibrated] = obj.calibrate;
+%                     disp('Data is now calibrated');
+                end
               else
                 disp('Calibrating the dataset');
                 [calibrated] = obj.calibrate;
@@ -129,20 +144,23 @@ classdef Movie <  handle
             assert(iscell(candidatePos), 'Expecting a cell containing candidate positions');
             
             obj.candidatePos = candidatePos;
+            obj.updateStatus;
         end
         
         function set.superResCal(obj,superResCal)
+            %Assertion are still needed
             obj.superResCal = superResCal;
+            obj.updateStatus;
         end
+        
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% GET PATH  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
         function [file2Analyze] = getFileInPath(~, path, ext)
-            
             assert(ischar(path),'The given path should be a char');
             assert(ischar(ext),'The given extension should be a char');
+            assert(isfolder(path),'The path given is not a folder')
             folderContent = dir(path);
-            index2Images   = contains({folderContent.name},ext);
-            file2Analyze = folderContent(index2Images);
+            index2Images  = contains({folderContent.name},ext);
+            file2Analyze  = folderContent(index2Images);
         end
         
         function [file2Analyze] = getOMETIF(obj,path)
@@ -168,17 +186,17 @@ classdef Movie <  handle
             filename = [file2Analyze.folder filesep 'calibration.mat'];
             calibration.fullPath = filename;
             save(filename,'calibration');
-   
         end
         
         function [calib] = calibrate(obj)
-           
+            %Load and calibrate the movie using the calibration file
             frame = 1:obj.raw.movInfo.maxFrame(1);
             [data, ~, ~] = mpSetup.loadAndCal( obj.raw.fullPath, obj.cal.file, frame);
             step = 100;
             calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
             mkdir(calDir);
-            
+            %Save the resulting planes in separated TIF and save a txt info
+            %file
             fid = fopen([calDir filesep 'CalibratedInfo.txt'],'w');
             fprintf(fid,'The information in this file are intended to the user. They are generated automatically so please do not edit them\n');
             calib.mainPath = calDir;
@@ -260,10 +278,22 @@ classdef Movie <  handle
         end
         
         function getCandidatePos(obj,detectParam, frames)
-            switch nargin
+            switch nargin 
+                case 1
+                    run = false;
+                case 2
+                    frames = 1: obj.calibrated.nFrames;
+                    run = true;
+                    disp('Running detection on every frame');
                 case 3
+                    run= true;
+                    [frames] = Check.frame(frames);
+                otherwise
+                    error('too many inputs');
+            end
+            
+            if run
                     assert(obj.checkStatus('calibrated'),'Data should be calibrated to detect candidate');
-                    assert(isvector(frames),'Frames should be a vector of integers');
                     assert(isstruct(detectParam),'Detection parameter should be a struct with two fields');
                     nFrames = length(frames);
 
@@ -273,7 +303,6 @@ classdef Movie <  handle
                     else
                         candidate = currentCandidate;
                     end
-
                     %parameter for localization
                     objNA  = obj.info.NA;
                     emWave = obj.info.emW;
@@ -284,8 +313,9 @@ classdef Movie <  handle
                     delta  = detectParam.delta;
                     chi2   = detectParam.chi2;
 
-                    position = zeros(200,3);
+                    h = waitbar(0,'detection of candidates...');
                     for i = 1 : 1:nFrames
+                        position = zeros(200,3);
                         [volIm] = obj.getFrame(frames(i)); 
                         nameFields = fieldnames(volIm);
                         for j = 1:length(nameFields)
@@ -296,10 +326,12 @@ classdef Movie <  handle
                             position(startIdx:startIdx+size(pos,1)-1,:) = pos;
                         end
                         candidate{frames(i)} = position;
+                        waitbar(i/nFrames,h,...
+                            sprintf('detection of candidates in Frame %d/%d done',i,nFrames));
                     end
-
+                    close(h);
                     obj.candidatePos = candidate;
-                otherwise
+            else
                     disp('getCandidatePos is a function that detects features in a movie');
                     disp('To work, it needs to receive a structure containing 2 detection parameter:');
                     disp('delta which is the radius around which detection is performed? usually 6 pixels');
@@ -309,7 +341,9 @@ classdef Movie <  handle
         end
         
         function [data] = getFrame(obj,idx)
-            assert(length(idx)==1,'Error too many frame requested, please load one at a time');
+            assert(length(idx)==1,'Requested frame exceed the size of the movie');
+            [idx] = obj.checkFrame(idx);
+            
             if or(strcmp(obj.status,'raw'),strcmp(obj.status,'rawCalc'))
                 [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
                 data.Cam1 = movC1;
@@ -320,12 +354,13 @@ classdef Movie <  handle
                     [mov] = Load.Movie.tif.getframes(obj.calibrated.filePath.(sprintf('plane%d',i)),idx);
                     data.(sprintf('plane%d',i)) = mov;
                 end
-            end
-                
+            end  
         end
+        
 %%%%%%%%%%%%%%%%%%%%%%%%%%% DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
         function showFrame(obj,idx)
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
+            [idx] = obj.checkFrame(idx);
             [frame] = getFrame(obj,idx);
             assert(isstruct(frame),'Error unknown data format, data should be a struct');
             nImages = numel(fields(frame));
@@ -354,6 +389,7 @@ classdef Movie <  handle
         
         function showCandidate(obj,idx)
             assert(length(idx)==1, 'Only one frame can be displayed at once');
+            [idx] = obj.checkFrame(idx);
             assert(~isempty(obj.candidatePos{idx}),'There is no candidate found in that frame, check that you ran the detection for that frame');
             
             [frame] = getFrame(obj,idx);
@@ -383,7 +419,9 @@ classdef Movie <  handle
                 colormap('jet')
                 hold off
             end
+            
         end
+        
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%                
         function [checkRes] = checkStatus(obj,status)
             %This function check whether the "condition status" is at least
@@ -424,12 +462,19 @@ classdef Movie <  handle
                     end
             end
         end
-               
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
+        
+        function [frames] = checkFrame(obj,frames) 
+            testFrame = mod(frames,1);
+            if all(testFrame<1e-4)
+            else
+                frames = round(frames);
+                warning('Some frame were not integers, they were rounded');
+            end
+            assert(isvector(frames),'Frames should be a vector of integers');
+            assert(max(frames) <= obj.calibrated.nFrames,'Request exceeds max frame');
+            assert(min(frames) >0, 'Indexing in matlab start from 1');
         end
+        
     end
     
     methods (Access = private)

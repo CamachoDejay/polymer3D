@@ -37,7 +37,7 @@ mov.giveInfo;
 %% getCandidatePos
 detectParam.delta = 6;
 detectParam.chi2 = 80;
-mov.getCandidatePos(detectParam,22);
+mov.getCandidatePos(detectParam);
 
 %% showCandidate
 mov.showCandidate(22);
