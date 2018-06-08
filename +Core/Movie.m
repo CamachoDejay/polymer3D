@@ -77,13 +77,17 @@ classdef Movie <  handle
             [file2Analyze] = getFileInPath(obj, cal, '.mat');
             
             if (~isempty(file2Analyze))
+                disp('The calibration was already calculated, Loading from existing file');
                 fullPath = [file2Analyze.folder filesep file2Analyze.name];
                 tmp = load(fullPath);
                 cal = tmp.calibration;
                 obj.cal = cal;
+                disp('Done');
             else
+                disp('Calculating the calibration from calibration data');
                 [calibration] = obj.calcCalibration(cal);
                 obj.cal = calibration;
+                disp('Calibration is now saved');
             end
             
             
@@ -96,16 +100,22 @@ classdef Movie <  handle
           idx2Calibrated = contains({folderContent.name}, 'calibrated');
           
           if length(unique(idx2Calibrated))<2
+              disp('Calibrating the dataset');
               [calibrated] = obj.calibrate;
+              disp('Data is now calibrated');
           elseif length(unique(idx2Calibrated))==2
               fullPath = [calibrated filesep 'calibrated'];
               [file2Analyze] = getFileInPath(obj, fullPath, '.mat');           
               if (~isempty(file2Analyze))
+                disp('The dataset is already calibrated, Loading from existing file');
                 fullpath = [file2Analyze.folder filesep file2Analyze.name];
                 tmp = load(fullpath);
                 calibrated = tmp.calib;
+                disp('Done');
               else
+                disp('Calibrating the dataset');
                 [calibrated] = obj.calibrate;
+                disp('Data is now calibrated');
               end
           else
               error('Something is wrong with your calibrated directory');
@@ -232,7 +242,8 @@ classdef Movie <  handle
             else
                 zPos = zeros(size(fNames));
             end
-            figure(10)
+            h = figure(10);
+            h.Name = sprintf('Frame %d',idx);
             for i = 1:nImages
                 subplot(2,nImages/nsFig,i)
                 imagesc(frame.(fNames{i}))
