@@ -17,6 +17,7 @@ classdef Movie <  handle
     end
     
     methods
+        
         function obj = Movie(raw, info, cal, calibrated, superResCal)
             %MOVIE Construct an instance of this class
             %   We allow the user to create this object with various number
@@ -45,8 +46,10 @@ classdef Movie <  handle
             end
             obj.updateStatus;
         end
+        
 %%%%%%%%%%%%%%%%%%%%%%%%%%% SETTER FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function  set.raw(obj,raw)
+       
+        function set.raw(obj,raw)
             assert(isfolder(raw), 'The given path is not a folder');
             %Check Given path
             [file2Analyze] = getOMETIF(obj,raw);
@@ -61,7 +64,7 @@ classdef Movie <  handle
             obj.raw.movInfo = movInfo;
             obj.raw.frameInfo = frameInfo;
             obj.raw.fullPath = fullPath;
-            
+            obj.raw.maxFrame = movInfo.maxFrame;
             obj.updateStatus;
         end
         
@@ -116,6 +119,7 @@ classdef Movie <  handle
               [file2Analyze] = getFileInPath(obj, fullPath, '.mat');           
               if (~isempty(file2Analyze))
                 [file] = getFileInPath (obj,fullPath,'.tif');
+                
                 if length(file) == 8
                 disp('The dataset is already calibrated, Loading from existing file');
                 fullpath = [file2Analyze.folder filesep file2Analyze.name];
@@ -123,14 +127,15 @@ classdef Movie <  handle
                 calibrated = tmp.calib;
                 disp('Done');
                 else
-                    error('Some planes are missing (expect 8), recalibrating...');
-%                     disp('Some planes are missing (expect 8), recalibrating...');
-%                     [calibrated] = obj.calibrate;
-%                     disp('Data is now calibrated');
+                    %error('Some planes are missing (expect 8), recalibrating...');
+                    disp('Some planes are missing (expect 8), recalibrating...');
+                    [calibrated] = obj.applyCalib;
+                    disp('Data is now calibrated');
                 end
+                
               else
                 disp('Calibrating the dataset');
-                [calibrated] = obj.calibrate;
+                [calibrated] = obj.applyCalib;
                 disp('Data is now calibrated');
               end
           else
@@ -153,90 +158,8 @@ classdef Movie <  handle
             obj.updateStatus;
         end
         
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% GET PATH  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function [file2Analyze] = getFileInPath(~, path, ext)
-            assert(ischar(path),'The given path should be a char');
-            assert(ischar(ext),'The given extension should be a char');
-            assert(isfolder(path),'The path given is not a folder')
-            folderContent = dir(path);
-            index2Images  = contains({folderContent.name},ext);
-            file2Analyze  = folderContent(index2Images);
-        end
-        
-        function [file2Analyze] = getOMETIF(obj,path)
-            expExt = '.ome.tif';
-            %Check Given path
-            [file2Analyze] = obj.getFileInPath(path, expExt);
-            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
-        end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Calibration  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%      
-        function [calibration] = calcCalibration(obj,path)
-            
-            [file2Analyze] = obj.getOMETIF(path);
-            fullPath = [file2Analyze.folder filesep file2Analyze.name];
-            [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
-            assert(length(movInfo.Cam)==2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
-            assert(length(unique(cellfun(@str2num,{frameInfo.Z})))>2,'Z position is not changing across the selected calibration file, this is strange.');
-            
-            [calib, inform] = mpSetup.cali.calculate(fullPath);
-            
-            calibration.info = inform;
-            calibration.file = calib;
-            
-            filename = [file2Analyze.folder filesep 'calibration.mat'];
-            calibration.fullPath = filename;
-            save(filename,'calibration');
-        end
-        
-        function [calib] = calibrate(obj)
-            %Load and calibrate the movie using the calibration file
-            frame = 1:obj.raw.movInfo.maxFrame(1);
-            [data, ~, ~] = mpSetup.loadAndCal( obj.raw.fullPath, obj.cal.file, frame);
-            step = 100;
-            calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
-            mkdir(calDir);
-            %Save the resulting planes in separated TIF and save a txt info
-            %file
-            fid = fopen([calDir filesep 'CalibratedInfo.txt'],'w');
-            fprintf(fid,'The information in this file are intended to the user. They are generated automatically so please do not edit them\n');
-            calib.mainPath = calDir;
-            calib.nPlanes   = size(data,3);
-            for i = 1:size(data,3)
-
-                fName = sprintf('calibratedPlane%d.tif',i);
-                fPathTiff = [calDir filesep fName];
-                fieldN = sprintf('plane%d',i);
-                calib.filePath.(fieldN) = fPathTiff;
-                calib.nFrames = size(data,4);
-                t = Tiff(fPathTiff, 'w');
-                    for j = 1:step:calib.nFrames
-                    range = j:j+step-1;
-                        if max(range)>= calib.nFrames
-                        range = j:calib.nFrames;
-                        end
-                    t = dataStorage.writeTiff(t,squeeze(data(:,:,i,range)),16);
-                    end
-                t.close;
-                fprintf(fid,...
-                'Image plane %d: Cam %d, Channel %d Col1: %d Col2: %d, Rel. Zpos: %0.3f \n ',...
-                i,obj.cal.file.inFocus(obj.cal.file.neworder(i)).cam,...
-                obj.cal.file.inFocus(obj.cal.file.neworder(i)).ch,...
-                obj.cal.file.ROI(obj.cal.file.neworder(i),1),...
-                obj.cal.file.ROI(obj.cal.file.neworder(i),1)+...
-                obj.cal.file.ROI(obj.cal.file.neworder(i),3),...
-                obj.cal.file.inFocus(obj.cal.file.neworder(i)).zpos-...
-                obj.cal.file.inFocus(obj.cal.file.neworder(1)).zpos);
-                calib.oRelZPos(i) =  obj.cal.file.inFocus(obj.cal.file.neworder(i)).zpos-...
-                obj.cal.file.inFocus(obj.cal.file.neworder(1)).zpos;
-                
-            end
-            fclose(fid);
-           
-            fName = [calDir filesep 'calibrated.mat'];
-            save(fName,'calib');
-     
-        end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%GETTER FUNCTION%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%USER get/set FUNCTION%%%%%%%%%%%%%%%%%%%%%%%%        
+       
         function getRaw(obj,path)
             obj.raw = path;
         end
@@ -245,8 +168,9 @@ classdef Movie <  handle
             obj.cal = path;
         end
         
-        function getCalibrated(obj,path)
-            obj.calibrated = path;
+        function calibrate(obj)
+            assert(obj.checkStatus('rawCal'),'Experiment status is too early to calibrate, probably calibration and/or raw file missing');
+            obj.calibrated = obj.raw.movInfo.Path;
         end
         
         function giveInfo(obj)
@@ -287,7 +211,7 @@ classdef Movie <  handle
                     disp('Running detection on every frame');
                 case 3
                     run= true;
-                    [frames] = Check.frame(frames);
+                    [frames] = obj.checkFrame(frames);
                 otherwise
                     error('too many inputs');
             end
@@ -357,7 +281,8 @@ classdef Movie <  handle
             end  
         end
         
-%%%%%%%%%%%%%%%%%%%%%%%%%%% DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
+%%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
+
         function showFrame(obj,idx)
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
             [idx] = obj.checkFrame(idx);
@@ -371,7 +296,7 @@ classdef Movie <  handle
             else
                 zPos = zeros(size(fNames));
             end
-            h = figure(10);
+            h = figure(1);
             h.Name = sprintf('Frame %d',idx);
             for i = 1:nImages
                 subplot(2,nImages/nsFig,i)
@@ -401,7 +326,7 @@ classdef Movie <  handle
             rowPos = obj.candidatePos{idx}(:,1);
             colPos = obj.candidatePos{idx}(:,2);
             planeIdx = obj.candidatePos{idx}(:,3);
-            h = figure(10);
+            h = figure(2);
             h.Name = sprintf('Frame %d',idx);
             for i = 1:nImages
                 
@@ -422,7 +347,129 @@ classdef Movie <  handle
             
         end
         
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%                
+    end
+    
+    methods (Access = private)
+        
+        function updateStatus(obj)
+            %Cascade, as long as nothing empty is found we keep looking at
+            %the next element to know which status it is. 
+            if(isempty(obj.raw))
+                obj.status = 'none';
+            elseif (isempty(obj.cal))
+                obj.status = 'raw';
+            elseif (isempty(obj.calibrated))
+                obj.status = 'rawCal';
+            elseif (isempty(obj.superResCal))
+                obj.status = 'calibrated';
+            elseif (~isempty(obj.superResCal))
+                obj.status = 'SRCalibrated';
+            else
+                error('Whooop something is wrong with status, go in the corner and think about what you just did!')
+            end
+            %if the cascade stop in some places we still check that
+            %calibrated and SR calibrated are not empty because we allow
+            %the user to load from the calibrated data directly(without
+            %raw)
+            if (~isempty(obj.calibrated))
+                if(~isempty(obj.superResCal))
+                    obj.status = 'SRCalibrated';
+                else
+                    obj.status = 'calibrated';
+                end
+            end
+
+        end
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% GET PATH  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        function [file2Analyze] = getFileInPath(~, path, ext)
+            assert(ischar(path),'The given path should be a char');
+            assert(ischar(ext),'The given extension should be a char');
+            assert(isfolder(path),'The path given is not a folder')
+            folderContent = dir(path);
+            index2Images  = contains({folderContent.name},ext);
+            file2Analyze  = folderContent(index2Images);
+        end
+        
+        function [file2Analyze] = getOMETIF(obj,path)
+            expExt = '.ome.tif';
+            %Check Given path
+            [file2Analyze] = obj.getFileInPath(path, expExt);
+            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
+        end
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Calibration  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        function [calibration] = calcCalibration(obj,path)
+            
+            [file2Analyze] = obj.getOMETIF(path);
+            fullPath = [file2Analyze.folder filesep file2Analyze.name];
+            [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
+            assert(length(movInfo.Cam)==2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
+            assert(length(unique(cellfun(@str2num,{frameInfo.Z})))>2,'Z position is not changing across the selected calibration file, this is strange.');
+            
+            [calib, inform] = mpSetup.cali.calculate(fullPath);
+            
+            calibration.info = inform;
+            calibration.file = calib;
+            
+            filename = [file2Analyze.folder filesep 'calibration.mat'];
+            calibration.fullPath = filename;
+            save(filename,'calibration');
+        end
+        
+        function [calib] = applyCalib(obj)
+            %Load and calibrate the movie using the calibration file
+            frame = 1:obj.raw.movInfo.maxFrame(1);
+            [data, ~, ~] = mpSetup.loadAndCal( obj.raw.fullPath, obj.cal.file, frame);
+            step = 100;
+            calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
+            mkdir(calDir);
+            %Save the resulting planes in separated TIF and save a txt info
+            %file
+            fid = fopen([calDir filesep 'CalibratedInfo.txt'],'w');
+            fprintf(fid,'The information in this file are intended to the user. They are generated automatically so please do not edit them\n');
+            calib.mainPath = calDir;
+            calib.nPlanes   = size(data,3);
+            for i = 1:size(data,3)
+
+                fName = sprintf('calibratedPlane%d.tif',i);
+                fPathTiff = [calDir filesep fName];
+                fieldN = sprintf('plane%d',i);
+                calib.filePath.(fieldN) = fPathTiff;
+                calib.nFrames = size(data,4);
+                t = Tiff(fPathTiff, 'w');
+                    for j = 1:step:calib.nFrames
+                    range = j:j+step-1;
+                        if max(range)>= calib.nFrames
+                        range = j:calib.nFrames;
+                        end
+                    t = dataStorage.writeTiff(t,squeeze(data(:,:,i,range)),16);
+                    end
+                t.close;
+                fprintf(fid,...
+                'Image plane %d: Cam %d, Channel %d Col1: %d Col2: %d, Rel. Zpos: %0.3f \n ',...
+                i,obj.cal.file.inFocus(obj.cal.file.neworder(i)).cam,...
+                obj.cal.file.inFocus(obj.cal.file.neworder(i)).ch,...
+                obj.cal.file.ROI(obj.cal.file.neworder(i),1),...
+                obj.cal.file.ROI(obj.cal.file.neworder(i),1)+...
+                obj.cal.file.ROI(obj.cal.file.neworder(i),3),...
+                obj.cal.file.inFocus(obj.cal.file.neworder(i)).zpos-...
+                obj.cal.file.inFocus(obj.cal.file.neworder(1)).zpos);
+                calib.oRelZPos(i) =  obj.cal.file.inFocus(obj.cal.file.neworder(i)).zpos-...
+                obj.cal.file.inFocus(obj.cal.file.neworder(1)).zpos;
+                
+            end
+            fclose(fid);
+           
+            fName = [calDir filesep 'calibrated.mat'];
+            save(fName,'calib');
+     
+        end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
         function [checkRes] = checkStatus(obj,status)
             %This function check whether the "condition status" is at least
             %reach. e.g. When loading a calibration file we want to make
@@ -471,44 +518,10 @@ classdef Movie <  handle
                 warning('Some frame were not integers, they were rounded');
             end
             assert(isvector(frames),'Frames should be a vector of integers');
-            assert(max(frames) <= obj.calibrated.nFrames,'Request exceeds max frame');
+            assert(max(frames) <= obj.raw.maxFrame(1),'Request exceeds max frame');
             assert(min(frames) >0, 'Indexing in matlab start from 1');
         end
-        
-    end
-    
-    methods (Access = private)
-        
-        function updateStatus(obj)
-            %Cascade, as long as nothing empty is found we keep looking at
-            %the next element to know which status it is. 
-            if(isempty(obj.raw))
-                obj.status = 'none';
-            elseif (isempty(obj.cal))
-                obj.status = 'raw';
-            elseif (isempty(obj.calibrated))
-                obj.status = 'rawCal';
-            elseif (isempty(obj.superResCal))
-                obj.status = 'calibrated';
-            elseif (~isempty(obj.superResCal))
-                obj.status = 'SRCalibrated';
-            else
-                error('Whooop something is wrong with status, go in the corner and think about what you just did!')
-            end
-            %if the cascade stop in some places we still check that
-            %calibrated and SR calibrated are not empty because we allow
-            %the user to load from the calibrated data directly(without
-            %raw)
-            if (~isempty(obj.calibrated))
-                if(~isempty(obj.superResCal))
-                    obj.status = 'SRCalibrated';
-                else
-                    obj.status = 'calibrated';
-                end
-            end
 
-        end
-        
     end
 end
 
