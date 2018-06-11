@@ -1,4 +1,4 @@
-function [G] = gaus2D(pos, sig, xid,yid,maxCount)
+function [G] = gauss2D(pos, sig, xid,yid,maxCount)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here 
 switch nargin
