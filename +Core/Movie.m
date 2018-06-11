@@ -201,7 +201,8 @@ classdef Movie <  handle
             obj.info = inform;
         end
         
-        function getCandidatePos(obj,detectParam, frames)
+        function findCandidatePos(obj,detectParam, frames)
+            assert(~isempty(obj.info), 'Missing information about setup to be able to find candidates, please use giveInfo method first');
             switch nargin 
                 case 1
                     run = false;
@@ -264,6 +265,15 @@ classdef Movie <  handle
             end
         end
         
+        function [candidate] = getCandidatePos(obj, frames)
+            [idx] = obj.checkFrame(frames);
+            candidate = obj.candidatePos{idx};
+            if isempty(candidate)
+                warning('There was no candidate found in this frames, please check that you ran findCandidate on this frame, if yes, check the data');
+            end
+            
+        end
+        
         function [data] = getFrame(obj,idx)
             assert(length(idx)==1,'Requested frame exceed the size of the movie');
             [idx] = obj.checkFrame(idx);
@@ -323,9 +333,12 @@ classdef Movie <  handle
             nImages = numel(fields(frame));
             fNames = fieldnames(frame);
             nsFig = 2;
-            rowPos = obj.candidatePos{idx}(:,1);
-            colPos = obj.candidatePos{idx}(:,2);
-            planeIdx = obj.candidatePos{idx}(:,3);
+            
+            candidate = obj.getCandidatePos(idx);
+            rowPos    = candidate(:,1);
+            colPos    = candidate(:,2);
+            planeIdx  = candidate(:,3);
+            
             h = figure(2);
             h.Name = sprintf('Frame %d',idx);
             for i = 1:nImages
@@ -343,6 +356,7 @@ classdef Movie <  handle
                 title({fNames{i},sprintf(' Zpos = %0.3f',obj.calibrated.oRelZPos(i))});
                 colormap('jet')
                 hold off
+                
             end
             
         end

@@ -27,7 +27,7 @@ mov.calibrate;
 
 %% getFrame
 
-[data] = mov.getFrame(22);
+[data] = mov.getFrame(24);
 
 %% showFrame
 mov.showFrame(22);
@@ -37,8 +37,8 @@ mov.giveInfo;
 %% getCandidatePos
 detectParam.delta = 6;
 detectParam.chi2 = 80;
-mov.getCandidatePos(detectParam,24);
-
+mov.findCandidatePos(detectParam,24);
+candidate = mov.getCandidatePos(24);
 %% showCandidate
 mov.showCandidate(24);
 
