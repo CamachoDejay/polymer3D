@@ -250,7 +250,8 @@ classdef Movie <  handle
                             pos(:,3) = j;
                             position(startIdx:startIdx+size(pos,1)-1,:) = pos;
                         end
-                        candidate{frames(i)} = position;
+                        idx = find(position==0,1,'First');
+                        candidate{frames(i)} = position(1:idx-1,:);
                         waitbar(i/nFrames,h,...
                             sprintf('detection of candidates in Frame %d/%d done',i,nFrames));
                     end
