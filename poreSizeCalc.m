@@ -28,14 +28,14 @@ pxArea = pxSize*pxSize*1e-6; %in µm^2
 
 %% Looping through the Data
 
-h = waitbar(0);
+%h = waitbar(0);
 nImStacks = size(file2Analyze,1);
 
 allDataAdapt = [];
 allDataAuto = [];
-for j = 1:nImStacks
-    hMessage = sprintf('Loading image stack number %d/%d',j,nImStacks);
-    waitbar(0,h,hMessage);
+parfor j = 1:nImStacks
+   % hMessage = sprintf('Loading image stack number %d/%d',j,nImStacks);
+    %waitbar(0,h,hMessage);
     %Data loading
     path2Stacks = strcat(file2Analyze(j).folder,filesep);
     tmpName = file2Analyze(j).name;
@@ -50,11 +50,11 @@ for j = 1:nImStacks
     % init data that contains all infor for a single tif file
     tifStackData = [];
     
-    hMessage = sprintf('Analysis of Stack Number %d/%d',j,nImStacks);
+   % hMessage = sprintf('Analysis of Stack Number %d/%d',j,nImStacks);
     %loop through the frames of the current stack
     nIM = nFrame;
-    waitbar(j/nImStacks,h,hMessage);
-    
+   % waitbar(j/nImStacks,h,hMessage);
+    disp('Loading Data');
     for i=1:nIM %% PARFOR CAN BE PLACED HERE
         
         % Loading image number i
@@ -99,7 +99,7 @@ for j = 1:nImStacks
     tTmp = table(ones(size(tifStackData,1),1).*j,'VariableNames',{'TifIDX'});
     tifStackData = [tTmp, tifStackData];
 
-    disp('---------------------NEXT TIF ----------')
+    disp('Storing Data')
     
     % store in main table
     if ~isempty(strfind(file2Analyze(j).name,'adapt'))
@@ -107,8 +107,9 @@ for j = 1:nImStacks
     else
         allDataAuto = [allDataAuto; tifStackData];
     end
+    disp('---------------------NEXT TIF ----------')
 end
-close(h);
+%close(h);
 
 %% saving data
 % % % T = array2table(allData,...
@@ -119,7 +120,7 @@ infoFileName = [outDir filesep 'info.txt'];
     fprintf(fid,'This file contains information intended for the user of poreSizeCalc\n');
     fprintf(fid,' In such a way that the user knows what variable value were used.\n\n');
     fprintf(fid,'Pixel size used: %d',pxSize);
-    fprintf(fid,'Number of frame analyzed: %d/%d\n',nFrame,tNframes);
+    fprintf(fid,'Number of frame analyzed: %d\n',nFrame);
     fclose(fid);
 
 save([ outDir 'Adaptive-poreProps.mat'],'allDataAdapt')
