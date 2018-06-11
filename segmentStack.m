@@ -33,10 +33,11 @@ outputName  = 'SegmentedStacks';
 %% Loading Data
 %Load folder, and create a folder for data output.
 [file2Analyze,currentFolderName,outDir] = Load.Folder(fileExt,outputName);
-assert(~isempty(file2Analyze),'no %s file found in the directory', fileExt);
+assert(~isempty(file2Analyze), sprintf('no %s found in the directory', fileExt));
 %% load full stack
+nFiles = size(file2Analyze,1);
 
-for i = 1 : size(file2Analyze,2)
+for i = 1 : nFiles
 
     disp(['Loading stack --------------' file2Analyze(i).name])
     disp('This can take a few minutes ~2')
@@ -151,35 +152,34 @@ for i = 1 : size(file2Analyze,2)
     
     fclose(fid);
     close(h);
-
-    %%%%%%%%%%%%%%% Plotting %%%%%%%%%%%%%%%
-    if i==1 %only plot for the first stack
-        figure(1)
-        shg
-        SE = strel('disk',3);
-        for j = 1:50
-            subplot(1,2,1)
-            A = IMs(:,:,j);
-            B = BWglobal(:,:,j);
-            B = bwperim(B);
-            B = imdilate(B,SE);
-            C = imfuse(A,B,'ColorChannels',[2 1 0]);
-            imagesc(C)
-            axis image
-            title('global')
-
-            subplot(1,2,2)
-            A = IMs(:,:,j);
-            B = BWadapt(:,:,j);
-            B = bwperim(B);
-            B = imdilate(B,SE);
-            C = imfuse(A,B,'ColorChannels',[2 1 0]);
-            imagesc(C)
-            axis image
-            title('adaptive')
-            waitforbuttonpress
-
-        end
-    end
 end
 
+%%%%%%%%%%%%%%% Plotting %%%%%%%%%%%%%%%
+
+figure(1)
+shg
+SE = strel('disk',3);
+
+for j = round(linspace(1,nFrame,10))
+    subplot(1,2,1)
+    A = IMs(:,:,j);
+    B = BWglobal(:,:,j);
+    B = bwperim(B);
+    B = imdilate(B,SE);
+    C = imfuse(A,B,'ColorChannels',[2 1 0]);
+    imagesc(C)
+    axis image
+    title('global')
+
+    subplot(1,2,2)
+    A = IMs(:,:,j);
+    B = BWadapt(:,:,j);
+    B = bwperim(B);
+    B = imdilate(B,SE);
+    C = imfuse(A,B,'ColorChannels',[2 1 0]);
+    imagesc(C)
+    axis image
+    title('adaptive')
+    waitforbuttonpress
+
+end
