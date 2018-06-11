@@ -14,14 +14,21 @@ tObj.setDirectory(frames(1));
 im1  = tObj.read;
 nClass = class(im1);
 mov = zeros(w,l,f_n,nClass);
+convert = false;
 
-
+if length(size(im1))~=2
+    warning('Colored images received, conversion to grayscale is performed')
+    convert = true;
+end
 
 for i = 1:f_n
     f_i = frames(i);
     tObj.setDirectory(f_i)
     movTmp = tObj.read;  
-    mov(:,:,i) = movTmp(:,:,1);    
+    if convert
+        movTmp = rgb2gray(movTmp);
+    end
+    mov(:,:,i) = movTmp;    
 end
 tObj.close
 
