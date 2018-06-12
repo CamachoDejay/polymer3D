@@ -42,6 +42,9 @@ candidate = mov.getCandidatePos(24);
 %% showCandidate
 mov.showCandidate(24);
 
+%% consolidation
+finalList = mov.consolidate(24,6);
+
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
 for i = 1:8
