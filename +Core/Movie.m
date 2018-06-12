@@ -194,11 +194,20 @@ classdef Movie <  handle
             
             comment = answer(4);
             
+            sigma_nm = 0.25 * emW/NA;
+            FWHMnm = sigma_nm * sqrt(8*log(2));
+            FWHM_pix = FWHMnm/pxSize;
+            sigmaPix = sigma_nm/pxSize;
+                    
             inform.pxSize = pxSize;
             inform.NA = NA;
             inform.emW = emW;
+            inform.FWHM_px =  FWHM_pix;
+            inform.sigma_px = sigmaPix;
             inform.comment = comment;
+            
             obj.info = inform;
+            
         end
         
         function findCandidatePos(obj,detectParam, frames)
@@ -229,12 +238,7 @@ classdef Movie <  handle
                         candidate = currentCandidate;
                     end
                     %parameter for localization
-                    objNA  = obj.info.NA;
-                    emWave = obj.info.emW;
-                    sigma_nm = 0.25 * emWave/objNA;
-                    FWHMnm = sigma_nm * sqrt(8*log(2));
-                    pxSnm  = obj.info.pxSize;
-                    FWHM_pix = FWHMnm/pxSnm;
+                    FWHM_pix = obj.info.FWHM_px;
                     delta  = detectParam.delta;
                     chi2   = detectParam.chi2;
 
@@ -291,6 +295,135 @@ classdef Movie <  handle
                 end
             end  
         end
+        
+        function [finalCandidateList] = consolidate(obj,frames,roiSize)
+            assert(obj.checkStatus('calibrated'),'Data should be calibrated to detect candidate');
+            assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');    
+            switch nargin
+                    case 1
+                        frames = 1: obj.calibrated.nFrames;
+                        disp('Running consolidation on every frame');
+                    case 2
+                        [frames] = obj.checkFrame(frames);
+            end
+            nFrames = length(frames);
+            %allocate for storage
+            finalCandidateList = cell(1,nFrames);
+            for i = 1 : 1:nFrames
+                idx = frames(i);
+                [data] = obj.getFrame(idx);
+                [candidate] = obj.getCandidatePos(idx);
+                if isempty(candidate)
+                    
+                    warning('Frame %d did not contain any candidate',idx);
+                    
+                else
+                    
+                    [finalCandidate] = obj.consolidatePos(data, candidate, roiSize);
+                    finalCandidateList{i} = finalCandidate;
+                    
+                end
+                
+            end
+                    
+        end
+    
+        
+        function [finalCandidate] = consolidatePos(obj, data, frameCandidate, roiSize)
+            delta = roiSize;
+            sig = [obj.info.sigma_px obj.info.sigma_px];
+            
+            currentk = 1;
+            candMet = zeros(length(frameCandidate),7);
+            
+            for j = 1 : numel(fields(data))
+                
+                planeCandidate = frameCandidate(frameCandidate(:,3)==j,1:2);
+                planeData = data.(sprintf('plane%d',j));
+
+                cM = zeros(length(planeCandidate),6);
+                
+                for k = 1 : length(planeCandidate)
+                %Get the ROI    
+                [roi_lims] = EmitterSim.getROI(planeCandidate(k,2), planeCandidate(k,1),...
+                    delta, size(planeData,2), size(planeData,1));
+                ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
+                %Phasor fitting to get x,y,e
+                [row,col,e] = Localization.phasor(ROI);
+                [LRT,RMSD] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
+                rowPos = planeCandidate(k,1) + row;
+                colPos = planeCandidate(k,2) + col;
+    
+                cM(k,:) = [rowPos colPos e LRT RMSD k];
+                
+                end
+                %candidate Metric: phasor localization Res, Likelihood Res,
+                %indexCandidate in plane, Plane.
+                %candidateMetric: [row col e LRT RMSD k J]
+                
+                candMet(currentk:currentk+k-1,:) = [cM j*ones(k,1)];
+                currentk = currentk+k;
+                
+            end
+            
+            [corrEllip, focusMetric] = Localization.calcFocusMetric(candMet(:,3),candMet(:,4));
+            %Kill "bad" PSF from the focus metric so they are not taken
+            %later
+            focusMetric((1-corrEllip)>0.2) = NaN;
+            
+            candMet = [candMet focusMetric];
+            
+            counter = 1;
+            nPart = 0;
+            maxIt = size(candMet,1);
+            finalCandidate = cell(max(size(find(~isnan(focusMetric)))),2);
+            while and(~isempty(candMet(:,8)), ~isnan(nanmax(candMet(:,8))))
+                
+                if counter> maxIt
+                    
+                    error('While loop ran for an unexpectedly long time, something might be wrong');
+               
+                end
+              
+                %Find candidate in best focus
+                [~,idx] = max(candMet(:,8));
+                
+                %Check if there are planes above
+                [idx1] = obj.checkPlane(candMet,idx,1);
+
+                %Check if they are planes below
+                [idx2] = obj.checkPlane(candMet,idx,-1);
+
+                idxF = [idx1 idx idx2];
+                
+                %Check if the resulting configuration of the plane make
+                %sense
+                [planeConfig] = obj.checkPlaneConfig(idxF,candMet(:,7),idx);
+                %Store
+                if ~isempty(planeConfig)
+                nPart = nPart +1;
+                
+                finalCandidate{nPart,1} = candMet(idx,:);
+                finalCandidate{nPart,2} = planeConfig;
+
+                %We remove the particle(s) from the list
+                candMet(idxF,:) = [];
+                else
+                    %Otherwise we remove it from the best focus search list
+                    %by putting focus metric to NaN
+                    candMet(idx,8) = NaN;
+                    
+                end
+
+                counter = counter+1;
+            end
+            %we delete empty cells from the array
+            idx2Empty = cellfun(@isempty,finalCandidate);
+            finalCandidate(idx2Empty(:,1),:) = [];
+            
+end
+
+
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -485,7 +618,7 @@ classdef Movie <  handle
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        function [checkRes] = checkStatus(obj,status)
+        function [checkRes] = checkStatus(obj, status)
             %This function check whether the "condition status" is at least
             %reach. e.g. When loading a calibration file we want to make
             %sure that the status is raw or higher.
@@ -525,7 +658,7 @@ classdef Movie <  handle
             end
         end
         
-        function [frames] = checkFrame(obj,frames) 
+        function [frames] = checkFrame(obj, frames) 
             testFrame = mod(frames,1);
             if all(testFrame<1e-4)
             else
@@ -536,7 +669,119 @@ classdef Movie <  handle
             assert(max(frames) <= obj.raw.maxFrame(1),'Request exceeds max frame');
             assert(min(frames) >0, 'Indexing in matlab start from 1');
         end
+        
+        function [idx2Part] = checkPlane(obj, candMet, idx, direction)
+            %This function is designed to have PSFE plate ON
+            nP = obj.calibrated.nPlanes; 
+            assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
+            
+            currentPlane = candMet(idx,7);
+            currentPart  = candMet(idx,:);
+            
+            switch direction
 
+                case 1
+
+                    planes2Check = currentPlane-2:currentPlane-1;
+                    planes2Check = planes2Check(planes2Check>0);
+
+                case -1
+
+                    planes2Check = currentPlane+1:currentPlane+2;
+                    planes2Check = planes2Check(planes2Check<nP+1);
+
+                otherwise
+                    error('direction is supposed to be either 1 (up) or -1 (down)');
+            end
+
+            idx2Part = [];
+            for i = 1 : length(planes2Check)
+                planeIdx = planes2Check(i);
+                partInPlane = candMet(candMet(:,7) == planeIdx,:);
+                %Check position %Discuss with Rafa
+                partInPlane = partInPlane(and(abs(partInPlane(:,1)-currentPart(1))<2,...
+                                              abs(partInPlane(:,2)-currentPart(2)<2)),:);
+                if size(partInPlane,1)>1
+                    disp('More than one particle in close proximity')
+                end
+                if(isempty(partInPlane))
+                    disp('No other candidate in plane with similar position')
+                else
+                %Check ellipticity 
+                    switch direction
+                        case 1
+                            partInPlane = partInPlane(partInPlane(:,3) > currentPart(3),:);
+                        case -1
+                            partInPlane = partInPlane(partInPlane(:,3) < currentPart(3),:);
+                    end
+
+                    if(isempty(partInPlane))
+                        disp('No close candidate in plane consistent with ellipticity')
+                    else
+                        %check LRT
+                        maxExpLRT = abs(currentPart(4))+0.1*abs(currentPart(4));
+                        partInPlane = partInPlane(abs(partInPlane(:,4)) < maxExpLRT,:);
+                        if(isempty(partInPlane))
+                        disp('No close candidate in plane consistent with the LRT parameter')
+                        end
+                    end
+                end
+
+                if ~isempty(partInPlane)
+                    
+                newIdx = find(candMet(:,1) == partInPlane(1));
+                idx2Part = [idx2Part newIdx];
+                
+                end
+            end
+        end
+        
+        function [planeConfig] = checkPlaneConfig(obj, consIdx, plane, currentIdx)
+            %Here we will check that the consolidation found based on the
+            %best focused particle make sense with what we would expect and
+            %also that we have enough planes.
+            assert(length(consIdx) <= size(plane,1),'There is something wrong with your consolidated index and your candidate plane List');
+            assert(currentIdx < size(plane,1),'idx to the current candidate exceed the candidate plane list provided');
+            
+            %Let us test that we have consolidate the particle in at least
+            %3 Planes
+            test3Planes = length(consIdx) >= 3;
+            
+            if test3Planes
+                
+                %we get the index found before and after the currentidx
+                %and output a formatted planeConfig
+                idx = find(consIdx == currentIdx);
+                idxBefore = consIdx(1:idx-1);
+                idxBefore = plane(idxBefore);
+                
+                if length(idxBefore)==1
+                    
+                    idxBefore = [NaN idxBefore];
+                elseif isempty(idxBefore)==1
+                    idxBefore = [NaN NaN];
+                end
+                
+                idxAfter  = consIdx(idx+1:end);
+                idxAfter = plane(idxAfter);
+                
+                if length(idxAfter)==1
+                    
+                    idxAfter = [idxAfter NaN];
+                    
+                elseif isempty(idxAfter)==1
+                    
+                    idxAfter = [NaN NaN];
+                    
+                end
+                
+                planeConfig = [idxBefore(:)' idxAfter(:)'];
+                
+            else
+                
+                planeConfig = [];
+                
+            end
+        end
     end
 end
-
