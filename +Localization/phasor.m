@@ -1,4 +1,4 @@
-function [x,y,e] = phasor(ROI)
+function [row,col,e] = phasor(ROI)
 %PHASOR calculates the sub-pixel localization of a single particle in the
 %ROI. NOTE, x: position along the first dimention, y: position alog the
 %second dimention.
@@ -52,8 +52,8 @@ elip = MagX/MagY;
 
 % this shift is so it is consistent with our other localization methods,
 % which give the localize position in relation to the center of the ROI
-x = PositionX-roiCenter;
-y = PositionY-roiCenter;
+row = PositionX-roiCenter;
+col = PositionY-roiCenter;
 e = elip;
 
 end
