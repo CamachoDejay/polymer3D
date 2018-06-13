@@ -521,6 +521,7 @@ classdef Movie <  handle
                 
             end
         end
+        
     end
     
     methods (Access = private)
@@ -715,15 +716,15 @@ classdef Movie <  handle
             [corrEllip, focusMetric] = Localization.calcFocusMetric(candMet(:,3),candMet(:,4));
             %Kill "bad" PSF from the focus metric so they are not taken
             %later
-            focusMetric((1-corrEllip)>0.2) = NaN;
             candMet = [candMet focusMetric];
+            focusMetric((1-corrEllip)>0.2) = NaN;
             
             counter = 1;
             nPart = 0;
             maxIt = size(candMet,1);
-            finalCandidate = cell(max(size(find(~isnan(focusMetric)))),2);
+            finalCandidate = cell(max(size(find(~isnan(focusMetric)))),1);
             
-            while and(~isempty(candMet(:,8)), ~isnan(nanmax(candMet(:,8))))
+            while and(~isempty(focusMetric), ~isnan(nanmax(focusMetric)))
                 
                 if counter> maxIt
                     
@@ -732,7 +733,7 @@ classdef Movie <  handle
                 end
               
                 %Find candidate in best focus
-                [~,idx] = max(candMet(:,8));
+                [~,idx] = max(focusMetric);
                 
                 %Check if there are planes above
                 [idx1] = obj.searchPartnerCandidate(candMet,idx,1);
@@ -744,20 +745,28 @@ classdef Movie <  handle
                 
                 %Check if the resulting configuration of the plane make
                 %sense
-                [planeConfig] = obj.checkPlaneConfig(idxF,candMet(:,7),idx);
+                planeConfig = idxF;
+                planeConfig(~isnan(idxF)) = candMet(idxF(~isnan(idxF)),7);
+                [checkRes] = obj.checkPlaneConfig(planeConfig);
                 %Store
-                if ~isempty(planeConfig)
+                if checkRes
                     
                     nPart = nPart +1;
-                    finalCandidate{nPart,1} = candMet(idx,:);
-                    finalCandidate{nPart,2} = planeConfig;
+                    %allocate nans so missing row will be a row of nan
+                    particle = nan(5);
+                    %We store where candidate were found but only keep info
+                    %about x,y,e position, focus metric and plane
+                    particle(~isnan(idxF),:) = candMet(idxF(~isnan(idxF)), [1 2 3 8 7]);
+                    finalCandidate{nPart,1} = particle;
+                    
                     %We remove the particle(s) from the list
-                    candMet(idxF,:) = [];
+                    candMet(idxF(~isnan(idxF)),:) = [];
+                    focusMetric(idxF(~isnan(idxF))) = [];
                     
                 else
                     %Otherwise we remove it from the best focus search list
                     %by putting focus metric to NaN
-                    candMet(idx,8) = NaN;
+                    focusMetric(8) = NaN;
                     
                 end
 
@@ -939,53 +948,24 @@ end
             
         end
         
-        function [planeConfig] = checkPlaneConfig(~, consIdx, plane, currentIdx)
+        function [checkRes] = checkPlaneConfig(obj, planeConfig)
             %Here we will check that the consolidation found based on the
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
-            assert(length(consIdx) <= size(plane,1),'There is something wrong with your consolidated index and your candidate plane List');
-            assert(currentIdx < size(plane,1),'idx to the current candidate exceed the candidate plane list provided');
-            
+            assert(length(planeConfig) <= obj.calibrated.nPlanes,'There is something wrong with your consolidated index and your candidate plane List');
             %Let us test that we have consolidate the particle in at least
             %3 Planes
-            test3Planes = length(consIdx) >= 3;
+            test3Planes = length(find(~isnan(planeConfig)==true)) >= 3;
             
             if test3Planes
-                
-                %we get the index found before and after the currentidx
-                %and output a formatted planeConfig
-                idx = find(consIdx == currentIdx);
-                idxBefore = consIdx(1:idx-1);
-                idxBefore = plane(idxBefore);
-                
-                if length(idxBefore)==1
-                    
-                    idxBefore = [NaN idxBefore];
-                    
-                elseif isempty(idxBefore)==1
-                    
-                    idxBefore = [NaN NaN];
-                    
-                end
-                
-                idxAfter  = consIdx(idx+1:end);
-                idxAfter = plane(idxAfter);
-                
-                if length(idxAfter)==1
-                    
-                    idxAfter = [idxAfter NaN];
-                    
-                elseif isempty(idxAfter)==1
-                    
-                    idxAfter = [NaN NaN];
-                    
-                end
-                
-                planeConfig = [idxBefore(:)' idxAfter(:)'];
-                
+               %We check that there is no "Gap" in the plane configuration
+               %as it would not make sense.
+               testConsec = diff(planeConfig(~isnan(planeConfig)));
+               checkRes = all(testConsec==1);
+               
             else
                 
-                planeConfig = [];
+                checkRes = false;
                 
             end
         end
