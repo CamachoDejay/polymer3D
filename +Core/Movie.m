@@ -387,7 +387,7 @@ classdef Movie <  handle
             end  
         end
         
-        function [particleList] = consolidate(obj,frames,roiSize)
+        function [particles] = consolidate(obj,frames,roiSize)
             
             assert(obj.checkStatus('calibrated'),'Data should be calibrated to detect candidate');
             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');    
@@ -420,7 +420,8 @@ classdef Movie <  handle
             
             nFrames = length(frames);
             %allocate for storage
-            particleList = cell(1,nFrames);
+            particleList = cell(1,obj.raw.maxFrame(1));
+            nParticles = zeros(1,obj.raw.maxFrame(1));
             
             for i = 1 : 1:nFrames
                 
@@ -431,14 +432,21 @@ classdef Movie <  handle
                 if isempty(candidate)
                     
                     warning('Frame %d did not contain any candidate',idx);
-                    
+                    particleList{idx} = nan(5);
+                    nParticles(idx) = 0;
                 else
                     
                     [finalCandidate] = obj.consolidatePos(data, candidate, roiSize);
-                    particleList{i} = finalCandidate;
+                    particleList{idx} = finalCandidate;
+                    nParticles(idx) = length(finalCandidate);
+                    
                     
                 end
-            end          
+            end
+            particles.List   = particleList;
+            particles.nParticles = nParticles;
+            particles.tPoint = nFrames;
+            particles.idx2TP = frames;
         end
                
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
