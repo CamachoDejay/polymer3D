@@ -735,10 +735,10 @@ classdef Movie <  handle
                 [~,idx] = max(candMet(:,8));
                 
                 %Check if there are planes above
-                [idx1] = obj.checkPlane(candMet,idx,1);
+                [idx1] = obj.searchPartnerCandidate(candMet,idx,1);
 
                 %Check if they are planes below
-                [idx2] = obj.checkPlane(candMet,idx,-1);
+                [idx2] = obj.searchPartnerCandidate(candMet,idx,-1);
 
                 idxF = [idx1 idx idx2];
                 
@@ -847,9 +847,15 @@ end
                 if ~isempty(partInPlane)
                     
                     newIdx = find(candMet(:,1) == partInPlane(1));
-                    idx2Part = [idx2Part newIdx];
-                
+                    
+                else
+                    
+                    newIdx = NaN;
+
                 end
+                
+                idx2Part = [idx2Part newIdx];
+                
             end
         end
         
