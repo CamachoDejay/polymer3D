@@ -12,8 +12,9 @@ classdef Movie <  handle
        info
        calibrated
        candidatePos
+       particles
        superResCal
- 
+       
     end
     
     methods
@@ -208,6 +209,10 @@ classdef Movie <  handle
             
         end
         
+        function set.particles(obj,particles)
+            obj.particles = particles;
+        end
+        
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%USER get/set FUNCTION%%%%%%%%%%%%%%%%%%%%%%%%        
        
         function getRaw(obj,path)
@@ -387,7 +392,7 @@ classdef Movie <  handle
             end  
         end
         
-        function [particles] = consolidate(obj,frames,roiSize)
+        function [particle] = consolidate(obj,frames,roiSize)
             
             assert(obj.checkStatus('calibrated'),'Data should be calibrated to detect candidate');
             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');    
@@ -443,10 +448,11 @@ classdef Movie <  handle
                     
                 end
             end
-            particles.List   = particleList;
-            particles.nParticles = nParticles;
-            particles.tPoint = nFrames;
-            particles.idx2TP = frames;
+            particle.List   = particleList;
+            particle.nParticles = nParticles;
+            particle.tPoint = nFrames;
+            particle.idx2TP = frames;
+            obj.particles = particle;
         end
                
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -516,7 +522,7 @@ classdef Movie <  handle
                 subplot(2,nImages/nsFig,i)
                 hold on
                 imagesc(frame.(fNames{i}))
-                scatter(colPos(planeIdx==i),rowPos(planeIdx==i))
+                plot(colPos(planeIdx==i),rowPos(planeIdx==i),'g+')
                 axis image;
                 grid on;
                 a = gca;
@@ -528,6 +534,76 @@ classdef Movie <  handle
                 hold off
                 
             end
+        end
+        
+        function showParticles(obj,idx)
+            roiSize = 6; %TODO: retrieve from object
+            assert(length(idx)==1, 'Only one frame can be displayed at once');
+            [idx] = obj.checkFrame(idx);
+            % Show Candidate
+            obj.showCandidate(idx);
+            
+            if isempty(obj.particles)
+                
+                warning('You did not consolidate the candidate yet, please use the consolidate method before showing the particles');
+                
+            else
+                
+                if isempty(obj.particles.List(idx))
+                    
+                    warning('The candidates of the requested frame were not consolidated yet, only showing the candidate');
+                    
+                else
+                    
+                    nParticles = obj.particles.nParticles(idx);
+                    h = gcf;
+                    nPlanes = obj.calibrated.nPlanes;
+                    colors = rand(nParticles,3);
+                    
+                    for i = 1 : nPlanes
+                        subplot(2,nPlanes/2,i)
+                        hold on
+                        for j = 1 : nParticles
+                            currPart = obj.particles.List{idx}{j};
+                            if(~isempty(currPart(currPart(:,end) == i)))
+                                part2Plot = currPart(currPart(:,end) == i,:);
+                                plot(part2Plot(2),part2Plot(1),'o',...
+                                    'LineWidth',2, 'MarkerSize',10, 'MarkerEdgeColor',colors(j,:));
+                            end
+                        end
+                        hold off
+                    end
+                    
+                    [frame] = getFrame(obj,idx);
+                    assert(isstruct(frame),'Error unknown data format, data should be a struct');
+                    for i = 1:nParticles
+                        
+                        currPart = obj.particles.List{idx}{i};
+                        %Remove rows containing NaNs
+                        idx2NaN = isnan(currPart(:,1));
+                        currPart(idx2NaN,:) = [];
+                        planes = currPart(:,end);
+                        figure(20+i)
+                        hold on
+                        for j = 1 : length(planes)
+                            jdx = planes(j);
+                            currFrame = frame.(sprintf('plane%d',jdx));
+                            ROI = EmitterSim.getROI(currPart(j,2), currPart(j,1),...
+                         roiSize, size(currFrame,2), size(currFrame,1));
+                            subplot(1,length(planes),j)
+                            imagesc(currFrame(ROI(3):ROI(4),ROI(1):ROI(2)));
+                            title({['Particle ' num2str(j)],[ ' Plane ' num2str(jdx)]});
+                            axis image
+                            colormap('jet')
+
+                        end
+                        hold off
+                    end
+                end
+            end
+                
+            
+            
         end
         
     end
