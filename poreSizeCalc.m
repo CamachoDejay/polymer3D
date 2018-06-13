@@ -2,10 +2,11 @@ clear;
 clc;
 close all;
 %% User Input
-prompt = {'Enter the pixel size: ','Enter number of frame to analyze: '};
+prompt = {'Enter the pixel size: ','Enter number of frame to analyze: ',...
+    'number of frame to ignore beginning:', 'number of frame to ignore end:','Stack to ignore:'};
 dlgTitle = 'User input for Pore size calculation';
 numLines = 1;
-defaultVal = {'100','244'};
+defaultVal = {'100','244','0','0','0'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 
 %% Checking user input
@@ -16,6 +17,15 @@ assert(~isnan(pxSize),'Number of Frame should be numerical');%If not a number
 
 nFrame = str2double(answer(2));
 assert(~isnan(nFrame),'Number of Frame should be numerical');%If not a number
+
+bIgnore = str2double(answer(3));
+assert(~isnan(bIgnore),'Number of Frame to ignore should be numerical');
+
+aIgnore = str2double(answer(4));
+assert(~isnan(aIgnore),'Number of Frame to ignore should be numerical');
+
+sIgnore = str2double(answer(3));
+assert(~isnan(bIgnore),'Number of Frame should be numerical');
 
 fileExt = '.tif';
 outputName = 'PoreSize-Results';
@@ -30,15 +40,33 @@ pxArea = pxSize*pxSize*1e-6; %in µm^2
 
 %h = waitbar(0);
 nImStacks = size(file2Analyze,1);
+if sIgnore~=0
+    idx2Stack = 1:nImStacks;
+    nImStacks = nImStacks-length(sIgnore);
+    idx2Stack(idx2Stack == sIgnore) = [];
+end
+
+if bIgnore ~=0
+    startIdx = bIgnore;
+else
+    startIdx = 1;
+end
+
+if aIgnore ~= 0
+    endIdx = aIgnore;
+else
+    endIdx = nFrame;  
+end
 
 allDataAdapt = [];
 allDataAuto = [];
-parfor j = 1:nImStacks
+for j = 1:length(idx2Stack)
+    jdx = idx2Stack(j);
    % hMessage = sprintf('Loading image stack number %d/%d',j,nImStacks);
     %waitbar(0,h,hMessage);
     %Data loading
-    path2Stacks = strcat(file2Analyze(j).folder,filesep);
-    tmpName = file2Analyze(j).name;
+    path2Stacks = strcat(file2Analyze(jdx).folder,filesep);
+    tmpName = file2Analyze(jdx).name;
     p2file      = strcat(path2Stacks,tmpName);
     warning('off','all')
     fileInfo    = Load.Movie.tif.getinfo(p2file);
@@ -55,7 +83,7 @@ parfor j = 1:nImStacks
     nIM = nFrame;
    % waitbar(j/nImStacks,h,hMessage);
     disp('Loading Data');
-    for i=1:nIM %% PARFOR CAN BE PLACED HERE
+    parfor i=startIdx:endIdx %% PARFOR CAN BE PLACED HERE
         
         % Loading image number i
         warning('off','all')
