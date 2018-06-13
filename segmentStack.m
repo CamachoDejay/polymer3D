@@ -4,7 +4,7 @@
 % The program segments the stacks (e.g. binarization pore-material) and
 % save the information for further analysis
 
-clear
+clear 
 close all
 clc
 
@@ -80,8 +80,18 @@ parfor i = 1 : nFiles
 
     % get list of indices
     dIDX = 512; % to split stack in 512*512*Z chunks
+    
+    assert(mod(imSize(1),dIDX)>50, 'Your chunck size is generating problems on 1st index')
+    assert(mod(imSize(2),dIDX)>50, 'Your chunck size is generating problems on 2nd index')
+    
+    
     xi = 1:dIDX:imSize(1);
     xf = dIDX:dIDX:imSize(1);
+    if xf(end)~= imSize(1)
+        xf = [xf, imSize(1)];
+    end
+    assert(length(xi)==length(xf), 'Problems! indexing over the volume')
+    
     IDX = zeros(length(xi)*length(xf),4);
 
     [XX, YY] = meshgrid(xi,xf);
@@ -151,35 +161,11 @@ parfor i = 1 : nFiles
   
     
     fclose(fid);
-    close(h);
+    %close(h);
 end
 h = msgbox('The Data were succesfully saved !', 'Success');
+%%
 %%%%%%%%%%%%%%% Plotting %%%%%%%%%%%%%%%
-
-% figure(1)
-% shg
-% SE = strel('disk',3);
-% 
-% for j = round(linspace(1,nFrame,10))
-%     subplot(1,2,1)
-%     A = IMs(:,:,j);
-%     B = BWglobal(:,:,j);
-%     B = bwperim(B);
-%     B = imdilate(B,SE);
-%     C = imfuse(A,B,'ColorChannels',[2 1 0]);
-%     imagesc(C)
-%     axis image
-%     title('global')
-% 
-%     subplot(1,2,2)
-%     A = IMs(:,:,j);
-%     B = BWadapt(:,:,j);
-%     B = bwperim(B);
-%     B = imdilate(B,SE);
-%     C = imfuse(A,B,'ColorChannels',[2 1 0]);
-%     imagesc(C)
-%     axis image
-%     title('adaptive')
-%     waitforbuttonpress
-%
-%end
+idx = 1;
+path = file2Analyze.folder;
+Plotting.checkSegmentation(path,idx);

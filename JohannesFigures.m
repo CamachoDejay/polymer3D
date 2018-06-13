@@ -5,19 +5,19 @@ clc
 
 %% Load block
 % Load first file
-tmp = load('N:\Project Z-stacks\1K- 1 mg per ml\SegmentedStacks\PoreSize-ResultsAutomated-poreProps.mat');
+tmp = load('N:\DATA\Leica\PhD\2018\10062018\tif cold 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table05 = tmp.(names{1});
 clear tmp names
 % Load second file
-tmp = load('N:\Project Z-stacks\2K- 1 mg per ml\SegmentedStacks\PoreSize-ResultsAutomated-poreProps.mat');
+tmp = load('N:\DATA\Leica\PhD\2018\10062018\tif hot 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table075 = tmp.(names{1});
 clear tmp names
 % Loqd third file
-tmp = load('N:\Project Z-stacks\5K- 1 mg per ml\SegmentedStacks\PoreSize-ResultsAutomated-poreProps.mat');
+tmp = load('N:\DATA\Leica\PhD\2018\10062018\tif cold 2\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table1 = tmp.(names{1});
@@ -54,7 +54,7 @@ totalV = totalV(:);
 p1_CCDF = CCDF;
 clear CDF CCDF totalV
 
-
+%%
 figure()
 
 CCDF = p05_CCDF;
@@ -71,13 +71,13 @@ hold off
 a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
-title({'CCDF-plot for area of pores','PIC hydrogel 1 mg/ml for different polymer length'})
+title({'CCDF-plot for area of pores','PIC/pnipam; hydrogel 0.5 mg/ml heat response'})
 xlabel('Pore size (micrometer^2)')
 ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;
 ylim([1e-6 1])
 xlim([0.1 1e5])
-legend({'1K','2K','5K'})
+legend({'COLD 1','HOT 1','COLD 2'})
 
 %%
 figure(2)
