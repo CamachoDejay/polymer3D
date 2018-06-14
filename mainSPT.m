@@ -11,8 +11,8 @@ addpath(genpath('Ext'));
 
 % path to the callibration
 
-%path2File = '..\data\Multiplane\ZCalibration\\BeadsZCalibration_1';
-path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
+path2File = '..\data\Multiplane\ZCalibration\\BeadsZCalibration_1';
+%path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
 path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
 %% create a Movie Object
@@ -38,16 +38,19 @@ mov.giveInfo;
 %% getCandidatePos
 detectParam.delta = 6;
 detectParam.chi2 = 80;
-mov.findCandidatePos(detectParam,24);
+mov.findCandidatePos(detectParam);
 candidate = mov.getCandidatePos(24);
 %% showCandidate
-mov.showCandidate(10);
+mov.showCandidate(24);
 
 %% consolidation
-finalList = mov.superResConsolidate(24,6);
+mov.superResConsolidate(6);
 
 %% showParticles
 mov.showParticles(24);
+
+%% ZCalibration
+tP = mov.ZCalibrate;
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();

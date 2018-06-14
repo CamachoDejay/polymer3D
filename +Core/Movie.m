@@ -392,11 +392,11 @@ classdef Movie <  handle
             end  
         end
         
-        function [particle] = superResConsolidate(obj,frames,roiSize)
+        function superResConsolidate(obj,roiSize,frames)
             
-            assert(obj.checkStatus('calibrated'),'Data should be calibrated to detect candidate');
+            assert(obj.checkStatus('calibrated'),'Data should be calibrated to consolidate');
             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');    
-            
+            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
             switch nargin
                 
                 case 1
@@ -407,9 +407,8 @@ classdef Movie <  handle
 
                 case 2
 
-                    [frames] = obj.checkFrame(frames);
-                    roiSize = 6;
-                    disp('no roiSize given, using default radius of 6 pixels')
+                    frames = 1: obj.calibrated.nFrames;
+                    disp('Running consolidation on every frame')
                     
                 case 3
                     
@@ -427,9 +426,10 @@ classdef Movie <  handle
             %allocate for storage
             particleList = cell(1,obj.raw.maxFrame(1));
             nParticles = zeros(1,obj.raw.maxFrame(1));
-            
+            idx2TP = zeros(1,obj.raw.maxFrame(1));
+            h = waitbar(0,'Consolidating candidate ...');
             for i = 1 : 1:nFrames
-                
+                disp(['Consolidating frame ' num2str(i) ' / ' num2str(nFrames)]);
                 idx = frames(i);
                 [data] = obj.getFrame(idx);
                 [candidate] = obj.getCandidatePos(idx);
@@ -439,21 +439,85 @@ classdef Movie <  handle
                     warning('Frame %d did not contain any candidate',idx);
                     particleList{idx} = nan(5);
                     nParticles(idx) = 0;
+                    
+                    
                 else
                     
                     [finalCandidate] = obj.consolidatePos(data, candidate, roiSize);
                     particleList{idx} = finalCandidate;
-                    nParticles(idx) = length(finalCandidate);   
+                    nParticles(idx) = length(finalCandidate);
+                    if ~isempty(finalCandidate)
+                        idx2TP(idx) = idx;
+                    end
                     
                 end
+                waitbar(i/nFrames,h,['Consolidating candidate... ' num2str(i) '/' num2str(nFrames) ' done']);
             end
+            close(h);
             particle.List   = particleList;
             particle.nParticles = nParticles;
             particle.tPoint = nFrames;
-            particle.idx2TP = frames;
+            particle.idx2TP = nonzeros(idx2TP);
             particle.roiSize = roiSize;
             obj.particles = particle;
             
+        end
+        
+        function [particle] = getParticles(obj,frames)
+            
+            [idx] = obj.checkFrame(frames);
+            particle = obj.particles.List{idx};
+            
+            if isempty(particle)
+                
+                warning('There was no particle found in this frames, check than you ran superResConsolidate method on this frame beforehand');
+            
+            end
+        end
+        
+        function trackedParticle = ZCalibrate(obj)
+            
+            assert(obj.checkStatus('calibrated'),'Data should be calibrated to do ZCalibration');
+            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
+            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
+            
+            %retrieve index to particles
+           % idx2Particles = 
+           frameIdx = 4;
+           
+           isPart = true;
+           counter = 1;
+           partIdx = 1;
+           trackedParticle = cell(1,length(obj.particles.List)-frameIdx);
+           trackedParticle{1} = obj.particles.List{frameIdx}{1};
+           while isPart
+           
+           Idx = frameIdx + counter;
+           part2Track = obj.particles.List{Idx-1}{1};
+           nPartInFrame = obj.particles.nParticles(Idx);
+           totIsPart = zeros(nPartInFrame,1);
+           for i = 1: nPartInFrame
+
+               nextPart = obj.particles.List{Idx}{i};
+               [isPart] = obj.isPartner(part2Track,nextPart,1,'ZCal');
+               totIsPart(i) = isPart;
+           end
+           counter = counter+1;
+           if(length(find(totIsPart==1))>1)
+               warning('Could not choose between 2 close particles, killing them both')
+               isPart = false;
+           elseif (~all(totIsPart==0))
+               
+               trackedParticle{counter} = obj.particles.List{Idx}{logical(totIsPart)};
+              
+               isPart = true;
+           else
+               isPart = false;
+               
+           end
+           end
+            idx2Empty = cellfun(@isempty,trackedParticle);
+            trackedParticle(idx2Empty) = [];
         end
                
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -593,7 +657,7 @@ classdef Movie <  handle
                          roiSize, size(currFrame,2), size(currFrame,1));
                             subplot(1,length(planes),j)
                             imagesc(currFrame(ROI(3):ROI(4),ROI(1):ROI(2)));
-                            title({['Particle ' num2str(j)],[ ' Plane ' num2str(jdx)]});
+                            title({['Particle ' num2str(i)],[ ' Plane ' num2str(jdx)]});
                             axis image
                             colormap('jet')
 
@@ -763,42 +827,47 @@ classdef Movie <  handle
             sig = [obj.info.sigma_px obj.info.sigma_px];
             
             currentk = 1;
-            candMet = zeros(length(frameCandidate),7);
-            
-            for j = 1 : numel(fields(data))
+            candMet = zeros(length(frameCandidate),5);
+            nP = numel(fields(data));
+            for j = 1 : nP
                 
                 planeCandidate = frameCandidate(frameCandidate(:,3)==j,1:2);
                 planeData = data.(sprintf('plane%d',j));
 
-                cM = zeros(length(planeCandidate),6);
-                
-                for k = 1 : length(planeCandidate)
-                    %Get the ROI    
-                    [roi_lims] = EmitterSim.getROI(planeCandidate(k,2), planeCandidate(k,1),...
-                        delta, size(planeData,2), size(planeData,1));
-                    ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
-                    %Phasor fitting to get x,y,e
-                    [row,col,e] = Localization.phasor(ROI);
-                    [LRT,RMSD] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
-                    rowPos = planeCandidate(k,1) + row;
-                    colPos = planeCandidate(k,2) + col;
+                cM = zeros(size(planeCandidate,1),4);
+                if(~isempty(planeCandidate))
+                    for k = 1 : size(planeCandidate,1)
+                        %Get the ROI    
+                        [roi_lims] = EmitterSim.getROI(planeCandidate(k,2), planeCandidate(k,1),...
+                            delta, size(planeData,2), size(planeData,1));
+                        ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
+                        %Phasor fitting to get x,y,e
+                        [row,col,e] = Localization.phasor(ROI);
+                        [LRT,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
+                        rowPos = planeCandidate(k,1) + row;
+                        colPos = planeCandidate(k,2) + col;
 
-                    cM(k,:) = [rowPos colPos e LRT RMSD k];
-                
+                        cM(k,:) = [rowPos colPos e LRT ];
+
+                    end
+                    %candidate Metric: phasor localization Res, Likelihood Res,
+                    %indexCandidate in plane, Plane.
+                    %candidateMetric: [row col e LRT RMSD k J]
+
+                    candMet(currentk:currentk+k-1,:) = [cM j*ones(k,1)];
+                    currentk = currentk+k;
                 end
-                %candidate Metric: phasor localization Res, Likelihood Res,
-                %indexCandidate in plane, Plane.
-                %candidateMetric: [row col e LRT RMSD k J]
-                
-                candMet(currentk:currentk+k-1,:) = [cM j*ones(k,1)];
-                currentk = currentk+k;
                 
             end
             
             [corrEllip, focusMetric] = Localization.calcFocusMetric(candMet(:,3),candMet(:,4));
             %Kill "bad" PSF from the focus metric so they are not taken
             %later
-            candMet = [candMet focusMetric];
+            %reformating to keep the same format as how the data is saved
+            %later
+            candMet = [candMet candMet(:,end)];
+            candMet(:,5) = focusMetric;
+            candMet(:,4) = [];
             focusMetric((1-corrEllip)>0.2) = NaN;
             
             counter = 1;
@@ -816,39 +885,56 @@ classdef Movie <  handle
               
                 %Find candidate in best focus
                 [~,idx] = max(focusMetric);
+                currentPlane = candMet(idx,end);
+              
+                %Check which planes are to be check
+                planes2Check = currentPlane-2:currentPlane-1;
+                planes2Check = planes2Check(planes2Check>0);
+
+                planes2Check = [planes2Check currentPlane+1:currentPlane+2];
+                planes2Check = planes2Check(planes2Check<nP+1);
+                currentCand = candMet(idx,:);
+                direction = 1;
                 
-                %Check if there are planes above
-                [idx1] = obj.searchPartnerCandidate(candMet,idx,1);
-
-                %Check if they are planes below
-                [idx2] = obj.searchPartnerCandidate(candMet,idx,-1);
-
-                idxF = [idx1 idx idx2];
+                particle = nan(5);
+                particle(3,:) = currentCand;
+                nCheck = length(planes2Check);
+                for i = 1:nCheck
+                    
+                    cand = candMet(candMet(:,end) == planes2Check(i),:);
+                    if(planes2Check(i) > currentPlane)
+                        direction = -1;
+                    end
+                    
+                    [isPart] = obj.isPartner(currentCand,cand,direction,'plane');
+                    if ~all(isPart ==0)
+                        id = cand(isPart,end)-currentCand(end);
+                        particle(round(length(currentCand)/2)+id,:) = cand(isPart,:);
+                    end
+                    
+                end
+                
+                 
                 
                 %Check if the resulting configuration of the plane make
                 %sense
-                planeConfig = idxF;
-                planeConfig(~isnan(idxF)) = candMet(idxF(~isnan(idxF)),7);
+                planeConfig = particle(:,end);
                 [checkRes] = obj.checkPlaneConfig(planeConfig);
                 %Store
                 if checkRes
                     
                     nPart = nPart +1;
-                    %allocate nans so missing row will be a row of nan
-                    particle = nan(5);
-                    %We store where candidate were found but only keep info
-                    %about x,y,e position, focus metric and plane
-                    particle(~isnan(idxF),:) = candMet(idxF(~isnan(idxF)), [1 2 3 8 7]);
                     finalCandidate{nPart,1} = particle;
                     
                     %We remove the particle(s) from the list
-                    candMet(idxF(~isnan(idxF)),:) = [];
-                    focusMetric(idxF(~isnan(idxF))) = [];
+                    focusMetric(ismember(candMet(:,1), particle(:,1))) = [];
+                    candMet(ismember(candMet(:,1), particle(:,1)),:) = [];
+                    
                     
                 else
                     %Otherwise we remove it from the best focus search list
                     %by putting focus metric to NaN
-                    focusMetric(8) = NaN;
+                    focusMetric(idx) = NaN;
                     
                 end
 
@@ -861,94 +947,135 @@ classdef Movie <  handle
             
 end
         
-        function [idx2Part] = searchPartnerCandidate(obj, candMet, idx, direction)
+        function [isPart] = isPartner(~, current, next, direction, check)
             
             %This function is designed to have PSFE plate ON
-            nP = obj.calibrated.nPlanes; 
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
-            currentPlane = candMet(idx,7);
-            currentPart  = candMet(idx,:);
-            
-            switch direction
-
-                case 1
-
-                    planes2Check = currentPlane-2:currentPlane-1;
-                    planes2Check = planes2Check(planes2Check>0);
-
-                case -1
-
-                    planes2Check = currentPlane+1:currentPlane+2;
-                    planes2Check = planes2Check(planes2Check<nP+1);
-
-                otherwise
-                    error('direction is supposed to be either 1 (up) or -1 (down)');
-            end
-
-            idx2Part = [NaN NaN];
-            
-            for i = 1 : length(planes2Check)
-                
-                planeIdx = planes2Check(i);
-                partInPlane = candMet(candMet(:,7) == planeIdx,:);
-                %Check position %Discuss with Rafa
-                partInPlane = partInPlane(and(abs(partInPlane(:,1)-currentPart(1))<2,...
-                                              abs(partInPlane(:,2)-currentPart(2)<2)),:);
-                if size(partInPlane,1)>1
+            assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
+           
+            switch check
+                case 'plane' %TL, consolidation between Plane
+                    isPart = zeros(size(next,1),1);
+                    %Calculate and Test Euclidian distance
+                    EuDist = sqrt((current(:,1) - next(:,1)).^2 +...
+                        (current(:,2) - next(:,2)).^2);
                     
-                    disp('More than one particle in close proximity')
-                    
-                end
-                
-                if(isempty(partInPlane))
-                    
-                    disp('No other candidate in plane with similar position')
-                    
-                else
-                %Check ellipticity 
-                    switch direction
+                    if(isempty(EuDist(EuDist<2*sqrt(2)))) %we allow 2 pixel off as no superResCal is done yet
+                        
+                        disp('No other candidate in plane with similar position')
+
+                    else
+                        
+                        isPart = EuDist<2*sqrt(2);
+                       
+                        if(length(find(isPart == 1))>1)
+
+                            disp('More than one particle in close proximity')
+
+                        end
+                        
+                        switch direction
                         
                         case 1
                             
-                            partInPlane = partInPlane(partInPlane(:,3) > currentPart(3),:);
+                            ellip = next(:,3) > current(3);
                             
                         case -1
                             
-                            partInPlane = partInPlane(partInPlane(:,3) < currentPart(3),:);
+                            ellip = next(:,3) < current(3);
                             
+                        end
+                        
+                        isPart = isPart .* ellip;
+                        
+                        if(all(isPart == 0))
+                        
+                            disp('No close candidate in plane consistent with ellipticity')
+                        
+                        else
+                            %check LRT
+                            maxExpFM = current(4)+0.1*current(4);
+                            FM = next(:,4) < maxExpFM;
+                            isPart = isPart .* FM;
+                            
+                            if(all(isPart == 0))
+   
+                                disp('No close candidate in plane consistent with the focus parameter')
+                            
+                            elseif(length(find(isPart==1))>1)
+                                
+                                warning('Could not choose which particle was the partner of the requested particle, killed them both');
+                                isPart(isPart==1) = 0;
+                                
+                            end
+                        
+                        end                
                     end
+                    
+                case 'ZCal' %ZStack, consolidation between frame
+                    isPart = false;
+                    %Check that at least 2 planes are in common
+                    commonPlanes = ismember(current(:,end),next(:,end));
+                    nCommonPlanes = length(find(commonPlanes));
+                    nPlanes = size(current,1);
+                    if length(find(commonPlanes))<2
+                    else                      
+                        
+                        %Calculate and Test Euclidian distance
+                        EuDist = sqrt((nanmedian(current(:,1)) - nanmedian(next(:,1))).^2 +...
+                            (nanmedian(current(:,2)) - nanmedian(next(:,2))).^2);
+                        
+                        isPart = EuDist<2;
+                        
+                        if(~isPart) %we allow 1 pixel off in both direction
 
-                    if(isempty(partInPlane))
-                        
-                        disp('No close candidate in plane consistent with ellipticity')
-                        
-                    else
-                        %check LRT
-                        maxExpLRT = abs(currentPart(4))+0.1*abs(currentPart(4));
-                        partInPlane = partInPlane(abs(partInPlane(:,4)) < maxExpLRT,:);
-                        
-                        if(isempty(partInPlane))
+                            disp('No other candidate in plane with similar position')
+
+                        else
+
+                            eWeight = [1 2 3 2 1];
+                            switch direction
+
+                            case 1
+
+                                ellip = next(:,3)+0.1*next(:,3) > current(:,3);
+                                ellipScore = sum(ellip .* eWeight(:));
+
+                            case -1
+
+                                ellip = next(:,3) < current(:,3)+0.1*current(:,3);
+                                ellipScore = sum(ellip .* eWeight(:));
+
+                            end
                             
-                        disp('No close candidate in plane consistent with the LRT parameter')
-                        
+                            isPart = ellipScore> 7 - (nPlanes-nCommonPlanes);
+
+                            if(~isPart)
+
+                                disp('No close candidate in plane consistent with ellipticity')
+
+                            else
+                                %check focus is not more than one plane away 
+                                isPart = abs(current(3,end)-next(3,end)<=1);
+
+                                if(~isPart)
+
+                                    disp('No close candidate in plane consistent with the focus parameter');
+
+                                end
+                            end                
                         end
                     end
-                end
-
-                if ~isempty(partInPlane)
                     
-                    newIdx = find(candMet(:,1) == partInPlane(1));
-                    
-                else
-                    
-                    newIdx = NaN;
-
-                end
-                
-                idx2Part(i) = newIdx;
+                case 'Track' %TL, consolidation between frame
+                otherwise 
+                    error('Unknown type of experiment');
+            end
+            isPart = logical(isPart);
+         
                 
             end
-        end
+     
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
