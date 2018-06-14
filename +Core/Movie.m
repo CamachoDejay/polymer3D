@@ -145,7 +145,7 @@ classdef Movie <  handle
           if length(unique(idx2Calibrated))<2
               
               disp('Calibrating the dataset');
-              [calibrated] = obj.calibrate;
+              [calibrated] = obj.applyCalib;
               disp('Data is now calibrated');
               
           %if there is 2 value, then calibrated folder exist and then we
@@ -392,7 +392,7 @@ classdef Movie <  handle
             end  
         end
         
-        function [particle] = consolidate(obj,frames,roiSize)
+        function [particle] = superResConsolidate(obj,frames,roiSize)
             
             assert(obj.checkStatus('calibrated'),'Data should be calibrated to detect candidate');
             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');    
@@ -443,8 +443,7 @@ classdef Movie <  handle
                     
                     [finalCandidate] = obj.consolidatePos(data, candidate, roiSize);
                     particleList{idx} = finalCandidate;
-                    nParticles(idx) = length(finalCandidate);
-                    
+                    nParticles(idx) = length(finalCandidate);   
                     
                 end
             end
@@ -452,7 +451,9 @@ classdef Movie <  handle
             particle.nParticles = nParticles;
             particle.tPoint = nFrames;
             particle.idx2TP = frames;
+            particle.roiSize = roiSize;
             obj.particles = particle;
+            
         end
                
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -537,7 +538,6 @@ classdef Movie <  handle
         end
         
         function showParticles(obj,idx)
-            roiSize = 6; %TODO: retrieve from object
             assert(length(idx)==1, 'Only one frame can be displayed at once');
             [idx] = obj.checkFrame(idx);
             % Show Candidate
@@ -555,6 +555,7 @@ classdef Movie <  handle
                     
                 else
                     
+                    roiSize = obj.particles.roiSize;
                     nParticles = obj.particles.nParticles(idx);
                     h = gcf;
                     nPlanes = obj.calibrated.nPlanes;
@@ -600,10 +601,7 @@ classdef Movie <  handle
                         hold off
                     end
                 end
-            end
-                
-            
-            
+            end              
         end
         
     end
@@ -887,7 +885,7 @@ end
                     error('direction is supposed to be either 1 (up) or -1 (down)');
             end
 
-            idx2Part = [];
+            idx2Part = [NaN NaN];
             
             for i = 1 : length(planes2Check)
                 
@@ -947,7 +945,7 @@ end
 
                 end
                 
-                idx2Part = [idx2Part newIdx];
+                idx2Part(i) = newIdx;
                 
             end
         end

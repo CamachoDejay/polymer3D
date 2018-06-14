@@ -11,7 +11,8 @@ addpath(genpath('Ext'));
 
 % path to the callibration
 
-path2File = '..\data\Multiplane\Data\TL-OD2-200msExposure_1';
+%path2File = '..\data\Multiplane\ZCalibration\\BeadsZCalibration_1';
+path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
 path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
 %% create a Movie Object
@@ -40,10 +41,10 @@ detectParam.chi2 = 80;
 mov.findCandidatePos(detectParam,24);
 candidate = mov.getCandidatePos(24);
 %% showCandidate
-mov.showCandidate(24);
+mov.showCandidate(10);
 
 %% consolidation
-finalList = mov.consolidate(24,6);
+finalList = mov.superResConsolidate(24,6);
 
 %% showParticles
 mov.showParticles(24);
