@@ -475,49 +475,55 @@ classdef Movie <  handle
             end
         end
         
-        function trackedParticle = ZCalibrate(obj)
-            
-            assert(obj.checkStatus('calibrated'),'Data should be calibrated to do ZCalibration');
-            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
-            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
-            
-            %retrieve index to particles
-           % idx2Particles = 
-           frameIdx = 4;
-           
-           isPart = true;
-           counter = 1;
-           partIdx = 1;
-           trackedParticle = cell(1,length(obj.particles.List)-frameIdx);
-           trackedParticle{1} = obj.particles.List{frameIdx}{1};
-           while isPart
-           
-           Idx = frameIdx + counter;
-           part2Track = obj.particles.List{Idx-1}{1};
-           nPartInFrame = obj.particles.nParticles(Idx);
-           totIsPart = zeros(nPartInFrame,1);
-           for i = 1: nPartInFrame
+        function trackedParticle = trackParticle(obj)
 
-               nextPart = obj.particles.List{Idx}{i};
-               [isPart] = obj.isPartner(part2Track,nextPart,1,'ZCal');
-               totIsPart(i) = isPart;
-           end
+        assert(obj.checkStatus('calibrated'),'Data should be calibrated to do ZCalibration');
+        assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
+        assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
+
+        %retrieve index to particles
+        % idx2Particles = 
+        frameIdx = 1;
+
+        isPart = true;
+        counter = 1;
+
+        trackedParticle = cell(1,length(obj.particles.List)-frameIdx);
+        trackedParticle{1} = obj.particles.List{frameIdx}{1};
+        while isPart
+
+           Idx = frameIdx + counter;
+           part2Track = trackedParticle{Idx-1};
+           nPartInFrame = obj.particles.nParticles(Idx);
+           %We use reshape to input the different particles of the next
+           %frame at once by storing them in the 3rd dimension
+           shape = [size(part2Track,1) size(part2Track,2) nPartInFrame]; 
+           nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(obj.particles.List{Idx}'),shape);
+
+           [isPart] = obj.isPartner(part2Track,nextParts,1,'ZCal');
+
            counter = counter+1;
-           if(length(find(totIsPart==1))>1)
+           if(length(find(isPart==1))>1)
+
                warning('Could not choose between 2 close particles, killing them both')
                isPart = false;
-           elseif (~all(totIsPart==0))
-               
-               trackedParticle{counter} = obj.particles.List{Idx}{logical(totIsPart)};
-              
+
+           elseif (~all(isPart==0))
+
+               trackedParticle{counter} = obj.particles.List{Idx}{isPart};
+
                isPart = true;
            else
+
                isPart = false;
-               
+
            end
+           if counter == length(obj.particles.List)-1
+               isPart = false;
            end
-            idx2Empty = cellfun(@isempty,trackedParticle);
-            trackedParticle(idx2Empty) = [];
+        end
+        idx2Empty = cellfun(@isempty,trackedParticle);
+        trackedParticle(idx2Empty) = [];
         end
                
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -947,7 +953,7 @@ classdef Movie <  handle
             
 end
         
-        function [isPart] = isPartner(~, current, next, direction, check)
+        function [isPart] = isPartner(obj, current, next, direction, check)
             
             %This function is designed to have PSFE plate ON
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
@@ -955,117 +961,72 @@ end
            
             switch check
                 case 'plane' %TL, consolidation between Plane
-                    isPart = zeros(size(next,1),1);
-                    %Calculate and Test Euclidian distance
-                    EuDist = sqrt((current(:,1) - next(:,1)).^2 +...
-                        (current(:,2) - next(:,2)).^2);
+                    Thresh = 2*sqrt(2); %in Px As the superResCal is not 
+                    %performed yet we allow 2px in both direction
+                    [checkRes1] = obj.checkEuDist(current(:,1:2),...
+                                next(:,1:2),Thresh);
+
+                    % Test ellipticity
+                    [checkRes2] = obj.checkEllipticity(current(:,3),...
+                        next(:,3),direction);
                     
-                    if(isempty(EuDist(EuDist<2*sqrt(2)))) %we allow 2 pixel off as no superResCal is done yet
-                        
-                        disp('No other candidate in plane with similar position')
+                    % Test focus Metric    
+                     maxExpFM = current(4)+0.1*current(4);
+                     checkRes3 = next(:,4) < maxExpFM;  
+                           
+                   %isPart will only be true for particle that passes the 3 tests       
+                   isPart = checkRes1.*checkRes2.*checkRes3;
+                   
+                   if(length(find(isPart))>1)
 
-                    else
-                        
-                        isPart = EuDist<2*sqrt(2);
-                       
-                        if(length(find(isPart == 1))>1)
+                        warning('Could not choose which particle was the partner of the requested particle, killed them both');
+                        isPart(isPart==1) = 0;
 
-                            disp('More than one particle in close proximity')
+                   end
 
-                        end
-                        
-                        switch direction
-                        
-                        case 1
-                            
-                            ellip = next(:,3) > current(3);
-                            
-                        case -1
-                            
-                            ellip = next(:,3) < current(3);
-                            
-                        end
-                        
-                        isPart = isPart .* ellip;
-                        
-                        if(all(isPart == 0))
-                        
-                            disp('No close candidate in plane consistent with ellipticity')
-                        
-                        else
-                            %check LRT
-                            maxExpFM = current(4)+0.1*current(4);
-                            FM = next(:,4) < maxExpFM;
-                            isPart = isPart .* FM;
-                            
-                            if(all(isPart == 0))
-   
-                                disp('No close candidate in plane consistent with the focus parameter')
-                            
-                            elseif(length(find(isPart==1))>1)
-                                
-                                warning('Could not choose which particle was the partner of the requested particle, killed them both');
-                                isPart(isPart==1) = 0;
-                                
-                            end
-                        
-                        end                
-                    end
-                    
                 case 'ZCal' %ZStack, consolidation between frame
-                    isPart = false;
-                    %Check that at least 2 planes are in common
-                    commonPlanes = ismember(current(:,end),next(:,end));
-                    nCommonPlanes = length(find(commonPlanes));
-                    nPlanes = size(current,1);
-                    if length(find(commonPlanes))<2
-                    else                      
-                        
-                        %Calculate and Test Euclidian distance
-                        EuDist = sqrt((nanmedian(current(:,1)) - nanmedian(next(:,1))).^2 +...
-                            (nanmedian(current(:,2)) - nanmedian(next(:,2))).^2);
-                        
-                        isPart = EuDist<2;
-                        
-                        if(~isPart) %we allow 1 pixel off in both direction
-
-                            disp('No other candidate in plane with similar position')
-
-                        else
-
-                            eWeight = [1 2 3 2 1];
-                            switch direction
-
-                            case 1
-
-                                ellip = next(:,3)+0.1*next(:,3) > current(:,3);
-                                ellipScore = sum(ellip .* eWeight(:));
-
-                            case -1
-
-                                ellip = next(:,3) < current(:,3)+0.1*current(:,3);
-                                ellipScore = sum(ellip .* eWeight(:));
-
-                            end
+                    %The calculation here is ran in parallel, we check if
+                    %the current particle is a partner of one of the
+                    %particles in the next frame. Some indexing or step
+                    %might therefore seems unnecessary but allow to take
+                    %any number of particles
+                    
+                    isPart = zeros(size(next,3),1);
+                    %check focus is not more than one plane away 
+                    roughcheck1 = squeeze(abs(current(3,end)-next(3,end,:)<=1));
+                    
+                    if all(roughcheck1 ==0)
+                        disp('Something is wrong your focus changed more than one plane between 2 frames');
+                    else
+                        %Check that at least 2 planes are in common
+                        commonPlanes = obj.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
+                        roughcheck2  = sum(commonPlanes,1)>2;
+                        if all(roughcheck2 ==0)
+                            disp('Less than 2 planes in common, breaking out');
+                        else 
                             
-                            isPart = ellipScore> 7 - (nPlanes-nCommonPlanes);
+                            for i = 1 : size(next,3)
+                                % Test Euclidian distance
+                                Thresh = 1; %in px
+                                [checkRes1] = obj.checkEuDist(current(commonPlanes(:,1,i),1:2),...
+                                    squeeze(next(commonPlanes(:,2,i),1:2,i)),Thresh);
 
-                            if(~isPart)
-
-                                disp('No close candidate in plane consistent with ellipticity')
-
-                            else
-                                %check focus is not more than one plane away 
-                                isPart = abs(current(3,end)-next(3,end)<=1);
-
-                                if(~isPart)
-
-                                    disp('No close candidate in plane consistent with the focus parameter');
-
-                                end
-                            end                
+                                % Test ellipticity
+                                eWeight = [1 2 3 2 1];
+                                thresh = 5;
+                                [checkRes2] = obj.checkEllipticity(current(commonPlanes(:,1,i),3),...
+                                    squeeze(next(commonPlanes(:,2,i),3,i)),direction,thresh,eWeight(commonPlanes(:,1,i)));
+                                 %To be a particle, we want the position to be
+                                %consistent in at least 2 planes and
+                                %ellipticity to pass the test.
+                                isPart(i) = and(length(find(checkRes1))>2, checkRes2);
+                                
+                            end
+                                              
                         end
                     end
+                              
+                                
                     
                 case 'Track' %TL, consolidation between frame
                 otherwise 
@@ -1074,9 +1035,20 @@ end
             isPart = logical(isPart);
          
                 
-            end
+        end
      
-        
+        function  [commonPlanes] = findCommonPlanes(obj,planeInCurrent,planeInNext)
+            
+            commonPlanes = zeros(size(planeInNext,1),2,size(planeInNext,2));
+            
+            for i = 1 : size(planeInNext,2)
+                
+                commonPlanes(:,1,i) = ismember(planeInCurrent,planeInNext(:,i));
+                commonPlanes(:,2,i) = ismember(planeInNext(:,i),planeInCurrent);
+                
+            end
+            commonPlanes = logical(squeeze(commonPlanes));
+        end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function [checkRes] = checkStatus(obj, status)
@@ -1138,7 +1110,7 @@ end
             end
         end
         
-        function [frames] = checkFrame(obj, frames) 
+        function [frames]   = checkFrame(obj, frames) 
             
             testFrame = mod(frames,1);
             
@@ -1155,6 +1127,49 @@ end
             assert(max(frames) <= obj.raw.maxFrame(1),'Request exceeds max frame');
             assert(min(frames) >0, 'Indexing in matlab start from 1');
             
+        end
+        
+        function [checkRes] = checkEuDist(obj,current,next,Thresh)
+
+            EuDist = sqrt((current(:,1) - next(:,1)).^2 +...
+                            (current(:,2) - next(:,2)).^2);
+            checkRes = EuDist < Thresh;
+            
+            if isempty(checkRes)
+                checkRes = false;
+            end
+            
+        end
+        
+        function [checkRes] = checkEllipticity(obj, current, next, direction, thresh, eWeight)
+            
+            
+            switch direction
+
+            case 1
+                
+                ellip = current < next+0.1*next;
+
+            case -1
+
+                ellip = current +0.1 *current > next;
+
+            end
+            
+            if size(current,1)>1
+                
+                checkRes = sum(ellip .* eWeight(:))>=thresh;
+                
+            else
+                
+                checkRes = ellip;
+                
+            end
+            
+            if isempty(checkRes)
+                checkRes = false;
+            end
+                    
         end
         
         function [checkRes] = checkPlaneConfig(obj, planeConfig)
@@ -1178,5 +1193,7 @@ end
                 
             end
         end
+        
+        
     end
 end
