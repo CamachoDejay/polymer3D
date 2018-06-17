@@ -475,55 +475,103 @@ classdef Movie <  handle
             end
         end
         
-        function trackedParticle = trackParticle(obj)
+        function traces = trackInZ(obj)
+            assert(obj.checkStatus('calibrated'),'Data should be calibrated to do ZCalibration');
+            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
+            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
+            
+            %We copy the List as boolean to keep track of where there are
+            %still particles left
+            [listBool] = obj.copyList(obj.particles.List,1);
+            %We copy as NaN for storage of the traces;
+            [traces]   = obj.copyList(obj.particles.List,NaN);
+            
+            [idx] = obj.pickParticle(listBool);
+            counter = 1;
+            while (idx)
+                
+            if counter>100
+                
+                break;
+                
+            end
+            
+            [listIdx] = obj.connectParticles(obj.particles.List,listBool,idx,'ZCal');
+           
+            if length(listIdx) < 5 
+                
+                [listBool] = obj.removeParticles(listBool,listIdx);
+                
+            else
+                
+            [traces]  = obj.storeTraces(traces,listIdx,counter);
+            
+            [listBool] = obj.removeParticles(listBool,listIdx);
 
-        assert(obj.checkStatus('calibrated'),'Data should be calibrated to do ZCalibration');
-        assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
-        assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
-
-        %retrieve index to particles
-        % idx2Particles = 
-        frameIdx = 1;
-
-        isPart = true;
-        counter = 1;
-
-        trackedParticle = cell(1,length(obj.particles.List)-frameIdx);
-        trackedParticle{1} = obj.particles.List{frameIdx}{1};
-        while isPart
-
-           Idx = frameIdx + counter;
-           part2Track = trackedParticle{Idx-1};
-           nPartInFrame = obj.particles.nParticles(Idx);
-           %We use reshape to input the different particles of the next
-           %frame at once by storing them in the 3rd dimension
-           shape = [size(part2Track,1) size(part2Track,2) nPartInFrame]; 
-           nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(obj.particles.List{Idx}'),shape);
-
-           [isPart] = obj.isPartner(part2Track,nextParts,1,'ZCal');
-
-           counter = counter+1;
-           if(length(find(isPart==1))>1)
-
-               warning('Could not choose between 2 close particles, killing them both')
-               isPart = false;
-
-           elseif (~all(isPart==0))
-
-               trackedParticle{counter} = obj.particles.List{Idx}{isPart};
-
-               isPart = true;
-           else
-
-               isPart = false;
-
-           end
-           if counter == length(obj.particles.List)-1
-               isPart = false;
-           end
+            end
+            
+            [idx] = obj.pickParticle(listBool);
+            counter = counter +1;
+            end
+      
         end
-        idx2Empty = cellfun(@isempty,trackedParticle);
-        trackedParticle(idx2Empty) = [];
+        
+        function listIdx = connectParticles(obj,List,listBool,idx,criteria)
+
+            isPart = true;
+            counter = 1;
+
+            listIdx = zeros(length(List)-idx(1),2);
+            listIdx(1,:) = idx;
+            currentIdx = idx;
+            while isPart
+                if currentIdx >= length(List)
+                           break;
+                end
+                part2Track = List{currentIdx(1)}{currentIdx(2)};
+                [checkRes] = obj.checkListBool(listBool,currentIdx(1)+1);
+                nPartInFrame = length(checkRes);
+
+                if ~all(checkRes==0)
+                   %We use reshape to input the different particles of the next
+                   %frame at once by storing them in the 3rd dimension
+                   shape = [size(part2Track,1) size(part2Track,2) nPartInFrame]; 
+                   nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
+                   nextParts = nextParts(:,:,logical(checkRes));
+                   [isPart] = obj.isPartner(part2Track,nextParts,1,criteria);
+
+                   counter = counter+1;
+                   if(length(find(isPart==1))>1)
+
+                       warning('Could not choose between 2 close particles, killing them both')
+                       isPart = false;
+
+                   elseif (~all(isPart==0))
+                       %Update newIdx
+                       currentIdx(1) = currentIdx(1)+1;%current become the connected from next frame
+                       currentIdx(2) = find(isPart);
+                       nextParts = [];
+                       listIdx(counter,:) = currentIdx;
+
+                       isPart = true;
+                   else
+
+                       isPart = false;
+
+                   end
+
+                   if counter == length(obj.particles.List)-1
+
+                       isPart = false;
+
+                   end
+                   
+                else
+                    isPart = false;
+                end
+            listIdx(listIdx(:,1) == 0,:) = [];
+
+            end
         end
                
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1037,7 +1085,7 @@ end
                 
         end
      
-        function  [commonPlanes] = findCommonPlanes(obj,planeInCurrent,planeInNext)
+        function [commonPlanes] = findCommonPlanes(~,planeInCurrent,planeInNext)
             
             commonPlanes = zeros(size(planeInNext,1),2,size(planeInNext,2));
             
@@ -1048,6 +1096,88 @@ end
                 
             end
             commonPlanes = logical(squeeze(commonPlanes));
+        end
+        
+        function [listCopy] = copyList(~, List, filling)
+            
+            assert(iscell(List),'The List should be a cell array');
+            listCopy = cell(List);
+            
+            for i = 1:length(List)
+                
+                if isempty(List{i})
+                    
+                    listCopy{i} = [];
+                    
+                else
+                    
+                    for j = 1:length(List{i})
+                        
+                        listCopy{i}{j} = filling;
+                        
+                    end
+                    
+                end
+                
+            end
+            
+        end
+        
+        function [idx] = pickParticle(obj,listBool)
+            %This function will pick a particle and return false if there
+            %is none
+              
+            for i = 1:length(listBool)
+
+                if exist('idx','var')
+
+                    break;
+
+                else
+
+                    if isempty(listBool{i})
+
+                    else
+
+                        for j = 1:length(listBool{i})
+
+                            if listBool{i}{j} == true
+
+                                idx = [i,j];
+                                break;
+
+                            end          
+                        end
+                    end
+                end
+            end
+              
+            if ~exist('idx','var')
+
+              idx = false;
+
+            end
+            
+        end
+        
+        function [traces] = storeTraces(obj,traces,listIdx,numPart)
+            
+            for i = 1 : size(listIdx,1)
+                
+                traces{listIdx(i,1)}{listIdx(i,2)} = numPart;
+                
+            end
+            
+        end
+        
+        function [listBool] = removeParticles(obj,listBool,listIdx)
+            
+            for i = 1 : size(listIdx,1)
+                
+                listBool{listIdx(i,1)}{listIdx(i,2)} = false;
+                
+            end
+            
         end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1194,6 +1324,40 @@ end
             end
         end
         
-        
+        function [checkRes] = checkListBool(~, listBool, idx)
+            
+            if( idx>= length(listBool))
+                
+                checkRes = false;
+                
+            else
+            
+            if isempty(listBool{idx})
+                
+                checkRes = false;
+                
+            else
+                test = zeros(1,length(listBool{idx}));
+                
+                for i = 1 : length(listBool{idx})
+                    
+                    test(i) = listBool{idx}{i};
+                    
+                end
+                
+                if(all(test == 0))
+                    
+                    checkRes = false;
+                    
+                else
+                    
+                    checkRes = test;
+                                      
+                end 
+                
+            end
+            
+            end
+        end
     end
 end
