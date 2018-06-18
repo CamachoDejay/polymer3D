@@ -5,19 +5,19 @@ clc
 
 %% Load block
 % Load first file
-tmp = load('N:\DATA\Leica\PhD\2018\10062018\tif cold 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
+tmp = load('N:\Project pnipam\tif cold 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table05 = tmp.(names{1});
 clear tmp names
 % Load second file
-tmp = load('N:\DATA\Leica\PhD\2018\10062018\tif hot 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
+tmp = load('N:\Project pnipam\tif hot 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table075 = tmp.(names{1});
 clear tmp names
 % Loqd third file
-tmp = load('N:\DATA\Leica\PhD\2018\10062018\tif cold 2\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
+tmp = load('N:\Project pnipam\tif cold 2\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table1 = tmp.(names{1});
@@ -77,7 +77,7 @@ ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;
 ylim([1e-6 1])
 xlim([0.1 1e5])
-legend({'COLD 1','HOT 1','COLD 2'})
+legend({'cold 1','hot 1','cold 2'})
 
 %%
 figure(2)

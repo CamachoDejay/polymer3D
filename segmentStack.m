@@ -37,7 +37,7 @@ assert(~isempty(file2Analyze), sprintf('no %s found in the directory', fileExt))
 %% load full stack
 nFiles = size(file2Analyze,1);
 
-parfor i = 1 : nFiles
+for i = 1 : nFiles
 
     disp(['Loading stack --------------' file2Analyze(i).name])
     disp('This can take a few minutes ~2')
@@ -80,9 +80,10 @@ parfor i = 1 : nFiles
 
     % get list of indices
     dIDX = 512; % to split stack in 512*512*Z chunks
-    
-    assert(mod(imSize(1),dIDX)>50, 'Your chunck size is generating problems on 1st index')
-    assert(mod(imSize(2),dIDX)>50, 'Your chunck size is generating problems on 2nd index')
+    mod1 = mod(imSize(1),dIDX);
+    mod2 = mod(imSize(2),dIDX);
+    assert(or(mod1==0,mod1>50), 'Your chunck size is generating problems on 1st index')
+    assert(or(mod2==0,mod2>50), 'Your chunck size is generating problems on 2nd index')
     
     
     xi = 1:dIDX:imSize(1);

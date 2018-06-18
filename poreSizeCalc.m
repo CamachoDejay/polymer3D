@@ -40,8 +40,8 @@ pxArea = pxSize*pxSize*1e-6; %in µm^2
 
 %h = waitbar(0);
 nImStacks = size(file2Analyze,1);
+idx2Stack = 1:nImStacks;
 if sIgnore~=0
-    idx2Stack = 1:nImStacks;
     nImStacks = nImStacks-length(sIgnore);
     idx2Stack(idx2Stack == sIgnore) = [];
 end
@@ -53,7 +53,7 @@ else
 end
 
 if aIgnore ~= 0
-    endIdx = aIgnore;
+    endIdx = nFrame-aIgnore;
 else
     endIdx = nFrame;  
 end
