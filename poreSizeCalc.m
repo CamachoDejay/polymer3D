@@ -58,8 +58,13 @@ else
     endIdx = nFrame;  
 end
 
-allDataAdapt = [];
-allDataAuto = [];
+allDataAdapt = struct('filename', [], 'Data', []);
+allDataAuto = struct('filename', [], 'Data', []);
+
+allDataAdapt(length(idx2Stack)/2).filename = [];
+allDataAuto(length(idx2Stack)/2).filename = [];
+nAdapt = 1;
+nAuto  = 1;
 for j = 1:length(idx2Stack)
     jdx = idx2Stack(j);
    % hMessage = sprintf('Loading image stack number %d/%d',j,nImStacks);
@@ -131,9 +136,15 @@ for j = 1:length(idx2Stack)
     
     % store in main table
     if ~isempty(strfind(file2Analyze(j).name,'adapt'))
-        allDataAdapt = [allDataAdapt; tifStackData];
+        
+        %allDataAdapt = [allDataAdapt; tifStackData];
+        allDataAdapt(nAdapt).filename = file2Analyze(j).name;
+        allDataAdapt(nAdapt).Data = tifStackData;
+        nAdapt = nAdapt+1;
     else
-        allDataAuto = [allDataAuto; tifStackData];
+        allDataAuto(nAuto).filename = file2Analyze(j).name;
+        allDataAuto(nAuto).Data = tifStackData;
+        nAuto = nAuto+1;
     end
     disp('---------------------NEXT TIF ----------')
 end
@@ -156,11 +167,20 @@ save([ outDir 'Automated-poreProps.mat'],'allDataAuto')
 h = msgbox('The Data were succesfully saved !', 'Success');
 
 %% Plotting
-totalAdapt = allDataAdapt.Area;
+
+totalAdapt = [];
+totalGlobal = [];
+for i = 1 : length(allDataAdapt)
+    
+    totalAdapt  = [totalAdapt allDataAdapt(i).Data.Area];
+    totalGlobal = [totalGlobal allDataAuto(i).Data.Area];
+
+end
+
 totalAdapt = totalAdapt(:);
 [CDF,CCDF] = Plotting.getCDF(totalAdapt);
 
-totalGlobal = allDataAuto.Area;
+
 totalGlobal  = totalGlobal (:);
 [CDF2,CCDF2] = Plotting.getCDF(totalGlobal);
 
