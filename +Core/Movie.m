@@ -275,87 +275,116 @@ classdef Movie <  handle
         function findCandidatePos(obj,detectParam, frames)
             
             assert(~isempty(obj.info), 'Missing information about setup to be able to find candidates, please use giveInfo method first');
+            [file2Analyze] = getFileInPath(obj, obj.raw.movInfo.Path, '.mat');
             
-            switch nargin 
-                
-                case 1
-                    
+            if any(contains({file2Analyze.name},'candidatePos')==true)
+                quest = 'Some candidate were found in the raw folder, do you want to load them or run again ?';
+                title = 'Question to User';
+                btn1  = 'Load';
+                btn2 = 'run again';
+                defbtn = 'Load';
+                answer = questdlg(quest,title,btn1,btn2,defbtn);
+                switch answer
+                case 'Load'
+                    candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
+                    candidate = candidate.candidate;
                     run = false;
-                    
-                case 2
-                    
-                    frames = 1: obj.calibrated.nFrames;
+                case 'run again'
                     run = true;
-                    disp('Running detection on every frame');
-                    
-                case 3
-                    
-                    run= true;
-                    [frames] = obj.checkFrame(frames);
-                    
-                otherwise
-                    
-                    error('too many inputs');
-                    
-            end
+                end
+            else
+                run = true;
+            end    
             
             if run
-                
-                assert(obj.checkStatus('calibrated'),'Data should be calibrated to detect candidate');
-                assert(isstruct(detectParam),'Detection parameter should be a struct with two fields');
-                nFrames = length(frames);
-                currentCandidate = obj.candidatePos;
-                
-                if(isempty(currentCandidate))
-                    
-                    candidate = cell(obj.calibrated.nFrames,1);
-                    
-                else
-                    
-                    candidate = currentCandidate;
-                    
-                end
-                
-                %parameter for localization
-                FWHM_pix = obj.info.FWHM_px;
-                delta  = detectParam.delta;
-                chi2   = detectParam.chi2;
-                h = waitbar(0,'detection of candidates...');
-                
-                for i = 1 : 1:nFrames
-                    
-                    position = zeros(200,3);
-                    [volIm] = obj.getFrame(frames(i)); 
-                    nameFields = fieldnames(volIm);
-                    
-                    for j = 1:length(nameFields)
-                        
-                        [ pos, ~, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
-                            delta, FWHM_pix, chi2 );
-                        startIdx = find(position==0,1,'First');
-                        pos(:,3) = j;
-                        position(startIdx:startIdx+size(pos,1)-1,:) = pos;
-                        
+                    switch nargin 
+
+                        case 1
+
+                            run = false;
+
+                        case 2
+
+                            frames = 1: obj.calibrated.nFrames;
+                            run = true;
+                            disp('Running detection on every frame');
+
+                        case 3
+
+                            run= true;
+                            [frames] = obj.checkFrame(frames);
+
+                        otherwise
+
+                            error('too many inputs');
+
                     end
-                    
-                    idx = find(position==0,1,'First');
-                    candidate{frames(i)} = position(1:idx-1,:);
-                    waitbar(i/nFrames,h,...
-                        sprintf('detection of candidates in Frame %d/%d done',i,nFrames));
-                end
-                
-                close(h);
-                obj.candidatePos = candidate;
-                
-            else
-                
-                disp('getCandidatePos is a function that detects features in a movie');
-                disp('To work, it needs to receive a structure containing 2 detection parameter:');
-                disp('delta which is the radius around which detection is performed? usually 6 pixels');
-                disp('chi2 which characterize how certain you want to be about the fact that there is a molecule there');
-                disp('Usually between 20 and 200');
-                
+
+                    if run
+
+                        assert(obj.checkStatus('calibrated'),'Data should be calibrated to detect candidate');
+                        assert(isstruct(detectParam),'Detection parameter should be a struct with two fields');
+                        nFrames = length(frames);
+                        currentCandidate = obj.candidatePos;
+
+                        if(isempty(currentCandidate))
+
+                            candidate = cell(obj.calibrated.nFrames,1);
+
+                        else
+
+                            candidate = currentCandidate;
+
+                        end
+
+                        %parameter for localization
+                        FWHM_pix = obj.info.FWHM_px;
+                        delta  = detectParam.delta;
+                        chi2   = detectParam.chi2;
+                        h = waitbar(0,'detection of candidates...');
+
+                        for i = 1 : 1:nFrames
+
+                            position = zeros(200,3);
+                            [volIm] = obj.getFrame(frames(i)); 
+                            nameFields = fieldnames(volIm);
+
+                            for j = 1:length(nameFields)
+
+                                [ pos, ~, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
+                                    delta, FWHM_pix, chi2 );
+                                startIdx = find(position==0,1,'First');
+                                pos(:,3) = j;
+                                position(startIdx:startIdx+size(pos,1)-1,:) = pos;
+
+                            end
+
+                            idx = find(position==0,1,'First');
+                            candidate{frames(i)} = position(1:idx-1,:);
+                            waitbar(i/nFrames,h,...
+                                sprintf('detection of candidates in Frame %d/%d done',i,nFrames));
+                        end
+
+                        close(h);
+
+                        fileName = sprintf('%s%scandidatePos.mat',obj.raw.movInfo.Path,'\');
+                        save(fileName,'candidate');
+                        
+
+
+                    else
+
+                        disp('getCandidatePos is a function that detects features in a movie');
+                        disp('To work, it needs to receive a structure containing 2 detection parameter:');
+                        disp('delta which is the radius around which detection is performed? usually 6 pixels');
+                        disp('chi2 which characterize how certain you want to be about the fact that there is a molecule there');
+                        disp('Usually between 20 and 200');
+
+                    end
             end
+            
+            obj.candidatePos = candidate;
+            
         end
         
         function [candidate] = getCandidatePos(obj, frames)
@@ -397,70 +426,99 @@ classdef Movie <  handle
             assert(obj.checkStatus('calibrated'),'Data should be calibrated to consolidate');
             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');    
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
-            switch nargin
-                
-                case 1
-
-                    frames = 1: obj.calibrated.nFrames;
-                    roiSize = 6;
-                    disp('Running consolidation on every frame with roi of 6 pixel');
-
-                case 2
-
-                    frames = 1: obj.calibrated.nFrames;
-                    disp('Running consolidation on every frame')
-                    
-                case 3
-                    
-                    [frames] = obj.checkFrame(frames);
-                    assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
-                    assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
-                    
-                otherwise
-                    
-                    error('Something wrong with input'); 
-                    
-            end
             
-            nFrames = length(frames);
-            %allocate for storage
-            particleList = cell(1,obj.raw.maxFrame(1));
-            nParticles = zeros(1,obj.raw.maxFrame(1));
-            idx2TP = zeros(1,obj.raw.maxFrame(1));
-            h = waitbar(0,'Consolidating candidate ...');
-            for i = 1 : 1:nFrames
-                disp(['Consolidating frame ' num2str(i) ' / ' num2str(nFrames)]);
-                idx = frames(i);
-                [data] = obj.getFrame(idx);
-                [candidate] = obj.getCandidatePos(idx);
+            [file2Analyze] = getFileInPath(obj, obj.raw.movInfo.Path, '.mat');
+            
+            if any(contains({file2Analyze.name},'particle')==true)
+                quest = 'Some candidate were found in the raw folder, do you want to load them or run again ?';
+                title = 'Question to User';
+                btn1  = 'Load';
+                btn2 = 'run again';
+                defbtn = 'Load';
+                answer = questdlg(quest,title,btn1,btn2,defbtn);
                 
-                if isempty(candidate)
-                    
-                    warning('Frame %d did not contain any candidate',idx);
-                    particleList{idx} = nan(5);
-                    nParticles(idx) = 0;
-                    
-                    
-                else
-                    
-                    [finalCandidate] = obj.consolidatePos(data, candidate, roiSize);
-                    particleList{idx} = finalCandidate;
-                    nParticles(idx) = length(finalCandidate);
-                    if ~isempty(finalCandidate)
-                        idx2TP(idx) = idx;
-                    end
-                    
+                switch answer
+                case 'Load'
+                    particle = load([file2Analyze(1).folder filesep 'particle.mat']);
+                    particle = particle.particle;
+                    run = false;
+                case 'run again'
+                    run = true;
                 end
-                waitbar(i/nFrames,h,['Consolidating candidate... ' num2str(i) '/' num2str(nFrames) ' done']);
-            end
-            close(h);
-            particle.List   = particleList;
-            particle.nParticles = nParticles;
-            particle.tPoint = nFrames;
-            particle.idx2TP = nonzeros(idx2TP);
-            particle.roiSize = roiSize;
-            obj.particles = particle;
+            else
+                run = true;
+            end    
             
+            if run
+            
+                switch nargin
+
+                    case 1
+
+                        frames = 1: obj.calibrated.nFrames;
+                        roiSize = 6;
+                        disp('Running consolidation on every frame with roi of 6 pixel');
+
+                    case 2
+
+                        frames = 1: obj.calibrated.nFrames;
+                        disp('Running consolidation on every frame')
+
+                    case 3
+
+                        [frames] = obj.checkFrame(frames);
+                        assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
+                        assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
+
+                    otherwise
+
+                        error('Something wrong with input'); 
+
+                end
+
+                nFrames = length(frames);
+                %allocate for storage
+                particleList = cell(1,obj.raw.maxFrame(1));
+                nParticles = zeros(1,obj.raw.maxFrame(1));
+                idx2TP = zeros(1,obj.raw.maxFrame(1));
+                h = waitbar(0,'Consolidating candidate ...');
+                for i = 1 : 1:nFrames
+                    disp(['Consolidating frame ' num2str(i) ' / ' num2str(nFrames)]);
+                    idx = frames(i);
+                    [data] = obj.getFrame(idx);
+                    [candidate] = obj.getCandidatePos(idx);
+
+                    if isempty(candidate)
+
+                        warning('Frame %d did not contain any candidate',idx);
+                        particleList{idx} = nan(5);
+                        nParticles(idx) = 0;
+
+
+                    else
+
+                        [finalCandidate] = obj.consolidatePos(data, candidate, roiSize);
+                        particleList{idx} = finalCandidate;
+                        nParticles(idx) = length(finalCandidate);
+                        if ~isempty(finalCandidate)
+                            idx2TP(idx) = idx;
+                        end
+
+                    end
+                    waitbar(i/nFrames,h,['Consolidating candidate... ' num2str(i) '/' num2str(nFrames) ' done']);
+                end
+                close(h);
+                particle.List   = particleList;
+                particle.nParticles = nParticles;
+                particle.tPoint = nFrames;
+                particle.idx2TP = nonzeros(idx2TP);
+                particle.roiSize = roiSize;
+
+                fileName = sprintf('%s%sparticle.mat',obj.raw.movInfo.Path,'\');
+                save(fileName,'particle');
+            end
+            
+            obj.particles = particle;
         end
         
         function [particle] = getParticles(obj,frames)
@@ -1048,7 +1106,7 @@ end
                     else
                         %Check that at least 2 planes are in common
                         commonPlanes = obj.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
-                        roughcheck2  = sum(commonPlanes,1)>2;
+                        roughcheck2  = sum(commonPlanes,1)>=2;
                         if all(roughcheck2 ==0)
                             disp('Less than 2 planes in common, breaking out');
                         else 
