@@ -546,10 +546,11 @@ classdef Movie <  handle
             
             [idx] = obj.pickParticle(listBool);
             counter = 1;
+            errCount =1;
             while (idx)
                 
-            if counter>100
-                
+            if errCount>100
+                warning('While loop ran for unexpectedly longer time');
                 break;
                 
             end
@@ -564,73 +565,19 @@ classdef Movie <  handle
                 
             [traces]  = obj.storeTraces(traces,listIdx,counter);
             
+            counter = counter +1;
+            
             [listBool] = obj.removeParticles(listBool,listIdx);
 
             end
             
             [idx] = obj.pickParticle(listBool);
-            counter = counter +1;
+            errCount = errCount +1;
             end
       
         end
         
-        function listIdx = connectParticles(obj,List,listBool,idx,criteria)
-
-            isPart = true;
-            counter = 1;
-
-            listIdx = zeros(length(List)-idx(1),2);
-            listIdx(1,:) = idx;
-            currentIdx = idx;
-            while isPart
-                if currentIdx >= length(List)
-                           break;
-                end
-                part2Track = List{currentIdx(1)}{currentIdx(2)};
-                [checkRes] = obj.checkListBool(listBool,currentIdx(1)+1);
-                nPartInFrame = length(checkRes);
-
-                if ~all(checkRes==0)
-                   %We use reshape to input the different particles of the next
-                   %frame at once by storing them in the 3rd dimension
-                   shape = [size(part2Track,1) size(part2Track,2) nPartInFrame]; 
-                   nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
-                   nextParts = nextParts(:,:,logical(checkRes));
-                   [isPart] = obj.isPartner(part2Track,nextParts,1,criteria);
-
-                   counter = counter+1;
-                   if(length(find(isPart==1))>1)
-
-                       warning('Could not choose between 2 close particles, killing them both')
-                       isPart = false;
-
-                   elseif (~all(isPart==0))
-                       %Update newIdx
-                       currentIdx(1) = currentIdx(1)+1;%current become the connected from next frame
-                       currentIdx(2) = find(isPart);
-                       nextParts = [];
-                       listIdx(counter,:) = currentIdx;
-
-                       isPart = true;
-                   else
-
-                       isPart = false;
-
-                   end
-
-                   if counter == length(obj.particles.List)-1
-
-                       isPart = false;
-
-                   end
-                   
-                else
-                    isPart = false;
-                end
-            listIdx(listIdx(:,1) == 0,:) = [];
-
-            end
-        end
+     
                
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1125,7 +1072,7 @@ end
                                  %To be a particle, we want the position to be
                                 %consistent in at least 2 planes and
                                 %ellipticity to pass the test.
-                                isPart(i) = and(length(find(checkRes1))>2, checkRes2);
+                                isPart(i) = and(length(find(checkRes1))>=2, checkRes2);
                                 
                             end
                                               
@@ -1154,6 +1101,65 @@ end
                 
             end
             commonPlanes = logical(squeeze(commonPlanes));
+        end
+        
+        function listIdx = connectParticles(obj,List,listBool,idx,criteria)
+
+            isPart = true;
+            counter = 1;
+
+            listIdx = zeros(length(List)-idx(1),2);
+            listIdx(1,:) = idx;
+            currentIdx = idx;
+            while isPart
+                if currentIdx >= length(List)
+                           break;
+                end
+                part2Track = List{currentIdx(1)}{currentIdx(2)};
+                [checkRes] = obj.checkListBool(listBool,currentIdx(1)+1);
+                nPartInFrame = length(checkRes);
+
+                if ~all(checkRes==0)
+                   %We use reshape to input the different particles of the next
+                   %frame at once by storing them in the 3rd dimension
+                   shape = [size(part2Track,1) size(part2Track,2) nPartInFrame]; 
+                   nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
+                   nextParts = nextParts(:,:,logical(checkRes));
+                   [isPart] = obj.isPartner(part2Track,nextParts,1,criteria);
+
+                   counter = counter+1;
+                   if(length(find(isPart==1))>1)
+
+                       warning('Could not choose between 2 close particles, killing them both')
+                       isPart = false;
+
+                   elseif (~all(isPart==0))
+                       %Update newIdx
+                       currentIdx(1) = currentIdx(1)+1;%current become the connected from next frame
+                       idx2AvailableParticles = find(checkRes);
+                       currentIdx(2) = idx2AvailableParticles(isPart);
+                       nextParts = [];
+                       listIdx(counter,:) = currentIdx;
+
+                       isPart = true;
+                   else
+
+                       isPart = false;
+
+                   end
+
+                   if counter == length(obj.particles.List)-1
+
+                       isPart = false;
+
+                   end
+                   
+                else
+                    isPart = false;
+                end
+            listIdx(listIdx(:,1) == 0,:) = [];
+
+            end
         end
         
         function [listCopy] = copyList(~, List, filling)
