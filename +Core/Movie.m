@@ -13,6 +13,7 @@ classdef Movie <  handle
        calibrated
        candidatePos
        particles
+       zCalibration
        superResCal
        
     end
@@ -211,6 +212,10 @@ classdef Movie <  handle
         
         function set.particles(obj,particles)
             obj.particles = particles;
+        end
+        
+        function set.zCalibration(obj, zCalibration)
+            obj.zCalibration = zCalibration;
         end
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%USER get/set FUNCTION%%%%%%%%%%%%%%%%%%%%%%%%        
@@ -430,7 +435,7 @@ classdef Movie <  handle
             [file2Analyze] = getFileInPath(obj, obj.raw.movInfo.Path, '.mat');
             
             if any(contains({file2Analyze.name},'particle')==true)
-                quest = 'Some candidate were found in the raw folder, do you want to load them or run again ?';
+                quest = 'Some consolidated positions were found in the raw folder, do you want to load them or run again ?';
                 title = 'Question to User';
                 btn1  = 'Load';
                 btn2 = 'run again';
@@ -513,6 +518,8 @@ classdef Movie <  handle
                 particle.tPoint = nFrames;
                 particle.idx2TP = nonzeros(idx2TP);
                 particle.roiSize = roiSize;
+                particle.Traces = [];
+                particle.nTraces = [];
 
                 fileName = sprintf('%s%sparticle.mat',obj.raw.movInfo.Path,'\');
                 save(fileName,'particle');
@@ -533,7 +540,7 @@ classdef Movie <  handle
             end
         end
         
-        function traces = trackInZ(obj)
+        function [traces,counter] = trackInZ(obj)
             assert(obj.checkStatus('calibrated'),'Data should be calibrated to do ZCalibration');
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
             assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
@@ -574,10 +581,55 @@ classdef Movie <  handle
             [idx] = obj.pickParticle(listBool);
             errCount = errCount +1;
             end
+            counter = counter -1;
+            obj.particles.Traces = traces;
+            obj.particles.nTraces = counter;
       
         end
         
-     
+        function [zData] = zCalibrate(obj)
+            assert(obj.checkStatus('calibrated'),'Data should be calibrated to do ZCalibration');
+            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
+            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
+            
+            if ~isempty(obj.particles.Traces)
+                quest = 'Some tracked traces were found in the object, do you want to keep them or run again ?';
+                title = 'Question to User';
+                btn1  = 'Keep';
+                btn2 = 'Run again';
+                defbtn = 'Keep';
+                answer = questdlg(quest,title,btn1,btn2,defbtn);
+                
+                switch answer
+                    case 'Keep'
+                    case 'Run again'
+                       
+                        [traces, nPart] = obj.trackInZ;
+                    otherwise
+                        error('Unknown answer to question dialog ');
+                        
+                end
+                
+            else
+                
+                %We first track particle in Z
+                [traces, nPart] = obj.trackInZ;
+                
+            end
+            %Transform the traces into calibration data (extracting data
+            %per plane
+            zCalData = obj.getZCalData(obj.particles.Traces,obj.particles.nTraces);
+            
+            zSyncCalData = obj.syncZCalData(zCalData);
+            
+            zCal =  obj.calZCalibration(zSyncCalData);
+            
+            obj.zCalibration.cal = zCal;
+            obj.zCalibration.calData = zCalData;
+            obj.zCalibration.syncEllip = zSyncCalData;
+            
+            zData = obj.zCalibration;
+        end
                
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -727,6 +779,38 @@ classdef Movie <  handle
             end              
         end
         
+        function showTraces(obj,ips)
+            assert(~isempty(obj.particles.Traces),'You need to get the traces before displaying them');
+            
+            nPlanes = obj.calibrated.nPlanes;
+            colors = rand(obj.particles.nTraces,3);
+            
+            for i = 1 : length(obj.particles.Traces)
+            nParticles = length(obj.particles.Traces{i});
+            obj.showCandidate(i);
+            
+            h = gcf;
+            
+                for j = 1 : nPlanes
+                    subplot(2,nPlanes/2,j)
+                    hold on
+                    for k = 1 : nParticles
+                        currPart = obj.particles.List{i}{k};
+                        labelColor = obj.particles.Traces{i}{k};
+                        if ~isnan(labelColor)
+                            if(~isempty(currPart(currPart(:,end) == j)))
+                                part2Plot = currPart(currPart(:,end) == j,:);
+                                plot(part2Plot(2),part2Plot(1),'o',...
+                                    'LineWidth',2, 'MarkerSize',10, 'MarkerEdgeColor',colors(labelColor,:));
+                                drawnow
+                            end
+                        end
+                    end
+                    hold off
+                    pause(1/ips);
+                end
+            end
+        end
     end
     
     methods (Access = private)
@@ -886,14 +970,14 @@ classdef Movie <  handle
             sig = [obj.info.sigma_px obj.info.sigma_px];
             
             currentk = 1;
-            candMet = zeros(length(frameCandidate),5);
+            candMet = zeros(length(frameCandidate),6);
             nP = numel(fields(data));
             for j = 1 : nP
                 
                 planeCandidate = frameCandidate(frameCandidate(:,3)==j,1:2);
                 planeData = data.(sprintf('plane%d',j));
 
-                cM = zeros(size(planeCandidate,1),4);
+                cM = zeros(size(planeCandidate,1),5);
                 if(~isempty(planeCandidate))
                     for k = 1 : size(planeCandidate,1)
                         %Get the ROI    
@@ -905,8 +989,11 @@ classdef Movie <  handle
                         [LRT,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
                         rowPos = planeCandidate(k,1) + row;
                         colPos = planeCandidate(k,2) + col;
+                        
+                        [grad,~] = imgradient(ROI);
+                        Grad = max(max(grad,[],2),[],1);
 
-                        cM(k,:) = [rowPos colPos e LRT ];
+                        cM(k,:) = [rowPos colPos e LRT Grad];
 
                     end
                     %candidate Metric: phasor localization Res, Likelihood Res,
@@ -925,6 +1012,7 @@ classdef Movie <  handle
             %reformating to keep the same format as how the data is saved
             %later
             candMet = [candMet candMet(:,end)];
+            candMet(:,6) = candMet(:,5);
             candMet(:,5) = focusMetric;
             candMet(:,4) = [];
             focusMetric((1-corrEllip)>0.2) = NaN;
@@ -955,7 +1043,7 @@ classdef Movie <  handle
                 currentCand = candMet(idx,:);
                 direction = 1;
                 
-                particle = nan(5);
+                particle = nan(5,6);
                 particle(3,:) = currentCand;
                 nCheck = length(planes2Check);
                 for i = 1:nCheck
@@ -1243,6 +1331,122 @@ end
             end
             
         end
+        
+        function [zCalData] = getZCalData(obj,traces,nPart)
+            
+            
+            zCalData = cell(obj.calibrated.nPlanes,nPart);
+            
+               for i = 1:length(traces)
+
+                    if isempty(traces{i})
+
+                    else
+
+                        for j = 1:length(traces{i})
+                            if ~isnan(traces{i}{j})
+                            planes = obj.particles.List{i}{j}(:,end);
+                            planes = planes (~isnan(planes));
+                            
+                            for k = 1 : length(planes)
+                                data2Store = obj.particles.List{i}{j};
+                                data2Store = data2Store(data2Store(:,end) == planes(k),:);
+                                zCalData{planes(k),traces{i}{j}}(i,:) = [data2Store(3:end) i] ;
+                                
+                            end
+                            else
+                            end
+                            
+                        end
+                    end
+               end
+               %clean up the data
+               for i = 1 : size(zCalData,1)
+                   for j = 1 : size(zCalData,2)
+                       
+                       zCalData{i,j}(zCalData{i,j}(:,1)==0,:) = [];
+                       
+                   end
+               end
+        end   
+        
+        function [zSyncCalData] = syncZCalData(obj,zCalData)
+            zStep = obj.getZStep;
+            relZ  = obj.calibrated.oRelZPos;
+            zSyncCalData = cell(8,2);
+            for i = 1:size(zCalData,1)
+                for j = 1:size(zCalData,2)
+                    
+                    zPos = zCalData{i,j}(:,5)*zStep;
+                    ellipt = zCalData{i,j}(:,1);
+                    ellipt = ellipt(and(ellipt<1.42, ellipt > 0.7));
+                    zPos = zPos(and(ellipt<1.42, ellipt > 0.7));
+                    p = polyfit(ellipt,zPos,3);
+                    %fit4 = p(1).*ellipt.^4+p(2).*ellipt.^3+p(3).*ellipt.^2+p(4).*ellipt.^1+p(5);
+                    focus = sum(p);
+                    %TODO: checkQuality COntrole
+                    zCalData{i,j}(:,6) = (zCalData{i,j}(:,5)*zStep - focus + relZ(i))*1000;
+                    
+                    zSyncCalData{i} = [zSyncCalData{i}; zCalData{i,j}(:,[1 6])];
+                end
+                
+                [~,ind] = sort(zSyncCalData{i}(:,2));
+                zSyncCalData{i,1} = zSyncCalData{i}(ind,:);
+                zSyncCalData{i,2} = zSyncCalData{i}(ind,[2 1]);
+                
+            end
+            
+            
+        end
+        
+        function [zStep] = getZStep(obj)
+            nFrames = obj.raw.maxFrame(1);
+            zPos = zeros(nFrames,1);
+            
+            for i = 1 : obj.raw.maxFrame(1)
+                
+                zPos(i) = obj.raw.frameInfo(2*i).Pos(3);
+                
+            end
+            
+            zStep = mean(diff(zPos));
+            
+        end
+        
+        function [zCalibration] = calZCalibration(obj, zSyncCalData)
+            zCalibration = cell(length(zSyncCalData),2);
+            for i = 1: length(zSyncCalData)
+                dataCurrentPlane = zSyncCalData{i};
+                [binnedData] = obj.zCalBinning(dataCurrentPlane);
+                
+                p = polyfit(binnedData(:,1),binnedData(:,2),3);
+                fit1 = p(1).*binnedData(:,1).^3+p(2).*binnedData(:,1).^2+p(3).*binnedData(:,1).^1+p(4);
+                p2 = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),3);
+                fit2 = p2(1).*dataCurrentPlane(:,1).^3+p2(2).*dataCurrentPlane(:,1).^2+p2(3).*dataCurrentPlane(:,1).^1+p2(4);
+%                 
+%                 figure
+%                 subplot(1,2,1)
+%                 hold on
+%                 plot(binnedData(:,1),binnedData(:,2))
+%                 plot(binnedData(:,1),fit1)
+%                 
+%                 subplot(1,2,2)
+%                 hold on
+%                 plot(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
+%                 plot(dataCurrentPlane(:,1),fit2)
+                zCalibration{i,1} = p;
+                zCalibration{i,2} = p2;
+                
+            end
+            
+        end
+        function [binnedData] = zCalBinning(obj,zCalData2Bin)
+            
+            nQuant = linspace(0,1,length(zCalData2Bin)/10);
+            binnedData = quantile(zCalData2Bin,nQuant);
+            
+        end
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function [checkRes] = checkStatus(obj, status)

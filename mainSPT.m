@@ -51,8 +51,11 @@ mov.showParticles(24);
 
 %% ZCalibration
 traces =  mov.trackInZ;
+
+%% Show traces
+mov.showTraces(30);%ips
 %%
-tP = mov.trackParticle;
+[zData] = mov.zCalibrate;
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
