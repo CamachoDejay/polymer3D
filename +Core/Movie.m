@@ -631,6 +631,45 @@ classdef Movie <  handle
             
             zData = obj.zCalibration;
         end
+        
+        function [traces] = get3DTraces(obj)
+            list = obj.particles.List;
+            tracesIdx = obj.particles.Traces;
+            pxSize = obj.info.pxSize;
+            
+            if isempty(obj.zCalibration.cal)
+                warning('no z calibration detected, only show 2D plot');
+            end
+            traces = zeros(length(list),6,obj.particles.nTraces);
+            for i = 1 : length(list)
+                if ~isempty(list{i})
+                    for j = 1 : length(list{i})
+
+                        xMed = nanmedian(list{i}{j}(:,2))* pxSize;
+                        yMed = nanmedian(list{i}{j}(:,1))* pxSize;
+                        x = list{i}{j}(3,2)* pxSize;
+                        y = list{i}{j}(3,1)* pxSize;
+                        
+                        if ~isempty(obj.zCalibration.cal)
+                            
+                            [z,zMed] = obj.getZPosition(list{i}{j});
+                            
+                        else
+                            
+                            zMed = 0;
+                            z = 0;
+                            
+                        end
+                        
+                        if ~isnan(tracesIdx{i}{j})
+                        traces(i,:,tracesIdx{i}{j}) = [x y z xMed yMed zMed];
+                        else
+                        end
+                    end                    
+                end
+            end
+            obj.particles.traces3D = traces;
+        end
                
 %%%%%%%%%%%%%%%%%%%%%%%%%%% USER DISPLAY FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -780,7 +819,7 @@ classdef Movie <  handle
             end              
         end
         
-        function showTraces(obj,ips)
+        function showParticlesTracked(obj,ips)
             assert(~isempty(obj.particles.Traces),'You need to get the traces before displaying them');
             
             nPlanes = obj.calibrated.nPlanes;
@@ -811,6 +850,90 @@ classdef Movie <  handle
                     pause(1/ips);
                 end
             end
+        end
+        
+        function showTraces(obj)
+            assert(~isempty(obj.particles.Traces),'You need to get the traces before displaying them');
+            assert(isfield(obj.particles,'traces3D'),'You need to extract the 3D traces before display');
+            traces = obj.particles.traces3D;
+            npart = size(traces,3);
+            %plot XYZ for every particles
+            
+            figure()
+            
+            for i = 1:npart
+                data = traces(:,:,i);
+                data = data(data(:,1)~=0,:);
+                fprintf('std in X from best focus: %0.2f \n',median(std(data(:,1))));
+                fprintf('std in Y from mean of planes: %0.2f \n',median(std(data(:,2))));
+                
+                subplot(2,1,1)
+                hold on
+                plot(data(:,1) - median(data(:,1)));
+                plot(data(:,2) - median(data(:,2)));
+                plot(data(:,3) - median(data(:,3)));
+                hold off
+                
+                subplot(2,1,2)
+                hold on
+                plot(data(:,4) - median(data(:,4)));
+                plot(data(:,5) - median(data(:,5)));
+                plot(data(:,6) - median(data(:,6)));
+                hold off
+            end
+           
+            
+            %plot Euclidian distance
+             %Calc euclidian distance
+                 
+            figure()
+            hold on
+            for i = 1:npart
+                data = traces(:,:,i);
+                data = data(data(:,1)~=0,:);
+                
+                eucl = sqrt((data(:,1)-data(1,1)).^2 + (data(:,2)-data(1,2)).^2 +...
+                    (data(:,3)-data(1,3)).^2 );
+                medEucl = sqrt((data(:,4)-data(1,4)).^2 + (data(:,5)-data(1,5)).^2 +...
+                    (data(:,6)-data(1,6)).^2 );
+                
+                eucl2D = sqrt((data(:,1)-data(1,1)).^2 + (data(:,2)-data(1,2)).^2);
+                medEucl2D = sqrt((data(:,4)-data(1,4)).^2 + (data(:,5)-data(1,5)).^2);
+                
+                fprintf('std in 2D from best focus: %0.2f \n',median(std(eucl2D)));
+                fprintf('std in 2D from mean of planes: %0.2f \n',median(std(medEucl2D)));
+                
+                subplot(2,2,1)
+                hold on
+                plot(eucl);
+                title({'3D euclidian distance'; 'From best focus'})
+                hold off
+                
+                subplot(2,2,2)
+                hold on
+                plot(medEucl);
+                title({'3D euclidian distance'; 'From median'})
+                hold off
+                
+                subplot(2,2,3)
+                hold on
+                plot(eucl2D);
+                title({'2D euclidian distance'; 'From best focus'})
+                hold off
+                
+                subplot(2,2,4)
+                hold on
+                plot(medEucl2D);
+                title({'2D euclidian distance'; 'From median'})
+                hold off
+                
+                %ylim([-400 400]);
+                
+
+            end
+            hold off
+            
+            
         end
         
         function showZCalibration(obj)
@@ -856,8 +979,34 @@ classdef Movie <  handle
             ylabel('Ellipticity')
             title('Ellipticity-Z curve for all the planes superimposed')
             
+            figure()
+            
+            for i = 1 : length(obj.zCalibration.syncEllip)
+                dataCurrentPlane = obj.zCalibration.syncEllip{i};
+                [binnedData] = obj.zCalBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
+                zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
+                p = polyfit(binnedData(:,1),binnedData(:,2),3);
+                fit = polyval(p,zVec);
+                p2 = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),3);
+                fit2 = polyval(p2,zVec);
+                %                 
+                subplot(1,2,1)
+                hold on
+                scatter(binnedData(:,1),binnedData(:,2))
+                plot(zVec,fit)
+                title('Binned data fitted with polynomial')
+
+                subplot(1,2,2)
+                hold on
+                scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
+                plot(zVec,fit2)
+                title('Full data fitted with polynomial')
+                
+            end
+            
 
         end
+        
     end
     
     methods (Access = private)
@@ -1468,25 +1617,27 @@ end
         
         function [zCalibration] = calZCalibration(obj, zSyncCalData)
             zCalibration = cell(length(zSyncCalData),2);
+            
             for i = 1: length(zSyncCalData)
                 dataCurrentPlane = zSyncCalData{i};
-                [binnedData] = obj.zCalBinning(dataCurrentPlane);
+                [binnedData] = obj.zCalBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
                 
+                zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
                 p = polyfit(binnedData(:,1),binnedData(:,2),3);
-                fit1 = p(1).*binnedData(:,1).^3+p(2).*binnedData(:,1).^2+p(3).*binnedData(:,1).^1+p(4);
+                fit = polyval(p,zVec);
                 p2 = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),3);
-                fit2 = p2(1).*dataCurrentPlane(:,1).^3+p2(2).*dataCurrentPlane(:,1).^2+p2(3).*dataCurrentPlane(:,1).^1+p2(4);
+                fit2 = polyval(p2,zVec);
 %                 
 %                 figure
 %                 subplot(1,2,1)
 %                 hold on
-%                 plot(binnedData(:,1),binnedData(:,2))
-%                 plot(binnedData(:,1),fit1)
+%                 scatter(binnedData(:,1),binnedData(:,2))
+%                 plot(zVec,fit)
 %                 
 %                 subplot(1,2,2)
 %                 hold on
-%                 plot(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
-%                 plot(dataCurrentPlane(:,1),fit2)
+%                 scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
+%                 plot(zVec,fit2)
                 zCalibration{i,1} = p;
                 zCalibration{i,2} = p2;
                 
@@ -1494,11 +1645,46 @@ end
             
         end
         
-        function [binnedData] = zCalBinning(obj,zCalData2Bin)
+        function [binnedData] = zCalBinning(obj,zCalData2Bin,nPoint)
             
-            nQuant = linspace(0,1,length(zCalData2Bin)/10);
+            nQuant = linspace(0,1,length(zCalData2Bin)/nPoint);
             binnedData = quantile(zCalData2Bin,nQuant);
             
+        end
+        
+        function [zPos,medZ] = getZPosition(obj,particle)
+             assert(~isempty(obj.zCalibration),'No zCalibration found, please run z calibration calculating Z position');
+             zCal = obj.zCalibration.cal;
+             
+             syncEllip = obj.zCalibration.syncEllip;
+             
+             zVec = min(syncEllip{particle(3,end),1}) : 1 : max(syncEllip{particle(3,end),1});
+             fit = polyval(zCal{particle(3,end),2},zVec);
+             %find the index of the value the closest to the particle
+             %ellipticity
+             [~,idx] = min(abs(fit-particle(3,3)));
+             
+             zPos = zVec(idx);
+             
+             medZ = zeros(length(particle(~isnan(particle(:,1)))),1);
+             
+             for i = 1 : length(particle(~isnan(particle(:,1))))
+                 
+                 pData = particle(~isnan(particle(:,1)),:);
+                 zVectmp = min(syncEllip{pData(i,end),1}) : 1 : max(syncEllip{pData(i,end),1});
+                 fit = polyval(zCal{pData(i,end),2},zVectmp);
+                 %find the index of the value the closest to the particle
+                 %ellipticity
+                 
+                 if(and(pData(i,3)<1.42,pData(i,3)>0.7))%check ellip in the range of calibration
+                 [~,idx] = min(abs(fit-pData(i,3)));
+                 medZ(i) = zVectmp(idx);
+                 else
+                 end
+                 
+             end
+             medZ = mean(medZ(medZ~=0));
+             
         end
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -54,11 +54,20 @@ traces =  mov.trackInZ;
 
 %% Show traces
 mov.showTraces(30);%ips
-%%
+%% ZCalibrate
 [zData] = mov.zCalibrate;
 
-%%
+%% Show ZCalibration
 mov.showZCalibration;
+
+%% Get 3D traces
+traces = mov.get3DTraces;
+
+%% Show Traces
+
+mov.showTraces
+
+
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
 for i = 1:8
