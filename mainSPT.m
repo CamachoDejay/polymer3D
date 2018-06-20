@@ -57,6 +57,8 @@ mov.showTraces(30);%ips
 %%
 [zData] = mov.zCalibrate;
 
+%%
+mov.showZCalibration;
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
 for i = 1:8

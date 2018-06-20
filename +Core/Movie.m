@@ -620,6 +620,7 @@ classdef Movie <  handle
             %per plane
             zCalData = obj.getZCalData(obj.particles.Traces,obj.particles.nTraces);
             
+            %synchronize the data
             zSyncCalData = obj.syncZCalData(zCalData);
             
             zCal =  obj.calZCalibration(zSyncCalData);
@@ -810,6 +811,52 @@ classdef Movie <  handle
                     pause(1/ips);
                 end
             end
+        end
+        
+        function showZCalibration(obj)
+            assert(~isempty(obj.zCalibration),'No zCalibration found, please run z calibration before display');
+            relZ = obj.calibrated.oRelZPos*1000;%in nm
+            figure()
+            for i = 1 : length(obj.zCalibration.syncEllip)
+                
+                z =  obj.zCalibration.syncEllip{i}(:,1);
+                ellip = obj.zCalibration.syncEllip{i}(:,2);
+                
+                ellip1 = ellip(ellip>=1);
+                z1 = z(ellip>=1);
+                
+                ellip2 = 1./ellip(ellip<=1);
+                z2 = z(ellip<=1);
+               yAx = 1:0.1:2;
+               subplot(2,1,1)
+               hold on
+               scatter(z1,ellip1)
+               plot(ones(length(yAx),1)*relZ(i),yAx)
+               title('Elliptiticy Elongated in Y')
+               xlabel('zPos (nm)')
+               ylabel('Ellipticity (sigY/sigX)')
+               ylim([1 2])
+               hold off
+               
+               subplot(2,1,2)
+               hold on
+               scatter(z2,ellip2)
+               plot(ones(length(yAx))*relZ(i),yAx)
+               title('Elliptiticy Elongated in X')
+               xlabel('zPos (nm)')
+               ylabel('Ellipticity (sigX/sigY)')
+               ylim([1 2])
+               hold off
+                
+            end
+            
+            figure()
+            scatter(obj.zCalibration.syncEllip{1,2}(:,1),obj.zCalibration.syncEllip{1,2}(:,2));
+            xlabel('ZPosition')
+            ylabel('Ellipticity')
+            title('Ellipticity-Z curve for all the planes superimposed')
+            
+
         end
     end
     
@@ -1374,28 +1421,34 @@ end
             zStep = obj.getZStep;
             relZ  = obj.calibrated.oRelZPos;
             zSyncCalData = cell(8,2);
+%             figure
             for i = 1:size(zCalData,1)
                 for j = 1:size(zCalData,2)
                     
                     zPos = zCalData{i,j}(:,5)*zStep;
                     ellipt = zCalData{i,j}(:,1);
-                    ellipt = ellipt(and(ellipt<1.42, ellipt > 0.7));
                     zPos = zPos(and(ellipt<1.42, ellipt > 0.7));
-                    p = polyfit(ellipt,zPos,3);
-                    %fit4 = p(1).*ellipt.^4+p(2).*ellipt.^3+p(3).*ellipt.^2+p(4).*ellipt.^1+p(5);
-                    focus = sum(p);
-                    %TODO: checkQuality COntrole
-                    zCalData{i,j}(:,6) = (zCalData{i,j}(:,5)*zStep - focus + relZ(i))*1000;
-                    
-                    zSyncCalData{i} = [zSyncCalData{i}; zCalData{i,j}(:,[1 6])];
+                    ellipt = ellipt(and(ellipt<1.42, ellipt > 0.7));
+
+                    p = polyfit(zPos,ellipt,4);
+                    zVec = min(zPos):0.001:max(zPos);%1nm step                    
+                    fit = polyval(p,zVec);
+                    [~,idx] = min(abs(fit-1));
+                    focus = zVec(idx);                  
+                   
+                    zCalData{i,j}(:,6) = ((zCalData{i,j}(:,5))*zStep - focus + relZ(i))*1000;
+                    fullSync = ((zCalData{i,j}(:,5))*zStep - focus)*1000;
+                    zSyncCalData{i,1} = [zSyncCalData{i,1}; zCalData{i,j}(:,[6 1])];
+                    zSyncCalData{1,2} = [zSyncCalData{1,2}; [fullSync zCalData{i,j}(:,1)]];
                 end
                 
-                [~,ind] = sort(zSyncCalData{i}(:,2));
-                zSyncCalData{i,1} = zSyncCalData{i}(ind,:);
-                zSyncCalData{i,2} = zSyncCalData{i}(ind,[2 1]);
+                [~,ind] = sort(zSyncCalData{i,1}(:,1));
+                zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
                 
             end
             
+            [~,ind] = sort(zSyncCalData{1,2}(:,1));
+            zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
             
         end
         
@@ -1440,6 +1493,7 @@ end
             end
             
         end
+        
         function [binnedData] = zCalBinning(obj,zCalData2Bin)
             
             nQuant = linspace(0,1,length(zCalData2Bin)/10);
