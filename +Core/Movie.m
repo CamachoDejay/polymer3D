@@ -16,6 +16,12 @@ classdef Movie <  handle
        zCalibration
        superResCal
        
+   end
+   
+    properties (SetAccess = 'public')
+
+       
+   
     end
     
     methods
@@ -636,33 +642,60 @@ classdef Movie <  handle
             list = obj.particles.List;
             tracesIdx = obj.particles.Traces;
             pxSize = obj.info.pxSize;
+            elliptRange = [obj.zCalibration.syncEllip{1,3}(1) obj.zCalibration.syncEllip{1,3}(2)];
+            elliptRange = elliptRange(1):0.01:elliptRange(2);
+            wRange1 = length(elliptRange(elliptRange<=1));
+            wRange2 = length(elliptRange(elliptRange>=1));
+            
+            weight1 = linspace(1,5,wRange1);
+            weight2 = linspace(5,1,wRange2);
+            
+            finalWeight = [weight1 weight2];
             
             if isempty(obj.zCalibration.cal)
+                
                 warning('no z calibration detected, only show 2D plot');
+                
             end
             traces = zeros(length(list),6,obj.particles.nTraces);
             for i = 1 : length(list)
                 if ~isempty(list{i})
                     for j = 1 : length(list{i})
-
-                        xMed = nanmedian(list{i}{j}(:,2))* pxSize;
-                        yMed = nanmedian(list{i}{j}(:,1))* pxSize;
+                        
+                        currentPart = list{i}{j};
+                        
+                        %find indices to data in correct ellipticity range
+                        id = and(currentPart(:,3)>=elliptRange(1),...
+                                       currentPart(:,3)<=elliptRange(end));
+                        ellip2Keep = currentPart(id,3);
+                        idx = ellip2Keep;
+                        for k = 1 :length(ellip2Keep)
+                            
+                            [~,idx(k)] = min(abs(elliptRange-ellip2Keep(k)));
+                            
+                            
+                        end
+                           
+                        weight = finalWeight(idx);
+                        xAvg = sum(diag(list{i}{j}(id,2)* weight))/sum(weight) * pxSize;
+                        yAvg = sum(diag(list{i}{j}(id,1)* weight))/sum(weight) * pxSize;
+                       
                         x = list{i}{j}(3,2)* pxSize;
                         y = list{i}{j}(3,1)* pxSize;
                         
                         if ~isempty(obj.zCalibration.cal)
                             
-                            [z,zMed] = obj.getZPosition(list{i}{j});
+                            [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight);
                             
                         else
                             
-                            zMed = 0;
+                            zAvg = 0;
                             z = 0;
                             
                         end
                         
                         if ~isnan(tracesIdx{i}{j})
-                        traces(i,:,tracesIdx{i}{j}) = [x y z xMed yMed zMed];
+                        traces(i,:,tracesIdx{i}{j}) = [x y z xAvg yAvg zAvg];
                         else
                         end
                     end                    
@@ -872,6 +905,9 @@ classdef Movie <  handle
                 plot(data(:,1) - median(data(:,1)));
                 plot(data(:,2) - median(data(:,2)));
                 plot(data(:,3) - median(data(:,3)));
+                title('X Y Z position for different particle in best focus')
+                xlabel('Frame')
+                ylabel('Position(nm)')
                 hold off
                 
                 subplot(2,1,2)
@@ -879,6 +915,9 @@ classdef Movie <  handle
                 plot(data(:,4) - median(data(:,4)));
                 plot(data(:,5) - median(data(:,5)));
                 plot(data(:,6) - median(data(:,6)));
+                xlabel('Frame')
+                ylabel('Position(nm)')
+                title('X Y Z position for different particle mean')
                 hold off
             end
            
@@ -942,7 +981,7 @@ classdef Movie <  handle
             figure()
             for i = 1 : length(obj.zCalibration.syncEllip)
                 
-                z =  obj.zCalibration.syncEllip{i}(:,1);
+                z =  obj.zCalibration.syncEllip{i}(:,1)+relZ(i);
                 ellip = obj.zCalibration.syncEllip{i}(:,2);
                 
                 ellip1 = ellip(ellip>=1);
@@ -982,14 +1021,19 @@ classdef Movie <  handle
             figure()
             
             for i = 1 : length(obj.zCalibration.syncEllip)
+                
                 dataCurrentPlane = obj.zCalibration.syncEllip{i};
+                
                 [binnedData] = obj.zCalBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
                 zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
-                p = polyfit(binnedData(:,1),binnedData(:,2),3);
+                %retrieving fit to display
+                p = obj.zCalibration.cal{i};
                 fit = polyval(p,zVec);
-                p2 = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),3);
-                fit2 = polyval(p2,zVec);
-                %                 
+                %shifting according to the plane
+                zVec = zVec + relZ(i) ;
+                dataCurrentPlane(:,1) = dataCurrentPlane(:,1)+ relZ(i); 
+                binnedData(:,1) = binnedData(:,1) +relZ(i);
+                
                 subplot(1,2,1)
                 hold on
                 scatter(binnedData(:,1),binnedData(:,2))
@@ -999,7 +1043,7 @@ classdef Movie <  handle
                 subplot(1,2,2)
                 hold on
                 scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
-                plot(zVec,fit2)
+                plot(zVec,fit)
                 title('Full data fitted with polynomial')
                 
             end
@@ -1194,7 +1238,7 @@ classdef Movie <  handle
                     end
                     %candidate Metric: phasor localization Res, Likelihood Res,
                     %indexCandidate in plane, Plane.
-                    %candidateMetric: [row col e LRT RMSD k J]
+                    %candidateMetric: [row col e LRT Grad J]
 
                     candMet(currentk:currentk+k-1,:) = [cM j*ones(k,1)];
                     currentk = currentk+k;
@@ -1211,7 +1255,7 @@ classdef Movie <  handle
             candMet(:,6) = candMet(:,5);
             candMet(:,5) = focusMetric;
             candMet(:,4) = [];
-            focusMetric((1-corrEllip)>0.2) = NaN;
+            focusMetric((1-corrEllip)>0.3) = NaN;
             
             counter = 1;
             nPart = 0;
@@ -1328,6 +1372,19 @@ end
                     %might therefore seems unnecessary but allow to take
                     %any number of particles
                     
+                    isEdgePlane = or(~isempty(find(current(:,end)==1,1)),~isempty(find(current(:,end)==8,1)));
+                    
+                    if isEdgePlane
+                        
+                        nConsistentPlanes = 2;
+                        
+                    else
+                        
+                        nConsistentPlanes = 2;
+                         
+                    end
+                    
+                    
                     isPart = zeros(size(next,3),1);
                     %check focus is not more than one plane away 
                     roughcheck1 = squeeze(abs(current(3,end)-next(3,end,:)<=1));
@@ -1337,7 +1394,7 @@ end
                     else
                         %Check that at least 2 planes are in common
                         commonPlanes = obj.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
-                        roughcheck2  = sum(commonPlanes,1)>=2;
+                        roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
                         if all(roughcheck2 ==0)
                             disp('Less than 2 planes in common, breaking out');
                         else 
@@ -1356,7 +1413,7 @@ end
                                  %To be a particle, we want the position to be
                                 %consistent in at least 2 planes and
                                 %ellipticity to pass the test.
-                                isPart(i) = and(length(find(checkRes1))>=2, checkRes2);
+                                isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes, checkRes2);
                                 
                             end
                                               
@@ -1560,35 +1617,60 @@ end
                for i = 1 : size(zCalData,1)
                    for j = 1 : size(zCalData,2)
                        
-                       zCalData{i,j}(zCalData{i,j}(:,1)==0,:) = [];
+                       if ~isempty(zCalData{i,j})
+                           
+                            zCalData{i,j}(zCalData{i,j}(:,1)==0,:) = [];
+                            
+                       else
+                       end
                        
                    end
                end
         end   
         
         function [zSyncCalData] = syncZCalData(obj,zCalData)
+            deg = 4;
+            minEllipt = 0.7;
+            maxEllipt = 1/minEllipt;
             zStep = obj.getZStep;
-            relZ  = obj.calibrated.oRelZPos;
             zSyncCalData = cell(8,2);
 %             figure
             for i = 1:size(zCalData,1)
                 for j = 1:size(zCalData,2)
-                    
-                    zPos = zCalData{i,j}(:,5)*zStep;
-                    ellipt = zCalData{i,j}(:,1);
-                    zPos = zPos(and(ellipt<1.42, ellipt > 0.7));
-                    ellipt = ellipt(and(ellipt<1.42, ellipt > 0.7));
+                    %Extrac data in acceptable ellipticity range
+                    %(arbitrary)
+                    if ~isempty(zCalData{i,j})
+                        zPos = zCalData{i,j}(:,5)*zStep;
+                        ellipt = zCalData{i,j}(:,1);
+                        zPos = zPos(and(ellipt<maxEllipt, ellipt > minEllipt));
+                        ellipt = ellipt(and(ellipt<maxEllipt, ellipt > minEllipt));
 
-                    p = polyfit(zPos,ellipt,4);
-                    zVec = min(zPos):0.001:max(zPos);%1nm step                    
-                    fit = polyval(p,zVec);
-                    [~,idx] = min(abs(fit-1));
-                    focus = zVec(idx);                  
-                   
-                    zCalData{i,j}(:,6) = ((zCalData{i,j}(:,5))*zStep - focus + relZ(i))*1000;
-                    fullSync = ((zCalData{i,j}(:,5))*zStep - focus)*1000;
-                    zSyncCalData{i,1} = [zSyncCalData{i,1}; zCalData{i,j}(:,[6 1])];
-                    zSyncCalData{1,2} = [zSyncCalData{1,2}; [fullSync zCalData{i,j}(:,1)]];
+                        %Now we shift in z the value closest to ellipt =1 for
+                        %the fit == rough synchronization    
+                        [~,idx] = min(abs(ellipt-1));
+                        focus1 = zPos(idx);
+                        zPos = zPos - focus1;
+
+                        if length(ellipt)<deg
+                        else
+                            %Do the fit and extract the z position of the focus
+                            p = polyfit(zPos,ellipt,deg);
+                            zVec = min(zPos):0.001:max(zPos);%1nm step
+
+                            if or(min(zPos)>-0.1, max(zPos) <0.1)
+                                zVec = -1:0.001:1; 
+                            end
+
+                            fit = polyval(p,zVec);
+                            [~,idx] = min(abs(fit-1));
+                            focus2 = zVec(idx);                  
+                            shift = focus1+focus2;
+                            zCalData{i,j}(:,6) = ((zCalData{i,j}(:,5))*zStep -shift)*1000;
+                            fullSync = ((zCalData{i,j}(:,5))*zStep -shift)*1000;
+                            zSyncCalData{i,1} = [zSyncCalData{i,1}; zCalData{i,j}(:,[6 1])];
+                            zSyncCalData{1,2} = [zSyncCalData{1,2}; [fullSync zCalData{i,j}(:,1)]];
+                        end
+                    end
                 end
                 
                 [~,ind] = sort(zSyncCalData{i,1}(:,1));
@@ -1598,6 +1680,7 @@ end
             
             [~,ind] = sort(zSyncCalData{1,2}(:,1));
             zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
+            zSyncCalData{1,3} = [minEllipt, maxEllipt, deg];
             
         end
         
@@ -1616,17 +1699,17 @@ end
         end
         
         function [zCalibration] = calZCalibration(obj, zSyncCalData)
-            zCalibration = cell(length(zSyncCalData),2);
+            zCalibration = cell(length(zSyncCalData),1);
+            deg = zSyncCalData{1,3}(3);
             
             for i = 1: length(zSyncCalData)
                 dataCurrentPlane = zSyncCalData{i};
                 [binnedData] = obj.zCalBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
                 
                 zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
-                p = polyfit(binnedData(:,1),binnedData(:,2),3);
+     
+                p = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),deg);
                 fit = polyval(p,zVec);
-                p2 = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),3);
-                fit2 = polyval(p2,zVec);
 %                 
 %                 figure
 %                 subplot(1,2,1)
@@ -1637,9 +1720,9 @@ end
 %                 subplot(1,2,2)
 %                 hold on
 %                 scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
-%                 plot(zVec,fit2)
-                zCalibration{i,1} = p;
-                zCalibration{i,2} = p2;
+%                 plot(zVec,fit)
+ 
+                zCalibration{i} = p;
                 
             end
             
@@ -1652,38 +1735,45 @@ end
             
         end
         
-        function [zPos,medZ] = getZPosition(obj,particle)
+        function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight)
              assert(~isempty(obj.zCalibration),'No zCalibration found, please run z calibration calculating Z position');
              zCal = obj.zCalibration.cal;
-             
+             relZ = obj.calibrated.oRelZPos;
              syncEllip = obj.zCalibration.syncEllip;
              
              zVec = min(syncEllip{particle(3,end),1}) : 1 : max(syncEllip{particle(3,end),1});
-             fit = polyval(zCal{particle(3,end),2},zVec);
+             fit = polyval(zCal{particle(3,end),1},zVec);
              %find the index of the value the closest to the particle
              %ellipticity
              [~,idx] = min(abs(fit-particle(3,3)));
+            zPos = zVec(idx)+ relZ(particle(3,end))*1000;
              
-             zPos = zVec(idx);
              
-             medZ = zeros(length(particle(~isnan(particle(:,1)))),1);
+            id = and(particle(:,3)>=elliptRange(1),...
+                                       particle(:,3)<=elliptRange(end));
+            data2Keep = particle(id,:);
+            
+           
              
-             for i = 1 : length(particle(~isnan(particle(:,1))))
-                 
-                 pData = particle(~isnan(particle(:,1)),:);
-                 zVectmp = min(syncEllip{pData(i,end),1}) : 1 : max(syncEllip{pData(i,end),1});
-                 fit = polyval(zCal{pData(i,end),2},zVectmp);
-                 %find the index of the value the closest to the particle
-                 %ellipticity
-                 
-                 if(and(pData(i,3)<1.42,pData(i,3)>0.7))%check ellip in the range of calibration
-                 [~,idx] = min(abs(fit-pData(i,3)));
-                 medZ(i) = zVectmp(idx);
-                 else
-                 end
-                 
-             end
-             medZ = mean(medZ(medZ~=0));
+            idx1 = zeros(size(data2Keep,1),1);
+            zAvg = zeros(size(data2Keep,1),1);
+           
+            for k = 1 :size(data2Keep,1)
+
+                [~,idx1(k)] = min(abs(elliptRange-data2Keep(k,3)));
+                
+                zVectmp = min(syncEllip{data2Keep(k,end),1}) : 1 : max(syncEllip{data2Keep(k,end),1});
+                fit = polyval(zCal{data2Keep(k,end),1},zVectmp);
+                
+                [~,idx] = min(abs(fit-data2Keep(k,3)));
+                zAvg(k) = zVectmp(idx) + relZ(data2Keep(k,end))*1000;
+                
+
+            end
+                     
+             weight = finalWeight(idx1);               
+             zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
+
              
         end
     
@@ -1817,9 +1907,20 @@ end
             assert(length(planeConfig) <= obj.calibrated.nPlanes,'There is something wrong with your consolidated index and your candidate plane List');
             %Let us test that we have consolidate the particle in at least
             %3 Planes
-            test3Planes = length(find(~isnan(planeConfig)==true)) >= 3;
+            isEdgePlane = or(~isempty(find(planeConfig==1,1)),~isempty(find(planeConfig==8,1)));
             
-            if test3Planes
+            if isEdgePlane
+                
+                testPlanes = length(find(~isnan(planeConfig)==true)) >= 2;
+                
+            else
+                
+                 testPlanes = length(find(~isnan(planeConfig)==true)) >= 3;
+                
+            end
+           
+            
+            if testPlanes
                %We check that there is no "Gap" in the plane configuration
                %as it would not make sense.
                testConsec = diff(planeConfig(~isnan(planeConfig)));
