@@ -16,56 +16,56 @@ path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
 path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
 %% create a Movie Object
-mov2 = Core.Movie(path2File);
+mov1 = Core.Movie(path2File);
 
 %% showFrame
-mov2.showFrame(22);
+mov1.showFrame(22);
 %% Calculate calibration
-mov2.getCalibration(path2Cal);
+mov1.getCalibration(path2Cal);
 
 %% Calibrate
-mov2.calibrate;
+mov1.calibrate;
 
 %% getFrame
 
-[data] = mov2.getFrame(24);
+[data] = mov1.getFrame(24);
 
 %% showFrame
-mov2.showFrame(22);
+mov1.showFrame(22);
 
 %% GiveInfo
-mov2.giveInfo;
+mov1.giveInfo;
 %% getCandidatePos
 detectParam.delta = 6;
 detectParam.chi2 = 80;
-mov2.findCandidatePos(detectParam);
-candidate = mov2.getCandidatePos(24);
+mov1.findCandidatePos(detectParam);
+candidate = mov1.getCandidatePos(24);
 %% showCandidate
-mov2.showCandidate(24);
+mov1.showCandidate(24);
 
 %% consolidation
-mov2.superResConsolidate(6);
+mov1.superResConsolidate(6);
 
 %% showParticles
-mov2.showParticles(24);
+mov1.showParticles(24);
 
 %% ZCalibration
-traces =  mov2.trackInZ;
+traces =  mov1.trackInZ;
 
 %% Show traces
-mov2.showParticlesTracked(30);%ips
+mov1.showParticlesTracked(30);%ips
 %% ZCalibrate
-[zData] = mov2.zCalibrate;
+[zData] = mov1.zCalibrate;
 
 %% Show ZCalibration
-mov2.showZCalibration;
+mov1.showZCalibration;
 
 %% Get 3D traces
-traces = mov2.get3DTraces;
+traces = mov1.get3DTraces;
 
 %% Show Traces
 
-mov2.showTraces
+mov1.showTraces
 
 
 %% example of a frame list I will grow this into the frame object

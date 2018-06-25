@@ -13,13 +13,13 @@ classdef Movie <  handle
        calibrated
        candidatePos
        particles
-       zCalibration
+       
        superResCal
        
    end
    
     properties (SetAccess = 'public')
-
+    zCalibration
        
    
     end
@@ -898,13 +898,18 @@ classdef Movie <  handle
                 data = traces(:,:,i);
                 data = data(data(:,1)~=0,:);
                 fprintf('std in X from best focus: %0.2f \n',median(std(data(:,1))));
-                fprintf('std in Y from mean of planes: %0.2f \n',median(std(data(:,2))));
+                fprintf('std in y from best focus: %0.2f \n',median(std(data(:,2))));
+                fprintf('std in Z from best focus: %0.2f \n',median(std(data(:,3))));
+                fprintf('std in X from mean planes: %0.2f \n',median(std(data(:,4))));
+                fprintf('std in y from mean planes: %0.2f \n',median(std(data(:,5))));
+                fprintf('std in Z from mean planes: %0.2f \n',median(std(data(:,6))));
+                
                 
                 subplot(2,1,1)
                 hold on
-                plot(data(:,1) - median(data(:,1)));
-                plot(data(:,2) - median(data(:,2)));
-                plot(data(:,3) - median(data(:,3)));
+                plot(data(:,1) - data(1,1));
+                plot(data(:,2) - data(1,2));
+                plot(data(:,3) - data(1,3));
                 title('X Y Z position for different particle in best focus')
                 xlabel('Frame')
                 ylabel('Position(nm)')
@@ -912,9 +917,9 @@ classdef Movie <  handle
                 
                 subplot(2,1,2)
                 hold on
-                plot(data(:,4) - median(data(:,4)));
-                plot(data(:,5) - median(data(:,5)));
-                plot(data(:,6) - median(data(:,6)));
+                plot(data(:,4) - data(1,4));
+                plot(data(:,5) - data(1,5));
+                plot(data(:,6) - data(1,6));
                 xlabel('Frame')
                 ylabel('Position(nm)')
                 title('X Y Z position for different particle mean')
@@ -941,6 +946,8 @@ classdef Movie <  handle
                 
                 fprintf('std in 2D from best focus: %0.2f \n',median(std(eucl2D)));
                 fprintf('std in 2D from mean of planes: %0.2f \n',median(std(medEucl2D)));
+                fprintf('std in 3D from best focus: %0.2f \n',median(std(eucl)));
+                fprintf('std in 3D from mean of planes: %0.2f \n',median(std(medEucl)));
                 
                 subplot(2,2,1)
                 hold on
