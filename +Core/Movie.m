@@ -667,6 +667,10 @@ classdef Movie <  handle
                         %find indices to data in correct ellipticity range
                         id = and(currentPart(:,3)>=elliptRange(1),...
                                        currentPart(:,3)<=elliptRange(end));
+                        if all(id==0)
+                            
+                        else
+                                  
                         ellip2Keep = currentPart(id,3);
                         idx = ellip2Keep;
                         for k = 1 :length(ellip2Keep)
@@ -697,6 +701,8 @@ classdef Movie <  handle
                         if ~isnan(tracesIdx{i}{j})
                         traces(i,:,tracesIdx{i}{j}) = [x y z xAvg yAvg zAvg];
                         else
+                        end
+                        
                         end
                     end                    
                 end
@@ -897,12 +903,12 @@ classdef Movie <  handle
             for i = 1:npart
                 data = traces(:,:,i);
                 data = data(data(:,1)~=0,:);
-                fprintf('std in X from best focus: %0.2f \n',median(std(data(:,1))));
-                fprintf('std in y from best focus: %0.2f \n',median(std(data(:,2))));
-                fprintf('std in Z from best focus: %0.2f \n',median(std(data(:,3))));
-                fprintf('std in X from mean planes: %0.2f \n',median(std(data(:,4))));
-                fprintf('std in y from mean planes: %0.2f \n',median(std(data(:,5))));
-                fprintf('std in Z from mean planes: %0.2f \n',median(std(data(:,6))));
+                fprintf('std in X from best focus: %0.2f \n',nanmedian(nanstd(data(:,1))));
+                fprintf('std in y from best focus: %0.2f \n',nanmedian(nanstd(data(:,2))));
+                fprintf('std in Z from best focus: %0.2f \n',nanmedian(nanstd(data(:,3))));
+                fprintf('std in X from mean planes: %0.2f \n',nanmedian(nanstd(data(:,4))));
+                fprintf('std in y from mean planes: %0.2f \n',nanmedian(nanstd(data(:,5))));
+                fprintf('std in Z from mean planes: %0.2f \n',nanmedian(nanstd(data(:,6))));
                 
                 
                 subplot(2,1,1)
@@ -944,10 +950,10 @@ classdef Movie <  handle
                 eucl2D = sqrt((data(:,1)-data(1,1)).^2 + (data(:,2)-data(1,2)).^2);
                 medEucl2D = sqrt((data(:,4)-data(1,4)).^2 + (data(:,5)-data(1,5)).^2);
                 
-                fprintf('std in 2D from best focus: %0.2f \n',median(std(eucl2D)));
-                fprintf('std in 2D from mean of planes: %0.2f \n',median(std(medEucl2D)));
-                fprintf('std in 3D from best focus: %0.2f \n',median(std(eucl)));
-                fprintf('std in 3D from mean of planes: %0.2f \n',median(std(medEucl)));
+                fprintf('std in 2D from best focus: %0.2f \n',nanmedian(nanstd(eucl2D)));
+                fprintf('std in 2D from mean of planes: %0.2f \n',nanmedian(nanstd(medEucl2D)));
+                fprintf('std in 3D from best focus: %0.2f \n',nanmedian(nanstd(eucl)));
+                fprintf('std in 3D from mean of planes: %0.2f \n',nanmedian(nanstd(medEucl)));
                 
                 subplot(2,2,1)
                 hold on
@@ -1637,8 +1643,8 @@ end
         
         function [zSyncCalData] = syncZCalData(obj,zCalData)
             deg = 4;
-            minEllipt = 0.7;
-            maxEllipt = 1/minEllipt;
+            minEllipt = 0.77;
+            maxEllipt = 1.6;
             zStep = obj.getZStep;
             zSyncCalData = cell(8,2);
 %             figure
