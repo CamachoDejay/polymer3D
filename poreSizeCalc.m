@@ -172,8 +172,8 @@ totalAdapt = [];
 totalGlobal = [];
 for i = 1 : length(allDataAdapt)
     
-    totalAdapt  = [totalAdapt allDataAdapt(i).Data.Area];
-    totalGlobal = [totalGlobal allDataAuto(i).Data.Area];
+    totalAdapt  = [totalAdapt ; allDataAdapt(i).Data.Area];
+    totalGlobal = [totalGlobal ;  allDataAuto(i).Data.Area];
 
 end
 

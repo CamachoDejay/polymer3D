@@ -9,20 +9,27 @@ close all
 clc
 
 %% User Input
-prompt = {'Enter number of frame to analyze ',...
+prompt = {'Enter initial frame','Enter number of frames to analyze ',...
     'Enter the desired threshold sensitivity ([0 1])'};
 dlgTitle = 'User input for image segmentation';
 numLines = 1;
-defaultVal = {'244','0.6'};
+defaultVal = {'1','76','0.6'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 
 %% Checking user input
 assert(~isempty(answer),'User canceled input dialog, Simulation was aborted')
 
-nFrame = str2double(answer(1));
+iniFra = round(str2double(answer(1)));
+assert(~isnan(iniFra),'Initial frame should be numerical');%If not a number
+nFrame = round(str2double(answer(2)));
 assert(~isnan(nFrame),'Number of Frame should be numerical');%If not a number
 
-Threshold = str2double(answer(2));
+finFra = iniFra + nFrame - 1;
+assert(finFra>=iniFra, 'WTF not expected')
+frames2load = iniFra:finFra;
+assert(iniFra>0, 'indexing starts at 1')
+
+Threshold = str2double(answer(3));
 assert(~isnan(Threshold),'Number of Frame should be numerical');%If not a number
 assert(and(Threshold > 0, Threshold <=1),...
     'Threshold sensitivity should be between 0 and 1');
@@ -49,9 +56,9 @@ for i = 1 : nFiles
     warning('off','all');
     %Check number of Frame
     tNframes = fileInfo.Frame_n;
-    assert(tNframes>=nFrame,'Requested number of frame is larger than the number of frame in the file')
+    assert(tNframes>=finFra,'Requested number of frame is larger than the number of frame in the file')
     
-    IM     = Load.Movie.tif.getframes(p2file, 1:nFrame); %Loading on of the frame
+    IM     = Load.Movie.tif.getframes(p2file, frames2load); %Loading on of the frame
     warning('on','all');
     toc
     disp('DONE with loading --------------')
