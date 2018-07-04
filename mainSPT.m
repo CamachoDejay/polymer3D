@@ -20,6 +20,12 @@ mov1 = Core.Movie(path2File);
 
 %% showFrame
 mov1.showFrame(22);
+%% Calib
+calib = Core.calib2D(path2Cal);
+
+calib.calc;
+
+calib.showFrame(22)
 %% Calculate calibration
 mov1.getCalibration(path2Cal);
 

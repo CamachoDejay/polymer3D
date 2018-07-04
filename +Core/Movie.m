@@ -154,10 +154,6 @@ classdef Movie < handle
             data.Cam2 = movC2;
         end
         
-    end
-    
-    methods (Access = private)
-        
         function [file2Analyze] = getFileInPath(~, path, ext)
            
             assert(ischar(path),'The given path should be a char');
@@ -197,6 +193,11 @@ classdef Movie < handle
             assert(min(frames) >0, 'Indexing in matlab start from 1');
             
         end
+        
+    end
+    
+    methods (Access = private)
+        
         
     end
     
