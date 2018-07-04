@@ -88,6 +88,8 @@ for j = 1:length(idx2Stack)
     nIM = nFrame;
    % waitbar(j/nImStacks,h,hMessage);
     disp('Loading Data');
+    totVol = 0;
+    filledVolume = 0;
     parfor i=startIdx:endIdx %% PARFOR CAN BE PLACED HERE
         
         % Loading image number i
@@ -124,8 +126,9 @@ for j = 1:length(idx2Stack)
         regData = [tTmp, regData];
         % store
         tifStackData = [tifStackData; regData];
-        %TODO:
-        %Calculate pore volume fraction
+        totVol = totVol + numel(IM);
+        filledVolume  = filledVolume + sum(sum(~IM));
+       
     end
     
     % add info about tif index
@@ -140,6 +143,8 @@ for j = 1:length(idx2Stack)
         %allDataAdapt = [allDataAdapt; tifStackData];
         allDataAdapt(nAdapt).filename = file2Analyze(j).name;
         allDataAdapt(nAdapt).Data = tifStackData;
+        allDataAdapt(nAdapt).Data.filledVolume(1) = filledVolume;%stillPX
+        allDataAdapt(nAdapt).Data.totVolume(1)    = totVol;%stillPX
         nAdapt = nAdapt+1;
     else
         allDataAuto(nAuto).filename = file2Analyze(j).name;
