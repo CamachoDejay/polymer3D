@@ -11,7 +11,7 @@ clc
 %together.
 
 %% User Input
-
+stack2Use = 5; % Take the last 5 stacks
 numBin = 20; %Number of Bins
 % Load block 1K
 %% S1_1K
@@ -35,51 +35,57 @@ clear tmp names
 
 %CDF
 name = fieldnames(S1_1K);
- 
-for i = 1 : length(S1_1K)
+numField = length(name);
+for i = 1 : numField 
     
     S1_1K.(name{i})(1).CCDF = [];
     allArea =[];
     
-    for j = 1: length(S1_1K.(name{i}))
+    for j = 1: stack2Use
         
-        area = S1_1K.(name{i})(j).Data.Area;
+        area = S1_1K.(name{i})(end+1-j).Data.Area;
         area = area(:);
         [CDF,CCDF] = Plotting.getCDF(area);
         CCDF = [CCDF.x CCDF.y];
-        S1_1K.(name{i})(j).CCDF = CCDF;
+        S1_1K.(name{i})(end+1-j).CCDF = CCDF;
         allArea = [allArea ; area];
         
     end
     
-    S1_1K.(name{i})(1).allArea = allArea;
+    S1_1K.(name{i})(end+1-j).allArea = allArea;
     [CDF,CCDF] = Plotting.getCDF(allArea(:));
     CCDF = [CCDF.x CCDF.y];
-    S1_1K.(name{i})(1).allCCDF = CCDF;
+    S1_1K.(name{i})(end+1-j).allCCDF = CCDF;
     
     %for Histogram
     [midBin, Freq, LFreq] = Plotting.lnbin(allArea,numBin);
     
-    S1_1K.(name{i})(1).midBin = midBin;
-    S1_1K.(name{i})(1).Freq = Freq;
-    S1_1K.(name{i})(1).LFreq = LFreq;
+    S1_1K.(name{i})(end+1-j).midBin = midBin;
+    S1_1K.(name{i})(end+1-j).Freq = Freq;
+    S1_1K.(name{i})(end+1-j).LFreq = LFreq;
+    
+    if length(S1_1K.(name{i}))-j>0
+        
+        S1_1K.(name{i})(1:length(S1_1K.(name{i}))-j) = [];
+    
+    end
     
 end
 
 %% S2_1K
-tmp = load('N:\Project Z-stacks\New stacks\1K_0.25mg_30 nm_sample 1\tif_1K_0.25 mg-30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
+tmp = load('N:\Project Z-stacks\New stacks\1K_0,25mg_30 nm_sample 2\TIF_1K_0.25 mg_30 nm_sample2\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 S2_1K.Table025 = tmp.(names{1});
 clear tmp names
 % Load second file
-tmp = load('N:\Project Z-stacks\New stacks\1K_0.5mg_30 nm_sample 1\Tif_1K_0,5mg_30 nm_sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
+tmp = load('N:\Project Z-stacks\New stacks\1K_0,5mg_30 nm_sample 2\tif_1k_0.5 mg_30 nm_Sample 2\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 S2_1K.Table050 = tmp.(names{1});
 clear tmp names
 % Loqd third file
-tmp = load('N:\Project Z-stacks\New stacks\1K_1 mg_30 nm_sample 1\TIF_1K_1 mg_0_30 nm_Sample1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
+tmp = load('N:\Project Z-stacks\New stacks\1K_1 mg_30 nm_sample 2\tif_1K_1 mg_30 nm_Sample 2\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 S2_1K.Table100 = tmp.(names{1});
@@ -88,34 +94,39 @@ clear tmp names
 %CDF
 name = fieldnames(S2_1K);
  
-for i = 1 : length(S2_1K)
+for i = 1 : numField 
     
     S2_1K.(name{i})(1).CCDF = [];
     allArea =[];
     
-    for j = 1: length(S2_1K.(name{i}))
+    for j = 1: stack2Use
         
-        area = S2_1K.(name{i})(j).Data.Area;
+        area = S2_1K.(name{i})(end+1-j).Data.Area;
         area = area(:);
         [CDF,CCDF] = Plotting.getCDF(area);
         CCDF = [CCDF.x CCDF.y];
-        S2_1K.(name{i})(j).CCDF = CCDF;
+        S2_1K.(name{i})(end+1-j).CCDF = CCDF;
         allArea = [allArea ; area];
         
     end
     
-    S2_1K.(name{i})(1).allArea = allArea;
+    S2_1K.(name{i})(end+1-j).allArea = allArea;
     [CDF,CCDF] = Plotting.getCDF(allArea(:));
     CCDF = [CCDF.x CCDF.y];
-    S2_1K.(name{i})(1).allCCDF = CCDF;
+    S2_1K.(name{i})(end+1-j).allCCDF = CCDF;
     
     %for Histogram
     [midBin, Freq, LFreq] = Plotting.lnbin(allArea,numBin);
     
-    S2_1K.(name{i})(1).midBin = midBin;
-    S2_1K.(name{i})(1).Freq = Freq;
-    S2_1K.(name{i})(1).LFreq = LFreq;
+    S2_1K.(name{i})(end+1-j).midBin = midBin;
+    S2_1K.(name{i})(end+1-j).Freq = Freq;
+    S2_1K.(name{i})(end+1-j).LFreq = LFreq;
     
+    if length(S2_1K.(name{i}))-j>0
+        
+        S2_1K.(name{i})(1:length(S2_1K.(name{i}))-j) = [];
+    
+    end
 end
 
 %Load block 5K
@@ -142,33 +153,39 @@ clear tmp names
 %CDF
 name = fieldnames(S1_5K);
  
-for i = 1 : length(S1_5K)
+for i = 1 : numField 
     
     S1_5K.(name{i})(1).CCDF = [];
     allArea =[];
     
-    for j = 1: length(S1_5K.(name{i}))
+    for j = 1: stack2Use
         
-        area = S1_5K.(name{i})(j).Data.Area;
+        area = S1_5K.(name{i})(end+1-j).Data.Area;
         area = area(:);
         [CDF,CCDF] = Plotting.getCDF(area);
         CCDF = [CCDF.x CCDF.y];
-        S1_5K.(name{i})(j).CCDF = CCDF;
+        S1_5K.(name{i})(end+1-j).CCDF = CCDF;
         allArea = [allArea ; area];
         
     end
     
-    S1_5K.(name{i})(1).allArea = allArea;
+    S1_5K.(name{i})(end+1-j).allArea = allArea;
     [CDF,CCDF] = Plotting.getCDF(allArea(:));
     CCDF = [CCDF.x CCDF.y];
-    S1_5K.(name{i})(1).allCCDF = CCDF;
+    S1_5K.(name{i})(end+1-j).allCCDF = CCDF;
     
     %for Histogram
     [midBin, Freq, LFreq] = Plotting.lnbin(allArea,numBin);
     
-    S1_5K.(name{i})(1).midBin = midBin;
-    S1_5K.(name{i})(1).Freq = Freq;
-    S1_5K.(name{i})(1).LFreq = LFreq;
+    S1_5K.(name{i})(end+1-j).midBin = midBin;
+    S1_5K.(name{i})(end+1-j).Freq = Freq;
+    S1_5K.(name{i})(end+1-j).LFreq = LFreq;
+    
+    if length(S1_5K.(name{i}))-j>0
+        
+        S1_5K.(name{i})(1:length(S1_5K.(name{i}))-j) = [];
+    
+    end
     
 end
 
@@ -195,32 +212,38 @@ clear tmp names
 %CDF
 name = fieldnames(S2_5K);
  
-for i = 1 : length(S2_5K)
+for i = 1 : numField 
     
     S2_5K.(name{i})(1).CCDF = [];
     allArea =[];
     
-    for j = 1: length(S2_5K.(name{i}))
+    for j = 1: stack2Use
         
-        area = S2_5K.(name{i})(j).Data.Area;
+        area = S2_5K.(name{i})(end+1-j).Data.Area;
         area = area(:);
         [CDF,CCDF] = Plotting.getCDF(area);
         CCDF = [CCDF.x CCDF.y];
-        S2_5K.(name{i})(j).CCDF = CCDF;
+        S2_5K.(name{i})(end+1-j).CCDF = CCDF;
         allArea = [allArea ; area];
         
     end
     
-    S2_5K.(name{i})(1).allArea = allArea;
+    S2_5K.(name{i})(end+1-j).allArea = allArea;
     [CDF,CCDF] = Plotting.getCDF(allArea(:));
     CCDF = [CCDF.x CCDF.y];
-    S2_5K.(name{i})(1).allCCDF = CCDF;
+    S2_5K.(name{i})(end+1-j).allCCDF = CCDF;
     
     %for Histogram
     [midBin, Freq, LFreq] = Plotting.lnbin(allArea,numBin);
     
-    S2_5K.(name{i})(1).midBin = midBin;
-    S2_5K.(name{i})(1).Freq = Freq;
-    S2_5K.(name{i})(1).LFreq = LFreq;
+    S2_5K.(name{i})(end+1-j).midBin = midBin;
+    S2_5K.(name{i})(end+1-j).Freq = Freq;
+    S2_5K.(name{i})(end+1-j).LFreq = LFreq;
+    
+    if length(S2_5K.(name{i}))-j>0
+        
+        S2_5K.(name{i})(1:length(S2_5K.(name{i}))-j) = [];
+    
+    end
     
 end
