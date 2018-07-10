@@ -11,7 +11,7 @@ addpath(genpath('Ext'));
 
 % path to the callibration
 
-%path2File = '..\data\Multiplane\ZCalibration\\BeadsZCalibration_1';
+path2zCal = '..\data\Multiplane\ZCalibration\\BeadsZCalibration_1';
 path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
 path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
@@ -45,32 +45,36 @@ detectParam.chi2 = 80;
 mpLocMov.findCandidatePos(detectParam);
 candidate = mpLocMov.getCandidatePos(24);
 mpLocMov.showCandidate(24);
-%% showCandidate
 
+%% ZCal
+zCalMov = Core.zCalMovie(path2zCal);
+%% CandidatePos
+zCalMov.giveInfo;
+zCalMov.findCandidatePos(detectParam);
 
-%% consolidation
-mov1.superResConsolidate(6);
+zCalMov.superResConsolidate;
+%mov1.superResConsolidate(6);
 
 %% showParticles
-mov1.showParticles(24);
+zCalMov.showParticles(24);
 
 %% ZCalibration
-traces =  mov1.trackInZ;
+traces =  zCalMov.trackInZ;
 
 %% Show traces
-mov1.showParticlesTracked(30);%ips
+zCalMov.showParticlesTracked(30);%ips
 %% ZCalibrate
-[zData] = mov1.zCalibrate;
+[zData] = zCalMov.zCalibrate;
 
 %% Show ZCalibration
-mov1.showZCalibration;
+zCalMov.showCalibration;
 
 %% Get 3D traces
-traces = mov1.get3DTraces;
+traces = zCalMov.get3DTraces;
 
 %% Show Traces
 
-mov1.showTraces
+zCalMov.showTraces
 
 
 %% example of a frame list I will grow this into the frame object

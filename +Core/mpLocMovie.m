@@ -9,10 +9,17 @@ classdef mpLocMovie < Core.mpMovie
     end
     
     methods
-        function obj = mpLocMovie(raw)
+        function obj = mpLocMovie(raw, cal)
             
             obj  = obj@Core.mpMovie(raw);
             obj.calibrated = raw;
+            switch nargin
+                case 1
+                    obj.giveInfo;
+                    obj.findCandidatePos;
+                case 2
+                    obj.cal = cal;
+            end
             
         end
         
@@ -190,117 +197,10 @@ classdef mpLocMovie < Core.mpMovie
             end
         end
         
-        function [isPart] = isPartner(obj, current, next, direction, check)
-            
-            %This function is designed to have PSFE plate ON
-            assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
-            assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
-           
-            switch check
-                case 'plane' %TL, consolidation between Plane
-                    Thresh = 2*sqrt(2); %in Px As the superResCal is not 
-                    %performed yet we allow 2px in both direction
-                    [checkRes1] = obj.checkEuDist(current(:,1:2),...
-                                next(:,1:2),Thresh);
-
-                    % Test ellipticity
-                    [checkRes2] = obj.checkEllipticity(current(:,3),...
-                        next(:,3),direction);
-                    
-                    % Test focus Metric    
-                     maxExpFM = current(4)+0.1*current(4);
-                     checkRes3 = next(:,4) < maxExpFM;  
-                           
-                   %isPart will only be true for particle that passes the 3 tests       
-                   isPart = checkRes1.*checkRes2.*checkRes3;
-                   
-                   if(length(find(isPart))>1)
-
-                        warning('Could not choose which particle was the partner of the requested particle, killed them both');
-                        isPart(isPart==1) = 0;
-
-                   end
-
-                case 'ZCal' %ZStack, consolidation between frame
-                    %The calculation here is ran in parallel, we check if
-                    %the current particle is a partner of one of the
-                    %particles in the next frame. Some indexing or step
-                    %might therefore seems unnecessary but allow to take
-                    %any number of particles
-                    
-                    isEdgePlane = or(~isempty(find(current(:,end)==1,1)),~isempty(find(current(:,end)==8,1)));
-                    
-                    if isEdgePlane
-                        
-                        nConsistentPlanes = 2;
-                        
-                    else
-                        
-                        nConsistentPlanes = 2;
-                         
-                    end
-                    
-                    
-                    isPart = zeros(size(next,3),1);
-                    %check focus is not more than one plane away 
-                    roughcheck1 = squeeze(abs(current(3,end)-next(3,end,:)<=1));
-                    
-                    if all(roughcheck1 ==0)
-                        disp('Something is wrong your focus changed more than one plane between 2 frames');
-                    else
-                        %Check that at least 2 planes are in common
-                        commonPlanes = obj.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
-                        roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
-                        if all(roughcheck2 ==0)
-                            disp('Less than 2 planes in common, breaking out');
-                        else 
-                            
-                            for i = 1 : size(next,3)
-                                % Test Euclidian distance
-                                Thresh = 1; %in px
-                                [checkRes1] = obj.checkEuDist(current(commonPlanes(:,1,i),1:2),...
-                                    squeeze(next(commonPlanes(:,2,i),1:2,i)),Thresh);
-
-                                % Test ellipticity
-                                eWeight = [1 2 3 2 1];
-                                thresh = 5;
-                                [checkRes2] = obj.checkEllipticity(current(commonPlanes(:,1,i),3),...
-                                    squeeze(next(commonPlanes(:,2,i),3,i)),direction,thresh,eWeight(commonPlanes(:,1,i)));
-                                 %To be a particle, we want the position to be
-                                %consistent in at least 2 planes and
-                                %ellipticity to pass the test.
-                                isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes, checkRes2);
-                                
-                            end
-                                              
-                        end
-                    end
-                              
-                                
-                    
-                case 'Track' %TL, consolidation between frame
-                otherwise 
-                    error('Unknown type of experiment');
-            end
-            isPart = logical(isPart);
-         
-                
-        end
-     
-        function [commonPlanes] = findCommonPlanes(~,planeInCurrent,planeInNext)
-            
-            commonPlanes = zeros(size(planeInNext,1),2,size(planeInNext,2));
-            
-            for i = 1 : size(planeInNext,2)
-                
-                commonPlanes(:,1,i) = ismember(planeInCurrent,planeInNext(:,i));
-                commonPlanes(:,2,i) = ismember(planeInNext(:,i),planeInCurrent);
-                
-            end
-            commonPlanes = logical(squeeze(commonPlanes));
-        end
     end
     
-    
+    methods (Access = private)
+
+    end
 end
 

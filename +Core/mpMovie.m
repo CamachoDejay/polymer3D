@@ -2,7 +2,7 @@ classdef mpMovie < Core.Movie
     %This class will hold the path to the movie and the calibrated movie.
     
     properties
-        cal
+        cal2D
         calibrated
     end
     
@@ -20,13 +20,13 @@ classdef mpMovie < Core.Movie
             end 
         end
         
-        function set.cal(obj,cal)
+        function set.cal2D(obj,cal2D)
             
-            assert(isstruct(cal), 'Calibration is expected to be a struct');
-            assert(numel(fieldnames(cal))==3, 'Calibration is expected to have 3 Fields');
-            assert(isfield(cal,'file'),'One of the field should be "file" ');
+            assert(isstruct(cal2D), 'Calibration is expected to be a struct');
+            assert(numel(fieldnames(cal2D))==3, 'Calibration is expected to have 3 Fields');
+            assert(isfield(cal2D,'file'),'One of the field should be "file" ');
             
-            obj.cal = cal;
+            obj.cal = cal2D;
                
         end
         
