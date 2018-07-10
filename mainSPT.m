@@ -26,11 +26,15 @@ calib = Core.calib2D(path2Cal);
 calib.calc;
 
 calib.showFrame(22)
-%% Calculate calibration
-mov1.getCalibration(path2Cal);
+
+%%
 
 %% Calibrate
-mov1.calibrate;
+mpMov = Core.mpMovie(path2File,calib.getCal);
+
+mpMov.calibrate;
+
+mpMov.showFrame(15);
 
 %% getFrame
 
