@@ -17,8 +17,6 @@ classdef calib2D < Core.Movie
         function set.cal(obj,cal)
             
             if isstruct(cal)
-           	assert(numel(fieldnames(cal))==3, 'Calibration is expected to have 3 Fields');
-            assert(isfield(cal,'file'),'One of the field should be "file" ');
             
             obj.cal = cal;
             
@@ -32,7 +30,7 @@ classdef calib2D < Core.Movie
                     fullPath = [file2Analyze.folder filesep file2Analyze.name];
                     tmp = load(fullPath);
                     cal = tmp.calibration;
-                    obj.cal = cal;
+                    obj.cal = cal.file;
                     disp('Done');
 
                     %otherwise we calculate it

@@ -36,22 +36,17 @@ mpMov.calibrate;
 
 mpMov.showFrame(15);
 
-%% getFrame
-
-[data] = mov1.getFrame(24);
-
-%% showFrame
-mov1.showFrame(22);
-
-%% GiveInfo
-mov1.giveInfo;
+%%
+mpLocMov = Core.mpLocMovie(path2File);
+mpLocMov.giveInfo;
 %% getCandidatePos
 detectParam.delta = 6;
 detectParam.chi2 = 80;
-mov1.findCandidatePos(detectParam);
-candidate = mov1.getCandidatePos(24);
+mpLocMov.findCandidatePos(detectParam);
+candidate = mpLocMov.getCandidatePos(24);
+mpLocMov.showCandidate(24);
 %% showCandidate
-mov1.showCandidate(24);
+
 
 %% consolidation
 mov1.superResConsolidate(6);

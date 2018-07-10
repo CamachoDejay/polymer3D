@@ -155,6 +155,12 @@ classdef mpMovie < Core.Movie
                 end
             end  
         end
+        
+        function [calibrated] = getCalibrated(obj)
+            
+            calibrated = obj.calibrated;
+            
+        end
                 
     end
     
