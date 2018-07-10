@@ -1,32 +1,52 @@
 classdef calib2D < Core.Movie
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
+    %This class will hold information about the 2D Cal movie.
     
     properties (SetAccess = 'private')
         cal
     end
     
     methods
-        function obj = calib2D(raw,cal)
+        function obj = calib2D(raw)
             %UNTITLED2 Construct an instance of this class
             %   Detailed explanation goes here
             obj = obj@Core.Movie(raw);
-            
-            switch nargin
-                case 1
-                case 2
-                    obj.cal = cal;
-            end 
+            obj.cal = raw;
+          
         end
         
         function set.cal(obj,cal)
             
-            assert(isstruct(cal), 'Calibration is expected to be a struct');
-            assert(numel(fieldnames(cal))==3, 'Calibration is expected to have 3 Fields');
+            if isstruct(cal)
+           	assert(numel(fieldnames(cal))==3, 'Calibration is expected to have 3 Fields');
             assert(isfield(cal,'file'),'One of the field should be "file" ');
             
             obj.cal = cal;
+            
+            elseif isfolder(cal)
                 
+                [file2Analyze] = getFileInPath(obj, cal, '.mat');
+                
+                if (~isempty(file2Analyze))
+                
+                    disp('The calibration was already calculated, Loading from existing file');
+                    fullPath = [file2Analyze.folder filesep file2Analyze.name];
+                    tmp = load(fullPath);
+                    cal = tmp.calibration;
+                    obj.cal = cal;
+                    disp('Done');
+
+                    %otherwise we calculate it
+                else
+                        disp('No calibration Calculating the calibration from calibration data');
+                        [calibration] = obj.calcCalibration(cal);
+                        obj.cal = calibration;
+                        disp('Calibration is now saved');
+
+                end
+            else
+                error('There is something wrong with your Cal file or path');
+           
+            end    
         end
         
         function calc(obj)
