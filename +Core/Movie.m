@@ -166,15 +166,6 @@ classdef Movie < handle
             
         end
         
-        function [file2Analyze] = getOMETIF(obj,path)
-            
-            expExt = '.ome.tif';
-            %Check Given path
-            [file2Analyze] = obj.getFileInPath(path, expExt);
-            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
-            
-        end
-        
         function [frames]   = checkFrame(obj, frames) 
             
             testFrame = mod(frames,1);
@@ -198,6 +189,14 @@ classdef Movie < handle
     
     methods (Access = private)
         
+        function [file2Analyze] = getOMETIF(obj,path)
+            
+            expExt = '.ome.tif';
+            %Check Given path
+            [file2Analyze] = obj.getFileInPath(path, expExt);
+            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
+            
+        end
         
     end
     
