@@ -70,9 +70,15 @@ classdef Movie < handle
           end
         end
         
-        function getRaw(obj,path)
+        function [raw] = getRaw(obj)
             
-            obj.raw = path;
+            raw = obj.raw;
+            
+        end
+        
+        function [info] = getInfo(obj)
+            
+            info = obj.info;
             
         end
         
@@ -183,6 +189,10 @@ classdef Movie < handle
             assert(max(frames) <= obj.raw.maxFrame(1),'Request exceeds max frame');
             assert(min(frames) >0, 'Indexing in matlab start from 1');
             
+        end
+        
+        function playMovie(obj)
+            %TODO: Code a good way of playing the movie;
         end
         
     end
