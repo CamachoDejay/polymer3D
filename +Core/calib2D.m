@@ -16,16 +16,12 @@ classdef calib2D < Core.Movie
         
         function set.cal(obj,cal)
             
-            if isstruct(cal)
-            
-            obj.cal = cal;
-            
-            elseif isfolder(cal)
-                
+            if ischar(cal)
+                assert(isfolder(cal),'The path provided is not a folder');
                 [file2Analyze] = getFileInPath(obj, cal, '.mat');
-                
+
                 if (~isempty(file2Analyze))
-                
+
                     disp('The calibration was already calculated, Loading from existing file');
                     fullPath = [file2Analyze.folder filesep file2Analyze.name];
                     tmp = load(fullPath);
@@ -41,10 +37,11 @@ classdef calib2D < Core.Movie
                         disp('Calibration is now saved');
 
                 end
+                
             else
-                error('There is something wrong with your Cal file or path');
-           
-            end    
+                assert(isstruct(cal),'Error with calibration');
+                obj.cal = cal;
+            end
         end
         
         function calc(obj)
