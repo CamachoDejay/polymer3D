@@ -27,8 +27,6 @@ calib.calc;
 
 calib.showFrame(22)
 
-%%
-
 %% Calibrate
 mpMov = Core.mpMovie(path2File,calib.getCal);
 
@@ -37,8 +35,9 @@ mpMov.calibrate;
 mpMov.showFrame(15);
 
 %%
-mpLocMov = Core.mpLocMovie(path2File);
+mpLocMov = Core.mpLocMovie(path2File,calib.getCal);
 mpLocMov.giveInfo;
+mpLocMov.calibrate;
 %% getCandidatePos
 detectParam.delta = 6;
 detectParam.chi2 = 80;

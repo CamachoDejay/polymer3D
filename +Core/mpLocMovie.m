@@ -1,6 +1,7 @@
 classdef mpLocMovie < Core.mpMovie
-    %UNTITLED4 Summary of this class goes here
-    %   Detailed explanation goes here
+    %mpLocMovie hold all the method and info necessary for localization,
+    %expension of this object will be first centered around Tracking but
+    %it will also be easy to extend to STORM/PALM.
     
     properties
         
@@ -11,16 +12,8 @@ classdef mpLocMovie < Core.mpMovie
     methods
         function obj = mpLocMovie(raw, cal)
             
-            obj  = obj@Core.mpMovie(raw);
-            obj.calibrated = raw;
-            switch nargin
-                case 1
-                    obj.giveInfo;
-                    obj.findCandidatePos;
-                case 2
-                    obj.cal = cal;
-            end
-            
+            obj  = obj@Core.mpMovie(raw,cal);
+         
         end
         
         function set.candidatePos(obj,candidatePos)
@@ -33,114 +26,44 @@ classdef mpLocMovie < Core.mpMovie
         function findCandidatePos(obj,detectParam, frames)
             
             assert(~isempty(obj.info), 'Missing information about setup to be able to find candidates, please use giveInfo method first');
+            assert(nargin>1,'not enough input argument');
             [file2Analyze] = getFileInPath(obj, obj.raw.movInfo.Path, '.mat');
-            
-            if any(contains({file2Analyze.name},'candidatePos')==true)
-                quest = 'Some candidate were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                switch answer
-                case 'Load'
-                    candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
-                    candidate = candidate.candidate;
-                    run = false;
-                case 'run again'
-                    run = true;
-                end
-            else
-                run = true;
-            end    
+            %Check if some candidate exists already
+            [run, candidate] = obj.existCandidate(file2Analyze);
             
             if run
-                    switch nargin 
+                switch nargin 
 
-                        case 1
+                    case 2
 
-                            run = false;
+                        frames = 1: obj.calibrated.nFrames;
+                        run = true;
+                        disp('Running detection on every frame');
 
-                        case 2
+                    case 3
 
-                            frames = 1: obj.calibrated.nFrames;
-                            run = true;
-                            disp('Running detection on every frame');
+                        run= true;
+                        [frames] = obj.checkFrame(frames);
 
-                        case 3
+                    otherwise
 
-                            run= true;
-                            [frames] = obj.checkFrame(frames);
+                        error('too many inputs');
 
-                        otherwise
+                end
 
-                            error('too many inputs');
+                [candidate] = obj.detectCandidate(detectParam,frames);
+                       
+            elseif ~isempty(candidate)
+            else
 
-                    end
+                disp('getCandidatePos is a function that detects features in a movie');
+                disp('To work, it needs to receive a structure containing 2 detection parameter:');
+                disp('delta which is the radius around which detection is performed usually 6 pixels');
+                disp('chi2 which characterize how certain you want to be about the fact that there is a molecule there');
+                disp('Typically between 20 and 200');
 
-                    if run
-
-                        assert(~isempty(obj.calibrated),'Data should be calibrated to detect candidate');
-                        assert(isstruct(detectParam),'Detection parameter should be a struct with two fields');
-                        nFrames = length(frames);
-                        currentCandidate = obj.candidatePos;
-
-                        if(isempty(currentCandidate))
-
-                            candidate = cell(obj.calibrated.nFrames,1);
-
-                        else
-
-                            candidate = currentCandidate;
-
-                        end
-
-                        %parameter for localization
-                        FWHM_pix = obj.info.FWHM_px;
-                        delta  = detectParam.delta;
-                        chi2   = detectParam.chi2;
-                        h = waitbar(0,'detection of candidates...');
-
-                        for i = 1 : 1:nFrames
-
-                            position = zeros(200,3);
-                            [volIm] = obj.getFrame(frames(i)); 
-                            nameFields = fieldnames(volIm);
-
-                            for j = 1:length(nameFields)
-
-                                [ pos, ~, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
-                                    delta, FWHM_pix, chi2 );
-                                startIdx = find(position==0,1,'First');
-                                pos(:,3) = j;
-                                position(startIdx:startIdx+size(pos,1)-1,:) = pos;
-
-                            end
-
-                            idx = find(position==0,1,'First');
-                            candidate{frames(i)} = position(1:idx-1,:);
-                            waitbar(i/nFrames,h,...
-                                sprintf('detection of candidates in Frame %d/%d done',i,nFrames));
-                        end
-
-                        close(h);
-
-                        fileName = sprintf('%s%scandidatePos.mat',obj.raw.movInfo.Path,'\');
-                        save(fileName,'candidate');
-                        
-
-
-                    else
-
-                        disp('getCandidatePos is a function that detects features in a movie');
-                        disp('To work, it needs to receive a structure containing 2 detection parameter:');
-                        disp('delta which is the radius around which detection is performed? usually 6 pixels');
-                        disp('chi2 which characterize how certain you want to be about the fact that there is a molecule there');
-                        disp('Usually between 20 and 200');
-
-                    end
             end
-            
+          
             obj.candidatePos = candidate;
             
         end
@@ -200,6 +123,90 @@ classdef mpLocMovie < Core.mpMovie
     end
     
     methods (Access = private)
+        
+        function [run,candidate] = existCandidate(obj,file2Analyze)
+            
+            if any(contains({file2Analyze.name},'candidatePos')==true)
+            quest = 'Some candidate were found in the raw folder, do you want to load them or run again ?';
+            title = 'Question to User';
+            btn1  = 'Load';
+            btn2 = 'run again';
+            defbtn = 'Load';
+            answer = questdlg(quest,title,btn1,btn2,defbtn);
+            
+            switch answer
+            case 'Load'
+                
+                candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
+                candidate = candidate.candidate;
+                run = false;
+                
+            case 'run again'
+                
+                run = true;
+                candidate =[];
+                
+            end
+            
+            else
+                
+                run = true;
+                candidate =[];
+            end    
+        end
+        
+        function [candidate] = detectCandidate(obj,detectParam,frames)
+            
+            assert(~isempty(obj.calibrated),'Data should be calibrated to detect candidate');
+            assert(isstruct(detectParam),'Detection parameter should be a struct with two fields');
+            nFrames = length(frames);
+            currentCandidate = obj.candidatePos;
+
+            if(isempty(currentCandidate))
+
+                candidate = cell(obj.calibrated.nFrames,1);
+
+            else
+
+                candidate = currentCandidate;
+
+            end
+
+            %parameter for localization
+            FWHM_pix = obj.info.FWHM_px;
+            delta  = detectParam.delta;
+            chi2   = detectParam.chi2;
+            h = waitbar(0,'detection of candidates...');
+
+            for i = 1 : 1:nFrames
+
+                position = zeros(200,3);
+                [volIm] = obj.getFrame(frames(i)); 
+                nameFields = fieldnames(volIm);
+
+                for j = 1:length(nameFields)
+
+                    [ pos, ~, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
+                        delta, FWHM_pix, chi2 );
+                    startIdx = find(position==0,1,'First');
+                    pos(:,3) = j;
+                    position(startIdx:startIdx+size(pos,1)-1,:) = pos;
+
+                end
+
+                idx = find(position==0,1,'First');
+                candidate{frames(i)} = position(1:idx-1,:);
+                waitbar(i/nFrames,h,...
+                    sprintf('detection of candidates in Frame %d/%d done',i,nFrames));
+            end
+
+            close(h);
+
+            fileName = sprintf('%s%scandidatePos.mat',obj.raw.movInfo.Path,'\');
+            save(fileName,'candidate');
+                        
+        end
+        
 
     end
 end
