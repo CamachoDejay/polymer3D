@@ -7,14 +7,15 @@ classdef zCalMovie < Core.mpLocMovie
     end
     
     methods
-        function obj = zCalMovie(raw,candidatePos)
+        function obj = zCalMovie(raw,cal,candidatePos)
             %UNTITLED6 Construct an instance of this class
             %   Detailed explanation goes here
-            obj  = obj@Core.mpLocMovie(raw);
-            switch nargin
-                case 1
-                case 2
+            obj  = obj@Core.mpLocMovie(raw,cal);
+            
+            if nargin == 3
+                
                     obj.candidatePos = candidatePos;
+                    
             end
             
         end

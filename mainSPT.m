@@ -30,7 +30,7 @@ calib.showFrame(22)
 %% Calibrate
 mpMov = Core.mpMovie(path2File,calib.getCal);
 
-mpMov.calibrate;
+%mpMov.calibrate;
 
 mpMov.showFrame(15);
 
@@ -46,7 +46,7 @@ candidate = mpLocMov.getCandidatePos(24);
 mpLocMov.showCandidate(24);
 
 %% ZCal
-zCalMov = Core.zCalMovie(path2zCal);
+zCalMov = Core.zCalMovie(path2zCal,calib.getCal);
 %% CandidatePos
 zCalMov.giveInfo;
 zCalMov.findCandidatePos(detectParam);

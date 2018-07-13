@@ -19,6 +19,7 @@ classdef mpMovie < Core.Movie
                 case 1
                 case 2
                     obj.cal2D = cal;
+                    obj.calibrated = raw;
             end 
         end
         
@@ -33,68 +34,75 @@ classdef mpMovie < Core.Movie
         end
         
         function set.calibrated(obj,calibrated)
-            
-          assert(isfolder(calibrated), 'The given path is not a folder');
-          folderContent = dir(calibrated);
-          idx2Calibrated = contains({folderContent.name}, 'calibrated');
-          
-          %if there is only 1 diff value, this value must be 0 and thus
-          %calibrated folder does not exist thus, we calibrate
-          if length(unique(idx2Calibrated))<2
-              
-              disp('Calibrating the dataset');
-              [calibrated] = obj.applyCalib;
-              disp('Data is now calibrated');
-              
-          %if there is 2 value, then calibrated folder exist and then we
-          %check if a calibration file is in there.
-          elseif length(unique(idx2Calibrated))==2
-              
-              fullPath = [calibrated filesep 'calibrated'];
-              [file2Analyze] = getFileInPath(obj, fullPath, '.mat'); 
-              
-              if (~isempty(file2Analyze))
-                  
-                [file] = getFileInPath (obj,fullPath,'.tif');
-                
-                if length(file) == 8
-                    
-                disp('The dataset is already calibrated, Loading from existing file');
-                fullpath = [file2Analyze.folder filesep file2Analyze.name];
-                tmp = load(fullpath);
-                calibrated = tmp.calib;
-                disp('Done');
-                
-                else
-                    
-                    %error('Some planes are missing (expect 8), recalibrating...');
-                    disp('Some planes are missing (expect 8), recalibrating...');
-                    [calibrated] = obj.applyCalib;
-                    disp('Data is now calibrated');
-                    
-                end
-                
-              else
-                  
-                disp('Calibrating the dataset');
-                [calibrated] = obj.applyCalib;
-                disp('Data is now calibrated');
-                
-              end
-          else
-              
-              error('Something is wrong with your calibrated directory');
-              
-          end
-          
-            obj.calibrated = calibrated;
-            
+           
+            if ischar(calibrated)
+
+              obj.calibrate;
+
+            else
+
+              assert(isstruct(calibrated),'Calibrated is expected to be a struct');
+              obj.calibrated = calibrated;
+
+            end
         end
         
         function calibrate(obj)
-            
-            obj.calibrated = obj.raw.movInfo.Path;
-            
+     
+            folderContent = dir(obj.raw.movInfo.Path);
+            idx2Calibrated = contains({folderContent.name}, 'calibrated');
+
+            %if there is only 1 diff value, this value must be 0 and thus
+            %calibrated folder does not exist thus, we calibrate
+            if length(unique(idx2Calibrated))<2
+
+                disp('Calibrating the dataset');
+                [calibrate] = obj.applyCalib;
+                disp('Data is now calibrated');
+
+            %if there is 2 value, then calibrated folder exist and then we
+            %check if a calibration file is in there.
+            elseif length(unique(idx2Calibrated))==2
+
+                fullPath = [obj.raw.movInfo.Path filesep 'calibrated'];
+                [file2Analyze] = obj.getFileInPath(fullPath, '.mat'); 
+
+                if (~isempty(file2Analyze))
+
+                    [file] = obj.getFileInPath (fullPath,'.tif');
+
+                    if length(file) == 8 %only work with 8 Planes now
+
+                        disp('The dataset is already calibrated, Loading from existing file');
+                        fullpath = [file2Analyze.folder filesep file2Analyze.name];
+                        tmp = load(fullpath);
+                        calibrate = tmp.calib;
+                        disp('Done');
+
+                    else
+
+                    %error('Some planes are missing (expect 8), recalibrating...');
+                    disp('Some planes are missing (expect 8), recalibrating...');
+                    [calibrate] = obj.applyCalib;
+                    disp('Data is now correctly calibrated');
+
+                    end
+
+                else
+
+                disp('Calibrating the dataset');
+                [calibrate] = obj.applyCalib;
+                disp('Data is now calibrated');
+
+                end
+            else
+
+              error('Something is wrong with your calibrated directory');
+
+            end
+
+            obj.calibrated = calibrate;
+
         end
         
         function showFrame(obj,idx)
@@ -175,7 +183,7 @@ classdef mpMovie < Core.Movie
          function [calib] = applyCalib(obj)
             %Load and calibrate the movie using the calibration file
             frame = 1:obj.raw.movInfo.maxFrame(1);
-            [data, ~, ~] = mpSetup.loadAndCal( obj.raw.fullPath, obj.cal.file, frame);
+            [data, ~, ~] = mpSetup.loadAndCal( obj.raw.fullPath, obj.cal2D.file, frame);
             step = 100;
             calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
             mkdir(calDir);

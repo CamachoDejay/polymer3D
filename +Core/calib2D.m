@@ -26,7 +26,7 @@ classdef calib2D < Core.Movie
                     fullPath = [file2Analyze.folder filesep file2Analyze.name];
                     tmp = load(fullPath);
                     cal = tmp.calibration;
-                    obj.cal = cal.file;
+                    obj.cal = cal;
                     disp('Done');
 
                     %otherwise we calculate it
