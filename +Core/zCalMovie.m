@@ -38,27 +38,8 @@ classdef zCalMovie < Core.mpLocMovie
             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');    
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
             
-            [file2Analyze] = getFileInPath(obj, obj.raw.movInfo.Path, '.mat');
-            
-            if any(contains({file2Analyze.name},'particle')==true)
-                quest = 'Some consolidated positions were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                case 'Load'
-                    particle = load([file2Analyze(1).folder filesep 'particle.mat']);
-                    particle = particle.particle;
-                    run = false;
-                case 'run again'
-                    run = true;
-                end
-            else
-                run = true;
-            end    
+            [file2Analyze] = getFileInPath(obj, obj.raw.movInfo.Path, '.mat');            
+            [run, particle] = obj.existParticles(file2Analyze);
             
             if run
             
@@ -104,7 +85,6 @@ classdef zCalMovie < Core.mpLocMovie
                         warning('Frame %d did not contain any candidate',idx);
                         particleList{idx} = nan(5);
                         nParticles(idx) = 0;
-
 
                     else
 
@@ -802,6 +782,7 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
+        
         function [isPart]   = isPartPlane(obj, current, next, direction)
             
             %This function is designed to have PSFE plate ON
@@ -902,6 +883,20 @@ classdef zCalMovie < Core.mpLocMovie
          
                 
         end
+        
+        function [commonPlanes] = findCommonPlanes(~,planeInCurrent,planeInNext)
+            
+            commonPlanes = zeros(size(planeInNext,1),2,size(planeInNext,2));
+            
+            for i = 1 : size(planeInNext,2)
+                
+                commonPlanes(:,1,i) = ismember(planeInCurrent,planeInNext(:,i));
+                commonPlanes(:,2,i) = ismember(planeInNext(:,i),planeInCurrent);
+                
+            end
+            commonPlanes = logical(squeeze(commonPlanes));
+        end
+        
 
         function [checkRes] = checkEuDist(obj,current,next,Thresh)
 
@@ -1013,20 +1008,34 @@ classdef zCalMovie < Core.mpLocMovie
             end
             
             end
-        end    
+        end  
         
-        function [commonPlanes] = findCommonPlanes(~,planeInCurrent,planeInNext)
+        function [run, particle] = existParticles(obj,file2Analyze)
             
-            commonPlanes = zeros(size(planeInNext,1),2,size(planeInNext,2));
+            if any(contains({file2Analyze.name},'particle')==true)
+                quest = 'Some consolidated positions were found in the raw folder, do you want to load them or run again ?';
+                title = 'Question to User';
+                btn1  = 'Load';
+                btn2 = 'run again';
+                defbtn = 'Load';
+                answer = questdlg(quest,title,btn1,btn2,defbtn);
+                
+                switch answer
+                case 'Load'
+                    particle = load([file2Analyze(1).folder filesep 'particle.mat']);
+                    particle = particle.particle;
+                    run = false;
+                case 'run again'
+                    run = true;
+                    particle = [];
+                end
+            else
+                run = true;
+                particle = [];
+            end    
             
-            for i = 1 : size(planeInNext,2)
-                
-                commonPlanes(:,1,i) = ismember(planeInCurrent,planeInNext(:,i));
-                commonPlanes(:,2,i) = ismember(planeInNext(:,i),planeInCurrent);
-                
-            end
-            commonPlanes = logical(squeeze(commonPlanes));
         end
+        
         
         function listIdx = connectParticles(obj,List,listBool,idx)
 
@@ -1168,6 +1177,7 @@ classdef zCalMovie < Core.mpLocMovie
             end
             
         end
+        
         
         function [zSyncCalData] = syncZCalData(obj,zCalData)
             deg = 4;
