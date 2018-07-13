@@ -1,5 +1,7 @@
 classdef mpMovie < Core.Movie
     %This class will hold the path to the movie and the calibrated movie.
+    %Extension will be centered around localization but SOFI movie could
+    %also be a branch of this object
     
     properties
         cal2D
@@ -16,7 +18,7 @@ classdef mpMovie < Core.Movie
             switch nargin
                 case 1
                 case 2
-                    obj.cal = cal;
+                    obj.cal2D = cal;
             end 
         end
         
@@ -26,7 +28,7 @@ classdef mpMovie < Core.Movie
             assert(numel(fieldnames(cal2D))==3, 'Calibration is expected to have 3 Fields');
             assert(isfield(cal2D,'file'),'One of the field should be "file" ');
             
-            obj.cal = cal2D;
+            obj.cal2D = cal2D;
                
         end
         
@@ -160,6 +162,10 @@ classdef mpMovie < Core.Movie
             
             calibrated = obj.calibrated;
             
+        end
+        
+        function playMovie(obj)
+            %TODO: code this function
         end
                 
     end
