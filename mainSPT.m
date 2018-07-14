@@ -45,6 +45,8 @@ mpLocMov.findCandidatePos(detectParam);
 candidate = mpLocMov.getCandidatePos(24);
 mpLocMov.showCandidate(24);
 
+%%
+mpLocMov.superResConsolidate;
 %% ZCal
 zCalMov = Core.zCalMovie(path2zCal,calib.getCal);
 %% CandidatePos

@@ -1,5 +1,6 @@
 classdef calib2D < Core.Movie
-    %This class will hold information about the 2D Cal movie.
+    %This class will hold information about the 2D Cal movie and will be
+    %able to calculate the calibration as well.
     
     properties (SetAccess = 'private')
         cal
@@ -7,57 +8,34 @@ classdef calib2D < Core.Movie
     
     methods
         function obj = calib2D(raw)
-            %UNTITLED2 Construct an instance of this class
-            %   Detailed explanation goes here
+            %In this case raw path is used for both the loading of the
+            %movie and the calibration calculation
             obj = obj@Core.Movie(raw);
-            obj.cal = raw;
+            obj.calc;
           
         end
         
         function set.cal(obj,cal)
-            
-            if ischar(cal)
-                assert(isfolder(cal),'The path provided is not a folder');
-                [file2Analyze] = getFileInPath(obj, cal, '.mat');
-
-                if (~isempty(file2Analyze))
-
-                    disp('The calibration was already calculated, Loading from existing file');
-                    fullPath = [file2Analyze.folder filesep file2Analyze.name];
-                    tmp = load(fullPath);
-                    cal = tmp.calibration;
-                    obj.cal = cal;
-                    disp('Done');
-
-                    %otherwise we calculate it
-                else
-                        disp('No calibration Calculating the calibration from calibration data');
-                        [calibration] = obj.calcCalibration(cal);
-                        obj.cal = calibration;
-                        disp('Calibration is now saved');
-
-                end
+            assert(isstruct(cal),'2DCal expected to be a struct');
+            obj.cal = cal;
                 
-            else
-                assert(isstruct(cal),'Error with calibration');
-                obj.cal = cal;
-            end
         end
         
         function calc(obj)
-            
+            assert(~isempty(raw),'Please provide a path');
+            %Calculate from the raw path stored in the movie
             path = obj.raw.movInfo.Path;
             [file2Analyze] = obj.getFileInPath( path, '.mat');
             
             if (~isempty(file2Analyze))
-                
+                %If calibration already exist we load it
                 disp('The calibration was already calculated, Loading from existing file');
                 fullPath = [file2Analyze.folder filesep file2Analyze.name];
                 tmp = load(fullPath);
                 calibration = tmp.calibration;
 
             else
-            
+                %Otherwise we Calculate it
                 path = obj.raw.fullPath;
                 [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(path);
                 assert(length(movInfo.Cam)==2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
@@ -80,7 +58,9 @@ classdef calib2D < Core.Movie
         end
         
         function cal = getCal(obj)
+            
             cal = obj.cal;
+            
         end
         
     end

@@ -1,12 +1,13 @@
 classdef zCalMovie < Core.mpLocMovie
-    %zCal will hold the information related to zCalibration.
+    %zCal will hold the information related to zCalibration as well as all
+    %the method linked to the zCalibration.
     
     properties
-        particles
         calib
     end
     
     methods
+        
         function obj = zCalMovie(raw,cal,candidatePos)
             %UNTITLED6 Construct an instance of this class
             %   Detailed explanation goes here
@@ -20,113 +21,14 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
-        function set.particles(obj,particles)
-            
-            obj.particles = particles;
-            
-        end
-        
         function set.calib(obj, calib)
             
             obj.calib = calib;
             
         end
-        
-        function superResConsolidate(obj,roiSize,frames)
-            
-            assert(~isempty(obj.calibrated),'Data should be calibrated to consolidate');
-            assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');    
-            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
-            
-            [file2Analyze] = getFileInPath(obj, obj.raw.movInfo.Path, '.mat');            
-            [run, particle] = obj.existParticles(file2Analyze);
-            
-            if run
-            
-                switch nargin
 
-                    case 1
-
-                        frames = 1: obj.calibrated.nFrames;
-                        roiSize = 6;
-                        disp('Running consolidation on every frame with roi of 6 pixel');
-
-                    case 2
-
-                        frames = 1: obj.calibrated.nFrames;
-                        disp('Running consolidation on every frame')
-
-                    case 3
-
-                        [frames] = obj.checkFrame(frames);
-                        assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
-                        assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
-
-                    otherwise
-
-                        error('Something wrong with input'); 
-
-                end
-
-                nFrames = length(frames);
-                %allocate for storage
-                particleList = cell(1,obj.raw.maxFrame(1));
-                nParticles = zeros(1,obj.raw.maxFrame(1));
-                idx2TP = zeros(1,obj.raw.maxFrame(1));
-                h = waitbar(0,'Consolidating candidate ...');
-                for i = 1 : 1:nFrames
-                    disp(['Consolidating frame ' num2str(i) ' / ' num2str(nFrames)]);
-                    idx = frames(i);
-                    [data] = obj.getFrame(idx);
-                    [candidate] = obj.getCandidatePos(idx);
-
-                    if isempty(candidate)
-
-                        warning('Frame %d did not contain any candidate',idx);
-                        particleList{idx} = nan(5);
-                        nParticles(idx) = 0;
-
-                    else
-
-                        [finalCandidate] = obj.consolidatePos(data, candidate, roiSize);
-                        particleList{idx} = finalCandidate;
-                        nParticles(idx) = length(finalCandidate);
-                        if ~isempty(finalCandidate)
-                            idx2TP(idx) = idx;
-                        end
-
-                    end
-                    waitbar(i/nFrames,h,['Consolidating candidate... ' num2str(i) '/' num2str(nFrames) ' done']);
-                end
-                close(h);
-                particle.List   = particleList;
-                particle.nParticles = nParticles;
-                particle.tPoint = nFrames;
-                particle.idx2TP = nonzeros(idx2TP);
-                particle.roiSize = roiSize;
-                particle.Traces = [];
-                particle.nTraces = [];
-
-                fileName = sprintf('%s%sparticle.mat',obj.raw.movInfo.Path,'\');
-                save(fileName,'particle');
-            end
-            
-            obj.particles = particle;
-        end
-        
-        function [particle] = getParticles(obj,frames)
-            
-            [idx] = obj.checkFrame(frames);
-            particle = obj.particles.List{idx};
-            
-            if isempty(particle)
-                
-                warning('There was no particle found in this frames, check than you ran superResConsolidate method on this frame beforehand');
-            
-            end
-        end
-        
         function [traces,counter] = trackInZ(obj)
+            %track the particle in the Z direction (3rd dimension here)
             assert(~isempty(obj.calibrated),'Data should be calibrated to do ZCalibration');
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
             assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
@@ -136,34 +38,33 @@ classdef zCalMovie < Core.mpLocMovie
             [listBool] = obj.copyList(obj.particles.List,1);
             %We copy as NaN for storage of the traces;
             [traces]   = obj.copyList(obj.particles.List,NaN);
-            
+            %We pick the first particle available
             [idx] = obj.pickParticle(listBool);
             counter = 1;
             errCount =1;
             while (idx)
-                
-            if errCount>100
+            %loop until there is no particle (pickParticle return false)   
+            if errCount>1000
                 warning('While loop ran for unexpectedly longer time');
                 break;
                 
             end
-            
+            %Connect particles (cf consolidation but across frames
             [listIdx] = obj.connectParticles(obj.particles.List,listBool,idx);
-           
+            %if the particle was connected in less than 5 frames we remove
+            % its appearance from the list bool
             if length(listIdx) < 5 
                 
                 [listBool] = obj.removeParticles(listBool,listIdx);
                 
             else
-                
+            %Otherwise we store traces, increment counter and remove.
             [traces]  = obj.storeTraces(traces,listIdx,counter);
-            
             counter = counter +1;
-            
             [listBool] = obj.removeParticles(listBool,listIdx);
 
             end
-            
+            % We pick a new particle and start all over again
             [idx] = obj.pickParticle(listBool);
             errCount = errCount +1;
             end
@@ -190,7 +91,8 @@ classdef zCalMovie < Core.mpLocMovie
                     case 'Keep'
                     case 'Run again'
                        
-                        [traces, nPart] = obj.trackInZ;
+                        obj.trackInZ;
+                        
                     otherwise
                         error('Unknown answer to question dialog ');
                         
@@ -199,18 +101,18 @@ classdef zCalMovie < Core.mpLocMovie
             else
                 
                 %We first track particle in Z
-                [traces, nPart] = obj.trackInZ;
+                obj.trackInZ;
                 
             end
             %Transform the traces into calibration data (extracting data
             %per plane
             zCalData = obj.getCalData(obj.particles.Traces,obj.particles.nTraces);
             
-            %synchronize the data
+            %synchronize the data (aligned them in Z)
             zSyncCalData = obj.syncZCalData(zCalData);
-            
+            %Calculate the calibration curve
             zCal =  obj.calCalib(zSyncCalData);
-            
+            %store
             obj.calib.cal = zCal;
             obj.calib.calData = zCalData;
             obj.calib.syncEllip = zSyncCalData;
@@ -219,17 +121,19 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function [traces] = get3DTraces(obj)
+            %Extract 3D traces for each particles
             list = obj.particles.List;
             tracesIdx = obj.particles.Traces;
             pxSize = obj.info.pxSize;
+            %ellipt range used for fitting
             elliptRange = [obj.calib.syncEllip{1,3}(1) obj.calib.syncEllip{1,3}(2)];
             elliptRange = elliptRange(1):0.01:elliptRange(2);
+            %we weigh the average later base on how much out of focus the
+            %plane was.
             wRange1 = length(elliptRange(elliptRange<=1));
             wRange2 = length(elliptRange(elliptRange>=1));
-            
             weight1 = linspace(1,5,wRange1);
             weight2 = linspace(5,1,wRange2);
-            
             finalWeight = [weight1 weight2];
             
             if isempty(obj.calib.cal)
@@ -237,13 +141,13 @@ classdef zCalMovie < Core.mpLocMovie
                 warning('no z calibration detected, only show 2D plot');
                 
             end
+            %Calculation of x-y-z position occurs within the loop here
             traces = zeros(length(list),6,obj.particles.nTraces);
             for i = 1 : length(list)
                 if ~isempty(list{i})
                     for j = 1 : length(list{i})
                         
                         currentPart = list{i}{j};
-                        
                         %find indices to data in correct ellipticity range
                         id = and(currentPart(:,3)>=elliptRange(1),...
                                        currentPart(:,3)<=elliptRange(end));
@@ -261,14 +165,15 @@ classdef zCalMovie < Core.mpLocMovie
                         end
                            
                         weight = finalWeight(idx);
+                        %Weighed average
                         xAvg = sum(diag(list{i}{j}(id,2)* weight))/sum(weight) * pxSize;
                         yAvg = sum(diag(list{i}{j}(id,1)* weight))/sum(weight) * pxSize;
-                       
+                        %best focus Value
                         x = list{i}{j}(3,2)* pxSize;
                         y = list{i}{j}(3,1)* pxSize;
                         
                         if ~isempty(obj.calib.cal)
-                            
+                            %Calculation for Z is occur here
                             [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight);
                             
                         else
@@ -287,77 +192,14 @@ classdef zCalMovie < Core.mpLocMovie
                     end                    
                 end
             end
+            %Storage
             obj.particles.traces3D = traces;
         end
         
-        function showParticles(obj,idx)
-            assert(length(idx)==1, 'Only one frame can be displayed at once');
-            [idx] = obj.checkFrame(idx);
-            % Show Candidate
-            obj.showCandidate(idx);
-            
-            if isempty(obj.particles)
-                
-                warning('You did not consolidate the candidate yet, please use the consolidate method before showing the particles');
-                
-            else
-                
-                if isempty(obj.particles.List(idx))
-                    
-                    warning('The candidates of the requested frame were not consolidated yet, only showing the candidate');
-                    
-                else
-                    
-                    roiSize = obj.particles.roiSize;
-                    nParticles = obj.particles.nParticles(idx);
-                    h = gcf;
-                    nPlanes = obj.calibrated.nPlanes;
-                    colors = rand(nParticles,3);
-                    
-                    for i = 1 : nPlanes
-                        subplot(2,nPlanes/2,i)
-                        hold on
-                        for j = 1 : nParticles
-                            currPart = obj.particles.List{idx}{j};
-                            if(~isempty(currPart(currPart(:,end) == i)))
-                                part2Plot = currPart(currPart(:,end) == i,:);
-                                plot(part2Plot(2),part2Plot(1),'o',...
-                                    'LineWidth',2, 'MarkerSize',10, 'MarkerEdgeColor',colors(j,:));
-                            end
-                        end
-                        hold off
-                    end
-                    
-                    [frame] = getFrame(obj,idx);
-                    assert(isstruct(frame),'Error unknown data format, data should be a struct');
-                    for i = 1:nParticles
-                        
-                        currPart = obj.particles.List{idx}{i};
-                        %Remove rows containing NaNs
-                        idx2NaN = isnan(currPart(:,1));
-                        currPart(idx2NaN,:) = [];
-                        planes = currPart(:,end);
-                        figure(20+i)
-                        hold on
-                        for j = 1 : length(planes)
-                            jdx = planes(j);
-                            currFrame = frame.(sprintf('plane%d',jdx));
-                            ROI = EmitterSim.getROI(currPart(j,2), currPart(j,1),...
-                         roiSize, size(currFrame,2), size(currFrame,1));
-                            subplot(1,length(planes),j)
-                            imagesc(currFrame(ROI(3):ROI(4),ROI(1):ROI(2)));
-                            title({['Particle ' num2str(i)],[ ' Plane ' num2str(jdx)]});
-                            axis image
-                            colormap('jet')
-
-                        end
-                        hold off
-                    end
-                end
-            end              
-        end
-        
         function showParticlesTracked(obj,ips)
+            %display a movie where both localization and consolidation are
+            %showed. The display needs to be improved !
+            %TODO : improve display of the movie
             assert(~isempty(obj.particles.Traces),'You need to get the traces before displaying them');
             
             nPlanes = obj.calibrated.nPlanes;
@@ -391,6 +233,7 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function showTraces(obj)
+            %Display the x-y-z traces
             assert(~isempty(obj.particles.Traces),'You need to get the traces before displaying them');
             assert(isfield(obj.particles,'traces3D'),'You need to extract the 3D traces before display');
             traces = obj.particles.traces3D;
@@ -430,17 +273,14 @@ classdef zCalMovie < Core.mpLocMovie
                 title('X Y Z position for different particle mean')
                 hold off
             end
-           
-            
-            %plot Euclidian distance
-             %Calc euclidian distance
-                 
+               
+            %plot Euclidian distance   
             figure()
             hold on
             for i = 1:npart
                 data = traces(:,:,i);
                 data = data(data(:,1)~=0,:);
-                
+                 %Calc euclidian distance
                 eucl = sqrt((data(:,1)-data(1,1)).^2 + (data(:,2)-data(1,2)).^2 +...
                     (data(:,3)-data(1,3)).^2 );
                 medEucl = sqrt((data(:,4)-data(1,4)).^2 + (data(:,5)-data(1,5)).^2 +...
@@ -564,8 +404,8 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function [zCalData] = getCalData(obj,traces,nPart)
-            
-            
+            %Extract all the data across frame separated by planes (1calib
+            %curve by plane
             zCalData = cell(obj.calibrated.nPlanes,nPart);
             
                for i = 1:length(traces)
@@ -607,215 +447,107 @@ classdef zCalMovie < Core.mpLocMovie
         end   
                 
         function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight)
-             assert(~isempty(obj.calib),'No zCalibration found, please run z calibration calculating Z position');
-             zCal = obj.calib.cal;
-             relZ = obj.calibrated.oRelZPos;
-             syncEllip = obj.calib.syncEllip;
-             
-             zVec = min(syncEllip{particle(3,end),1}) : 1 : max(syncEllip{particle(3,end),1});
-             fit = polyval(zCal{particle(3,end),1},zVec);
-             %find the index of the value the closest to the particle
-             %ellipticity
-             [~,idx] = min(abs(fit-particle(3,3)));
+            %extract Z position based on ellipticity and calibration curve
+            assert(~isempty(obj.calib),'No zCalibration found, please run z calibration calculating Z position');
+            zCal = obj.calib.cal;
+            relZ = obj.calibrated.oRelZPos;
+            syncEllip = obj.calib.syncEllip;
+
+            zVec = min(syncEllip{particle(3,end),1}) : 1 : max(syncEllip{particle(3,end),1});
+            fit = polyval(zCal{particle(3,end),1},zVec);
+            %find the index of the value the closest to the particle
+            %ellipticity
+            [~,idx] = min(abs(fit-particle(3,3)));
             zPos = zVec(idx)+ relZ(particle(3,end))*1000;
-             
-             
+
             id = and(particle(:,3)>=elliptRange(1),...
-                                       particle(:,3)<=elliptRange(end));
+                                   particle(:,3)<=elliptRange(end));
             data2Keep = particle(id,:);
-            
-           
-             
+
             idx1 = zeros(size(data2Keep,1),1);
             zAvg = zeros(size(data2Keep,1),1);
-           
+            %Calculate z occur withing the loop
             for k = 1 :size(data2Keep,1)
 
-                [~,idx1(k)] = min(abs(elliptRange-data2Keep(k,3)));
-                
-                zVectmp = min(syncEllip{data2Keep(k,end),1}) : 1 : max(syncEllip{data2Keep(k,end),1});
-                fit = polyval(zCal{data2Keep(k,end),1},zVectmp);
-                
-                [~,idx] = min(abs(fit-data2Keep(k,3)));
-                zAvg(k) = zVectmp(idx) + relZ(data2Keep(k,end))*1000;
-                
+            [~,idx1(k)] = min(abs(elliptRange-data2Keep(k,3)));
 
+            zVectmp = min(syncEllip{data2Keep(k,end),1}) : 1 : max(syncEllip{data2Keep(k,end),1});
+            fit = polyval(zCal{data2Keep(k,end),1},zVectmp);
+
+            [~,idx] = min(abs(fit-data2Keep(k,3)));
+            zAvg(k) = zVectmp(idx) + relZ(data2Keep(k,end))*1000;
             end
-                     
-             weight = finalWeight(idx1);               
-             zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
 
-             
+            weight = finalWeight(idx1);
+            %weighed average occur here
+            %diag is taken because of the matrix operation between weight
+            %and zAvg
+            zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
+
         end
         
     end
-    
+
      methods (Access = private)
          
-        function [finalCandidate] = consolidatePos(obj, data, frameCandidate, roiSize)
-            
-            delta = roiSize;
-            sig = [obj.info.sigma_px obj.info.sigma_px];
-            
-            currentk = 1;
-            candMet = zeros(length(frameCandidate),6);
-            nP = numel(fields(data));
-            for j = 1 : nP
-                
-                planeCandidate = frameCandidate(frameCandidate(:,3)==j,1:2);
-                planeData = data.(sprintf('plane%d',j));
-
-                cM = zeros(size(planeCandidate,1),5);
-                if(~isempty(planeCandidate))
-                    for k = 1 : size(planeCandidate,1)
-                        %Get the ROI    
-                        [roi_lims] = EmitterSim.getROI(planeCandidate(k,2), planeCandidate(k,1),...
-                            delta, size(planeData,2), size(planeData,1));
-                        ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
-                        %Phasor fitting to get x,y,e
-                        [row,col,e] = Localization.phasor(ROI);
-                        [LRT,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
-                        rowPos = planeCandidate(k,1) + row;
-                        colPos = planeCandidate(k,2) + col;
-                        
-                        [grad,~] = imgradient(ROI);
-                        Grad = max(max(grad,[],2),[],1);
-
-                        cM(k,:) = [rowPos colPos e LRT Grad];
-
-                    end
-                    %candidate Metric: phasor localization Res, Likelihood Res,
-                    %indexCandidate in plane, Plane.
-                    %candidateMetric: [row col e LRT Grad J]
-
-                    candMet(currentk:currentk+k-1,:) = [cM j*ones(k,1)];
-                    currentk = currentk+k;
-                end
-                
-            end
-            
-            [corrEllip, focusMetric] = Localization.calcFocusMetric(candMet(:,3),candMet(:,4));
-            %Kill "bad" PSF from the focus metric so they are not taken
-            %later
-            %reformating to keep the same format as how the data is saved
-            %later
-            candMet = [candMet candMet(:,end)];
-            candMet(:,6) = candMet(:,5);
-            candMet(:,5) = focusMetric;
-            candMet(:,4) = [];
-            focusMetric((1-corrEllip)>0.3) = NaN;
-            
+        function listIdx = connectParticles(obj,List,listBool,idx)
+        %function connecting particles across frame by checking if two
+        %particles from different frame are partners
+            isPart = true;
             counter = 1;
-            nPart = 0;
-            maxIt = size(candMet,1);
-            finalCandidate = cell(max(size(find(~isnan(focusMetric)))),1);
-            
-            while and(~isempty(focusMetric), ~isnan(nanmax(focusMetric)))
-                
-                if counter> maxIt
-                    
-                    error('While loop ran for an unexpectedly long time, something might be wrong');
-               
-                end
-              
-                %Find candidate in best focus
-                [~,idx] = max(focusMetric);
-                currentPlane = candMet(idx,end);
-              
-                %Check which planes are to be check
-                planes2Check = currentPlane-2:currentPlane-1;
-                planes2Check = planes2Check(planes2Check>0);
 
-                planes2Check = [planes2Check currentPlane+1:currentPlane+2];
-                planes2Check = planes2Check(planes2Check<nP+1);
-                currentCand = candMet(idx,:);
-                direction = 1;
-                
-                particle = nan(5,6);
-                particle(3,:) = currentCand;
-                nCheck = length(planes2Check);
-                for i = 1:nCheck
-                    
-                    cand = candMet(candMet(:,end) == planes2Check(i),:);
-                    if(planes2Check(i) > currentPlane)
-                        direction = -1;
-                    end
-                    
-                    [isPart] = obj.isPartPlane(currentCand,cand,direction);
-                    if ~all(isPart ==0)
-                        id = cand(isPart,end)-currentCand(end);
-                        particle(round(length(currentCand)/2)+id,:) = cand(isPart,:);
-                    end
-                    
+            listIdx = zeros(length(List)-idx(1),2);
+            listIdx(1,:) = idx;
+            currentIdx = idx;
+            while isPart
+                if currentIdx >= length(List)
+                           break;
                 end
-                
-                 
-                
-                %Check if the resulting configuration of the plane make
-                %sense
-                planeConfig = particle(:,end);
-                [checkRes] = obj.checkPlaneConfig(planeConfig);
-                %Store
-                if checkRes
-                    
-                    nPart = nPart +1;
-                    finalCandidate{nPart,1} = particle;
-                    
-                    %We remove the particle(s) from the list
-                    focusMetric(ismember(candMet(:,1), particle(:,1))) = [];
-                    candMet(ismember(candMet(:,1), particle(:,1)),:) = [];
-                    
-                    
+                part2Track = List{currentIdx(1)}{currentIdx(2)};
+                [checkRes] = obj.checkListBool(listBool,currentIdx(1)+1);
+                nPartInFrame = length(checkRes);
+
+                if ~all(checkRes==0)
+                   %We use reshape to input the different particles of the next
+                   %frame at once by storing them in the 3rd dimension
+                   shape = [size(part2Track,1) size(part2Track,2) nPartInFrame]; 
+                   nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
+                   nextParts = nextParts(:,:,logical(checkRes));
+                   [isPart] = obj.isPartFrame(part2Track,nextParts,1);
+
+                   counter = counter+1;
+                   if(length(find(isPart==1))>1)
+
+                       warning('Could not choose between 2 close particles, killing them both')
+                       isPart = false;
+
+                   elseif (~all(isPart==0))
+                       %Update newIdx
+                       currentIdx(1) = currentIdx(1)+1;%current become the connected from next frame
+                       idx2AvailableParticles = find(checkRes);
+                       currentIdx(2) = idx2AvailableParticles(isPart);
+                       nextParts = [];
+                       listIdx(counter,:) = currentIdx;
+
+                       isPart = true;
+                   else
+
+                       isPart = false;
+
+                   end
+
+                   if counter == length(obj.particles.List)-1
+
+                       isPart = false;
+
+                   end
+                   
                 else
-                    %Otherwise we remove it from the best focus search list
-                    %by putting focus metric to NaN
-                    focusMetric(idx) = NaN;
-                    
+                    isPart = false;
                 end
+            listIdx(listIdx(:,1) == 0,:) = [];
 
-                counter = counter+1;
-                
             end
-            %we delete empty cells from the array
-            idx2Empty = cellfun(@isempty,finalCandidate);
-            finalCandidate(idx2Empty(:,1),:) = [];
-            
-        end
-        
-        
-        function [isPart]   = isPartPlane(obj, current, next, direction)
-            
-            %This function is designed to have PSFE plate ON
-            assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
-            assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
-           
-            
-            Thresh = 2*sqrt(2); %in Px As the superResCal is not 
-            %performed yet we allow 2px in both direction
-            [checkRes1] = obj.checkEuDist(current(:,1:2),...
-                    next(:,1:2),Thresh);
-
-            % Test ellipticity
-            [checkRes2] = obj.checkEllipticity(current(:,3),...
-            next(:,3),direction);
-
-            % Test focus Metric    
-            maxExpFM = current(4)+0.1*current(4);
-            checkRes3 = next(:,4) < maxExpFM;  
-
-            %isPart will only be true for particle that passes the 3 tests       
-            isPart = checkRes1.*checkRes2.*checkRes3;
-
-            if(length(find(isPart))>1)
-
-            warning('Could not choose which particle was the partner of the requested particle, killed them both');
-            isPart(isPart==1) = 0;
-            end
-
-      
-            isPart = logical(isPart);
-         
-                
         end
         
         function [isPart]   = isPartFrame(obj, current, next, direction)
@@ -884,98 +616,9 @@ classdef zCalMovie < Core.mpLocMovie
                 
         end
         
-        function [commonPlanes] = findCommonPlanes(~,planeInCurrent,planeInNext)
-            
-            commonPlanes = zeros(size(planeInNext,1),2,size(planeInNext,2));
-            
-            for i = 1 : size(planeInNext,2)
-                
-                commonPlanes(:,1,i) = ismember(planeInCurrent,planeInNext(:,i));
-                commonPlanes(:,2,i) = ismember(planeInNext(:,i),planeInCurrent);
-                
-            end
-            commonPlanes = logical(squeeze(commonPlanes));
-        end
-        
-
-        function [checkRes] = checkEuDist(obj,current,next,Thresh)
-
-            EuDist = sqrt((current(:,1) - next(:,1)).^2 +...
-                            (current(:,2) - next(:,2)).^2);
-            checkRes = EuDist < Thresh;
-            
-            if isempty(checkRes)
-                checkRes = false;
-            end
-            
-        end
-        
-        function [checkRes] = checkEllipticity(obj, current, next, direction, thresh, eWeight)
-            
-            
-            switch direction
-
-            case 1
-                
-                ellip = current < next+0.1*next;
-
-            case -1
-
-                ellip = current +0.1 *current > next;
-
-            end
-            
-            if size(current,1)>1
-                
-                checkRes = sum(ellip .* eWeight(:))>=thresh;
-                
-            else
-                
-                checkRes = ellip;
-                
-            end
-            
-            if isempty(checkRes)
-                checkRes = false;
-            end
-                    
-        end
-        
-        function [checkRes] = checkPlaneConfig(obj, planeConfig)
-            %Here we will check that the consolidation found based on the
-            %best focused particle make sense with what we would expect and
-            %also that we have enough planes.
-            assert(length(planeConfig) <= obj.calibrated.nPlanes,'There is something wrong with your consolidated index and your candidate plane List');
-            %Let us test that we have consolidate the particle in at least
-            %3 Planes
-            isEdgePlane = or(~isempty(find(planeConfig==1,1)),~isempty(find(planeConfig==8,1)));
-            
-            if isEdgePlane
-                
-                testPlanes = length(find(~isnan(planeConfig)==true)) >= 2;
-                
-            else
-                
-                 testPlanes = length(find(~isnan(planeConfig)==true)) >= 3;
-                
-            end
-           
-            
-            if testPlanes
-               %We check that there is no "Gap" in the plane configuration
-               %as it would not make sense.
-               testConsec = diff(planeConfig(~isnan(planeConfig)));
-               checkRes = all(testConsec==1);
-               
-            else
-                
-                checkRes = false;
-                
-            end
-        end
-        
         function [checkRes] = checkListBool(~, listBool, idx)
-            
+            %Check if there are still candidate in the list that were not
+            %yet connected or removed.
             if( idx>= length(listBool))
                 
                 checkRes = false;
@@ -1009,95 +652,11 @@ classdef zCalMovie < Core.mpLocMovie
             
             end
         end  
-        
-        function [run, particle] = existParticles(obj,file2Analyze)
-            
-            if any(contains({file2Analyze.name},'particle')==true)
-                quest = 'Some consolidated positions were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
                 
-                switch answer
-                case 'Load'
-                    particle = load([file2Analyze(1).folder filesep 'particle.mat']);
-                    particle = particle.particle;
-                    run = false;
-                case 'run again'
-                    run = true;
-                    particle = [];
-                end
-            else
-                run = true;
-                particle = [];
-            end    
-            
-        end
-        
-        
-        function listIdx = connectParticles(obj,List,listBool,idx)
-
-            isPart = true;
-            counter = 1;
-
-            listIdx = zeros(length(List)-idx(1),2);
-            listIdx(1,:) = idx;
-            currentIdx = idx;
-            while isPart
-                if currentIdx >= length(List)
-                           break;
-                end
-                part2Track = List{currentIdx(1)}{currentIdx(2)};
-                [checkRes] = obj.checkListBool(listBool,currentIdx(1)+1);
-                nPartInFrame = length(checkRes);
-
-                if ~all(checkRes==0)
-                   %We use reshape to input the different particles of the next
-                   %frame at once by storing them in the 3rd dimension
-                   shape = [size(part2Track,1) size(part2Track,2) nPartInFrame]; 
-                   nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
-                   nextParts = nextParts(:,:,logical(checkRes));
-                   [isPart] = obj.isPartFrame(part2Track,nextParts,1);
-
-                   counter = counter+1;
-                   if(length(find(isPart==1))>1)
-
-                       warning('Could not choose between 2 close particles, killing them both')
-                       isPart = false;
-
-                   elseif (~all(isPart==0))
-                       %Update newIdx
-                       currentIdx(1) = currentIdx(1)+1;%current become the connected from next frame
-                       idx2AvailableParticles = find(checkRes);
-                       currentIdx(2) = idx2AvailableParticles(isPart);
-                       nextParts = [];
-                       listIdx(counter,:) = currentIdx;
-
-                       isPart = true;
-                   else
-
-                       isPart = false;
-
-                   end
-
-                   if counter == length(obj.particles.List)-1
-
-                       isPart = false;
-
-                   end
-                   
-                else
-                    isPart = false;
-                end
-            listIdx(listIdx(:,1) == 0,:) = [];
-
-            end
-        end
         
         function [listCopy] = copyList(~, List, filling)
-            
+            %Small function that copy a given list (cell array) filling it
+            %with the input filling (e.g. NaN, 0, 1,...)
             assert(iscell(List),'The List should be a cell array');
             listCopy = cell(List);
             
@@ -1123,7 +682,8 @@ classdef zCalMovie < Core.mpLocMovie
         
         function [idx] = pickParticle(obj,listBool)
             %This function will pick a particle and return false if there
-            %is none
+            %is none. It goes through the given list and search for the
+            %first non-false idx and returns it.
               
             for i = 1:length(listBool)
 
@@ -1159,7 +719,8 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function [traces] = storeTraces(obj,traces,listIdx,numPart)
-            
+            %Store the list of idx as a traces (which has the same format
+            %as the particle list
             for i = 1 : size(listIdx,1)
                 
                 traces{listIdx(i,1)}{listIdx(i,2)} = numPart;
@@ -1169,7 +730,8 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function [listBool] = removeParticles(obj,listBool,listIdx)
-            
+            %Remove the particle by putting false in the boolean copy in
+            %the given indices of the indices list (listIdx)
             for i = 1 : size(listIdx,1)
                 
                 listBool{listIdx(i,1)}{listIdx(i,2)} = false;
@@ -1178,8 +740,13 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
-        
         function [zSyncCalData] = syncZCalData(obj,zCalData)
+            %Fit the ellipiticty - zPos data for each particles and
+            %synchronized them by putting the point where ellipticity = 1
+            %to zPos=0+PlanePosition. It uses the zCaldata which represent
+            %the data point for each particle for a particle plane. Fitting
+            %is done by polynomial to increase accuracy (if e = 1.05 then
+            %this point will be locate not exactly at 0 but will be shifted
             deg = 4;
             minEllipt = 0.77;
             maxEllipt = 1.6;
@@ -1188,8 +755,9 @@ classdef zCalMovie < Core.mpLocMovie
 %             figure
             for i = 1:size(zCalData,1)
                 for j = 1:size(zCalData,2)
-                    %Extrac data in acceptable ellipticity range
-                    %(arbitrary)
+                    %Extract data in acceptable ellipticity range
+                    %=>arbitrarily chosen when doing the fit, we stored it
+                    %and reuse it here
                     if ~isempty(zCalData{i,j})
                         zPos = zCalData{i,j}(:,5)*zStep;
                         ellipt = zCalData{i,j}(:,1);
@@ -1204,10 +772,10 @@ classdef zCalMovie < Core.mpLocMovie
 
                         if length(ellipt)<deg
                         else
-                            %Do the fit and extract the z position of the focus
+                            %Do the fit and extract the exact z position of the focus
                             p = polyfit(zPos,ellipt,deg);
                             zVec = min(zPos):0.001:max(zPos);%1nm step
-
+                            %this extraction has a 1nm accuracy
                             if or(min(zPos)>-0.1, max(zPos) <0.1)
                                 zVec = -1:0.001:1; 
                             end
@@ -1215,20 +783,21 @@ classdef zCalMovie < Core.mpLocMovie
                             fit = polyval(p,zVec);
                             [~,idx] = min(abs(fit-1));
                             focus2 = zVec(idx);                  
-                            shift = focus1+focus2;
-                            zCalData{i,j}(:,6) = ((zCalData{i,j}(:,5))*zStep -shift)*1000;
-                            fullSync = ((zCalData{i,j}(:,5))*zStep -shift)*1000;
+                            shift = focus1+focus2;%take into account both synchronization
+                            zCalData{i,j}(:,6) = ((zCalData{i,j}(:,5))*zStep -shift)*1000;%transform into nm keeping particle separated
+                            fullSync = ((zCalData{i,j}(:,5))*zStep -shift)*1000;%mix all particle together
+                            %tmp Store
                             zSyncCalData{i,1} = [zSyncCalData{i,1}; zCalData{i,j}(:,[6 1])];
                             zSyncCalData{1,2} = [zSyncCalData{1,2}; [fullSync zCalData{i,j}(:,1)]];
                         end
                     end
                 end
-                
+                %tmp Store
                 [~,ind] = sort(zSyncCalData{i,1}(:,1));
                 zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
                 
             end
-            
+            %final storing and output
             [~,ind] = sort(zSyncCalData{1,2}(:,1));
             zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
             zSyncCalData{1,3} = [minEllipt, maxEllipt, deg];
@@ -1236,6 +805,7 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function [zStep] = getZStep(obj)
+            %small function that extract the zStep from the info in the raw
             nFrames = obj.raw.maxFrame(1);
             zPos = zeros(nFrames,1);
             
@@ -1250,6 +820,9 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function [calib] = calCalib(obj, zSyncCalData)
+            %function that take the synchronized z-ellip Data and fit, for
+            %each planes with a polynomial. It stores the coeff of the
+            %polynomials
             calib = cell(length(zSyncCalData),1);
             deg = zSyncCalData{1,3}(3);
             
@@ -1280,7 +853,7 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function [binnedData] = zCalBinning(obj,zCalData2Bin,nPoint)
-            
+            %small function that bins the data using quantiles
             nQuant = linspace(0,1,length(zCalData2Bin)/nPoint);
             binnedData = quantile(zCalData2Bin,nQuant);
             
@@ -1288,4 +861,3 @@ classdef zCalMovie < Core.mpLocMovie
          
      end
 end
-

@@ -1,18 +1,18 @@
 classdef mpMovie < Core.Movie
-    %This class will hold the path to the movie and the calibrated movie.
+    %From this class we assume that we are dealing with multiplane data.
+    %The movie can thus be calibrated if calibration data is provided.
     %Extension will be centered around localization but SOFI movie could
     %also be a branch of this object
     
     properties
-        cal2D
-        calibrated
+        cal2D %calibration data
+        calibrated %Path to calibrated data and Info
     end
     
     methods
         
         function obj = mpMovie(raw,cal)
-            %UNTITLED2 Construct an instance of this class
-            %   Detailed explanation goes here
+           
             obj = obj@Core.Movie(raw);
             
             switch nargin
@@ -48,7 +48,7 @@ classdef mpMovie < Core.Movie
         end
         
         function calibrate(obj)
-     
+            %Method that the user will call to calibrate the data
             folderContent = dir(obj.raw.movInfo.Path);
             idx2Calibrated = contains({folderContent.name}, 'calibrated');
 
@@ -72,7 +72,7 @@ classdef mpMovie < Core.Movie
                     [file] = obj.getFileInPath (fullPath,'.tif');
 
                     if length(file) == 8 %only work with 8 Planes now
-
+                        %If data is already calibrated we load it
                         disp('The dataset is already calibrated, Loading from existing file');
                         fullpath = [file2Analyze.folder filesep file2Analyze.name];
                         tmp = load(fullpath);
@@ -80,8 +80,7 @@ classdef mpMovie < Core.Movie
                         disp('Done');
 
                     else
-
-                    %error('Some planes are missing (expect 8), recalibrating...');
+                    %Otherwise we apply the calibration to the data
                     disp('Some planes are missing (expect 8), recalibrating...');
                     [calibrate] = obj.applyCalib;
                     disp('Data is now correctly calibrated');
@@ -89,7 +88,7 @@ classdef mpMovie < Core.Movie
                     end
 
                 else
-
+                %If no calibration was found we calibrate again
                 disp('Calibrating the dataset');
                 [calibrate] = obj.applyCalib;
                 disp('Data is now calibrated');
@@ -106,10 +105,12 @@ classdef mpMovie < Core.Movie
         end
         
         function showFrame(obj,idx)
-            
+            %Adapted method from the Core.Movie one, its behavior changed
+            %depending on whether the data has been calibrated or not.
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
-            
+            %check the frame requested
             [idx] = obj.checkFrame(idx);
+            %Get the data of the requested frame
             [frame] = getFrame(obj,idx);            
             assert(isstruct(frame),'Error unknown data format, data should be a struct');
             
@@ -126,6 +127,7 @@ classdef mpMovie < Core.Movie
                 zPos = zeros(size(fNames));
                 
             end
+            %Displaying occur hear
             h = figure(1);
             h.Name = sprintf('Frame %d',idx);
             for i = 1:nImages
@@ -145,15 +147,14 @@ classdef mpMovie < Core.Movie
         end
         
         function [data] = getFrame(obj,idx)
-            
+            %Allow the user to extract data from a specific frame, behavior
+            %depends on the calibration
             assert(length(idx)==1,'Requested frame exceed the size of the movie');
             [idx] = obj.checkFrame(idx);
             %Behavior depend on status
             if isempty(obj.calibrated)
-                %LoadCam
-                [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
-                data.Cam1 = movC1;
-                data.Cam2 = movC2;
+                
+               [data] = getFrame@Core.Movie(obj,idx);
                 
             elseif isstruct(obj.calibrated)
                 
@@ -201,7 +202,8 @@ classdef mpMovie < Core.Movie
                 calib.filePath.(fieldN) = fPathTiff;
                 calib.nFrames = size(data,4);
                 t = Tiff(fPathTiff, 'w');
-                
+                    %Saving occurs in 100 steps to avoid memory issue in
+                    %matlab
                     for j = 1:step:calib.nFrames
                         
                     range = j:j+step-1;
@@ -217,6 +219,8 @@ classdef mpMovie < Core.Movie
                     end
                     
                 t.close;
+                %We also write a few info about the calibrated data in a
+                %text file
                 fprintf(fid,...
                 'Image plane %d: Cam %d, Channel %d Col1: %d Col2: %d, Rel. Zpos: %0.3f \n ',...
                 i,obj.cal.file.inFocus(obj.cal.file.neworder(i)).cam,...
@@ -230,7 +234,7 @@ classdef mpMovie < Core.Movie
                 obj.cal.file.inFocus(obj.cal.file.neworder(1)).zpos;
                 
             end
-            
+            %Finally we save the calibratedInfo as a matfile
             fclose(fid);
             fName = [calDir filesep 'calibrated.mat'];
             save(fName,'calib');

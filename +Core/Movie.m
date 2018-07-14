@@ -1,6 +1,8 @@
 classdef Movie < handle
     %General definition of a movie (master class from which many other
     %movie type will inherit
+    %The Movie hold information and path to the movie but does not store
+    %any data inside. Methods allow to display and do stuff with the data.
     
     properties (SetAccess = 'private')
         raw
@@ -38,7 +40,8 @@ classdef Movie < handle
         end
         
         function set.raw(obj,raw)
-            
+            %This function will be adapted later to be able to take any
+            %type of Movie (not only OME-TIFF).
             assert(isfolder(raw), 'The given path is not a folder');
             %Check Given path
             [file2Analyze] = getOMETIF(obj,raw);
@@ -63,11 +66,11 @@ classdef Movie < handle
             
             assert(isstruct(inform),'Information is expected to be a structure');
             names = fieldnames(inform);
-          for i = 1:numel(fields(inform))
-              
+            for i = 1:numel(fields(inform))
+
               obj.info.(names{i}) = inform.(names{i});
-              
-          end
+
+            end
         end
         
         function [raw] = getRaw(obj)
@@ -83,7 +86,7 @@ classdef Movie < handle
         end
         
         function giveInfo(obj)
-            
+            %Make a prompt asking some question to the user.
             prompt = {'Enter the pixel size: ','Enter the NA of the objective ',...
                 'Enter the emission wavelength', 'Any comment about experiment?'};
             dlgTitle = 'Information about experimental parameters';
@@ -121,7 +124,7 @@ classdef Movie < handle
         end
         
         function showFrame(obj,idx)
-            
+            %To display a frame as a figure
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
             
             [idx] = obj.checkFrame(idx);
@@ -161,11 +164,12 @@ classdef Movie < handle
         end
         
         function [file2Analyze] = getFileInPath(~, path, ext)
-           
+            %Small method to extract the file of a certain extension in a
+            %given path
             assert(ischar(path),'The given path should be a char');
             assert(ischar(ext),'The given extension should be a char');
             assert(isfolder(path),'The path given is not a folder')
-            
+
             folderContent = dir(path);
             index2Images  = contains({folderContent.name},ext);
             file2Analyze  = folderContent(index2Images);
@@ -173,7 +177,7 @@ classdef Movie < handle
         end
         
         function [frames]   = checkFrame(obj, frames) 
-            
+            %Short method that make sure that the frame are making sense.
             testFrame = mod(frames,1);
             
             if all(testFrame<1e-4)
@@ -200,7 +204,7 @@ classdef Movie < handle
     methods (Access = private)
         
         function [file2Analyze] = getOMETIF(obj,path)
-            
+            %Variant of getFileInPath for .ome.tif file
             expExt = '.ome.tif';
             %Check Given path
             [file2Analyze] = obj.getFileInPath(path, expExt);
