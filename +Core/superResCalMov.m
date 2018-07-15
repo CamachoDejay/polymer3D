@@ -1,4 +1,4 @@
-classdef superResCal < Core.zCalMovie
+classdef superResCalMov < Core.zCalMovie
     %SuperResCal will hold information about the operation that needs to be
     %performed on the coordinates to match them to the plane of reference.
     
@@ -16,7 +16,7 @@ classdef superResCal < Core.zCalMovie
     
     methods
         %Constructor
-        function obj = superResCal(raw, cal, candidatePos)
+        function obj = superResCalMov(raw, cal, candidatePos)
             
             obj  = obj@Core.zCalMovie(raw,cal);
             
@@ -26,6 +26,8 @@ classdef superResCal < Core.zCalMovie
                     
             end
         end
+        
+        
         
         
     end
