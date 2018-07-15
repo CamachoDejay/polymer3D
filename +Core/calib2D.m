@@ -22,7 +22,7 @@ classdef calib2D < Core.Movie
         end
         
         function calc(obj)
-            assert(~isempty(raw),'Please provide a path');
+            assert(~isempty(obj.raw),'Please provide a path');
             %Calculate from the raw path stored in the movie
             path = obj.raw.movInfo.Path;
             [file2Analyze] = obj.getFileInPath( path, '.mat');

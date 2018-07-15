@@ -74,6 +74,113 @@ classdef zCalMovie < Core.mpLocMovie
       
         end
         
+        function [zCalData] = getCalData(obj,traces,nPart)
+            %Extract all the data across frame separated by planes (1calib
+            %curve by plane
+            zCalData = cell(obj.calibrated.nPlanes,nPart);
+            
+               for i = 1:length(traces)
+
+                    if isempty(traces{i})
+
+                    else
+
+                        for j = 1:length(traces{i})
+                            if ~isnan(traces{i}{j})
+                            planes = obj.particles.List{i}{j}(:,end);
+                            planes = planes (~isnan(planes));
+                            
+                            for k = 1 : length(planes)
+                                data2Store = obj.particles.List{i}{j};
+                                data2Store = data2Store(data2Store(:,end) == planes(k),:);
+                                zCalData{planes(k),traces{i}{j}}(i,:) = [data2Store(3:end) i] ;
+                                
+                            end
+                            else
+                            end
+                            
+                        end
+                    end
+               end
+               %clean up the data
+               for i = 1 : size(zCalData,1)
+                   for j = 1 : size(zCalData,2)
+                       
+                       if ~isempty(zCalData{i,j})
+                           
+                            zCalData{i,j}(zCalData{i,j}(:,1)==0,:) = [];
+                            
+                       else
+                       end
+                       
+                   end
+               end
+        end 
+        
+        function [zSyncCalData] = syncZCalData(obj,zCalData)
+            %Fit the ellipiticty - zPos data for each particles and
+            %synchronized them by putting the point where ellipticity = 1
+            %to zPos=0+PlanePosition. It uses the zCaldata which represent
+            %the data point for each particle for a particle plane. Fitting
+            %is done by polynomial to increase accuracy (if e = 1.05 then
+            %this point will be locate not exactly at 0 but will be shifted
+            deg = 4;
+            minEllipt = 0.77;
+            maxEllipt = 1.6;
+            zStep = obj.getZStep;
+            zSyncCalData = cell(8,2);
+%             figure
+            for i = 1:size(zCalData,1)
+                for j = 1:size(zCalData,2)
+                    %Extract data in acceptable ellipticity range
+                    %=>arbitrarily chosen when doing the fit, we stored it
+                    %and reuse it here
+                    if ~isempty(zCalData{i,j})
+                        zPos = zCalData{i,j}(:,5)*zStep;
+                        ellipt = zCalData{i,j}(:,1);
+                        zPos = zPos(and(ellipt<maxEllipt, ellipt > minEllipt));
+                        ellipt = ellipt(and(ellipt<maxEllipt, ellipt > minEllipt));
+
+                        %Now we shift in z the value closest to ellipt =1 for
+                        %the fit == rough synchronization    
+                        [~,idx] = min(abs(ellipt-1));
+                        focus1 = zPos(idx);
+                        zPos = zPos - focus1;
+
+                        if length(ellipt)<deg
+                        else
+                            %Do the fit and extract the exact z position of the focus
+                            p = polyfit(zPos,ellipt,deg);
+                            zVec = min(zPos):0.001:max(zPos);%1nm step
+                            %this extraction has a 1nm accuracy
+                            if or(min(zPos)>-0.1, max(zPos) <0.1)
+                                zVec = -1:0.001:1; 
+                            end
+
+                            fit = polyval(p,zVec);
+                            [~,idx] = min(abs(fit-1));
+                            focus2 = zVec(idx);                  
+                            shift = focus1+focus2;%take into account both synchronization
+                            zCalData{i,j}(:,6) = ((zCalData{i,j}(:,5))*zStep -shift)*1000;%transform into nm keeping particle separated
+                            fullSync = ((zCalData{i,j}(:,5))*zStep -shift)*1000;%mix all particle together
+                            %tmp Store
+                            zSyncCalData{i,1} = [zSyncCalData{i,1}; zCalData{i,j}(:,[6 1])];
+                            zSyncCalData{1,2} = [zSyncCalData{1,2}; [fullSync zCalData{i,j}(:,1)]];
+                        end
+                    end
+                end
+                %tmp Store
+                [~,ind] = sort(zSyncCalData{i,1}(:,1));
+                zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
+                
+            end
+            %final storing and output
+            [~,ind] = sort(zSyncCalData{1,2}(:,1));
+            zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
+            zSyncCalData{1,3} = [minEllipt, maxEllipt, deg];
+            
+        end
+        
         function [zData] = zCalibrate(obj)
             assert(~isempty(obj.calibrated),'Data should be calibrated to do ZCalibration');
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
@@ -402,50 +509,7 @@ classdef zCalMovie < Core.mpLocMovie
             
 
         end
-        
-        function [zCalData] = getCalData(obj,traces,nPart)
-            %Extract all the data across frame separated by planes (1calib
-            %curve by plane
-            zCalData = cell(obj.calibrated.nPlanes,nPart);
-            
-               for i = 1:length(traces)
-
-                    if isempty(traces{i})
-
-                    else
-
-                        for j = 1:length(traces{i})
-                            if ~isnan(traces{i}{j})
-                            planes = obj.particles.List{i}{j}(:,end);
-                            planes = planes (~isnan(planes));
-                            
-                            for k = 1 : length(planes)
-                                data2Store = obj.particles.List{i}{j};
-                                data2Store = data2Store(data2Store(:,end) == planes(k),:);
-                                zCalData{planes(k),traces{i}{j}}(i,:) = [data2Store(3:end) i] ;
-                                
-                            end
-                            else
-                            end
-                            
-                        end
-                    end
-               end
-               %clean up the data
-               for i = 1 : size(zCalData,1)
-                   for j = 1 : size(zCalData,2)
-                       
-                       if ~isempty(zCalData{i,j})
-                           
-                            zCalData{i,j}(zCalData{i,j}(:,1)==0,:) = [];
-                            
-                       else
-                       end
-                       
-                   end
-               end
-        end   
-                
+    
         function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight)
             %extract Z position based on ellipticity and calibration curve
             assert(~isempty(obj.calib),'No zCalibration found, please run z calibration calculating Z position');
@@ -740,69 +804,6 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
-        function [zSyncCalData] = syncZCalData(obj,zCalData)
-            %Fit the ellipiticty - zPos data for each particles and
-            %synchronized them by putting the point where ellipticity = 1
-            %to zPos=0+PlanePosition. It uses the zCaldata which represent
-            %the data point for each particle for a particle plane. Fitting
-            %is done by polynomial to increase accuracy (if e = 1.05 then
-            %this point will be locate not exactly at 0 but will be shifted
-            deg = 4;
-            minEllipt = 0.77;
-            maxEllipt = 1.6;
-            zStep = obj.getZStep;
-            zSyncCalData = cell(8,2);
-%             figure
-            for i = 1:size(zCalData,1)
-                for j = 1:size(zCalData,2)
-                    %Extract data in acceptable ellipticity range
-                    %=>arbitrarily chosen when doing the fit, we stored it
-                    %and reuse it here
-                    if ~isempty(zCalData{i,j})
-                        zPos = zCalData{i,j}(:,5)*zStep;
-                        ellipt = zCalData{i,j}(:,1);
-                        zPos = zPos(and(ellipt<maxEllipt, ellipt > minEllipt));
-                        ellipt = ellipt(and(ellipt<maxEllipt, ellipt > minEllipt));
-
-                        %Now we shift in z the value closest to ellipt =1 for
-                        %the fit == rough synchronization    
-                        [~,idx] = min(abs(ellipt-1));
-                        focus1 = zPos(idx);
-                        zPos = zPos - focus1;
-
-                        if length(ellipt)<deg
-                        else
-                            %Do the fit and extract the exact z position of the focus
-                            p = polyfit(zPos,ellipt,deg);
-                            zVec = min(zPos):0.001:max(zPos);%1nm step
-                            %this extraction has a 1nm accuracy
-                            if or(min(zPos)>-0.1, max(zPos) <0.1)
-                                zVec = -1:0.001:1; 
-                            end
-
-                            fit = polyval(p,zVec);
-                            [~,idx] = min(abs(fit-1));
-                            focus2 = zVec(idx);                  
-                            shift = focus1+focus2;%take into account both synchronization
-                            zCalData{i,j}(:,6) = ((zCalData{i,j}(:,5))*zStep -shift)*1000;%transform into nm keeping particle separated
-                            fullSync = ((zCalData{i,j}(:,5))*zStep -shift)*1000;%mix all particle together
-                            %tmp Store
-                            zSyncCalData{i,1} = [zSyncCalData{i,1}; zCalData{i,j}(:,[6 1])];
-                            zSyncCalData{1,2} = [zSyncCalData{1,2}; [fullSync zCalData{i,j}(:,1)]];
-                        end
-                    end
-                end
-                %tmp Store
-                [~,ind] = sort(zSyncCalData{i,1}(:,1));
-                zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
-                
-            end
-            %final storing and output
-            [~,ind] = sort(zSyncCalData{1,2}(:,1));
-            zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
-            zSyncCalData{1,3} = [minEllipt, maxEllipt, deg];
-            
-        end
         
         function [zStep] = getZStep(obj)
             %small function that extract the zStep from the info in the raw
