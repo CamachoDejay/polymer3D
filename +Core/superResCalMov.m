@@ -27,9 +27,51 @@ classdef superResCalMov < Core.zCalMovie
             end
         end
         
+        function superResCalibrate(obj)
+            
+            %#1 Track particle in Z
+            [traces, counter] = obj.trackInZ;
+            
+            %#2 Extract Data per particles
+            [partData] = obj.extractPartData;
+            %#2 Find frames where a particle is approx equally defocused in
+            %2 planes.
+            [test]= obj.findDefocusedFrame(traces);
+        end
+    end
+    
+    methods (Access = private)
+       
+        function [partData] = extractPartData(obj)
+            list = obj.particles.List;
+            traces = obj.particles.Traces;
+            nTraces = obj.particles.nTraces;
+            
+            %Allocate Memory
+            
+            partData = cell(1,nTraces);
+            
+            for i = 1 : length(traces)
+                if ~isempty(traces{i})
+                    for j = 1 : length(traces{i})
+                        idx2Part = traces{i}{j};
+                        if ~isnan(idx2Part)
+                        startIdx = length(partData{idx2Part})+1;
+                        partData{idx2Part}(startIdx,:) = [list{i}{j}(3,[1:3, end]) i];
+                        else
+                        end
+                    end
+                end
+            end         
+        end
         
-        
+       function [defocusFramePer] = findDefocusedFrame(traces)
+           
+           
+       end
         
     end
+    
+    
 end
 

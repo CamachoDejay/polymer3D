@@ -25,7 +25,7 @@ classdef calib2D < Core.Movie
             assert(~isempty(obj.raw),'Please provide a path');
             %Calculate from the raw path stored in the movie
             path = obj.raw.movInfo.Path;
-            [file2Analyze] = obj.getFileInPath( path, '.mat');
+            [file2Analyze] = obj.getFileInPath( path, 'calibration.mat');
             
             if (~isempty(file2Analyze))
                 %If calibration already exist we load it

@@ -15,6 +15,9 @@ path2zCal = '..\data\Multiplane\ZCalibration\\BeadsZCalibration_1';
 path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
 path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
+detectParam.delta = 6;
+detectParam.chi2 = 80;
+
 %% create a Movie Object
 mov1 = Core.Movie(path2File);
 
@@ -39,8 +42,7 @@ mpLocMov = Core.mpLocMovie(path2File,calib.getCal);
 mpLocMov.giveInfo;
 mpLocMov.calibrate;
 %% getCandidatePos
-detectParam.delta = 6;
-detectParam.chi2 = 80;
+
 mpLocMov.findCandidatePos(detectParam);
 candidate = mpLocMov.getCandidatePos(24);
 mpLocMov.showCandidate(24);
@@ -77,7 +79,7 @@ traces = zCalMov.get3DTraces;
 
 zCalMov.showTraces
 
-%% SuperResCal
+%% SuperResCalMovie
 SRCalMov = Core.superResCalMov(path2Cal,calib.getCal);
 
 SRCalMov.giveInfo;
@@ -88,6 +90,10 @@ SRCalMov.showCandidate(50);
 SRCalMov.superResConsolidate;
 
 SRCalMov.showParticles(50);
+%% SuperResCalibrate
+
+SRCalMov.superResCalibrate;
+
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
 for i = 1:8

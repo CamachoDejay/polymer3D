@@ -148,7 +148,8 @@ classdef mpLocMovie < Core.mpMovie
                     if isempty(candidate)
 
                         warning('Frame %d did not contain any candidate',idx);
-                        particleList{idx} = nan(5);
+                        particleList{idx} = [];
+                        %particleList{idx}{1} = nan(5);
                         nParticles(idx) = 0;
 
                     else
@@ -483,7 +484,15 @@ classdef mpLocMovie < Core.mpMovie
                 end
 
                 idx = find(position==0,1,'First');
-                candidate{frames(i)} = position(1:idx-1,:);
+                if isempty(idx)
+                    
+                    candidate{frames(i)} = position;
+                    
+                else
+                    
+                    candidate{frames(i)} = position(1:idx-1,:);
+                    
+                end
                 waitbar(i/nFrames,h,...
                     sprintf('detection of candidates in Frame %d/%d done',i,nFrames));
             end

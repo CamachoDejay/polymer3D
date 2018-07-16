@@ -1,9 +1,9 @@
 classdef zCalMovie < Core.mpLocMovie
-    %zCal will hold the information related to zCalibration as well as all
-    %the method linked to the zCalibration.
+    %zCal will hold the information related to zzCalibrationration as well as all
+    %the method linked to the zzCalibrationration.
     
     properties
-        calib
+        zCalibration
     end
     
     methods
@@ -21,17 +21,17 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
-        function set.calib(obj, calib)
+        function set.zCalibration(obj, zCalibration)
             
-            obj.calib = calib;
+            obj.zCalibration = zCalibration;
             
         end
 
         function [traces,counter] = trackInZ(obj)
             %track the particle in the Z direction (3rd dimension here)
-            assert(~isempty(obj.calibrated),'Data should be calibrated to do ZCalibration');
-            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
-            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
+            assert(~isempty(obj.calibrated),'Data should be calibrated to do ZzCalibrationration');
+            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zzCalibrationration');
+            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZzCalibrationration');
             
             %We copy the List as boolean to keep track of where there are
             %still particles left
@@ -75,7 +75,7 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function [zCalData] = getCalData(obj,traces,nPart)
-            %Extract all the data across frame separated by planes (1calib
+            %Extract all the data across frame separated by planes (1zCalibration
             %curve by plane
             zCalData = cell(obj.calibrated.nPlanes,nPart);
             
@@ -181,10 +181,10 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
-        function [zData] = zCalibrate(obj)
-            assert(~isempty(obj.calibrated),'Data should be calibrated to do ZCalibration');
-            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zCalibration');
-            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZCalibration');
+        function [zData] = zzCalibrationrate(obj)
+            assert(~isempty(obj.calibrated),'Data should be calibrated to do ZzCalibrationration');
+            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zzCalibrationration');
+            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZzCalibrationration');
             
             if ~isempty(obj.particles.Traces)
                 quest = 'Some tracked traces were found in the object, do you want to keep them or run again ?';
@@ -211,20 +211,20 @@ classdef zCalMovie < Core.mpLocMovie
                 obj.trackInZ;
                 
             end
-            %Transform the traces into calibration data (extracting data
+            %Transform the traces into zCalibrationration data (extracting data
             %per plane
             zCalData = obj.getCalData(obj.particles.Traces,obj.particles.nTraces);
             
             %synchronize the data (aligned them in Z)
             zSyncCalData = obj.syncZCalData(zCalData);
-            %Calculate the calibration curve
-            zCal =  obj.calCalib(zSyncCalData);
+            %Calculate the zCalibrationration curve
+            zCal =  obj.calzCalibration(zSyncCalData);
             %store
-            obj.calib.cal = zCal;
-            obj.calib.calData = zCalData;
-            obj.calib.syncEllip = zSyncCalData;
+            obj.zCalibration.cal = zCal;
+            obj.zCalibration.calData = zCalData;
+            obj.zCalibration.syncEllip = zSyncCalData;
             
-            zData = obj.calib;
+            zData = obj.zCalibration;
         end
         
         function [traces] = get3DTraces(obj)
@@ -233,7 +233,7 @@ classdef zCalMovie < Core.mpLocMovie
             tracesIdx = obj.particles.Traces;
             pxSize = obj.info.pxSize;
             %ellipt range used for fitting
-            elliptRange = [obj.calib.syncEllip{1,3}(1) obj.calib.syncEllip{1,3}(2)];
+            elliptRange = [obj.zCalibration.syncEllip{1,3}(1) obj.zCalibration.syncEllip{1,3}(2)];
             elliptRange = elliptRange(1):0.01:elliptRange(2);
             %we weigh the average later base on how much out of focus the
             %plane was.
@@ -243,9 +243,9 @@ classdef zCalMovie < Core.mpLocMovie
             weight2 = linspace(5,1,wRange2);
             finalWeight = [weight1 weight2];
             
-            if isempty(obj.calib.cal)
+            if isempty(obj.zCalibration.cal)
                 
-                warning('no z calibration detected, only show 2D plot');
+                warning('no z zCalibrationration detected, only show 2D plot');
                 
             end
             %Calculation of x-y-z position occurs within the loop here
@@ -279,7 +279,7 @@ classdef zCalMovie < Core.mpLocMovie
                         x = list{i}{j}(3,2)* pxSize;
                         y = list{i}{j}(3,1)* pxSize;
                         
-                        if ~isempty(obj.calib.cal)
+                        if ~isempty(obj.zCalibration.cal)
                             %Calculation for Z is occur here
                             [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight);
                             
@@ -434,14 +434,14 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
-        function showCalibration(obj)
-            assert(~isempty(obj.calib),'No zCalibration found, please run z calibration before display');
+        function showzCalibrationration(obj)
+            assert(~isempty(obj.zCalibration),'No zzCalibrationration found, please run z zCalibrationration before display');
             relZ = obj.calibrated.oRelZPos*1000;%in nm
             figure()
-            for i = 1 : length(obj.calib.syncEllip)
+            for i = 1 : length(obj.zCalibration.syncEllip)
                 
-                z =  obj.calib.syncEllip{i}(:,1)+relZ(i);
-                ellip = obj.calib.syncEllip{i}(:,2);
+                z =  obj.zCalibration.syncEllip{i}(:,1)+relZ(i);
+                ellip = obj.zCalibration.syncEllip{i}(:,2);
                 
                 ellip1 = ellip(ellip>=1);
                 z1 = z(ellip>=1);
@@ -472,21 +472,21 @@ classdef zCalMovie < Core.mpLocMovie
             end
             
             figure()
-            scatter(obj.calib.syncEllip{1,2}(:,1),obj.calib.syncEllip{1,2}(:,2));
+            scatter(obj.zCalibration.syncEllip{1,2}(:,1),obj.zCalibration.syncEllip{1,2}(:,2));
             xlabel('ZPosition')
             ylabel('Ellipticity')
             title('Ellipticity-Z curve for all the planes superimposed')
             
             figure()
             
-            for i = 1 : length(obj.calib.syncEllip)
+            for i = 1 : length(obj.zCalibration.syncEllip)
                 
-                dataCurrentPlane = obj.calib.syncEllip{i};
+                dataCurrentPlane = obj.zCalibration.syncEllip{i};
                 
                 [binnedData] = obj.zCalBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
                 zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
                 %retrieving fit to display
-                p = obj.calib.cal{i};
+                p = obj.zCalibration.cal{i};
                 fit = polyval(p,zVec);
                 %shifting according to the plane
                 zVec = zVec + relZ(i) ;
@@ -511,11 +511,11 @@ classdef zCalMovie < Core.mpLocMovie
         end
     
         function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight)
-            %extract Z position based on ellipticity and calibration curve
-            assert(~isempty(obj.calib),'No zCalibration found, please run z calibration calculating Z position');
-            zCal = obj.calib.cal;
+            %extract Z position based on ellipticity and zCalibrationration curve
+            assert(~isempty(obj.zCalibration),'No zzCalibrationration found, please run z zCalibrationration calculating Z position');
+            zCal = obj.zCalibration.cal;
             relZ = obj.calibrated.oRelZPos;
-            syncEllip = obj.calib.syncEllip;
+            syncEllip = obj.zCalibration.syncEllip;
 
             zVec = min(syncEllip{particle(3,end),1}) : 1 : max(syncEllip{particle(3,end),1});
             fit = polyval(zCal{particle(3,end),1},zVec);
@@ -559,7 +559,7 @@ classdef zCalMovie < Core.mpLocMovie
         %particles from different frame are partners
             isPart = true;
             counter = 1;
-
+            dbstop in connectParticles if error
             listIdx = zeros(length(List)-idx(1),2);
             listIdx(1,:) = idx;
             currentIdx = idx;
@@ -574,7 +574,10 @@ classdef zCalMovie < Core.mpLocMovie
                 if ~all(checkRes==0)
                    %We use reshape to input the different particles of the next
                    %frame at once by storing them in the 3rd dimension
-                   shape = [size(part2Track,1) size(part2Track,2) nPartInFrame]; 
+                   nextPart = List{currentIdx(1)+1};
+                   nextPart = nextPart(logical(checkRes));
+                   
+                   shape = [size(nextPart{1},1) size(nextPart{1},2) nPartInFrame];%Unused particle are expected to be still 5x5
                    nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
                    nextParts = nextParts(:,:,logical(checkRes));
                    [isPart] = obj.isPartFrame(part2Track,nextParts,1);
@@ -615,69 +618,69 @@ classdef zCalMovie < Core.mpLocMovie
         end
         
         function [isPart]   = isPartFrame(obj, current, next, direction)
-            
             %This function is designed to have PSFE plate ON
-            assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
-            assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
-           
-             %ZStack, consolidation between frame
-                    %The calculation here is ran in parallel, we check if
-                    %the current particle is a partner of one of the
-                    %particles in the next frame. Some indexing or step
-                    %might therefore seems unnecessary but allow to take
-                    %any number of particles
-                    
-                    isEdgePlane = or(~isempty(find(current(:,end)==1,1)),~isempty(find(current(:,end)==8,1)));
-                    
-                    if isEdgePlane
-                        
-                        nConsistentPlanes = 2;
-                        
-                    else
-                        
-                        nConsistentPlanes = 2;
-                         
-                    end
-                    
-                    
-                    isPart = zeros(size(next,3),1);
-                    %check focus is not more than one plane away 
-                    roughcheck1 = squeeze(abs(current(3,end)-next(3,end,:)<=1));
-                    
-                    if all(roughcheck1 ==0)
-                        disp('Something is wrong your focus changed more than one plane between 2 frames');
-                    else
-                        %Check that at least 2 planes are in common
-                        commonPlanes = obj.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
-                        roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
-                        if all(roughcheck2 ==0)
-                            disp('Less than 2 planes in common, breaking out');
-                        else 
-                            
-                            for i = 1 : size(next,3)
-                                % Test Euclidian distance
-                                Thresh = 1; %in px
-                                [checkRes1] = obj.checkEuDist(current(commonPlanes(:,1,i),1:2),...
-                                    squeeze(next(commonPlanes(:,2,i),1:2,i)),Thresh);
+             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
+             assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
 
-                                % Test ellipticity
-                                eWeight = [1 2 3 2 1];
-                                thresh = 5;
-                                [checkRes2] = obj.checkEllipticity(current(commonPlanes(:,1,i),3),...
-                                    squeeze(next(commonPlanes(:,2,i),3,i)),direction,thresh,eWeight(commonPlanes(:,1,i)));
-                                 %To be a particle, we want the position to be
-                                %consistent in at least 2 planes and
-                                %ellipticity to pass the test.
-                                isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes, checkRes2);
-                                
-                            end
-                                              
+            if ~all(isnan(next))
+                 %ZStack, consolidation between frame
+                        %The calculation here is ran in parallel, we check if
+                        %the current particle is a partner of one of the
+                        %particles in the next frame. Some indexing or step
+                        %might therefore seems unnecessary but allow to take
+                        %any number of particles
+                        isEdgePlane = or(~isempty(find(current(:,end)==1,1)),~isempty(find(current(:,end)==8,1)));
+
+                        if isEdgePlane
+
+                            nConsistentPlanes = 2;
+
+                        else
+
+                            nConsistentPlanes = 2;
+
                         end
-                    end
 
-            isPart = logical(isPart);
-         
-                
+                        isPart = zeros(size(next,3),1);
+                        %check focus is not more than one plane away 
+                        roughcheck1 = squeeze(abs(current(3,end)-next(3,end,:)<=1));
+
+                        if all(roughcheck1 ==0)
+                            disp('Something is wrong your focus changed more than one plane between 2 frames');
+                        else
+                            %Check that at least 2 planes are in common
+                            commonPlanes = obj.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
+                            roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
+                            if all(roughcheck2 ==0)
+                                disp('Less than 2 planes in common, breaking out');
+                            else 
+
+                                for i = 1 : size(next,3)
+                                    % Test Euclidian distance
+                                    Thresh = 1; %in px
+                                    [checkRes1] = obj.checkEuDist(current(commonPlanes(:,1,i),1:2),...
+                                        squeeze(next(commonPlanes(:,2,i),1:2,i)),Thresh);
+
+                                    % Test ellipticity
+                                    eWeight = [1 2 3 2 1];
+                                    thresh = 5;
+                                    [checkRes2] = obj.checkEllipticity(current(commonPlanes(:,1,i),3),...
+                                        squeeze(next(commonPlanes(:,2,i),3,i)),direction,thresh,eWeight(commonPlanes(:,1,i)));
+                                     %To be a particle, we want the position to be
+                                    %consistent in at least 2 planes and
+                                    %ellipticity to pass the test.
+                                    isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes, checkRes2);
+
+                                end
+
+                            end
+                        end
+
+                isPart = logical(isPart);
+            
+            else
+                isPart = false(size(next,1),1);
+            end
         end
         
         function [checkRes] = checkListBool(~, listBool, idx)
@@ -820,11 +823,11 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
-        function [calib] = calCalib(obj, zSyncCalData)
+        function [zCalibration] = calzCalibration(obj, zSyncCalData)
             %function that take the synchronized z-ellip Data and fit, for
             %each planes with a polynomial. It stores the coeff of the
             %polynomials
-            calib = cell(length(zSyncCalData),1);
+            zCalibration = cell(length(zSyncCalData),1);
             deg = zSyncCalData{1,3}(3);
             
             for i = 1: length(zSyncCalData)
@@ -847,7 +850,7 @@ classdef zCalMovie < Core.mpLocMovie
 %                 scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
 %                 plot(zVec,fit)
  
-                calib{i} = p;
+                zCalibration{i} = p;
                 
             end
             
