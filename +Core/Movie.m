@@ -44,7 +44,7 @@ classdef Movie < handle
             %type of Movie (not only OME-TIFF).
             assert(isfolder(raw), 'The given path is not a folder');
             %Check Given path
-            [file2Analyze] = getOMETIF(obj,raw);
+            [file2Analyze] = Core.Movie.getOMETIF(raw);
       
             if length(file2Analyze)>1
                 
@@ -127,7 +127,7 @@ classdef Movie < handle
             %To display a frame as a figure
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
             
-            [idx] = obj.checkFrame(idx);
+            [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             [frame] = getFrame(obj,idx);            
             assert(isstruct(frame),'Error unknown data format, data should be a struct');
             
@@ -156,27 +156,22 @@ classdef Movie < handle
         function [data] = getFrame(obj,idx)
             
             assert(length(idx)==1,'Requested frame exceed the size of the movie');
-            [idx] = obj.checkFrame(idx);
+             [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             %LoadCam
             [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
             data.Cam1 = movC1;
             data.Cam2 = movC2;
         end
         
-        function [file2Analyze] = getFileInPath(~, path, ext)
-            %Small method to extract the file of a certain extension in a
-            %given path
-            assert(ischar(path),'The given path should be a char');
-            assert(ischar(ext),'The given extension should be a char');
-            assert(isfolder(path),'The path given is not a folder')
-
-            folderContent = dir(path);
-            index2Images  = contains({folderContent.name},ext);
-            file2Analyze  = folderContent(index2Images);
-            
+        function playMovie(obj)
+            %TODO: Code a good way of playing the movie;
         end
         
-        function [frames]   = checkFrame(obj, frames) 
+    end
+    
+    methods (Static)
+        
+        function [frames]       = checkFrame(frames,maxFrame) 
             %Short method that make sure that the frame are making sense.
             testFrame = mod(frames,1);
             
@@ -190,27 +185,38 @@ classdef Movie < handle
             end
             
             assert(isvector(frames),'Frames should be a vector of integers');
-            assert(max(frames) <= obj.raw.maxFrame(1),'Request exceeds max frame');
+            assert(max(frames) <= maxFrame(1),'Request exceeds max frame');
             assert(min(frames) >0, 'Indexing in matlab start from 1');
             
         end
         
-        function playMovie(obj)
-            %TODO: Code a good way of playing the movie;
+        function [file2Analyze] = getFileInPath(path, ext)
+            %Small method to extract the file of a certain extension in a
+            %given path
+            assert(ischar(path),'The given path should be a char');
+            assert(ischar(ext),'The given extension should be a char');
+            assert(isfolder(path),'The path given is not a folder')
+
+            folderContent = dir(path);
+            index2Images  = contains({folderContent.name},ext);
+            file2Analyze  = folderContent(index2Images);
+            
+        end
+        
+        function [file2Analyze] = getOMETIF(path)
+            %Variant of getFileInPath for .ome.tif file
+            expExt = '.ome.tif';
+            %Check Given path
+            [file2Analyze] = Core.Movie.getFileInPath(path, expExt);
+            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
+            
         end
         
     end
     
     methods (Access = private)
         
-        function [file2Analyze] = getOMETIF(obj,path)
-            %Variant of getFileInPath for .ome.tif file
-            expExt = '.ome.tif';
-            %Check Given path
-            [file2Analyze] = obj.getFileInPath(path, expExt);
-            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
-            
-        end
+        
         
     end
     
