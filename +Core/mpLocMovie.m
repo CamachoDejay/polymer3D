@@ -39,11 +39,8 @@ classdef mpLocMovie < Core.mpMovie
         
         function findCandidatePos(obj,detectParam, frames)
             %Method to perform localization on each plane for each frame
-            assert(~isempty(obj.info), 'Missing information about setup to be able to find candidates, please use giveInfo method first');
-            assert(nargin>1,'not enough input argument');
-            [file2Analyze] = getFileInPath(obj, obj.raw.movInfo.Path, '.mat');
-            %Check if some candidate exists already (previously saved)
-            [run, candidate] = obj.existCandidate(file2Analyze);
+            %Check if some candidate exists already in the folder (previously saved)
+            [run, candidate] = Core.mpLocMovie.existCandidate(obj.raw.movInfo.Path, '.mat');
             
             if run
                 switch nargin 
@@ -62,6 +59,8 @@ classdef mpLocMovie < Core.mpMovie
 
                 end
                 %Localization occurs here
+                 assert(~isempty(obj.info), 'Missing information about setup to be able to find candidates, please use giveInfo method first or load previous data');
+                 assert(nargin>1,'not enough input argument or accept loading of previous data (if possible)');
                 [candidate] = obj.detectCandidate(detectParam,frames);
                        
             elseif ~isempty(candidate)
@@ -85,7 +84,7 @@ classdef mpLocMovie < Core.mpMovie
         
         function [candidate] = getCandidatePos(obj, frames)
             %Extract the position of the candidate of a given frame
-            [idx] = obj.checkFrame(frames);
+            [idx] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
             candidate = obj.candidatePos{idx};
             
             if isempty(candidate)
@@ -102,8 +101,8 @@ classdef mpLocMovie < Core.mpMovie
             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');    
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
             
-            [file2Analyze] = getFileInPath(obj, obj.raw.movInfo.Path, '.mat');            
-            [run, particle] = obj.existParticles(file2Analyze);
+            %Check if some particles were saved already.
+            [run, particle] = Core.mpLocMovie.existParticles(obj.raw.movInfo.Path, '.mat');
             
             if run
                 %Check the number of function input
@@ -121,7 +120,7 @@ classdef mpLocMovie < Core.mpMovie
 
                     case 3
 
-                        [frames] = obj.checkFrame(frames);
+                        [frames] = Movie.checkFrame(frames,obj.raw.maxFrame(1));
                         assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
                         assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
 
@@ -185,7 +184,7 @@ classdef mpLocMovie < Core.mpMovie
         function showCandidate(obj,idx)
             %Display Candidate
             assert(length(idx)==1, 'Only one frame can be displayed at once');
-            [idx] = obj.checkFrame(idx);
+             [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             assert(~isempty(obj.candidatePos{idx}),'There is no candidate found in that frame, check that you ran the detection for that frame');
             
             [frame] = getFrame(obj,idx);
@@ -225,7 +224,7 @@ classdef mpLocMovie < Core.mpMovie
             %display particles (after consolidation), On top of the
             %localization, consolidated particles are circled.
             assert(length(idx)==1, 'Only one frame can be displayed at once');
-            [idx] = obj.checkFrame(idx);
+             [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             % Show Candidate
             obj.showCandidate(idx);
             
@@ -290,8 +289,122 @@ classdef mpLocMovie < Core.mpMovie
                 end
             end              
         end
+
+    end
+    
+    methods (Static)
+        %method linked to candidate
+        function [run,candidate] = existCandidate(Path,ext)
+            
+            [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+            
+            %Check if some candidate were already stored
+            if any(contains({file2Analyze.name},'candidatePos')==true)
+            quest = 'Some candidate were found in the raw folder, do you want to load them or run again ?';
+            title = 'Question to User';
+            btn1  = 'Load';
+            btn2 = 'run again';
+            defbtn = 'Load';
+            answer = questdlg(quest,title,btn1,btn2,defbtn);
+            
+            switch answer
+                case 'Load'
+
+                    candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
+                    candidate = candidate.candidate;
+                    run = false;
+
+                case 'run again'
+
+                    run = true;
+                    candidate =[];
+
+                otherwise
+                   error('Unknown answer to user input dialog, most likely due to cancelation')
+            end
+            
+            else
+                
+                run = true;
+                candidate =[];
+            end    
+        end
         
-        function [checkRes] = checkEuDist(obj,current,next,Thresh)
+        %method Linked to particles/planeConsolidation
+        function [run, particle] = existParticles(Path, ext)
+            
+            [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+            %Check if some particles were already saved in the raw folder.
+            if any(contains({file2Analyze.name},'particle')==true)
+                quest = 'Some consolidated positions were found in the raw folder, do you want to load them or run again ?';
+                title = 'Question to User';
+                btn1  = 'Load';
+                btn2 = 'run again';
+                defbtn = 'Load';
+                answer = questdlg(quest,title,btn1,btn2,defbtn);
+                
+                switch answer
+                    case 'Load'
+                        
+                        particle = load([file2Analyze(1).folder filesep 'particle.mat']);
+                        particle = particle.particle;
+                        run = false;
+                        
+                    case 'run again'
+                        
+                        run = true;
+                        particle = [];
+                        
+                    otherwise
+                        
+                        error('Unknown answer to user input dialog, most likely due to cancelation')
+                        
+                 end
+            else
+                run = true;
+                particle = [];
+            end    
+            
+        end
+        
+        function [isPart]   = isPartPlane(current, next, direction)
+            %This function aim at determining whether a candidate from one
+            %plane and the another are actually the same candidate on
+            %different plane or different candidate. The decision is based
+            %on threshold on localization distance, ellipticity and focus
+            %metric.
+            
+            %This function is designed to have PSFE plate ON
+            assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
+            assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
+
+            Thresh = 2*sqrt(2); %in Px As the superResCal is not 
+            %performed yet we allow 2px in both direction
+            [checkRes1] = Core.mpLocMovie.checkEuDist(current(:,1:2),...
+                    next(:,1:2),Thresh);
+
+            % Test ellipticity
+            [checkRes2] = Core.mpLocMovie.checkEllipticity(current(:,3),...
+            next(:,3),direction);
+
+            % Test focus Metric    
+            maxExpFM = current(4)+0.1*current(4);
+            checkRes3 = next(:,4) < maxExpFM;  
+
+            %isPart will only be true for particle that passes the 3 tests       
+            isPart = checkRes1.*checkRes2.*checkRes3;
+
+            if(length(find(isPart))>1)
+
+            warning('Could not choose which particle was the partner of the requested particle, killed them both');
+            isPart(isPart==1) = 0;
+            end
+
+            isPart = logical(isPart);         
+                
+        end
+        
+        function [checkRes] = checkEuDist(current,next,Thresh)
             %Use to check if the Euclidian distance is within reasonable
             %range
             EuDist = sqrt((current(:,1) - next(:,1)).^2 +...
@@ -304,7 +417,7 @@ classdef mpLocMovie < Core.mpMovie
             
         end
         
-        function [checkRes] = checkEllipticity(obj, current, next, direction, thresh, eWeight)
+        function [checkRes] = checkEllipticity(current, next, direction, thresh, eWeight)
             %Use to check if the Ellipticity make sense with what we
             %expect from the behavior of the PSFEngineering plate
             switch direction
@@ -335,11 +448,11 @@ classdef mpLocMovie < Core.mpMovie
                     
         end
         
-        function [checkRes] = checkPlaneConfig(obj, planeConfig)
+        function [checkRes] = checkPlaneConfig(planeConfig,nPlanes)
             %Here we will check that the consolidation found based on the
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
-            assert(length(planeConfig) <= obj.calibrated.nPlanes,'There is something wrong with your consolidated index and your candidate plane List');
+            assert(length(planeConfig) <= nPlanes,'There is something wrong with your consolidated index and your candidate plane List');
             %Let us test that we have consolidate the particle in at least
             %3 Planes
             isEdgePlane = or(~isempty(find(planeConfig==1,1)),~isempty(find(planeConfig==8,1)));
@@ -368,33 +481,71 @@ classdef mpLocMovie < Core.mpMovie
             end
         end
         
-        function [run, particle] = existParticles(obj,file2Analyze)
-            %Check if some particles were already saved in the raw folder.
-            if any(contains({file2Analyze.name},'particle')==true)
-                quest = 'Some consolidated positions were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                case 'Load'
-                    particle = load([file2Analyze(1).folder filesep 'particle.mat']);
-                    particle = particle.particle;
-                    run = false;
-                case 'run again'
-                    run = true;
-                    particle = [];
-                end
-            else
-                run = true;
-                particle = [];
-            end    
+        %method linked to consolidation along frames
+        function listIdx = connectParticles(List,listBool,idx)
+        %function connecting particles across frame by checking if two
+        %particles from different frame are partners
+            isPart = true;
+            counter = 1;
             
+            listIdx = zeros(length(List)-idx(1),2);
+            listIdx(1,:) = idx;
+            currentIdx = idx;
+            while isPart
+                if currentIdx >= length(List)
+                           break;
+                end
+                part2Track = List{currentIdx(1)}{currentIdx(2)};
+                [checkRes] = Core.mpLocMovie.checkListBool(listBool,currentIdx(1)+1);
+                nPartInFrame = length(checkRes);
+
+                if ~all(checkRes==0)
+                   %We use reshape to input the different particles of the next
+                   %frame at once by storing them in the 3rd dimension
+                   nextPart = List{currentIdx(1)+1};
+                   nextPart = nextPart(logical(checkRes));
+                   
+                   shape = [size(nextPart{1},1) size(nextPart{1},2) nPartInFrame];%Unused particle are expected to be still 5x5
+                   nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
+                   nextParts = nextParts(:,:,logical(checkRes));
+                   [isPart] = Core.mpLocMovie.isPartFrame(part2Track,nextParts,1);
+
+                   counter = counter+1;
+                   if(length(find(isPart==1))>1)
+
+                       warning('Could not choose between 2 close particles, killing them both')
+                       isPart = false;
+
+                   elseif (~all(isPart==0))
+                       %Update newIdx
+                       currentIdx(1) = currentIdx(1)+1;%current become the connected from next frame
+                       idx2AvailableParticles = find(checkRes);
+                       currentIdx(2) = idx2AvailableParticles(isPart);
+                       nextParts = [];
+                       listIdx(counter,:) = currentIdx;
+
+                       isPart = true;
+                   else
+
+                       isPart = false;
+
+                   end
+
+                   if counter == length(List)-1
+
+                       isPart = false;
+
+                   end
+                   
+                else
+                    isPart = false;
+                end
+            listIdx(listIdx(:,1) == 0,:) = [];
+
+            end
         end
         
-        function [commonPlanes] = findCommonPlanes(~,planeInCurrent,planeInNext)
+        function [commonPlanes]  = findCommonPlanes(planeInCurrent,planeInNext)
             %Check how many common planes are between two candidates (one
             %of the criteria to determine if they can be partner)
             commonPlanes = zeros(size(planeInNext,1),2,size(planeInNext,2));
@@ -408,42 +559,200 @@ classdef mpLocMovie < Core.mpMovie
             commonPlanes = logical(squeeze(commonPlanes));
         end
         
+        function [isPart]   = isPartFrame(current, next, direction)
+            %This function is designed to have PSFE plate ON
+             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
+             assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
+
+            if ~all(isnan(next))
+                 %ZStack, consolidation between frame
+                        %The calculation here is ran in parallel, we check if
+                        %the current particle is a partner of one of the
+                        %particles in the next frame. Some indexing or step
+                        %might therefore seems unnecessary but allow to take
+                        %any number of particles
+                        isEdgePlane = or(~isempty(find(current(:,end)==1,1)),~isempty(find(current(:,end)==8,1)));
+
+                        if isEdgePlane
+
+                            nConsistentPlanes = 2;
+
+                        else
+
+                            nConsistentPlanes = 2;
+
+                        end
+
+                        isPart = zeros(size(next,3),1);
+                        %check focus is not more than one plane away 
+                        roughcheck1 = squeeze(abs(current(3,end)-next(3,end,:)<=1));
+
+                        if all(roughcheck1 ==0)
+                            disp('Something is wrong your focus changed more than one plane between 2 frames');
+                        else
+                            %Check that at least 2 planes are in common
+                            commonPlanes = Core.mpLocMovie.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
+                            roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
+                            if all(roughcheck2 ==0)
+                                disp('Less than 2 planes in common, breaking out');
+                            else 
+
+                                for i = 1 : size(next,3)
+                                    % Test Euclidian distance
+                                    Thresh = 1; %in px
+                                    [checkRes1] = Core.mpLocMovie.checkEuDist(current(commonPlanes(:,1,i),1:2),...
+                                        squeeze(next(commonPlanes(:,2,i),1:2,i)),Thresh);
+
+                                    % Test ellipticity
+                                    eWeight = [1 2 3 2 1];
+                                    thresh = 5;
+                                    [checkRes2] = Core.mpLocMovie.checkEllipticity(current(commonPlanes(:,1,i),3),...
+                                        squeeze(next(commonPlanes(:,2,i),3,i)),direction,thresh,eWeight(commonPlanes(:,1,i)));
+                                     %To be a particle, we want the position to be
+                                    %consistent in at least 2 planes and
+                                    %ellipticity to pass the test.
+                                    isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes, checkRes2);
+
+                                end
+
+                            end
+                        end
+
+                isPart = logical(isPart);
+            
+            else
+                isPart = false(size(next,1),1);
+            end
+        end
+        
+        function [listCopy] = copyList(List, filling)
+            %Small function that copy a given list (cell array) filling it
+            %with the input filling (e.g. NaN, 0, 1,...)
+            assert(iscell(List),'The List should be a cell array');
+            listCopy = cell(List);
+            
+            for i = 1:length(List)
+                
+                if isempty(List{i})
+                    
+                    listCopy{i} = [];
+                    
+                else
+                    
+                    for j = 1:length(List{i})
+                        
+                        listCopy{i}{j} = filling;
+                        
+                    end
+                    
+                end
+                
+            end
+            
+        end
+        
+        function [checkRes] = checkListBool(listBool, idx)
+            %Check if there are still candidate in the list that were not
+            %yet connected or removed.
+            if( idx>= length(listBool))
+                
+                checkRes = false;
+                
+            else
+            
+            if isempty(listBool{idx})
+                
+                checkRes = false;
+                
+            else
+                test = zeros(1,length(listBool{idx}));
+                
+                for i = 1 : length(listBool{idx})
+                    
+                    test(i) = listBool{idx}{i};
+                    
+                end
+                
+                if(all(test == 0))
+                    
+                    checkRes = false;
+                    
+                else
+                    
+                    checkRes = test;
+                                      
+                end 
+                
+            end
+            
+            end
+        end  
+                
+        function [idx] = pickParticle(listBool)
+            %This function will pick a particle and return false if there
+            %is none. It goes through the given list and search for the
+            %first non-false idx and returns it.
+              
+            for i = 1:length(listBool)
+
+                if exist('idx','var')
+
+                    break;
+
+                else
+
+                    if isempty(listBool{i})
+
+                    else
+
+                        for j = 1:length(listBool{i})
+
+                            if listBool{i}{j} == true
+
+                                idx = [i,j];
+                                break;
+
+                            end          
+                        end
+                    end
+                end
+            end
+              
+            if ~exist('idx','var')
+
+              idx = false;
+
+            end
+            
+        end
+        
+        function [traces] = storeTraces(traces,listIdx,numPart)
+            %Store the list of idx as a traces (which has the same format
+            %as the particle list
+            for i = 1 : size(listIdx,1)
+                
+                traces{listIdx(i,1)}{listIdx(i,2)} = numPart;
+                
+            end
+            
+        end
+        
+        function [listBool] = removeParticles(listBool,listIdx)
+            %Remove the particle by putting false in the boolean copy in
+            %the given indices of the indices list (listIdx)
+            for i = 1 : size(listIdx,1)
+                
+                listBool{listIdx(i,1)}{listIdx(i,2)} = false;
+                
+            end
+            
+        end
+        
     end
     
     methods (Access = private)
         
         %Methods linked to Candidate
-        function [run,candidate] = existCandidate(obj,file2Analyze)
-            %Check if some candidate were already stored
-            if any(contains({file2Analyze.name},'candidatePos')==true)
-            quest = 'Some candidate were found in the raw folder, do you want to load them or run again ?';
-            title = 'Question to User';
-            btn1  = 'Load';
-            btn2 = 'run again';
-            defbtn = 'Load';
-            answer = questdlg(quest,title,btn1,btn2,defbtn);
-            
-            switch answer
-            case 'Load'
-                
-                candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
-                candidate = candidate.candidate;
-                run = false;
-                
-            case 'run again'
-                
-                run = true;
-                candidate =[];
-                
-            end
-            
-            else
-                
-                run = true;
-                candidate =[];
-            end    
-        end
-        
         function [candidate] = detectCandidate(obj,detectParam,frames)
             %Do the actual localization
             assert(~isempty(obj.calibrated),'Data should be calibrated to detect candidate');
@@ -565,45 +874,6 @@ classdef mpLocMovie < Core.mpMovie
             end
         end
         
-        function [isPart]   = isPartPlane(obj, current, next, direction)
-            %This function aim at determining whether a candidate from one
-            %plane and the another are actually the same candidate on
-            %different plane or different candidate. The decision is based
-            %on threshold on localization distance, ellipticity and focus
-            %metric.
-            
-            %This function is designed to have PSFE plate ON
-            assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
-            assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
-
-            Thresh = 2*sqrt(2); %in Px As the superResCal is not 
-            %performed yet we allow 2px in both direction
-            [checkRes1] = obj.checkEuDist(current(:,1:2),...
-                    next(:,1:2),Thresh);
-
-            % Test ellipticity
-            [checkRes2] = obj.checkEllipticity(current(:,3),...
-            next(:,3),direction);
-
-            % Test focus Metric    
-            maxExpFM = current(4)+0.1*current(4);
-            checkRes3 = next(:,4) < maxExpFM;  
-
-            %isPart will only be true for particle that passes the 3 tests       
-            isPart = checkRes1.*checkRes2.*checkRes3;
-
-            if(length(find(isPart))>1)
-
-            warning('Could not choose which particle was the partner of the requested particle, killed them both');
-            isPart(isPart==1) = 0;
-            end
-
-            isPart = logical(isPart);         
-                
-        end
-        
-        
-        
         function [candidateList] = planeConsolidation(obj,candMet,focusMetric)
             %Loop through all candidate of a given frame and match them
             %between frame until none can be match or all are matched.
@@ -644,7 +914,7 @@ classdef mpLocMovie < Core.mpMovie
                         direction = -1;%check below
                     end
                     
-                    [isPart] = obj.isPartPlane(currentCand,cand,direction);
+                    [isPart] = Core.mpLocMovie.isPartPlane(currentCand,cand,direction);
                     if ~all(isPart ==0)
                         id = cand(isPart,end)-currentCand(end);
                         particle(round(length(currentCand)/2)+id,:) = cand(isPart,:);
@@ -655,7 +925,7 @@ classdef mpLocMovie < Core.mpMovie
                 %Check if the resulting configuration of the plane make
                 %sense e.g. no hole in the configuration
                 planeConfig = particle(:,end);
-                [checkRes] = obj.checkPlaneConfig(planeConfig);
+                [checkRes] = Core.mpLocMovie.checkPlaneConfig(planeConfig,nPlanes);
                 %Store
                 if checkRes
                     
