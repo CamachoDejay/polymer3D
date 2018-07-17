@@ -109,7 +109,7 @@ classdef mpMovie < Core.Movie
             %depending on whether the data has been calibrated or not.
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
             %check the frame requested
-            [idx] = obj.checkFrame(idx);
+            [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             %Get the data of the requested frame
             [frame] = getFrame(obj,idx);            
             assert(isstruct(frame),'Error unknown data format, data should be a struct');
@@ -150,7 +150,7 @@ classdef mpMovie < Core.Movie
             %Allow the user to extract data from a specific frame, behavior
             %depends on the calibration
             assert(length(idx)==1,'Requested frame exceed the size of the movie');
-            [idx] = obj.checkFrame(idx);
+             [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             %Behavior depend on status
             if isempty(obj.calibrated)
                 
