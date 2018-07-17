@@ -33,7 +33,7 @@ calib.showFrame(22)
 %% Calibrate
 mpMov = Core.mpMovie(path2File,calib.getCal);
 
-%mpMov.calibrate;
+mpMov.calibrate;
 
 mpMov.showFrame(15);
 
@@ -70,7 +70,7 @@ zCalMov.showParticlesTracked(30);%ips
 [zData] = zCalMov.zCalibrate;
 
 %% Show ZCalibration
-zCalMov.showCalibration;
+zCalMov.showZCalibration;
 
 %% Get 3D traces
 traces = zCalMov.get3DTraces;
