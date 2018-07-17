@@ -176,6 +176,21 @@ classdef mpMovie < Core.Movie
         function playMovie(obj)
             %TODO: code this function
         end
+        
+        function [zStep, zPosMotor] = getZPosMotor(obj)
+            %small function that extract the zStep from the info in the raw
+            nFrames = obj.raw.maxFrame(1);
+            zPosMotor = zeros(nFrames,1);
+            
+            for i = 1 : obj.raw.maxFrame(1)
+                
+                zPosMotor(i) = obj.raw.frameInfo(2*i).Pos(3);
+                
+            end
+            
+            zStep = mean(diff(zPosMotor));
+            
+        end
                 
     end
     

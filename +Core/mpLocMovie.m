@@ -5,9 +5,9 @@ classdef mpLocMovie < Core.mpMovie
     
     properties
         
-        particles
         candidatePos
-        
+        particles
+
     end
     
     methods
@@ -23,19 +23,7 @@ classdef mpLocMovie < Core.mpMovie
             assert(iscell(candidatePos), 'Expecting a cell containing candidate positions');
             obj.candidatePos = candidatePos;
             
-        end
-            
-        function [particle] = getParticles(obj,frames)
-          %GetParticles
-            [idx] = obj.checkFrame(frames);
-            particle = obj.particles.List{idx};
-            
-            if isempty(particle)
-                
-                warning('There was no particle found in this frames, check than you ran superResConsolidate method on this frame beforehand');
-            
-            end
-        end
+        end       
         
         function findCandidatePos(obj,detectParam, frames)
             %Method to perform localization on each plane for each frame
@@ -179,6 +167,18 @@ classdef mpLocMovie < Core.mpMovie
             end
             %#4 Storing particles in the object
             obj.particles = particle;
+        end
+        
+        function [particle] = getParticles(obj,frames)
+          %GetParticles
+            [idx] = obj.checkFrame(frames);
+            particle = obj.particles.List{idx};
+            
+            if isempty(particle)
+                
+                warning('There was no particle found in this frames, check than you ran superResConsolidate method on this frame beforehand');
+            
+            end
         end
         
         function showCandidate(obj,idx)

@@ -486,63 +486,6 @@ classdef zCalMovie < Core.mpLocMovie
 
         end
         
-    end
-    
-    methods (Static)
-        
-        function [zCalibration] = calZCalibration(zSyncCalData)
-            %function that take the synchronized z-ellip Data and fit, for
-            %each planes with a polynomial. It stores the coeff of the
-            %polynomials
-            zCalibration = cell(length(zSyncCalData),1);
-            deg = zSyncCalData{1,3}(3);
-            
-            for i = 1: length(zSyncCalData)
-                dataCurrentPlane = zSyncCalData{i};
-                [binnedData] = Plotting.qBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
-                
-                zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
-     
-                p = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),deg);
-                fit = polyval(p,zVec);
-%                 
-%                 figure
-%                 subplot(1,2,1)
-%                 hold on
-%                 scatter(binnedData(:,1),binnedData(:,2))
-%                 plot(zVec,fit)
-%                 
-%                 subplot(1,2,2)
-%                 hold on
-%                 scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
-%                 plot(zVec,fit)
- 
-                zCalibration{i} = p;
-                
-            end
-            
-        end
-        
-    end
-    
-
-     methods (Access = private)
-        
-        function [zStep] = getZStep(obj)
-            %small function that extract the zStep from the info in the raw
-            nFrames = obj.raw.maxFrame(1);
-            zPos = zeros(nFrames,1);
-            
-            for i = 1 : obj.raw.maxFrame(1)
-                
-                zPos(i) = obj.raw.frameInfo(2*i).Pos(3);
-                
-            end
-            
-            zStep = mean(diff(zPos));
-            
-        end
-        
         function [zSyncCalData] = syncZCalData(obj,zCalData)
             %Fit the ellipiticty - zPos data for each particles and
             %synchronized them by putting the point where ellipticity = 1
@@ -553,7 +496,7 @@ classdef zCalMovie < Core.mpLocMovie
             deg = 4;
             minEllipt = 0.77;
             maxEllipt = 1.6;
-            zStep = obj.getZStep;
+            [zStep,~] = obj.getZPosMotor;
             zSyncCalData = cell(8,2);
 %             figure
             for i = 1:size(zCalData,1)
@@ -606,6 +549,52 @@ classdef zCalMovie < Core.mpLocMovie
             zSyncCalData{1,3} = [minEllipt, maxEllipt, deg];
             
         end
+        
+    end
+    
+    methods (Static)
+        
+        function [zCalibration] = calZCalibration(zSyncCalData)
+            %function that take the synchronized z-ellip Data and fit, for
+            %each planes with a polynomial. It stores the coeff of the
+            %polynomials
+            zCalibration = cell(length(zSyncCalData),1);
+            deg = zSyncCalData{1,3}(3);
+            
+            for i = 1: length(zSyncCalData)
+                dataCurrentPlane = zSyncCalData{i};
+                [binnedData] = Plotting.qBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
+                
+                zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
+     
+                p = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),deg);
+                fit = polyval(p,zVec);
+%                 
+%                 figure
+%                 subplot(1,2,1)
+%                 hold on
+%                 scatter(binnedData(:,1),binnedData(:,2))
+%                 plot(zVec,fit)
+%                 
+%                 subplot(1,2,2)
+%                 hold on
+%                 scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
+%                 plot(zVec,fit)
+ 
+                zCalibration{i} = p;
+                
+            end
+            
+        end
+        
+        
+        
+    end
+    
+
+     methods (Access = private)
+        
+        
         
      end
 end
