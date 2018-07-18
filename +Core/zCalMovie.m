@@ -2,7 +2,7 @@ classdef zCalMovie < Core.mpLocMovie
     %zCal will hold the information related to zzCalibrationration as well as all
     %the method linked to the zzCalibrationration.
     
-    properties
+    properties (SetAccess = 'private')
         zCalibration
     end
     

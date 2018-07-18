@@ -10,7 +10,7 @@ classdef superResCalMov < Core.zCalMovie
     %Thus rather than having two classes with a lot in common (thus
     %duplicate) it was decided that it would inherit from zCalMovie
     
-    properties
+    properties (SetAccess = 'private')
         superResCalibration
     end
     

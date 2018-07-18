@@ -3,7 +3,7 @@ classdef mpLocMovie < Core.mpMovie
     %expension of this object will be first centered around Tracking but
     %it will also be easy to extend to STORM/PALM.
     
-    properties (Access = private)
+    properties (SetAccess = 'private')
         
         candidatePos
         particles
