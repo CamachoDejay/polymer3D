@@ -6,7 +6,10 @@ classdef Movie < handle
     
     properties (SetAccess = 'private')
         raw
-        info
+        
+    end
+    properties 
+       info 
     end
     
     methods
