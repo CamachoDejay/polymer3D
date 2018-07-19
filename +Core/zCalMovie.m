@@ -4,6 +4,7 @@ classdef zCalMovie < Core.mpLocMovie
     
     properties (SetAccess = 'private')
         zCalibration
+        traces
     end
     
     methods
@@ -69,8 +70,8 @@ classdef zCalMovie < Core.mpLocMovie
             errCount = errCount +1;
             end
             counter = counter -1;
-            obj.particles.Traces = traces;
-            obj.particles.nTraces = counter;
+            obj.traces.trace = traces;
+            obj.traces.nTrace = counter;
       
         end
         
@@ -115,6 +116,7 @@ classdef zCalMovie < Core.mpLocMovie
                        
                    end
                end
+               obj.zCalibration.calData = zCalData;
         end 
         
         function [zData] = zCalibrate(obj)
@@ -547,7 +549,7 @@ classdef zCalMovie < Core.mpLocMovie
             [~,ind] = sort(zSyncCalData{1,2}(:,1));
             zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
             zSyncCalData{1,3} = [minEllipt, maxEllipt, deg];
-            
+            obj.zCalibration.syncEllip = zSyncCalData;
         end
         
     end
