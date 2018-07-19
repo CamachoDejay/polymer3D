@@ -41,12 +41,12 @@ classdef calib2D < Core.Movie
                 assert(length(movInfo.Cam)==2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
                 assert(length(unique(cellfun(@str2num,{frameInfo.Z})))>2,'Z position is not changing across the selected calibration file, this is strange.');
 
-                [calib, inform] = mpSetup.cali.calculate(fullPath);
+                [calib, inform] = mpSetup.cali.calculate(path);
 
                 calibration.info = inform;
                 calibration.file = calib;
-
-                filename = [file2Analyze.folder filesep 'calibration.mat'];
+                [folder,~] = fileparts(path);
+                filename = [folder filesep 'calibration.mat'];
                 calibration.fullPath = filename;
                 save(filename,'calibration');
                 
