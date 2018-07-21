@@ -3,7 +3,7 @@ classdef zCalMovie < Core.mpLocMovie
     %the method linked to the zzCalibrationration.
     
     properties (SetAccess = 'private')
-        zCalibration
+        zData
         traces
     end
     
@@ -22,57 +22,10 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
-        function set.zCalibration(obj, zCalibration)
+        function set.zData(obj, zData)
             
-            obj.zCalibration = zCalibration;
+            obj.zData = zData;
             
-        end
-
-        function [traces,counter] = trackInZ(obj)
-            %track the particle in the Z direction (3rd dimension here)
-            assert(~isempty(obj.calibrated),'Data should be calibrated to do ZzCalibrationration');
-            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zzCalibrationration');
-            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZzCalibrationration');
-            
-            %We copy the List as boolean to keep track of where there are
-            %still particles left
-            [listBool] = obj.copyList(obj.particles.List,1);
-            %We copy as NaN for storage of the traces;
-            [traces]   = obj.copyList(obj.particles.List,NaN);
-            %We pick the first particle available
-            [idx] = obj.pickParticle(listBool);
-            counter = 1;
-            errCount =1;
-            while (idx)
-            %loop until there is no particle (pickParticle return false)   
-            if errCount>1000
-                warning('While loop ran for unexpectedly longer time');
-                break;
-                
-            end
-            %Connect particles (cf consolidation but across frames
-            [listIdx] = obj.connectParticles(obj.particles.List,listBool,idx);
-            %if the particle was connected in less than 5 frames we remove
-            % its appearance from the list bool
-            if length(listIdx) < 5 
-                
-                [listBool] = obj.removeParticles(listBool,listIdx);
-                
-            else
-            %Otherwise we store traces, increment counter and remove.
-            [traces]  = obj.storeTraces(traces,listIdx,counter);
-            counter = counter +1;
-            [listBool] = obj.removeParticles(listBool,listIdx);
-
-            end
-            % We pick a new particle and start all over again
-            [idx] = obj.pickParticle(listBool);
-            errCount = errCount +1;
-            end
-            counter = counter -1;
-            obj.traces.trace = traces;
-            obj.traces.nTrace = counter;
-      
         end
         
         function [zCalData] = getCalData(obj,traces,nPart)
@@ -116,7 +69,7 @@ classdef zCalMovie < Core.mpLocMovie
                        
                    end
                end
-               obj.zCalibration.calData = zCalData;
+               obj.zData.calData = zCalData;
         end 
         
         function showParticlesTracked(obj,ips)
@@ -155,235 +108,28 @@ classdef zCalMovie < Core.mpLocMovie
             end
         end
         
-        function showTraces(obj)
-            %Display the x-y-z traces
-            assert(~isempty(obj.particles.Traces),'You need to get the traces before displaying them');
-            assert(isfield(obj.particles,'traces3D'),'You need to extract the 3D traces before display');
-            traces = obj.particles.traces3D;
-            npart = size(traces,3);
-            %plot XYZ for every particles
-            
-            figure()
-            
-            for i = 1:npart
-                data = traces(:,:,i);
-                data = data(data(:,1)~=0,:);
-                fprintf('std in X from best focus: %0.2f \n',nanmedian(nanstd(data(:,1))));
-                fprintf('std in y from best focus: %0.2f \n',nanmedian(nanstd(data(:,2))));
-                fprintf('std in Z from best focus: %0.2f \n',nanmedian(nanstd(data(:,3))));
-                fprintf('std in X from mean planes: %0.2f \n',nanmedian(nanstd(data(:,4))));
-                fprintf('std in y from mean planes: %0.2f \n',nanmedian(nanstd(data(:,5))));
-                fprintf('std in Z from mean planes: %0.2f \n',nanmedian(nanstd(data(:,6))));
-                
-                
-                subplot(2,1,1)
-                hold on
-                plot(data(:,1) - data(1,1));
-                plot(data(:,2) - data(1,2));
-                plot(data(:,3) - data(1,3));
-                title('X Y Z position for different particle in best focus')
-                xlabel('Frame')
-                ylabel('Position(nm)')
-                hold off
-                
-                subplot(2,1,2)
-                hold on
-                plot(data(:,4) - data(1,4));
-                plot(data(:,5) - data(1,5));
-                plot(data(:,6) - data(1,6));
-                xlabel('Frame')
-                ylabel('Position(nm)')
-                title('X Y Z position for different particle mean')
-                hold off
-            end
-               
-            %plot Euclidian distance   
-            figure()
-            hold on
-            for i = 1:npart
-                data = traces(:,:,i);
-                data = data(data(:,1)~=0,:);
-                 %Calc euclidian distance
-                eucl = sqrt((data(:,1)-data(1,1)).^2 + (data(:,2)-data(1,2)).^2 +...
-                    (data(:,3)-data(1,3)).^2 );
-                medEucl = sqrt((data(:,4)-data(1,4)).^2 + (data(:,5)-data(1,5)).^2 +...
-                    (data(:,6)-data(1,6)).^2 );
-                
-                eucl2D = sqrt((data(:,1)-data(1,1)).^2 + (data(:,2)-data(1,2)).^2);
-                medEucl2D = sqrt((data(:,4)-data(1,4)).^2 + (data(:,5)-data(1,5)).^2);
-                
-                fprintf('std in 2D from best focus: %0.2f \n',nanmedian(nanstd(eucl2D)));
-                fprintf('std in 2D from mean of planes: %0.2f \n',nanmedian(nanstd(medEucl2D)));
-                fprintf('std in 3D from best focus: %0.2f \n',nanmedian(nanstd(eucl)));
-                fprintf('std in 3D from mean of planes: %0.2f \n',nanmedian(nanstd(medEucl)));
-                
-                subplot(2,2,1)
-                hold on
-                plot(eucl);
-                title({'3D euclidian distance'; 'From best focus'})
-                hold off
-                
-                subplot(2,2,2)
-                hold on
-                plot(medEucl);
-                title({'3D euclidian distance'; 'From median'})
-                hold off
-                
-                subplot(2,2,3)
-                hold on
-                plot(eucl2D);
-                title({'2D euclidian distance'; 'From best focus'})
-                hold off
-                
-                subplot(2,2,4)
-                hold on
-                plot(medEucl2D);
-                title({'2D euclidian distance'; 'From median'})
-                hold off
-                
-                %ylim([-400 400]);
-                
-
-            end
-            hold off
-            
-            
-        end
-        
-        function [traces] = get3DTraces(obj)
-            %Extract 3D traces for each particles
-            list = obj.particles.List;
-            tracesIdx = obj.particles.Traces;
-            pxSize = obj.info.pxSize;
-            %ellipt range used for fitting
-            elliptRange = [obj.zCalibration.syncEllip{1,3}(1) obj.zCalibration.syncEllip{1,3}(2)];
-            elliptRange = elliptRange(1):0.01:elliptRange(2);
-            %we weigh the average later base on how much out of focus the
-            %plane was.
-            wRange1 = length(elliptRange(elliptRange<=1));
-            wRange2 = length(elliptRange(elliptRange>=1));
-            weight1 = linspace(1,5,wRange1);
-            weight2 = linspace(5,1,wRange2);
-            finalWeight = [weight1 weight2];
-            
-            if isempty(obj.zCalibration.cal)
-                
-                warning('no z zCalibrationration detected, only show 2D plot');
-                
-            end
-            %Calculation of x-y-z position occurs within the loop here
-            traces = zeros(length(list),6,obj.particles.nTraces);
-            for i = 1 : length(list)
-                if ~isempty(list{i})
-                    for j = 1 : length(list{i})
-                        
-                        currentPart = list{i}{j};
-                        %find indices to data in correct ellipticity range
-                        id = and(currentPart(:,3)>=elliptRange(1),...
-                                       currentPart(:,3)<=elliptRange(end));
-                        if all(id==0)
-                            
-                        else
-                                  
-                        ellip2Keep = currentPart(id,3);
-                        idx = ellip2Keep;
-                        for k = 1 :length(ellip2Keep)
-                            
-                            [~,idx(k)] = min(abs(elliptRange-ellip2Keep(k)));
-                            
-                            
-                        end
-                           
-                        weight = finalWeight(idx);
-                        %Weighed average
-                        xAvg = sum(diag(list{i}{j}(id,2)* weight))/sum(weight) * pxSize;
-                        yAvg = sum(diag(list{i}{j}(id,1)* weight))/sum(weight) * pxSize;
-                        %best focus Value
-                        x = list{i}{j}(3,2)* pxSize;
-                        y = list{i}{j}(3,1)* pxSize;
-                        
-                        if ~isempty(obj.zCalibration.cal)
-                            %Calculation for Z is occur here
-                            [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight);
-                            
-                        else
-                            
-                            zAvg = 0;
-                            z = 0;
-                            
-                        end
-                        
-                        if ~isnan(tracesIdx{i}{j})
-                        traces(i,:,tracesIdx{i}{j}) = [x y z xAvg yAvg zAvg];
-                        else
-                        end
-                        
-                        end
-                    end                    
-                end
-            end
-            %Storage
-            obj.particles.traces3D = traces;
-        end
-        
-        function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight)
-            %extract Z position based on ellipticity and zCalibrationration curve
-            assert(~isempty(obj.zCalibration),'No zzCalibrationration found, please run z zCalibrationration calculating Z position');
-            zCal = obj.zCalibration.cal;
-            relZ = obj.calibrated.oRelZPos;
-            syncEllip = obj.zCalibration.syncEllip;
-
-            zVec = min(syncEllip{particle(3,end),1}) : 1 : max(syncEllip{particle(3,end),1});
-            fit = polyval(zCal{particle(3,end),1},zVec);
-            %find the index of the value the closest to the particle
-            %ellipticity
-            [~,idx] = min(abs(fit-particle(3,3)));
-            zPos = zVec(idx)+ relZ(particle(3,end))*1000;
-
-            id = and(particle(:,3)>=elliptRange(1),...
-                                   particle(:,3)<=elliptRange(end));
-            data2Keep = particle(id,:);
-
-            idx1 = zeros(size(data2Keep,1),1);
-            zAvg = zeros(size(data2Keep,1),1);
-            %Calculate z occur withing the loop
-            for k = 1 :size(data2Keep,1)
-
-            [~,idx1(k)] = min(abs(elliptRange-data2Keep(k,3)));
-
-            zVectmp = min(syncEllip{data2Keep(k,end),1}) : 1 : max(syncEllip{data2Keep(k,end),1});
-            fit = polyval(zCal{data2Keep(k,end),1},zVectmp);
-
-            [~,idx] = min(abs(fit-data2Keep(k,3)));
-            zAvg(k) = zVectmp(idx) + relZ(data2Keep(k,end))*1000;
-            end
-
-            weight = finalWeight(idx1);
-            %weighed average occur here
-            %diag is taken because of the matrix operation between weight
-            %and zAvg
-            zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
-
-        end
-        
-        function [zSyncCalData] = syncZCalData(obj,zCalData)
+        function [zSyncCalData] = syncZCalData(obj,zCalData,fitZParam)
             %Fit the ellipiticty - zPos data for each particles and
             %synchronized them by putting the point where ellipticity = 1
             %to zPos=0+PlanePosition. It uses the zCaldata which represent
             %the data point for each particle for a particle plane. Fitting
             %is done by polynomial to increase accuracy (if e = 1.05 then
             %this point will be locate not exactly at 0 but will be shifted
-            deg = 4;
-            minEllipt = 0.77;
-            maxEllipt = 1.6;
+            assert(isstruct(fitZParam), 'fitZParam is expected to be a struct with two fields, deg for polynomial fit and ellipRange for ellipticity to consider');
+            assert(and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRange')),...
+                'fitZParam is expected to be a struct with two fields, deg for polynomial fit and ellipRange for ellipticity to consider');
+            
+            
+            deg = fitZParam.deg;
+            minEllipt = fitZParam.ellipRange(1);
+            maxEllipt = fitZParam.ellipRange(2);
             [zStep,~] = obj.getZPosMotor;
             zSyncCalData = cell(8,2);
-%             figure
+            
             for i = 1:size(zCalData,1)
                 for j = 1:size(zCalData,2)
                     %Extract data in acceptable ellipticity range
-                    %=>arbitrarily chosen when doing the fit, we stored it
-                    %and reuse it here
+                    
                     if ~isempty(zCalData{i,j})
                         zPos = zCalData{i,j}(:,5)*zStep;
                         ellipt = zCalData{i,j}(:,1);
@@ -427,7 +173,142 @@ classdef zCalMovie < Core.mpLocMovie
             [~,ind] = sort(zSyncCalData{1,2}(:,1));
             zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
             zSyncCalData{1,3} = [minEllipt, maxEllipt, deg];
-            obj.zCalibration.syncEllip = zSyncCalData;
+            obj.zData.syncEllip = zSyncCalData;
+        end
+        
+        function [traces,counter] = trackInZ(obj,trackParam)
+            %track the particle in the Z direction (3rd dimension here)
+            %Here we do not expect any big movement from one frame to the
+            %other so we give a warning if the tracking parameter seems to
+            %soft.
+            assert(isstruct(trackParam),'Tracking parameter is expected to be a struct with two field "euDistPx" and "ellip"')
+            assert(and(isfield(trackParam,'euDistPx'),isfield(trackParam,'ellip')),...
+                'Tracking parameter is expected to be a struct with two field "euDistPx" and "ellip"')
+            
+            if trackParam.euDistPx > 1
+                warning('Current euclidian distance thresholds is probably too high, we do not expect much movement from one frame to the next here')
+            end
+            
+            if or(trackParam.ellip > 6, trackParam.ellip<=3)
+                warning('Requested ellipticity thresold is better to be close to 5 which means that at least 2 of the best focus plane should be consistent ([1 2 3 2 1])');
+            end
+            
+            [traces,counter] = obj.trackParticles(trackParam);
+            
+            obj.traces.trace = traces;
+            obj.traces.nTrace = counter;
+      
+        end
+        
+        function [traces] = get3DTraces(obj,calib,fitZParam)
+            
+            %Extract 3D traces for each particles
+            list = obj.particles.List;
+            tracesIdx = obj.traces.trace;
+            pxSize = obj.info.pxSize;
+            
+            %ellipt range used for fitting
+            elliptRange = fitZParam.ellipRange(1):0.01:fitZParam.ellipRange(2);
+            %we weigh the average later base on how much out of focus the
+            %plane was.
+            wRange1 = length(elliptRange(elliptRange<=1));
+            wRange2 = length(elliptRange(elliptRange>=1));
+            weight1 = linspace(1,5,wRange1);
+            weight2 = linspace(5,1,wRange2);
+            finalWeight = [weight1 weight2];
+            
+            %Calculation of x-y-z position occurs within the loop here
+            traces = zeros(length(list),6,obj.traces.nTrace);
+            for i = 1 : length(list)
+                if ~isempty(list{i})
+                    for j = 1 : length(list{i})
+                        
+                        currentPart = list{i}{j};
+                        %find indices to data in correct ellipticity range
+                        id = and(currentPart(:,3)>=elliptRange(1),...
+                                       currentPart(:,3)<=elliptRange(end));
+                        if all(id==0)
+                            
+                        else
+                                  
+                        ellip2Keep = currentPart(id,3);
+                        idx = ellip2Keep;
+                        for k = 1 :length(ellip2Keep)
+                            
+                            [~,idx(k)] = min(abs(elliptRange-ellip2Keep(k)));
+                            
+                            
+                        end
+                           
+                        weight = finalWeight(idx);
+                        %Weighed average
+                        xAvg = sum(diag(list{i}{j}(id,2)* weight))/sum(weight) * pxSize;
+                        yAvg = sum(diag(list{i}{j}(id,1)* weight))/sum(weight) * pxSize;
+                        %best focus Value
+                        x = list{i}{j}(3,2)* pxSize;
+                        y = list{i}{j}(3,1)* pxSize;
+                        
+                        if ~isempty(calib)
+                            %Calculation for Z is occur here
+                            [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight,calib);
+                            
+                        else
+                            
+                            zAvg = 0;
+                            z = 0;
+                            
+                        end
+                        
+                        if ~isnan(tracesIdx{i}{j})
+                        traces(i,:,tracesIdx{i}{j}) = [x y z xAvg yAvg zAvg];
+                        else
+                        end
+                        
+                        end
+                    end                    
+                end
+            end
+           
+        end
+        
+        function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight,calib)
+            %extract Z position based on ellipticity and zCalibrationration curve
+            assert(~isempty(calib),'No zCalibration found, please give the zCalibration using giveZCal before calculating Z position');
+            zCal = calib;
+            relZ = obj.calibrated.oRelZPos;
+            syncEllip = obj.zData.syncEllip;
+
+            zVec = min(syncEllip{particle(3,end),1}) : 1 : max(syncEllip{particle(3,end),1});
+            fit = polyval(zCal{particle(3,end),1},zVec);
+            %find the index of the value the closest to the particle
+            %ellipticity
+            [~,idx] = min(abs(fit-particle(3,3)));
+            zPos = zVec(idx)+ relZ(particle(3,end))*1000;
+
+            id = and(particle(:,3)>=elliptRange(1),...
+                                   particle(:,3)<=elliptRange(end));
+            data2Keep = particle(id,:);
+
+            idx1 = zeros(size(data2Keep,1),1);
+            zAvg = zeros(size(data2Keep,1),1);
+            %Calculate z occur withing the loop
+            for k = 1 :size(data2Keep,1)
+
+            [~,idx1(k)] = min(abs(elliptRange-data2Keep(k,3)));
+
+            zVectmp = min(syncEllip{data2Keep(k,end),1}) : 1 : max(syncEllip{data2Keep(k,end),1});
+            fit = polyval(zCal{data2Keep(k,end),1},zVectmp);
+
+            [~,idx] = min(abs(fit-data2Keep(k,3)));
+            zAvg(k) = zVectmp(idx) + relZ(data2Keep(k,end))*1000;
+            end
+
+            weight = finalWeight(idx1);
+            %weighed average occur here
+            %diag is taken because of the matrix operation between weight
+            %and zAvg
+            zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
+
         end
         
     end
