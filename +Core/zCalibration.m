@@ -8,7 +8,8 @@ classdef zCalibration < handle
         zCalMovies
         cal2D
         calib
-        
+        traces3D
+        zPosMotor
     end
     
     methods
@@ -39,7 +40,7 @@ classdef zCalibration < handle
             end
         end
         
-        function retrieveZCalData(obj,detectParam)
+        function retrieveZCalData(obj,detectParam, fitZParam, trackParam)
             nfields = numel(fieldnames(obj.zCalMovies));
             for i = 1: nfields
                 disp(['Retrieving data from zCal file ' num2str(i) ' / ' num2str(nfields) ' ...']);
@@ -55,13 +56,14 @@ classdef zCalibration < handle
                 
                 obj.zCalMovies.(['zCal' num2str(i)]).findCandidatePos(detectParam);
                 obj.zCalMovies.(['zCal' num2str(i)]).superResConsolidate;
-                [traces,counter] = obj.zCalMovies.(['zCal' num2str(i)]).trackInZ;
+                [traces,counter] = obj.zCalMovies.(['zCal' num2str(i)]).trackInZ(trackParam);
                 [zCalData] = obj.zCalMovies.(['zCal' num2str(i)]).getCalData(traces,counter);
-                [~] = obj.zCalMovies.(['zCal' num2str(i)]).syncZCalData(zCalData);
+                [~] = obj.zCalMovies.(['zCal' num2str(i)]).syncZCalData(zCalData,fitZParam);
                 
             end
             disp('=================> DONE <===================');
-            
+            obj.calib.fitZParam = fitZParam;
+            obj.calib.trackParam = trackParam;
         end
         
         function zCalibrate(obj)
@@ -71,16 +73,17 @@ classdef zCalibration < handle
             %We regroup the data per plane of different movie together
             for i = 1: nfields
                 
-                for j = 1: length(obj.zCalMovies.(['zCal' num2str(i)]).zCalibration.syncEllip)
+                for j = 1: length(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip)
                     
-                    allData{j,1} = [allData{j,1} ;obj.zCalMovies.(['zCal' num2str(i)]).zCalibration.syncEllip{j,1} ];
-                    allData{1,2} = [allData{1,2} ;obj.zCalMovies.(['zCal' num2str(i)]).zCalibration.syncEllip{1,2} ];
+                    allData{j,1} = [allData{j,1} ;obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{j,1} ];
+                    
                 end
                 
+                allData{1,2} = [allData{1,2} ;obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{1,2} ];
             end
             %Sort the data
-            allData{1,3} = obj.zCalMovies.(['zCal' num2str(i)]).zCalibration.syncEllip{1,3};
-            for j = 1: length(obj.zCalMovies.(['zCal' num2str(i)]).zCalibration.syncEllip)
+            allData{1,3} = obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{1,3};
+            for j = 1: length(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip)
                 [~,ind] = sort(allData{j,1}(:,1));
                 allData{j,1} = allData{j,1}(ind,:);
                 
@@ -173,6 +176,145 @@ classdef zCalibration < handle
             
         end
         
+        function evalAccuracy(obj)
+            
+            nfields = numel(fieldnames(obj.zCalMovies));
+            zMotor = cell(nfields,1);
+            trace3D  = cell(nfields,1);
+            
+            for i = 1: nfields
+                
+                disp(['Retrieving 3D traces ' num2str(i) ' / ' num2str(nfields) ' ...']);
+                [~,zMotor{i}] = obj.zCalMovies.(['zCal' num2str(i)]).getZPosMotor;
+                trace3D{i} = obj.zCalMovies.(['zCal' num2str(i)]).get3DTraces (obj.calib.file,obj.calib.fitZParam);
+                
+            end
+            obj.traces3D = trace3D;
+            obj.zPosMotor = zMotor;
+            disp('=================> DONE <===================');
+        end
+        
+        function showAccuracy(obj)
+       
+            %Display the x-y-z traces
+            assert(~isempty(obj.traces3D),'You need to get the traces before displaying them, use evalAccuracy to get the traces');
+            trace = obj.traces3D;
+            motor = obj.zPosMotor;
+            accuracyFocus = [];
+            accuracyMean = [];
+            %plot XYZ for every particles       
+            nfields = numel(fieldnames(obj.zCalMovies));
+            figure()
+            for i = 1: nfields
+                
+                currentTrace = trace{i};
+                currentMotor = motor{i};
+                currentMotor = (currentMotor - currentMotor(1))*1000;
+                npart = size(currentTrace,3);
+                
+                for j = 1:npart
+                    data = currentTrace(:,:,j);
+                    if ~all(data==0)
+
+                        data = data(data(:,1)~=0,:);
+                        accuracyF2plot = (data(:,3) - data(find(data(:,3),1,'first'),3)) - currentMotor(1:size(data,1));
+                        accuracyM2plot  = (data(:,6) - data(find(data(:,3),1,'first'),6)) - currentMotor(1:size(data,1));
+                        
+                        accuracyMean = [accuracyMean std(accuracyM2plot)];
+                        accuracyFocus = [accuracyFocus std(accuracyF2plot)];
+                          
+                        subplot(2,2,1)
+                        hold on
+                        scatter(1:size(data(:,3),1),data(:,3) - data(1,3));
+                        plot(currentMotor,'-b');
+
+                        title('Z position for different particle in best focus')
+                        xlabel('Frame')
+                        ylabel('Position(nm)')
+                        hold off
+
+                        subplot(2,2,2)
+                        hold on
+                        scatter(1:size(data,1),data(:,6) - data(1,6));
+                        plot(currentMotor,'-b');
+                        xlabel('Frame')
+                        ylabel('Position(nm)')
+                        title('Z position for different particle mean')
+                        hold off
+
+                        subplot(2,2,3)
+                        hold on
+                        plot(nonzeros(accuracyF2plot))
+                        xlabel('Frame')
+                        ylabel('tracked Distance - motor movement')
+                        title(' Z position for different particle in best focus')
+                        hold off
+
+                        subplot(2,2,4)
+                        hold on
+                        plot(nonzeros(accuracyM2plot))
+                        xlabel('Frame')
+                        ylabel('tracked Distance - motor movement')
+                        title('Z position for different particle mean')
+                        hold off
+                    end
+                end
+            end
+            
+            disp(['Accuracy in Z for best focus is ' num2str(mean(accuracyFocus))]);
+            disp(['Accuracy in Z for mean  ' num2str(mean(accuracyMean))]);
+            
+%             %plot Euclidian distance   
+%             figure()
+%             hold on
+%             for i = 1:npart
+%                 data = trace(:,:,i);
+%                 data = data(data(:,1)~=0,:);
+%                  %Calc euclidian distance
+%                 eucl = sqrt((data(:,1)-data(1,1)).^2 + (data(:,2)-data(1,2)).^2 +...
+%                     (data(:,3)-data(1,3)).^2 );
+%                 medEucl = sqrt((data(:,4)-data(1,4)).^2 + (data(:,5)-data(1,5)).^2 +...
+%                     (data(:,6)-data(1,6)).^2 );
+%                 
+%                 eucl2D = sqrt((data(:,1)-data(1,1)).^2 + (data(:,2)-data(1,2)).^2);
+%                 medEucl2D = sqrt((data(:,4)-data(1,4)).^2 + (data(:,5)-data(1,5)).^2);
+%                 
+%                 fprintf('std in 2D from best focus: %0.2f \n',nanmedian(nanstd(eucl2D)));
+%                 fprintf('std in 2D from mean of planes: %0.2f \n',nanmedian(nanstd(medEucl2D)));
+%                 fprintf('std in 3D from best focus: %0.2f \n',nanmedian(nanstd(eucl)));
+%                 fprintf('std in 3D from mean of planes: %0.2f \n',nanmedian(nanstd(medEucl)));
+%                 
+%                 subplot(2,2,1)
+%                 hold on
+%                 plot(eucl);
+%                 title({'3D euclidian distance'; 'From best focus'})
+%                 hold off
+%                 
+%                 subplot(2,2,2)
+%                 hold on
+%                 plot(medEucl);
+%                 title({'3D euclidian distance'; 'From median'})
+%                 hold off
+%                 
+%                 subplot(2,2,3)
+%                 hold on
+%                 plot(eucl2D);
+%                 title({'2D euclidian distance'; 'From best focus'})
+%                 hold off
+%                 
+%                 subplot(2,2,4)
+%                 hold on
+%                 plot(medEucl2D);
+%                 title({'2D euclidian distance'; 'From median'})
+%                 hold off
+%                 
+%                 %ylim([-400 400]);
+%                 
+% 
+%             end
+%             hold off
+                     
+        end
     end
     
     methods (Access = private)

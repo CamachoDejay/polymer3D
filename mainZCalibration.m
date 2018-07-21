@@ -20,7 +20,13 @@ testZCal.retrieveZCalMov;
 %% extract zData
 detectParam.delta = 6;
 detectParam.chi2 = 80;
-testZCal.retrieveZCalData(detectParam)
+fitZParam.deg = 4;
+fitZParam.ellipRange = [0.77 1.6];
+
+trackParam.euDistPx = 1; 
+trackParam.ellip = 5;
+
+testZCal.retrieveZCalData(detectParam, fitZParam,trackParam);
 
 %% ZCalibration
 
@@ -30,3 +36,10 @@ testZCal.zCalibrate;
 %% show calib
 
 testZCal.showZCalibration
+
+%% test Calibration
+testZCal.evalAccuracy;
+
+%% 
+testZCal.showAccuracy;
+
