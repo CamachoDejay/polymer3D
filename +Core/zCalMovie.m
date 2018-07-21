@@ -119,128 +119,6 @@ classdef zCalMovie < Core.mpLocMovie
                obj.zCalibration.calData = zCalData;
         end 
         
-        function [zData] = zCalibrate(obj)
-            assert(~isempty(obj.calibrated),'Data should be calibrated to do ZzCalibrationration');
-            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zzCalibrationration');
-            assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZzCalibrationration');
-            
-            if ~isempty(obj.particles.Traces)
-                quest = 'Some tracked traces were found in the object, do you want to keep them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Keep';
-                btn2 = 'Run again';
-                defbtn = 'Keep';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                    case 'Keep'
-                    case 'Run again'
-                       
-                        obj.trackInZ;
-                        
-                    otherwise
-                        error('Unknown answer to question dialog ');
-                        
-                end
-                
-            else
-                
-                %We first track particle in Z
-                obj.trackInZ;
-                
-            end
-            %Transform the traces into zCalibrationration data (extracting data
-            %per plane
-            zCalData = obj.getCalData(obj.particles.Traces,obj.particles.nTraces);
-            
-            %synchronize the data (aligned them in Z)
-            zSyncCalData = obj.syncZCalData(zCalData);
-            %Calculate the zCalibrationration curve
-            zCal =  Core.zCalMovie.calZCalibration(zSyncCalData);
-            %store
-            obj.zCalibration.cal = zCal;
-            obj.zCalibration.calData = zCalData;
-            obj.zCalibration.syncEllip = zSyncCalData;
-            
-            zData = obj.zCalibration;
-        end
-        
-        function [traces] = get3DTraces(obj)
-            %Extract 3D traces for each particles
-            list = obj.particles.List;
-            tracesIdx = obj.particles.Traces;
-            pxSize = obj.info.pxSize;
-            %ellipt range used for fitting
-            elliptRange = [obj.zCalibration.syncEllip{1,3}(1) obj.zCalibration.syncEllip{1,3}(2)];
-            elliptRange = elliptRange(1):0.01:elliptRange(2);
-            %we weigh the average later base on how much out of focus the
-            %plane was.
-            wRange1 = length(elliptRange(elliptRange<=1));
-            wRange2 = length(elliptRange(elliptRange>=1));
-            weight1 = linspace(1,5,wRange1);
-            weight2 = linspace(5,1,wRange2);
-            finalWeight = [weight1 weight2];
-            
-            if isempty(obj.zCalibration.cal)
-                
-                warning('no z zCalibrationration detected, only show 2D plot');
-                
-            end
-            %Calculation of x-y-z position occurs within the loop here
-            traces = zeros(length(list),6,obj.particles.nTraces);
-            for i = 1 : length(list)
-                if ~isempty(list{i})
-                    for j = 1 : length(list{i})
-                        
-                        currentPart = list{i}{j};
-                        %find indices to data in correct ellipticity range
-                        id = and(currentPart(:,3)>=elliptRange(1),...
-                                       currentPart(:,3)<=elliptRange(end));
-                        if all(id==0)
-                            
-                        else
-                                  
-                        ellip2Keep = currentPart(id,3);
-                        idx = ellip2Keep;
-                        for k = 1 :length(ellip2Keep)
-                            
-                            [~,idx(k)] = min(abs(elliptRange-ellip2Keep(k)));
-                            
-                            
-                        end
-                           
-                        weight = finalWeight(idx);
-                        %Weighed average
-                        xAvg = sum(diag(list{i}{j}(id,2)* weight))/sum(weight) * pxSize;
-                        yAvg = sum(diag(list{i}{j}(id,1)* weight))/sum(weight) * pxSize;
-                        %best focus Value
-                        x = list{i}{j}(3,2)* pxSize;
-                        y = list{i}{j}(3,1)* pxSize;
-                        
-                        if ~isempty(obj.zCalibration.cal)
-                            %Calculation for Z is occur here
-                            [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight);
-                            
-                        else
-                            
-                            zAvg = 0;
-                            z = 0;
-                            
-                        end
-                        
-                        if ~isnan(tracesIdx{i}{j})
-                        traces(i,:,tracesIdx{i}{j}) = [x y z xAvg yAvg zAvg];
-                        else
-                        end
-                        
-                        end
-                    end                    
-                end
-            end
-            %Storage
-            obj.particles.traces3D = traces;
-        end
-        
         function showParticlesTracked(obj,ips)
             %display a movie where both localization and consolidation are
             %showed. The display needs to be improved !
@@ -372,82 +250,82 @@ classdef zCalMovie < Core.mpLocMovie
             
         end
         
-        function showZCalibration(obj)
-            assert(~isempty(obj.zCalibration),'No zzCalibrationration found, please run z zCalibrationration before display');
-            relZ = obj.calibrated.oRelZPos*1000;%in nm
-            figure()
-            for i = 1 : length(obj.zCalibration.syncEllip)
+        function [traces] = get3DTraces(obj)
+            %Extract 3D traces for each particles
+            list = obj.particles.List;
+            tracesIdx = obj.particles.Traces;
+            pxSize = obj.info.pxSize;
+            %ellipt range used for fitting
+            elliptRange = [obj.zCalibration.syncEllip{1,3}(1) obj.zCalibration.syncEllip{1,3}(2)];
+            elliptRange = elliptRange(1):0.01:elliptRange(2);
+            %we weigh the average later base on how much out of focus the
+            %plane was.
+            wRange1 = length(elliptRange(elliptRange<=1));
+            wRange2 = length(elliptRange(elliptRange>=1));
+            weight1 = linspace(1,5,wRange1);
+            weight2 = linspace(5,1,wRange2);
+            finalWeight = [weight1 weight2];
+            
+            if isempty(obj.zCalibration.cal)
                 
-                z =  obj.zCalibration.syncEllip{i}(:,1)+relZ(i);
-                ellip = obj.zCalibration.syncEllip{i}(:,2);
-                
-                ellip1 = ellip(ellip>=1);
-                z1 = z(ellip>=1);
-                
-                ellip2 = 1./ellip(ellip<=1);
-                z2 = z(ellip<=1);
-               yAx = 1:0.1:2;
-               subplot(2,1,1)
-               hold on
-               scatter(z1,ellip1)
-               plot(ones(length(yAx),1)*relZ(i),yAx)
-               title('Elliptiticy Elongated in Y')
-               xlabel('zPos (nm)')
-               ylabel('Ellipticity (sigY/sigX)')
-               ylim([1 2])
-               hold off
-               
-               subplot(2,1,2)
-               hold on
-               scatter(z2,ellip2)
-               plot(ones(length(yAx))*relZ(i),yAx)
-               title('Elliptiticy Elongated in X')
-               xlabel('zPos (nm)')
-               ylabel('Ellipticity (sigX/sigY)')
-               ylim([1 2])
-               hold off
+                warning('no z zCalibrationration detected, only show 2D plot');
                 
             end
-            
-            figure()
-            scatter(obj.zCalibration.syncEllip{1,2}(:,1),obj.zCalibration.syncEllip{1,2}(:,2));
-            xlabel('ZPosition')
-            ylabel('Ellipticity')
-            title('Ellipticity-Z curve for all the planes superimposed')
-            
-            figure()
-            
-            for i = 1 : length(obj.zCalibration.syncEllip)
-                
-                dataCurrentPlane = obj.zCalibration.syncEllip{i};
-                
-                [binnedData] = Plotting.qBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
-                zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
-                %retrieving fit to display
-                p = obj.zCalibration.cal{i};
-                fit = polyval(p,zVec);
-                %shifting according to the plane
-                zVec = zVec + relZ(i) ;
-                dataCurrentPlane(:,1) = dataCurrentPlane(:,1)+ relZ(i); 
-                binnedData(:,1) = binnedData(:,1) +relZ(i);
-                
-                subplot(1,2,1)
-                hold on
-                scatter(binnedData(:,1),binnedData(:,2))
-                plot(zVec,fit)
-                title('Binned data fitted with polynomial')
-
-                subplot(1,2,2)
-                hold on
-                scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
-                plot(zVec,fit)
-                title('Full data fitted with polynomial')
-                
+            %Calculation of x-y-z position occurs within the loop here
+            traces = zeros(length(list),6,obj.particles.nTraces);
+            for i = 1 : length(list)
+                if ~isempty(list{i})
+                    for j = 1 : length(list{i})
+                        
+                        currentPart = list{i}{j};
+                        %find indices to data in correct ellipticity range
+                        id = and(currentPart(:,3)>=elliptRange(1),...
+                                       currentPart(:,3)<=elliptRange(end));
+                        if all(id==0)
+                            
+                        else
+                                  
+                        ellip2Keep = currentPart(id,3);
+                        idx = ellip2Keep;
+                        for k = 1 :length(ellip2Keep)
+                            
+                            [~,idx(k)] = min(abs(elliptRange-ellip2Keep(k)));
+                            
+                            
+                        end
+                           
+                        weight = finalWeight(idx);
+                        %Weighed average
+                        xAvg = sum(diag(list{i}{j}(id,2)* weight))/sum(weight) * pxSize;
+                        yAvg = sum(diag(list{i}{j}(id,1)* weight))/sum(weight) * pxSize;
+                        %best focus Value
+                        x = list{i}{j}(3,2)* pxSize;
+                        y = list{i}{j}(3,1)* pxSize;
+                        
+                        if ~isempty(obj.zCalibration.cal)
+                            %Calculation for Z is occur here
+                            [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight);
+                            
+                        else
+                            
+                            zAvg = 0;
+                            z = 0;
+                            
+                        end
+                        
+                        if ~isnan(tracesIdx{i}{j})
+                        traces(i,:,tracesIdx{i}{j}) = [x y z xAvg yAvg zAvg];
+                        else
+                        end
+                        
+                        end
+                    end                    
+                end
             end
-            
-
+            %Storage
+            obj.particles.traces3D = traces;
         end
-    
+        
         function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight)
             %extract Z position based on ellipticity and zCalibrationration curve
             assert(~isempty(obj.zCalibration),'No zzCalibrationration found, please run z zCalibrationration calculating Z position');
@@ -555,48 +433,11 @@ classdef zCalMovie < Core.mpLocMovie
     end
     
     methods (Static)
-        
-        function [zCalibration] = calZCalibration(zSyncCalData)
-            %function that take the synchronized z-ellip Data and fit, for
-            %each planes with a polynomial. It stores the coeff of the
-            %polynomials
-            zCalibration = cell(length(zSyncCalData),1);
-            deg = zSyncCalData{1,3}(3);
-            
-            for i = 1: length(zSyncCalData)
-                dataCurrentPlane = zSyncCalData{i};
-                [binnedData] = Plotting.qBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
                 
-                zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
-     
-                p = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),deg);
-                fit = polyval(p,zVec);
-%                 
-%                 figure
-%                 subplot(1,2,1)
-%                 hold on
-%                 scatter(binnedData(:,1),binnedData(:,2))
-%                 plot(zVec,fit)
-%                 
-%                 subplot(1,2,2)
-%                 hold on
-%                 scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
-%                 plot(zVec,fit)
- 
-                zCalibration{i} = p;
-                
-            end
-            
-        end
-        
-        
-        
     end
     
 
      methods (Access = private)
-        
-        
         
      end
 end
