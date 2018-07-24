@@ -267,6 +267,7 @@ classdef zCalibration < handle
             obj.traces3D = trace3D;
             obj.zPosMotor = zMotor;
             
+            disp('Calculating accuracy and preparing plots')
             obj.showAccuracy(trace3D,zMotor);
             
             disp('=================> DONE <===================');
