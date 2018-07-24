@@ -80,6 +80,8 @@ traces = zCalMov.get3DTraces;
 zCalMov.showTraces
 
 %% SuperResCalMovie
+trackParam.euDistPx = 1; 
+trackParam.ellip = 5;
 SRCalMov = Core.superResCalMov(path2Cal,calib.getCal);
 
 SRCalMov.giveInfo;
@@ -92,7 +94,7 @@ SRCalMov.superResConsolidate;
 SRCalMov.showParticles(50);
 %% SuperResCalibrate
 
-SRCalMov.superResCalibrate;
+SRCalMov.superResCalibrate(trackParam);
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();

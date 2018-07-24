@@ -284,8 +284,9 @@ classdef zCalibration < handle
             %polynomials
             zCalibration = cell(length(zSyncCalData),1);
             deg = zSyncCalData{1,3}(3);
-            
+            disp('Starting fitting ...');
             for i = 1: length(zSyncCalData)
+                disp(['Fitting of plane ' num2str(i)]);
                 dataCurrentPlane = zSyncCalData{i};
                 [binnedData] = Plotting.qBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
                 
@@ -297,7 +298,7 @@ classdef zCalibration < handle
                 zCalibration{i} = p;
                 
             end
-            
+            disp('=================> DONE <===================');
         end
         
         function showAccuracy(obj,traces3D, zPosMotor)
@@ -326,8 +327,8 @@ classdef zCalibration < handle
                         accuracyF2plot = (data(:,3) - data(find(data(:,3),1,'first'),3)) - currentMotor(1:size(data,1));
                         accuracyM2plot  = (data(:,6) - data(find(data(:,3),1,'first'),6)) - currentMotor(1:size(data,1));
                         
-                        accuracyMean = [accuracyMean std(accuracyM2plot)];
-                        accuracyFocus = [accuracyFocus std(accuracyF2plot)];
+                        accuracyMean = [accuracyMean mean(abs(accuracyM2plot))];
+                        accuracyFocus = [accuracyFocus mean(abs(accuracyF2plot))];
                           
                         subplot(2,2,1)
                         hold on
@@ -350,7 +351,7 @@ classdef zCalibration < handle
 
                         subplot(2,2,3)
                         hold on
-                        plot(nonzeros(accuracyF2plot))
+                        plot(accuracyF2plot)
                         xlabel('Frame')
                         ylabel('tracked Distance - motor movement')
                         title(' Z position for different particle in best focus')
@@ -358,7 +359,7 @@ classdef zCalibration < handle
 
                         subplot(2,2,4)
                         hold on
-                        plot(nonzeros(accuracyM2plot))
+                        plot(accuracyM2plot)
                         xlabel('Frame')
                         ylabel('tracked Distance - motor movement')
                         title('Z position for different particle mean')

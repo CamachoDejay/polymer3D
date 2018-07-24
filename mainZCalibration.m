@@ -20,8 +20,8 @@ testZCal.retrieveZCalMov;
 %% extract zData
 detectParam.delta = 6;
 detectParam.chi2 = 80;
-fitZParam.deg = 4;
-fitZParam.ellipRange = [0.7 1.6];
+fitZParam.deg = 5;
+fitZParam.ellipRange = [0.77 1.5];
 
 trackParam.euDistPx = 1; 
 trackParam.ellip = 5;
