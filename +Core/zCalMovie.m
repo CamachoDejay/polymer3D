@@ -142,7 +142,7 @@ classdef zCalMovie < Core.mpLocMovie
                         focus1 = zPos(idx);
                         zPos = zPos - focus1;
 
-                        if length(ellipt)<deg
+                        if length(ellipt)<=deg
                         else
                             %Do the fit and extract the exact z position of the focus
                             p = polyfit(zPos,ellipt,deg);
