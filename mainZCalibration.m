@@ -21,7 +21,7 @@ testZCal.retrieveZCalMov;
 detectParam.delta = 6;
 detectParam.chi2 = 80;
 fitZParam.deg = 4;
-fitZParam.ellipRange = [0.77 1.6];
+fitZParam.ellipRange = [0.7 1.6];
 
 trackParam.euDistPx = 1; 
 trackParam.ellip = 5;
@@ -39,7 +39,3 @@ testZCal.showZCalibration
 
 %% test Calibration
 testZCal.evalAccuracy;
-
-%% 
-testZCal.showAccuracy;
-

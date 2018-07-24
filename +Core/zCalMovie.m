@@ -317,8 +317,7 @@ classdef zCalMovie < Core.mpLocMovie
                 
     end
     
-
-     methods (Access = private)
+    methods (Access = private)
         
      end
 end
