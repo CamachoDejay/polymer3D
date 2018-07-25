@@ -30,9 +30,15 @@ classdef superResCalMov < Core.zCalMovie
             %#2 Extract Data per particles
             [partData] = obj.extractPartData;
             
-            %#2 Find frames where a particle is approx equally defocused in
-            %2 planes.
-            [test]= obj.findDefocusedFrame(partData);
+            %#3 Find frames where a particle is approx equally defocused in
+            %2 consective planes.
+            [idx2Frame]= obj.findDefocusedFrame(partData);
+            
+            %#4 Extract the data per plane
+            [SRCalibData] = obj.getCalibData(partData,idx2Frame);
+            
+            %#5 Find Translation
+            [transMat] = obj.getTranslation(SRCalibData);
             
         end
     end
@@ -117,6 +123,48 @@ classdef superResCalMov < Core.zCalMovie
                 end
                 
             end
+            
+        end
+        
+        function [SRCalibData] = getCalibData(obj,partData,idx2Frame)
+            nPlanes = obj.calibrated.nPlanes;
+            SRCalibData = cell(nPlanes,1);
+            for i =1:size(partData,2)
+                currentData = partData{i};
+                for j = 1:nPlanes-1
+                    %Data Plane x
+                    idx = and(currentData(:,4)==j,currentData(:,5)==idx2Frame{i}(j,2));
+                    SRCalibData{j} = [SRCalibData{j}; currentData(idx,:) ];
+                    %Data Plane x+1
+                    idx = and(currentData(:,4)==j+1,currentData(:,5)==idx2Frame{i}(j,2));
+                    SRCalibData{j+1} = [SRCalibData{j+1}; currentData(idx,:)];
+                end
+            end
+            
+        end
+        
+        function [transMat] = getTranslation(obj,SRCalibData)
+            nPlanes = obj.calibrated.nPlanes;
+            transMat = cell(nPlanes-1,1);
+            for i = 1:nPlanes-1
+                
+                %Center of mass col row for plane a (ellip>1)
+                colCMa = mean(SRCalibData{i}(SRCalibData{i}(:,3)>1,1));
+                rowCMa = mean(SRCalibData{i}(SRCalibData{i}(:,3)>1,2));
+                
+                %Center of mass col row plane b (ellip<1)
+                colCMb = mean(SRCalibData{i+1}(SRCalibData{i+1}(:,3)<1,1));
+                rowCMb = mean(SRCalibData{i+1}(SRCalibData{i+1}(:,3)<1,2));
+                
+                %if we want to add the correction (not subtract)
+                colTrans = colCMa-colCMb;
+                rowTrans = rowCMa-rowCMb;
+                
+                %store
+                transMat{i} = [colTrans rowTrans];
+                
+            end
+            
             
         end
         
