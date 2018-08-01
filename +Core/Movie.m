@@ -5,7 +5,7 @@ classdef Movie < handle
     %any data inside. Methods allow to display and do stuff with the data.
     
     properties (SetAccess = 'private')
-        raw
+       raw
         
     end
     properties 

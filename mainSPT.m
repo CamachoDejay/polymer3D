@@ -20,9 +20,10 @@ detectParam.chi2 = 80;
 
 %% create a Movie Object
 mov1 = Core.Movie(path2File);
-
+mov2 = Core.Movie(path2zCal);
 %% showFrame
 mov1.showFrame(22);
+mov2.showFrame(51);
 %% Calib
 calib = Core.calib2D(path2Cal);
 
