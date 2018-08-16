@@ -84,8 +84,7 @@ classdef Calib2D < Core.Movie
                 
                 
             end
-            ylim([min(min(focusMet)), max(max(focusMet))]);
-            xlim([min(ZPos), max(ZPos)]);
+            ylim([min(min(
             title('Setup Plane Calibration');
             
             hold off

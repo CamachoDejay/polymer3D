@@ -28,8 +28,8 @@ mov1.showFrame(22);
 calib = Core.Calib2D(path2Cal);
 
 calib.calc;
-
-calib.showFrame(22)
+%%
+calib.showCal
 
 %% Calibrate
 mpMov = Core.mpMovie(path2File,calib.getCal);
