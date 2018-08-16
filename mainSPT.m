@@ -20,12 +20,12 @@ detectParam.chi2 = 80;
 
 %% create a Movie Object
 mov1 = Core.Movie(path2File);
-mov2 = Core.Movie(path2zCal);
+%mov2 = Core.Movie(path2zCal);
 %% showFrame
 mov1.showFrame(22);
-mov2.showFrame(51);
+%mov2.showFrame(51);
 %% Calib
-calib = Core.calib2D(path2Cal);
+calib = Core.Calib2D(path2Cal);
 
 calib.calc;
 
@@ -83,7 +83,7 @@ zCalMov.showTraces
 %% SuperResCalMovie
 trackParam.euDistPx = 1; 
 trackParam.ellip = 5;
-SRCalMov = Core.superResCalMov(path2Cal,calib.getCal);
+SRCalMov = Core.SRCalMovie(path2Cal,calib.getCal);
 
 SRCalMov.giveInfo;
 SRCalMov.findCandidatePos(detectParam);
@@ -95,7 +95,7 @@ SRCalMov.superResConsolidate;
 SRCalMov.showParticles(50);
 %% SuperResCalibrate
 
-SRCalMov.superResCalibrate(trackParam);
+SRCalMov.SRCalibrate(trackParam);
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();

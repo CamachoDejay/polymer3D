@@ -1,4 +1,4 @@
-classdef zCalMovie < Core.mpLocMovie
+classdef ZCalMovie < Core.MPLocMovie
     %zCal will hold the information related to zCalibration movies as well as all
     %the method linked to the zzCalibrationration.
     
@@ -9,10 +9,10 @@ classdef zCalMovie < Core.mpLocMovie
     
     methods
         
-        function obj = zCalMovie(raw,cal,candidatePos)
+        function obj = ZCalMovie(raw,cal,candidatePos)
             %UNTITLED6 Construct an instance of this class
             %   Detailed explanation goes here
-            obj  = obj@Core.mpLocMovie(raw,cal);
+            obj  = obj@Core.MPLocMovie(raw,cal);
             
             if nargin == 3
                 

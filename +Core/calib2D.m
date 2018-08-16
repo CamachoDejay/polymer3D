@@ -1,4 +1,4 @@
-classdef calib2D < Core.Movie
+classdef Calib2D < Core.Movie
     %This class will hold information about the 2D Cal movie and will be
     %able to calculate the calibration as well.
     
@@ -7,7 +7,7 @@ classdef calib2D < Core.Movie
     end
     
     methods
-        function obj = calib2D(raw)
+        function obj = Calib2D(raw)
             %In this case raw path is used for both the loading of the
             %movie and the calibration calculation
             obj = obj@Core.Movie(raw);

@@ -1,4 +1,4 @@
-classdef mpMovie < Core.Movie
+classdef MPMovie < Core.Movie
     %From this class we assume that we are dealing with multiplane data.
     %The movie can thus be calibrated if calibration data is provided.
     %Extension will be centered around localization but SOFI movie could
@@ -11,7 +11,7 @@ classdef mpMovie < Core.Movie
     
     methods
         
-        function obj = mpMovie(raw,cal)
+        function obj = MPMovie(raw,cal)
            
             obj = obj@Core.Movie(raw);
             

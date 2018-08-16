@@ -9,9 +9,9 @@ path2Cal  ='E:\Data\Leuven Data\2018\03-Mar\22\PlaneCaibration\BeadsCalibrationZ
 
 %% Initialize a zCalibration Object
 
-calib = Core.calib2D(path2Cal);
+calib = Core.Calib2D(path2Cal);
 
-testZCal = Core.zCalibration(path2zCal,calib.getCal);
+testZCal = Core.ZCalibration(path2zCal,calib.getCal);
 
 %% get zCalibrationMovie
 

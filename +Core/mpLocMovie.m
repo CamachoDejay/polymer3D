@@ -1,5 +1,5 @@
-classdef mpLocMovie < Core.mpMovie
-    %mpLocMovie hold all the method and info necessary for localization,
+classdef MPLocMovie < Core.MPMovie
+    %MPLocMovie hold all the method and info necessary for localization,
     %expension of this object will be first centered around Tracking but
     %it will also be easy to extend to STORM/PALM.
     
@@ -12,9 +12,9 @@ classdef mpLocMovie < Core.mpMovie
     
     methods
         
-        function obj = mpLocMovie(raw, cal)
+        function obj = MPLocMovie(raw, cal)
             
-            obj  = obj@Core.mpMovie(raw,cal);
+            obj  = obj@Core.MPMovie(raw,cal);
             
         end
         
@@ -28,7 +28,7 @@ classdef mpLocMovie < Core.mpMovie
         function findCandidatePos(obj,detectParam, frames)
             %Method to perform localization on each plane for each frame
             %Check if some candidate exists already in the folder (previously saved)
-            [run, candidate] = Core.mpLocMovie.existCandidate(obj.raw.movInfo.Path, '.mat');
+            [run, candidate] = Core.MPLocMovie.existCandidate(obj.raw.movInfo.Path, '.mat');
             
             if run
                 switch nargin
@@ -90,7 +90,7 @@ classdef mpLocMovie < Core.mpMovie
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
             
             %Check if some particles were saved already.
-            [run, particle] = Core.mpLocMovie.existParticles(obj.raw.movInfo.Path, '.mat');
+            [run, particle] = Core.MPLocMovie.existParticles(obj.raw.movInfo.Path, '.mat');
             
             if run
                 %Check the number of function input
@@ -300,11 +300,11 @@ classdef mpLocMovie < Core.mpMovie
                 'Tracking parameter is expected to be a struct with two field "euDistPx" and "ellip"')
             %We copy the List as boolean to keep track of where there are
             %still particles left
-            [listBool] = Core.mpLocMovie.copyList(obj.particles.List,1);
+            [listBool] = Core.MPLocMovie.copyList(obj.particles.List,1);
             %We copy as NaN for storage of the traces;
-            [traces]   = Core.mpLocMovie.copyList(obj.particles.List,NaN);
+            [traces]   = Core.MPLocMovie.copyList(obj.particles.List,NaN);
             %We pick the first particle available
-            [idx] = Core.mpLocMovie.pickParticle(listBool);
+            [idx] = Core.MPLocMovie.pickParticle(listBool);
             counter = 1;
             errCount =1;
             while (idx)
@@ -315,22 +315,22 @@ classdef mpLocMovie < Core.mpMovie
                     
                 end
                 %Connect particles (cf consolidation but across frames
-                [listIdx] = Core.mpLocMovie.connectParticles(obj.particles.List,listBool,idx, trackParam);
+                [listIdx] = Core.MPLocMovie.connectParticles(obj.particles.List,listBool,idx, trackParam);
                 %if the particle was connected in less than 5 frames we remove
                 % its appearance from the list bool
                 if length(listIdx) < 5
                     
-                    [listBool] = Core.mpLocMovie.removeParticles(listBool,listIdx);
+                    [listBool] = Core.MPLocMovie.removeParticles(listBool,listIdx);
                     
                 else
                     %Otherwise we store traces, increment counter and remove.
-                    [traces]  = Core.mpLocMovie.storeTraces(traces,listIdx,counter);
+                    [traces]  = Core.MPLocMovie.storeTraces(traces,listIdx,counter);
                     counter = counter +1;
-                    [listBool] = Core.mpLocMovie.removeParticles(listBool,listIdx);
+                    [listBool] = Core.MPLocMovie.removeParticles(listBool,listIdx);
                     
                 end
                 % We pick a new particle and start all over again
-                [idx] = Core.mpLocMovie.pickParticle(listBool);
+                [idx] = Core.MPLocMovie.pickParticle(listBool);
                 errCount = errCount +1;
             end
             counter = counter -1;
@@ -426,11 +426,11 @@ classdef mpLocMovie < Core.mpMovie
             
             Thresh = 2*sqrt(2); %in Px As the superResCal is not
             %performed yet we allow 2px in both direction
-            [checkRes1] = Core.mpLocMovie.checkEuDist(current(:,1:2),...
+            [checkRes1] = Core.MPLocMovie.checkEuDist(current(:,1:2),...
                 next(:,1:2),Thresh);
             
             % Test ellipticity
-            [checkRes2] = Core.mpLocMovie.checkEllipticity(current(:,3),...
+            [checkRes2] = Core.MPLocMovie.checkEllipticity(current(:,3),...
                 next(:,3),direction);
             
             % Test focus Metric
@@ -542,7 +542,7 @@ classdef mpLocMovie < Core.mpMovie
                     break;
                 end
                 part2Track = List{currentIdx(1)}{currentIdx(2)};
-                [checkRes] = Core.mpLocMovie.checkListBool(listBool,currentIdx(1)+1);
+                [checkRes] = Core.MPLocMovie.checkListBool(listBool,currentIdx(1)+1);
                 nPartInFrame = length(checkRes);
                 
                 if ~all(checkRes==0)
@@ -554,7 +554,7 @@ classdef mpLocMovie < Core.mpMovie
                     shape = [size(nextPart{1},1) size(nextPart{1},2) nPartInFrame];%Unused particle are expected to be still 5x5
                     nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
                     nextParts = nextParts(:,:,logical(checkRes));
-                    [isPart] = Core.mpLocMovie.isPartFrame(part2Track,nextParts,1,trackParam);
+                    [isPart] = Core.MPLocMovie.isPartFrame(part2Track,nextParts,1,trackParam);
                     
                     counter = counter+1;
                     if(length(find(isPart==1))>1)
@@ -637,7 +637,7 @@ classdef mpLocMovie < Core.mpMovie
                     disp('Something is wrong your focus changed more than one plane between 2 frames');
                 else
                     %Check that at least 2 planes are in common
-                    commonPlanes = Core.mpLocMovie.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
+                    commonPlanes = Core.MPLocMovie.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
                     roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
                     if all(roughcheck2 ==0)
                         disp('Less than 2 planes in common, breaking out');
@@ -646,13 +646,13 @@ classdef mpLocMovie < Core.mpMovie
                         for i = 1 : size(next,3)
                             % Test Euclidian distance
                             Thresh = trackParam.euDistPx; %in px
-                            [checkRes1] = Core.mpLocMovie.checkEuDist(current(commonPlanes(:,1,i),1:2),...
+                            [checkRes1] = Core.MPLocMovie.checkEuDist(current(commonPlanes(:,1,i),1:2),...
                                 squeeze(next(commonPlanes(:,2,i),1:2,i)),Thresh);
                             
                             % Test ellipticity
                             eWeight = [1 2 3 2 1];
                             thresh = trackParam.ellip;
-                            [checkRes2] = Core.mpLocMovie.checkEllipticity(current(commonPlanes(:,1,i),3),...
+                            [checkRes2] = Core.MPLocMovie.checkEllipticity(current(commonPlanes(:,1,i),3),...
                                 squeeze(next(commonPlanes(:,2,i),3,i)),direction,thresh,eWeight(commonPlanes(:,1,i)));
                             %To be a particle, we want the position to be
                             %consistent in at least 2 planes and
@@ -960,7 +960,7 @@ classdef mpLocMovie < Core.mpMovie
                         direction = -1;%check below
                     end
                     
-                    [isPart] = Core.mpLocMovie.isPartPlane(currentCand,cand,direction);
+                    [isPart] = Core.MPLocMovie.isPartPlane(currentCand,cand,direction);
                     if ~all(isPart ==0)
                         id = cand(isPart,end)-currentCand(end);
                         particle(round(length(currentCand)/2)+id,:) = cand(isPart,:);
@@ -971,7 +971,7 @@ classdef mpLocMovie < Core.mpMovie
                 %Check if the resulting configuration of the plane make
                 %sense e.g. no hole in the configuration
                 planeConfig = particle(:,end);
-                [checkRes] = Core.mpLocMovie.checkPlaneConfig(planeConfig,nPlanes);
+                [checkRes] = Core.MPLocMovie.checkPlaneConfig(planeConfig,nPlanes);
                 %Store
                 if checkRes
                     

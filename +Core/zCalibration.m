@@ -1,4 +1,4 @@
-classdef zCalibration < handle
+classdef ZCalibration < handle
     %zCalibration is a class that will hold the information of several
     %zCalMovie and be able to process these information to create a
     %calibration curve together with displaying etc...
@@ -15,7 +15,7 @@ classdef zCalibration < handle
     
     methods
         
-        function obj = zCalibration(path2zCal,cal2D)
+        function obj = ZCalibration(path2zCal,cal2D)
             %zCalibration Construct an instance of this class
             %   Detailed explanation goes here
             obj.path = path2zCal;
@@ -60,7 +60,7 @@ classdef zCalibration < handle
                     if ~all(idx==0)
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
-                        tmp = Core.zCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D);
+                        tmp = Core.ZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D);
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want
                         %any other movement here.
