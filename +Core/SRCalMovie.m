@@ -87,7 +87,7 @@ classdef SRCalMovie < Core.ZCalMovie
            
         end
         
-        function [defFrame] = findDefocusedFrame(obj,partData)
+        function [defocusFrame] = findDefocusedFrame(obj,partData)
            
             defocusFrame = cell(size(partData));
             
@@ -105,17 +105,18 @@ classdef SRCalMovie < Core.ZCalMovie
                     
                 end
             end
-            defFrame = zeros(1,max(planes)-1);
-            for i = 1 : max(planes)-1
-                data = zeros(1,size(partData,2));
-                for j = 1:size(partData,2)
-                    
-                    data(j) = defocusFrame{j}(i,2);
-                    
-                end
-                defFrame(i) = round(median(data(:)));
-            end
-           
+            %to only consider 1 Frame
+%             defFrame = zeros(1,max(planes)-1);
+%             for i = 1 : max(planes)-1
+%                 data = zeros(1,size(partData,2));
+%                 for j = 1:size(partData,2)
+%                     
+%                     data(j) = defocusFrame{j}(i,2);
+%                     
+%                 end
+%                 defFrame(i) = round(median(data(:)));
+%             end
+%            
             
         end
        
@@ -143,10 +144,10 @@ classdef SRCalMovie < Core.ZCalMovie
                 currentData = partData{i};
                 for j = 1:nPlanes-1
                     %Data Plane x
-                    idx = and(currentData(:,4)==j,currentData(:,5)==idx2Frame(j));
+                    idx = and(currentData(:,4)==j,currentData(:,5)==idx2Frame{i}(j,2));
                     SRCalibData{j} = [SRCalibData{j}; currentData(idx,:) ];
                     %Data Plane x+1
-                    idx = and(currentData(:,4)==j+1,currentData(:,5)==idx2Frame(j));
+                    idx = and(currentData(:,4)==j+1,currentData(:,5)==idx2Frame{i}(j,2));
                     SRCalibData{j+1} = [SRCalibData{j+1}; currentData(idx,:)];
                 end
             end
@@ -157,15 +158,16 @@ classdef SRCalMovie < Core.ZCalMovie
             nPlanes = obj.calibrated.nPlanes;
             transMat = cell(nPlanes-1,1);
             for i = 1:nPlanes-1
-                idx2FrameA = max(SRCalibData{i}(:,end));
-                idx2FrameB = min(SRCalibData{i}(:,end));
+                idx2FrameA = SRCalibData{i}(:,3) > 1;
+                idx2FrameB = SRCalibData{i+1}(:,3) < 1;
+                
                 %Center of mass col row for plane a (ellip>1)
-                colCMa = mean(SRCalibData{i}(SRCalibData{i}(:,end)==idx2FrameA,1));
-                rowCMa = mean(SRCalibData{i}(SRCalibData{i}(:,end)==idx2FrameA,2));
+                colCMa = mean(SRCalibData{i}(idx2FrameA,1));
+                rowCMa = mean(SRCalibData{i}(idx2FrameA,2));
                 
                 %Center of mass col row plane b (ellip<1)
-                colCMb = mean(SRCalibData{i+1}(SRCalibData{i+1}(:,end)==idx2FrameB,1));
-                rowCMb = mean(SRCalibData{i+1}(SRCalibData{i+1}(:,end)==idx2FrameB,2));
+                colCMb = mean(SRCalibData{i+1}(idx2FrameB,1));
+                rowCMb = mean(SRCalibData{i+1}(idx2FrameB,2));
                 
                 %if we want to add the correction (not subtract)
                 colTrans = colCMa-colCMb;
