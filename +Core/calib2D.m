@@ -74,7 +74,7 @@ classdef Calib2D < Core.Movie
             for i = 1 : size(focusMet,2)
                 
                 scatter(ZPos(:),focusMet(:,i),[],color(i,:),'filled')
-                plot(ZPos(:),fit(:,i),'Color', color(i,:))
+                plot(ZPos(:),fit(:,i),'Color', color(i,:),'LineWidth',2.5)
                 
                 height = 1.2*max(fit(:,i));
                 y = 1:height;
