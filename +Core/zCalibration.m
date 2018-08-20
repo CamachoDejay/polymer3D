@@ -213,11 +213,20 @@ classdef ZCalibration < handle
             
             %Plot #2
             figure()
-            scatter(obj.calib.data{1,2}(:,1),obj.calib.data{1,2}(:,2));
+            hold on
+          
+            for i = 1 : length(obj.calib.data)
+                dataCurrentPlane = obj.calib.data{i};
+                scatter(dataCurrentPlane(:,1), dataCurrentPlane(:,2),25,'filled',...
+                    'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4,'DisplayName',['Plane ' num2str(i) ' - ' num2str(relZ(i))])
+               
+            %scatter(obj.calib.data{1,2}(:,1),obj.calib.data{1,2}(:,2));
+            end
             xlabel('ZPosition')
             ylabel('Ellipticity')
+            legend(gca,'show')
             title('Ellipticity-Z curve for all the planes superimposed')
-            
+            hold off
             %Plot #3
             figure()            
             for i = 1 : length(obj.calib.data)
@@ -228,7 +237,9 @@ classdef ZCalibration < handle
                 zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
                 %retrieving fit to display
                 p = obj.calib.file{i};
+                p2= obj.calib.file{i,2};
                 fit = polyval(p,zVec);
+                fit2= ppval(p2,zVec);
                 %shifting according to the plane
                 zVec = zVec + relZ(i) ;
                 dataCurrentPlane(:,1) = dataCurrentPlane(:,1)+ relZ(i);
@@ -237,13 +248,13 @@ classdef ZCalibration < handle
                 subplot(1,2,1)
                 hold on
                 scatter(binnedData(:,1),binnedData(:,2))
-                plot(zVec,fit)
-                title('Binned data fitted with polynomial')
+                plot(zVec,fit2,'r')
+                title('Binned data fitted with Spline')
                 
                 subplot(1,2,2)
                 hold on
                 scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
-                plot(zVec,fit)
+                plot(zVec,fit,'r','LineWidth',2)
                 title('Full data fitted with polynomial')
                 
             end
@@ -282,7 +293,7 @@ classdef ZCalibration < handle
             %function that take the synchronized z-ellip Data and fit, for
             %each planes with a polynomial. It stores the coeff of the
             %polynomials
-            zCalibration = cell(length(zSyncCalData),1);
+            zCalibration = cell(length(zSyncCalData),2);
             deg = zSyncCalData{1,3}(3);
             disp('Starting fitting ...');
             for i = 1: length(zSyncCalData)
@@ -293,9 +304,11 @@ classdef ZCalibration < handle
                 zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
                 
                 p = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),deg);
-                fit = polyval(p,zVec);
+                p2= spline(binnedData(:,1),binnedData(:,2));
+                %fit = polyval(p,zVec);
                 
                 zCalibration{i} = p;
+                zCalibration{i,2} = p2;
                 
             end
             disp('=================> DONE <===================');
@@ -303,7 +316,7 @@ classdef ZCalibration < handle
         
         function showAccuracy(obj,traces3D, zPosMotor)
        
-            %Display the x-y-z traces
+         %Display the x-y-z traces
             assert(~isempty(obj.traces3D),'You need to get the traces before displaying them, use evalAccuracy to get the traces');
             trace = traces3D;
             motor =  zPosMotor;
@@ -322,7 +335,7 @@ classdef ZCalibration < handle
                 for j = 1:npart
                     data = currentTrace(:,:,j);
                     if ~all(data==0)
-
+                        frameVec = find(data(:,3),1,'first'):find(data(:,3),1,'last');
                         data = data(data(:,1)~=0,:);
                         accuracyF2plot = (data(:,3) - data(find(data(:,3),1,'first'),3)) - currentMotor(1:size(data,1));
                         accuracyM2plot  = (data(:,6) - data(find(data(:,3),1,'first'),6)) - currentMotor(1:size(data,1));
@@ -373,7 +386,7 @@ classdef ZCalibration < handle
             
             obj.zAccuracy.BF = mean(accuracyFocus);
             obj.zAccuracy.M  = mean(accuracyMean);
-        end
+    end
         
     end
 end
