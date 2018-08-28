@@ -6,8 +6,8 @@ clear
 close all
 clc
 
-fPath = 'E:\Data\Leuven Data\2018\03-Mar\22\PlaneCaibration\BeadsCalibrationZStack_1';
-fName = 'BeadsCalibrationZStack_1_MMStack_Pos0.ome.tif';
+fPath = 'E:\Data\Leuven Data\2018\08-Aug\28\PlaneCalibration_23';
+fName = 'PlaneCalibration_23_MMStack_Pos0.ome.tif';
 
 fPath = [fPath filesep fName];
 
@@ -16,12 +16,14 @@ fPath = [fPath filesep fName];
 
 %TODO: Improve the calculation of distance between the plane, Move it to
 %calculate ?
-zFocus = zeros(1,size(cal.focusMet,2));
-zFocus2 = zeros(1,size(cal.focusMet,2));
-for k=1:size(cal.focusMet,2)
-    [out,Fit] = Misc.gauss1DFit(cal.focusMet(:,k),cal.Zpos);
-    zFocus(k) = out(2);
-end
+zFocus = cell2mat({cal.inFocus.zpos});
+Fit = cal.fit;
+% zFocus2 = zeros(1,size(cal.focusMet,2));
+% Fit = zeros(size(cal.focusMet));
+% for k=1:size(cal.focusMet,2)
+%     [out,Fit(:,k)] = SimpleFitting.gauss1D(cal.focusMet(:,k),cal.Zpos);
+%     zFocus(k) = out(2);
+% end
 zFocus = zFocus(cal.neworder); %give the right order to the channels
 distBetweenCamPlanes = abs(mean(diff(zFocus(1:2:end))) + mean(diff(zFocus(2:2:end))))/2;
 target    = distBetweenCamPlanes/2;
@@ -29,8 +31,31 @@ distBetweenPlane = diff(zFocus);
 offTarget1 = distBetweenPlane - target;
 offTarget = mean(abs(offTarget1));
 
-message = sprintf('The difference between the target and the current plane conformation is %d',offTarget);
+message = sprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
 disp(message);
+%%
+ figure()
+            hold on
+            color = rand(8,3);
+            height = max(max(cal.focusMet));
+            for i = 1 : size(cal.focusMet,2)
+                [~,idx] = max(Fit(:,i));
+                scatter(cal.Zpos(:),cal.focusMet(:,i),[],color(i,:),'filled')
+                plot(cal.Zpos(:),Fit(:,i),'Color', color(i,:),'LineWidth',2.5)
+                
+                
+                y = 1:height;
+                x = ones(1,length(y))*zFocus(i);
+                plot(x(:),y(:),'k--');
+
+            end
+            ylim([min(min(cal.focusMet)), max(max(cal.focusMet))]);
+            xlim([min(cal.Zpos), max(cal.Zpos)]);
+            title('Setup Plane Calibration');
+            
+            hold off
+
+%%
 % load and calibrate, when applied to the calibration data then we should
 % be able to demonstrate that it works
 [data] = mpSetup.loadAndCal( fPath, cal );

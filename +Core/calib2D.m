@@ -72,7 +72,7 @@ classdef Calib2D < Core.Movie
             figure()
             hold on
             for i = 1 : size(focusMet,2)
-                
+                [~,idx] = max(fit(:,i));
                 scatter(ZPos(:),focusMet(:,i),[],color(i,:),'filled')
                 plot(ZPos(:),fit(:,i),'Color', color(i,:),'LineWidth',2.5)
                 
