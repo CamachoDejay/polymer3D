@@ -6,8 +6,8 @@ clear
 close all
 clc
 
-fPath = 'E:\Data\Leuven Data\2018\08-Aug\28\PlaneCalibration_23';
-fName = 'PlaneCalibration_23_MMStack_Pos0.ome.tif';
+fPath = 'E:\Data\Leuven Data\2018\08-Aug\29\PlaneCalibration_25';
+fName = 'PlaneCalibration_25_MMStack_Pos0.ome.tif';
 
 fPath = [fPath filesep fName];
 
