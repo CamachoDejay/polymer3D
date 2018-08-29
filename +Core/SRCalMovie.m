@@ -12,6 +12,7 @@ classdef SRCalMovie < Core.ZCalMovie
     
     properties (SetAccess = 'private')
         SRCalData
+        SRCorr
     end
     
     methods
@@ -39,6 +40,7 @@ classdef SRCalMovie < Core.ZCalMovie
             
             %#5 Find Translation
             [transMat] = obj.getTranslation(SRCalibData);
+            obj.SRCorr.translation = transMat;
             
         end
     end
@@ -104,20 +106,7 @@ classdef SRCalMovie < Core.ZCalMovie
                     
                     
                 end
-            end
-            %to only consider 1 Frame
-%             defFrame = zeros(1,max(planes)-1);
-%             for i = 1 : max(planes)-1
-%                 data = zeros(1,size(partData,2));
-%                 for j = 1:size(partData,2)
-%                     
-%                     data(j) = defocusFrame{j}(i,2);
-%                     
-%                 end
-%                 defFrame(i) = round(median(data(:)));
-%             end
-%            
-            
+            end            
         end
        
         function [idx] = findOptimalDefocusing(obj,dataPlaneA,dataPlaneB)

@@ -554,9 +554,9 @@ classdef MPLocMovie < Core.MPMovie
                     shape = [size(nextPart{1},1) size(nextPart{1},2) nPartInFrame];%Unused particle are expected to be still 5x5
                     nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
                     nextParts = nextParts(:,:,logical(checkRes));
-                    [isPart] = Core.MPLocMovie.isPartFrame(part2Track,nextParts,1,trackParam);
+                    [isPart] = Core.MPLocMovie.isPartFrame(part2Track,nextParts,-1,trackParam);
                     
-                    counter = counter+1;
+                   
                     if(length(find(isPart==1))>1)
                         
                         warning('Could not choose between 2 close particles, killing them both')
@@ -569,7 +569,7 @@ classdef MPLocMovie < Core.MPMovie
                         currentIdx(2) = idx2AvailableParticles(isPart);
                         nextParts = [];
                         listIdx(counter,:) = currentIdx;
-                        
+                        counter = counter+1;
                         isPart = true;
                     else
                         
@@ -948,7 +948,7 @@ classdef MPLocMovie < Core.MPMovie
                 planes2Check = [planes2Check currentPlane+1:currentPlane+2];
                 planes2Check = planes2Check(planes2Check<nPlanes+1);
                 currentCand = candMet(idx,:);
-                direction = 1;%Start by checking above
+                direction = -1;%Start by checking below
                 
                 particle = nan(5,6);
                 particle(3,:) = currentCand;
@@ -957,7 +957,7 @@ classdef MPLocMovie < Core.MPMovie
                     
                     cand = candMet(candMet(:,end) == planes2Check(i),:);
                     if(planes2Check(i) > currentPlane)
-                        direction = -1;%check below
+                        direction = +1;%above
                     end
                     
                     [isPart] = Core.MPLocMovie.isPartPlane(currentCand,cand,direction);
