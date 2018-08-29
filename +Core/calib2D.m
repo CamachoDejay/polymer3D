@@ -71,23 +71,24 @@ classdef Calib2D < Core.Movie
             FocusZ = {obj.cal.file.inFocus.zpos};
             figure()
             hold on
+            leg = cell(1,size(focusMet,2));
+            height =  max(max(focusMet));
+            y = 1:height;
             for i = 1 : size(focusMet,2)
                 [~,idx] = max(fit(:,i));
                 scatter(ZPos(:),focusMet(:,i),[],color(i,:),'filled')
-                plot(ZPos(:),fit(:,i),'Color', color(i,:),'LineWidth',2.5)
-                
-                height = 1.2*max(fit(:,i));
-                y = 1:height;
+                plot(ZPos(:),fit(:,i),'Color', color(i,:),'LineWidth',2.5,'HandleVisibility','off')
+               
                 x = ones(1,length(y))*FocusZ{i};
-                plot(x(:),y(:),'k--');
+                plot(x(:),y(:),'k--','HandleVisibility','off');
                 
-                
+                leg{i} = ['Cam' num2str(obj.cal.file.inFocus(i).cam) ' - Plane' num2str(obj.cal.file.inFocus(i).ch)];
                 
             end
             ylim([min(min(focusMet)), max(max(focusMet))]);
             xlim([min(ZPos), max(ZPos)]);
             title('Setup Plane Calibration');
-            
+            legend(leg)
             hold off
             
         end

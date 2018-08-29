@@ -32,7 +32,7 @@ calib.calc;
 calib.showCal
 
 %% Calibrate
-mpMov = Core.mpMovie(path2File,calib.getCal);
+mpMov = Core.MPMovie(path2File,calib.getCal);
 
 mpMov.calibrate;
 
