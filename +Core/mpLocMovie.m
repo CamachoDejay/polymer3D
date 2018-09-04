@@ -528,7 +528,7 @@ classdef MPLocMovie < Core.MPMovie
         end
         
         %method linked to consolidation along frames
-        function listIdx    = connectParticles(List,listBool,idx, trackParam)
+        function listIdx  = connectParticles(List,listBool,idx, trackParam)
             %function connecting particles across frame by checking if two
             %particles from different frame are partners
             isPart = true;
@@ -554,7 +554,7 @@ classdef MPLocMovie < Core.MPMovie
                     shape = [size(nextPart{1},1) size(nextPart{1},2) nPartInFrame];%Unused particle are expected to be still 5x5
                     nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
                     nextParts = nextParts(:,:,logical(checkRes));
-                    [isPart] = Core.MPLocMovie.isPartFrame(part2Track,nextParts,-1,trackParam);
+                    [isPart] = Core.MPLocMovie.isPartFrame(part2Track,nextParts,1,trackParam);
                     
                    
                     if(length(find(isPart==1))>1)
@@ -631,7 +631,7 @@ classdef MPLocMovie < Core.MPMovie
                 
                 isPart = zeros(size(next,3),1);
                 %check focus is not more than one plane away
-                roughcheck1 = squeeze(abs(current(3,end)-next(3,end,:)<=1));
+                roughcheck1 = squeeze(abs(current(3,end)-next(3,end,:))<=1);
                 
                 if all(roughcheck1 ==0)
                     disp('Something is wrong your focus changed more than one plane between 2 frames');
@@ -948,7 +948,7 @@ classdef MPLocMovie < Core.MPMovie
                 planes2Check = [planes2Check currentPlane+1:currentPlane+2];
                 planes2Check = planes2Check(planes2Check<nPlanes+1);
                 currentCand = candMet(idx,:);
-                direction = -1;%Start by checking below
+                direction = -1;%Start by checking above
                 
                 particle = nan(5,6);
                 particle(3,:) = currentCand;
@@ -957,7 +957,7 @@ classdef MPLocMovie < Core.MPMovie
                     
                     cand = candMet(candMet(:,end) == planes2Check(i),:);
                     if(planes2Check(i) > currentPlane)
-                        direction = +1;%above
+                        direction = +1;%check below (Plane 1 is the uppest plane 8 is lowest)
                     end
                     
                     [isPart] = Core.MPLocMovie.isPartPlane(currentCand,cand,direction);

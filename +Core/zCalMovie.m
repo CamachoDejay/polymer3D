@@ -76,13 +76,13 @@ classdef ZCalMovie < Core.MPLocMovie
             %display a movie where both localization and consolidation are
             %showed. The display needs to be improved !
             %TODO : improve display of the movie
-            assert(~isempty(obj.particles.Traces),'You need to get the traces before displaying them');
+            assert(~isempty(obj.traces),'You need to get the traces before displaying them');
             
             nPlanes = obj.calibrated.nPlanes;
-            colors = rand(obj.particles.nTraces,3);
+            colors = rand(obj.traces.nTrace,3);
             
-            for i = 1 : length(obj.particles.Traces)
-                nParticles = length(obj.particles.Traces{i});
+            for i = 1 : length(obj.traces.trace)
+                nParticles = length(obj.traces.trace{i});
                 obj.showCandidate(i);
                 
                 h = gcf;
@@ -92,7 +92,7 @@ classdef ZCalMovie < Core.MPLocMovie
                     hold on
                     for k = 1 : nParticles
                         currPart = obj.particles.List{i}{k};
-                        labelColor = obj.particles.Traces{i}{k};
+                        labelColor = obj.traces.trace{i}{k};
                         if ~isnan(labelColor)
                             if(~isempty(currPart(currPart(:,end) == j)))
                                 part2Plot = currPart(currPart(:,end) == j,:);
@@ -169,8 +169,10 @@ classdef ZCalMovie < Core.MPLocMovie
                     end
                 end
                 %tmp Store
-                [~,ind] = sort(zSyncCalData{i,1}(:,1));
-                zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
+                if ~isempty (zSyncCalData{i,1})
+                    [~,ind] = sort(zSyncCalData{i,1}(:,1));
+                    zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
+                end
                 
             end
             %final storing and output

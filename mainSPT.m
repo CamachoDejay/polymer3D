@@ -51,7 +51,7 @@ mpLocMov.showCandidate(24);
 %%
 mpLocMov.superResConsolidate;
 %% ZCal
-zCalMov = Core.zCalMovie(path2zCal,calib.getCal);
+zCalMov = Core.ZCalMovie(path2zCal,calib.getCal);
 %% CandidatePos
 zCalMov.giveInfo;
 zCalMov.findCandidatePos(detectParam);
@@ -63,7 +63,7 @@ zCalMov.superResConsolidate;
 zCalMov.showParticles(24);
 
 %% ZCalibration
-traces =  zCalMov.trackInZ;
+traces =  zCalMov.trackInZ(trackParam);
 
 %% Show traces
 zCalMov.showParticlesTracked(30);%ips
