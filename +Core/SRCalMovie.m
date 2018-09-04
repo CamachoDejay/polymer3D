@@ -13,6 +13,7 @@ classdef SRCalMovie < Core.ZCalMovie
     properties (SetAccess = 'private')
         SRCalData
         SRCorr
+        SRCorrData
     end
     
     methods
@@ -37,11 +38,115 @@ classdef SRCalMovie < Core.ZCalMovie
             
             %#4 Extract the data per plane
             [SRCalibData] = obj.getCalibData(partData,idx2Frame);
+            obj.SRCalData = SRCalibData;
             
             %#5 Find Translation
             [transMat] = obj.getTranslation(SRCalibData);
             obj.SRCorr.translation = transMat;
             
+        end
+        
+        function applyCalib(obj,refPlane)
+            disp('Starting super-resolution correction of the data');
+            data = obj.SRCalData;
+            nPlanes = length(data);
+            correction = obj.SRCorr;
+            corrData = data;
+            for i = 1 : nPlanes
+                currentPlane = i;
+                if currentPlane < refPlane
+                    
+                    idx2Corr = currentPlane:refPlane-1;
+                    sign = -1;
+                    
+                elseif currentPlane > refPlane
+                     
+                    idx2Corr = refPlane:currentPlane-1;
+                    sign = +1;
+                else
+                    idx2Corr = [];
+                end
+                %1 Translation
+                if ~isempty(idx2Corr)
+                    for j = 1:length(idx2Corr)
+                        corrData{i}(:,1:2) = corrData{i}(:,1:2) + sign* correction.translation{idx2Corr(j)};
+                    end
+                end
+                
+            end
+            obj.SRCorrData = corrData;
+            disp('=============> DONE <==============');
+        end
+        
+        function checkCalib(obj)
+           data = obj.SRCalData;
+           corrData = obj.SRCorrData;
+           err = cell(length(data)-1,1);
+           errCorr = err;
+           
+           for i =1:length(data) - 1
+               
+               err{i} = data{i,1}(data{i,1}(:,3)<1,1:2) - data{i+1,1}(data{i+1,1}(:,3)>1,1:2);
+               errCorr{i} = corrData{i,1}(corrData{i,1}(:,3)<1,1:2) - corrData{i+1,1}(corrData{i+1,1}(:,3)>1,1:2);
+           
+           end
+           
+           figure
+           fullErr = [];
+           fullCErr = [];
+           for i =1:length(data) - 1
+               
+               [errN, errEdge] = histcounts(err{i});
+               errBin = errEdge(1:end-1)+(errEdge(2)-errEdge(1));
+               [errCN, errCEdge] = histcounts(errCorr{i});
+               errCBin = errCEdge(1:end-1)+(errCEdge(2)-errCEdge(1));
+               
+               
+               subplot(1,3,1)
+               hold on
+               bar(errBin,errN)
+               xlim([-2 2])
+               title('Before SR Correction');
+               xlabel('Error in Pixel');
+               ylabel('Occurennce');
+               hold off
+               subplot(1,3,2)
+               hold on
+               bar(errCBin,errCN)
+               xlim([-2 2])
+               title('After SR Correction');
+               xlabel('Error in Pixel');
+               ylabel('Occurennce');
+               hold off
+               
+               fullErr = [fullErr; err{i}];
+               fullCErr = [fullCErr; errCorr{i}];
+               
+           end
+           
+               [fErrN, fErrEdge] = histcounts(fullErr);
+               fErrBin = fErrEdge(1:end-1)+(fErrEdge(2)-fErrEdge(1));
+               [fErrCN, fErrCEdge] = histcounts(fullCErr);
+               fErrCBin = fErrCEdge(1:end-1)+(fErrCEdge(2)-fErrCEdge(1));
+               
+               subplot(1,3,3)
+               hold on
+               plot(fErrBin,fErrN);
+               plot(fErrCBin,fErrCN);
+               legend({'Before Corr','After Corr'});
+               hold off
+           
+           avgErr = mean(abs(fullErr));
+           stdErr = std(abs(fullErr));
+           avgCErr = mean(abs(fullCErr));
+           stdCErr = std(abs(fullCErr));
+           
+           fprintf('The absolute error before correction is: %d \n', mean(avgErr));
+           fprintf('The accompanying standard deviation is: %d \n', mean(stdErr));
+           fprintf('The absolute error after correction is: %d \n', mean(avgCErr));
+           fprintf('The accompanying standard deviation is: %d \n', mean(stdCErr));
+           
+           
         end
     end
     
@@ -110,14 +215,14 @@ classdef SRCalMovie < Core.ZCalMovie
         end
        
         function [idx] = findOptimalDefocusing(obj,dataPlaneA,dataPlaneB)
-            nFrames = unique(dataPlaneA(dataPlaneA(:,3)>1,end));
+            nFrames = unique(dataPlaneA(dataPlaneA(:,3)<1,end));
             bestVal = [2 1];
             for i = 1: length(nFrames)
                 currentFrame = nFrames(i);
                 currentVal = [dataPlaneA(dataPlaneA(:,5)==currentFrame,3) dataPlaneB(dataPlaneB(:,5)==currentFrame,3)];
                 cmpVal = [abs(1-1/currentVal(1)) abs(1-currentVal(2))];
                 
-                if  and(abs(cmpVal(1) - cmpVal(2))< abs(bestVal(1) - bestVal(2)), currentVal(2)<1)
+                if  and(abs(cmpVal(1) - cmpVal(2))< abs(bestVal(1) - bestVal(2)), currentVal(2)>1)
                     bestVal = cmpVal;
                     idx = nFrames(i);
                 end
@@ -147,8 +252,8 @@ classdef SRCalMovie < Core.ZCalMovie
             nPlanes = obj.calibrated.nPlanes;
             transMat = cell(nPlanes-1,1);
             for i = 1:nPlanes-1
-                idx2FrameA = SRCalibData{i}(:,3) > 1;
-                idx2FrameB = SRCalibData{i+1}(:,3) < 1;
+                idx2FrameA = SRCalibData{i}(:,3) < 1;
+                idx2FrameB = SRCalibData{i+1}(:,3) > 1;
                 
                 %Center of mass col row for plane a (ellip>1)
                 colCMa = mean(SRCalibData{i}(idx2FrameA,1));
@@ -169,6 +274,8 @@ classdef SRCalMovie < Core.ZCalMovie
             
             
         end
+        
+      
         
     end
     

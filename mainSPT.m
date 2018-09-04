@@ -97,6 +97,13 @@ SRCalMov.showParticles(50);
 
 SRCalMov.SRCalibrate(trackParam);
 
+%% Apply Calibration
+refPlane = 1;
+SRCalMov.applyCalib(refPlane);
+%% check SRCalibration
+
+SRCalMov.checkCalib;
+
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
 for i = 1:8
