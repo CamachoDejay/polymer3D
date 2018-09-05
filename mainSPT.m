@@ -94,15 +94,18 @@ SRCalMov.superResConsolidate;
 
 SRCalMov.showParticles(50);
 %% SuperResCalibrate
+SRCalMov.getSRCalData(trackParam);
 
-SRCalMov.SRCalibrate(trackParam);
+%% calc translation
+refPlane = 4;
+SRCalMov.corrTranslation(refPlane);
 
-%% Apply Calibration
-refPlane = 1;
-SRCalMov.applyCalib(refPlane);
-%% check SRCalibration
+SRCalMov.checkAccuracy;
 
-SRCalMov.checkCalib;
+%% calc rotation
+SRCalMov.corrRotation(refPlane);
+
+SRCalMov.checkAccuracy;
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
