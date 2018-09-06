@@ -97,15 +97,15 @@ SRCalMov.showParticles(50);
 SRCalMov.getSRCalData(trackParam);
 
 %% calc translation
-refPlane = 4;
+refPlane = 6;
 SRCalMov.corrTranslation(refPlane);
 
-SRCalMov.checkAccuracy;
+SRCalMov.checkAccuracy(refPlane);
 
 %% calc rotation
 SRCalMov.corrRotation(refPlane);
 
-SRCalMov.checkAccuracy;
+SRCalMov.checkAccuracy(refPlane);
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();

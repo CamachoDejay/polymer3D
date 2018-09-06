@@ -75,35 +75,47 @@ classdef SRCalMovie < Core.ZCalMovie
             
         end
         
-        function checkAccuracy(obj)
+        function checkAccuracy(obj,refPlane)
             
             data = obj.SRCalData;
             corrData = obj.SRCorrData;
-            err = cell(length(data)-1,1);
-            errCorr = err;
+            
+            errRow = cell(length(data)-1,1);
+            errCol = errRow;
+            euclDist = errRow;
+            errCRow = errRow;
+            errCCol = errRow;
+            euclCDist= errRow;
+           
+            allDist = [];
+            allCorrDist = [];
             %Calculate the error on euclidian distance before and after
             %correction for each individual beads used for calibration
-            for i =1:length(data) - 1
-                euclA = sqrt(data{i,1}(data{i,1}(:,3)<1,1).^2 + data{i,1}(data{i,1}(:,3)<1,2).^2);
-                euclB = sqrt(data{i+1,1}(data{i+1,1}(:,3)>1,1).^2 + data{i+1,1}(data{i+1,1}(:,3)>1,2).^2);
+            for i = 1:length(data)-1
                 
-                err{i} = euclA - euclB;
-                euclA = sqrt(corrData{i,1}(corrData{i,1}(:,3)<1,1).^2 + corrData{i,1}(corrData{i,1}(:,3)<1,2).^2);
-                euclB = sqrt(corrData{i+1,1}(corrData{i+1,1}(:,3)>1,1).^2 + corrData{i+1,1}(corrData{i+1,1}(:,3)>1,2).^2);
-               
-                errCorr{i} = euclA - euclB;
-              
+                    errRow{i} = data{i,1}(data{i,1}(:,3)<1,1) - data{i+1,1}(data{i+1,1}(:,3)>1,1);
+                    errCol{i} = data{i,1}(data{i,1}(:,3)<1,2) - data{i+1,1}(data{i+1,1}(:,3)>1,2);
+                    euclDist{i} = sqrt(errRow{i}.^2+errCol{i}.^2);
+                    
+                    errCRow{i} = corrData{i,1}(corrData{i,1}(:,3)<1,1) - corrData{i+1,1}(corrData{i+1,1}(:,3)>1,1);
+                    errCCol{i} = corrData{i,1}(corrData{i,1}(:,3)<1,2) - corrData{i+1,1}(corrData{i+1,1}(:,3)>1,2);
+                    euclCDist{i} = sqrt(errCRow{i}.^2+errCCol{i}.^2);
+
+                    allDist = [allDist; data{i,1}(:,1) data{i,1}(:,2)];                   
+                    allCorrDist = [allCorrDist; corrData{i,1}(:,1) corrData{i,1}(:,2)];
+                    
             end
             
             %Plot histogram of errors
             figure
-            fullErr = [];
-            fullCErr = [];
-            for i =1:length(data) - 1
-                
-                [errN, errEdge] = histcounts(err{i},[-2:0.1:2]);
+            fullErrRow = [];
+            fullCErrRow = [];
+            errorPerPlane = zeros(length(data)-1,2);
+            errorCorrPerPlane = zeros(length(data)-1,2);
+            for i = 1:length(data)-1
+                [errN, errEdge] = histcounts(errRow{i},[-2:0.1:2]);
                 errBin = errEdge(1:end-1)+(errEdge(2)-errEdge(1));
-                [errCN, errCEdge] = histcounts(errCorr{i},[-2:0.1:2]);
+                [errCN, errCEdge] = histcounts(errCRow{i},[-2:0.1:2]);
                 errCBin = errCEdge(1:end-1)+(errCEdge(2)-errCEdge(1));
                 
                 subplot(1,3,1)
@@ -111,30 +123,33 @@ classdef SRCalMovie < Core.ZCalMovie
                 bar(errBin,errN)
                 xlim([-2 2])
                 title('Before SR Correction');
-                xlabel('Error in Pixel');
+                xlabel('X Error in Pixel');
                 ylabel('Occurennce');
-                legend
+                legend;
                 hold off
                 subplot(1,3,2)
                 hold on
                 bar(errCBin,errCN)
                 xlim([-2 2])
                 title('After SR Correction');
-                xlabel('Error in Pixel');
+                xlabel('X Error in Pixel');
                 ylabel('Occurennce');
-                legend
+                legend;
                 hold off
+               
+                fullErrRow = [fullErrRow; errRow{i}];
+                fullCErrRow = [fullCErrRow; errCRow{i}];
                 
-                fullErr = [fullErr; err{i}];
-                fullCErr = [fullCErr; errCorr{i}];
+                errorPerPlane(i,:) = [mean(abs(errRow{i})) mean(errRow{i})];
+                errorCorrPerPlane(i,:) = [mean(abs(errCRow{i})) mean(errCRow{i})];
                 
             end
             
-            [fErrN, fErrEdge] = histcounts(fullErr,[-2:0.1:2]);
+            [fErrN, fErrEdge] = histcounts(fullErrRow,[-2:0.1:2]);
             fErrBin = fErrEdge(1:end-1)+(fErrEdge(2)-fErrEdge(1));
-            [fErrCN, fErrCEdge] = histcounts(fullCErr,[-2:0.2:2]);
+            [fErrCN, fErrCEdge] = histcounts(fullCErrRow,[-2:0.2:2]);
             fErrCBin = fErrCEdge(1:end-1)+(fErrCEdge(2)-fErrCEdge(1));
-            
+            %Compare all errors before and after
             subplot(1,3,3)
             hold on
             plot(fErrBin,fErrN);
@@ -144,13 +159,37 @@ classdef SRCalMovie < Core.ZCalMovie
             xlim([-2 2])
             hold off
             
+            figure
+            plane = 1:7;
+            height = min(errorPerPlane(:,2)):0.01: max(errorPerPlane(:,2));
+            x = ones(1,length(height))*refPlane;
+            subplot(1,2,1)
+            hold on
+            plot(plane,errorPerPlane(:,1));
+            plot(plane,errorCorrPerPlane(:,1));
+            plot(x,height,'k--')
+            legend({'Before Correction','After Correction', 'Ref plane'});
+            xlabel('Planes')
+            ylabel('error compare to reference plane')
+            hold off ;
+            
+            subplot(1,2,2)
+            hold on
+            plot(plane,errorPerPlane(:,2));
+            plot(plane,errorCorrPerPlane(:,2));
+            plot(x,height,'k--')
+            legend({'Before Correction','After Correction', 'Ref plane'});
+            xlabel('Planes')
+            ylabel('error compare to reference plane')
+            hold off ;
+            
             %display some meaningful values to know what is happening
-            avgAbsErr = mean(abs(fullErr));
-            avgErr = mean(fullErr);
-            stdErr = std(abs(fullErr));
-            avgAbsCErr = mean(abs(fullCErr));
-            avgCErr = mean(fullCErr);
-            stdCErr = std(abs(fullCErr));
+            avgAbsErr = mean(abs(nonzeros(fullErrRow)));
+            avgErr = mean(nonzeros(fullErrRow));
+            stdErr = std(abs(nonzeros(fullErrRow)));
+            avgAbsCErr = mean(abs(nonzeros(fullCErrRow)));
+            avgCErr = mean(nonzeros(fullCErrRow));
+            stdCErr = std(abs(nonzeros(fullCErrRow)));
             
             fprintf('The absolute error before correction is: %0.3f pixel\n', mean(avgAbsErr));
             fprintf('The error before correction is: %d \n', mean(avgErr));
@@ -165,6 +204,16 @@ classdef SRCalMovie < Core.ZCalMovie
                     ' correction, something might have gone wrong...'])
             end
             
+            figure
+            subplot(1,3,1)
+            plot(allDist(:,2),allDist(:,1),'k+')
+            subplot(1,3,2)
+            plot(allCorrDist(:,2),allCorrDist(:,1),'r+');
+            subplot(1,3,3)
+            hold on
+            plot(allCorrDist(:,2),allCorrDist(:,1),'r+');
+            plot(allDist(:,2),allDist(:,1),'k+')
+            hold off 
         end
     end
     
@@ -304,18 +353,40 @@ classdef SRCalMovie < Core.ZCalMovie
                 planeA(:,3) = 0;
                 planeB(:,3) = 0;
                 
-                planeA = planeA - mean(planeA);
-                planeB = planeB - mean(planeB);
+                planeA = planeA - mean(planeA,1);
+                planeB = planeB - mean(planeB,1);
+                %check that format is okay
+                if and(size(planeA,1)~=3, size(planeA,2)==3)
+                    planeA = planeA';
+                    planeB = planeB';
+                elseif size(planeA,1)==3
+                else
+                    error('Something is wrong with the dimension of your data, expect a three 3D vector (x;y;z)')
+                end
+                
                 %Calculate rotation matrix (Procedure found at
                 %http://nghiaho.com/?page_id=671)
+                
                 %Calculate covariance matrix
                 H = planeA*planeB';
                 
                 %Single value decomposition
                 [U, S, V] = svd(H);
+                
                 %getting the rotation
                 rotMat{i} = V*U';
                 
+%                 %test if okay
+%                 euclDist = mean(sqrt((planeA(1,:) - planeB(1,:)).^2 +...
+%                     (planeA(2,:) - planeB(2,:)).^2 + ...
+%                     (planeA(2,:) - planeB(2,:)).^2));
+%                 
+%                 rotPlaneA = rotMat{i}*planeA;
+%                 euclDistCorr = mean(sqrt((rotPlaneA(1,:) - planeB(1,:)).^2 +...
+%                     (rotPlaneA(2,:) - planeB(2,:)).^2 + ...
+%                     (rotPlaneA(3,:) - planeB(3,:)).^2));
+%                 
+%                 Test = euclDistCorr < euclDist;
             end
         end
         
@@ -335,6 +406,7 @@ classdef SRCalMovie < Core.ZCalMovie
                 elseif currentPlane > refPlane
                     
                     idx2Corr = refPlane:currentPlane-1;
+                    idx2Corr = fliplr(idx2Corr);
                     sign = +1;
                     
                 else
@@ -387,39 +459,53 @@ classdef SRCalMovie < Core.ZCalMovie
                     data2Corr = corrData{i}(:,1:3);
                     data2Corr(:,3) = 0;
                     
-                    corrDA = data2Corr(corrData{i}(:,3)<1,:);
-                    corrDB = data2Corr(corrData{i}(:,3)>1,:);
-                    CMa = mean(corrDA);
-                    CMb = mean(corrDB);
+                    %corrDA = data2Corr(corrData{i}(:,3)<1,:);
+                    %corrDB = data2Corr(corrData{i}(:,3)>1,:);
+                    CM = mean(data2Corr);
+                   % CMb = mean(corrDB);
                         
-                    corrDA = corrDA - CMa;
-                    corrDB = corrDB - CMb;
+%                     corrDA = corrDA - CMa;
+%                     corrDB = corrDB - CMb;
+                    data2Corr = data2Corr - CM;
+                    
+                    if and(size( data2Corr,1)~=3, size( data2Corr,2)==3)
+                         data2Corr =  data2Corr';
+                        %corrDB = corrDB';
+                    elseif size(planeA,1)==3
+                    else
+                        error('Something is wrong with the dimension of your data, expect a three 3D vector (x;y;z)')
+                    end
                     
                     for j = 1:length(idx2Corr)
                         
                         if sign
-                            rot = corr{idx2Corr(j)};
+                            rot = corr{idx2Corr(j)}';
                         else
-                            rot = corr{idx2Corr(j)}^(-1);
+                            rot = corr{idx2Corr(j)};
                         end
 
-                        if isempty(corrDB)
+%                         if isempty(corrDB)
                             
-                            corrDA = (corrDA'*rot)';
-                            corrData{i}(corrData{i}(:,3)<1,1:2) = corrDA(:,1:2)+CMa(1:2);
+                            data2Corr = (rot*data2Corr);
+                            data2Store = data2Corr';
+                            corrData{i}(:,1:2) = data2Store(:,1:2)+CM(1:2);
                             
-                        elseif isempty(corrDA)
+% %                         elseif isempty(corrDA)
+%                             
+%                             corrDB = (rot*corrDB);
+%                             data2Store = corrDB';
+%                             corrData{i}(corrData{i}(:,3)>1,1:2) = data2Store(:,1:2)+CMb(1:2);
+%                             
+%                         else
+%                             
+%                             corrDA = (rot*corrDA);
+%                             corrDB = (rot*corrDB);
+%                             data2Store = corrDA';
+%                             corrData{i}(corrData{i}(:,3)<1,1:2) = data2Store(:,1:2)+CMa(1:2);
+%                             data2Store = corrDB';
+%                             corrData{i}(corrData{i}(:,3)>1,1:2) = data2Store(:,1:2)+CMb(1:2);
                             
-                            corrDB = (corrDB'*rot)';
-                            corrData{i}(corrData{i}(:,3)>1,1:2) = corrDB(:,1:2)+CMb(1:2);
-                            
-                        else
-                            
-                            corrDA = (corrDA'*rot)';
-                            corrDB = (corrDB'*rot)';
-                            corrData{i}(corrData{i}(:,3)<1,1:2) = corrDA(:,1:2)+CMa(1:2);
-                            corrData{i}(corrData{i}(:,3)>1,1:2) = corrDB(:,1:2)+CMb(1:2);
-                        end
+                        %end
                     end
                 end
             end
