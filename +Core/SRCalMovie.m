@@ -252,7 +252,20 @@ classdef SRCalMovie < Core.ZCalMovie
                 if length(test)<obj.calibrated.nPlanes
                     %put empty cells where test fails
                     partData{i} = [];
+                else%we check if data above and below focus is encountered
+                    del = false;
+                    for j = 1: length(test)
+                        data2Test2 = data2Test(data2Test(:,4)==j,:);
+                        if or(isempty(data2Test2(data2Test2(:,3)<1)),isempty(data2Test2(data2Test2(:,3)>1)))
+                            del = true;
+                        end
+                    end
+                    if del
+                        partData{i} = [];
+                    end
                 end
+                
+               
             end
             %Deleting empty cells of the cell array
             partData(cellfun('isempty',partData)) = [];
