@@ -164,6 +164,9 @@ classdef ZCalibration < handle
             zCalibration = obj.calZCalibration(allData);
             %storage to the object
             obj.calib.file = zCalibration;
+            
+            fileName = sprintf('%s%szCalibration.mat',obj.path,'\');
+            save(fileName,'zCalibration');
 
         end
         

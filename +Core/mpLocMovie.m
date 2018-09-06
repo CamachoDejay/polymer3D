@@ -824,7 +824,7 @@ classdef MPLocMovie < Core.MPMovie
             
             for i = 1 : 1:nFrames
                 
-                position = zeros(200,3);
+                position = zeros(1000,3);
                 [volIm] = obj.getFrame(frames(i));
                 nameFields = fieldnames(volIm);
                 

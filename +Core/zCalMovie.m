@@ -300,8 +300,9 @@ classdef ZCalMovie < Core.MPLocMovie
             syncEllip = obj.zData.syncEllip;
             
             zVec = min(syncEllip{particle(3,end),1}) : 1 : max(syncEllip{particle(3,end),1});
-            %fit = polyval(zCal{particle(3,end),1},zVec);
-            fit = ppval(zCal{particle(3,end),2},zVec);%spline
+            fit = polyval(zCal{particle(3,end),1},zVec);
+            %fit = ppval(zCal{particle(3,end),2},zVec);%spline
+            
             %find the index of the value the closest to the particle
             %ellipticity
             [~,idx] = min(abs(fit-particle(3,3)));
