@@ -107,6 +107,9 @@ SRCalMov.corrRotation(refPlane);
 
 SRCalMov.checkAccuracy(refPlane);
 
+%% Unit testing
+SRCalMov.correctionUnitTesting(0.2,[-0.3,0.5,0],5);
+
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
 for i = 1:8

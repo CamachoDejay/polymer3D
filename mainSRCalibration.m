@@ -25,3 +25,15 @@ trackParam.euDistPx = 1;
 trackParam.ellip = 5;
 
 testSRCal.retrieveSRCalData(detectParam,trackParam);
+
+% calibrate
+%% calc translation
+refPlane = 3;
+testSRCal.corrTranslation(refPlane);
+
+testSRCal.checkAccuracy(refPlane);
+
+%% calc rotation
+testSRCal.corrRotation(refPlane);
+
+testSRCal.checkAccuracy(refPlane);
