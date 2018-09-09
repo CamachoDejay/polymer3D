@@ -110,8 +110,11 @@ classdef ZCalibration < handle
                 %Molecule detection
                 obj.zCalMovies.(['zCal' num2str(i)]).findCandidatePos(detectParam);
                 
+                %SR fitting
+                obj.zCalMovies.(['zCal' num2str(i)]).SRLocalizeCandidate;
+                
                 %plane consolidation
-                obj.zCalMovies.(['zCal' num2str(i)]).superResConsolidate;
+                obj.zCalMovies.(['zCal' num2str(i)]).consolidatePlanes;
                 
                 %frame consolidation/track In Z
                 [traces,counter] = obj.zCalMovies.(['zCal' num2str(i)]).trackInZ(trackParam);

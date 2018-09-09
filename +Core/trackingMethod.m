@@ -25,7 +25,7 @@ classdef trackingMethod < handle
                     break;
                 end
                 part2Track = List{currentIdx(1)}{currentIdx(2)};
-                [checkRes] = Core.MPLocMovie.checkListBool(listBool,currentIdx(1)+1);
+                [checkRes] = Core.trackingMethod.checkListBool(listBool,currentIdx(1)+1);
                 nPartInFrame = length(checkRes);
                 
                 if ~all(checkRes==0)
@@ -37,7 +37,7 @@ classdef trackingMethod < handle
                     shape = [size(nextPart{1},1) size(nextPart{1},2) nPartInFrame];%Unused particle are expected to be still 5x5
                     nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
                     nextParts = nextParts(:,:,logical(checkRes));
-                    [isPart] = Core.MPLocMovie.isPartFrame(part2Track,nextParts,1,trackParam);
+                    [isPart] = Core.trackingMethod.isPartFrame(part2Track,nextParts,1,trackParam);
                     
                    
                     if(length(find(isPart==1))>1)
@@ -120,7 +120,7 @@ classdef trackingMethod < handle
                     disp('Something is wrong your focus changed more than one plane between 2 frames');
                 else
                     %Check that at least 2 planes are in common
-                    commonPlanes = Core.MPLocMovie.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
+                    commonPlanes = Core.trackingMethod.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
                     roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
                     if all(roughcheck2 ==0)
                         disp('Less than 2 planes in common, breaking out');
@@ -129,13 +129,13 @@ classdef trackingMethod < handle
                         for i = 1 : size(next,3)
                             % Test Euclidian distance
                             Thresh = trackParam.euDistPx; %in px
-                            [checkRes1] = Core.MPLocMovie.checkEuDist(current(commonPlanes(:,1,i),1:2),...
+                            [checkRes1] = Core.MPParticleMovie.checkEuDist(current(commonPlanes(:,1,i),1:2),...
                                 squeeze(next(commonPlanes(:,2,i),1:2,i)),Thresh);
                             
                             % Test ellipticity
                             eWeight = [1 2 3 2 1];
                             thresh = trackParam.ellip;
-                            [checkRes2] = Core.MPLocMovie.checkEllipticity(current(commonPlanes(:,1,i),3),...
+                            [checkRes2] = Core.MPParticleMovie.checkEllipticity(current(commonPlanes(:,1,i),3),...
                                 squeeze(next(commonPlanes(:,2,i),3,i)),direction,thresh,eWeight(commonPlanes(:,1,i)));
                             %To be a particle, we want the position to be
                             %consistent in at least 2 planes and

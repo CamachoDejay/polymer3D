@@ -106,8 +106,11 @@ classdef SRCalibration < handle
                 %Molecule detection
                 obj.SRCalMovies.(['SRCal' num2str(i)]).findCandidatePos(detectParam);
                 
+                 %SR fitting
+                obj.SRCalMovies.(['SRCal' num2str(i)]).SRLocalizeCandidate;
+                
                 %plane consolidation
-                obj.SRCalMovies.(['SRCal' num2str(i)]).superResConsolidate;
+                obj.SRCalMovies.(['SRCal' num2str(i)]).consolidatePlanes;
                 
                 %getting Calibration data
                 [SRCalibData,dataPerPlane] = obj.SRCalMovies.(['SRCal' num2str(i)]).getSRCalData(trackParam);
@@ -143,7 +146,17 @@ classdef SRCalibration < handle
             %Correct the data
             [corrData] = Core.SRCalMovie.applyTrans(data2Corr,transMat,refPlane);
             
+            
             obj.calib.SRCorrData = corrData;
+            obj.calib.translation = transMat;
+            
+            cal.translation = transMat;
+            cal.rotation = [1 1 1;...
+                            1 1 1;...
+                            1 1 1];
+            fileName = sprintf('%s%sSRCalibration.mat',obj.path,'\');
+            save(fileName,'cal');
+
         end
         
         function [transMat,rotMat,corrData] = corrRotation(obj,refPlane)
@@ -158,6 +171,13 @@ classdef SRCalibration < handle
             [corrData] = Core.SRCalMovie.applyRot(corrData,rotMat, refPlane);
                         
             obj.calib.SRCorrData = corrData;
+            obj.calib.translation = transMat;
+            obj.calib.rotation = rotMat;
+            
+            cal.translation = transMat;
+            cal.rotation = rotMat
+            fileName = sprintf('%s%sSRCalibration.mat',obj.path,'\');
+            save(fileName,'cal');
             
         end
         
