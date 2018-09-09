@@ -9,7 +9,7 @@ path2Cal  ='E:\Data\Leuven Data\2018\03-Mar\22\PlaneCaibration\BeadsCalibrationZ
 
 %% Initialize a zCalibration Object
 
-calib = Core.Calib2D(path2Cal);
+calib = Core.MPCalibration(path2Cal);
 
 testZCal = Core.ZCalibration(path2zCal,calib.getCal);
 

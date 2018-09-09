@@ -113,6 +113,18 @@ SRCalMov.checkAccuracy(refPlane);
 %% Unit testing
 SRCalMov.correctionUnitTesting(0.2,[-0.3,0.5,0],5);
 
+%% MPLocMovie
+
+path2ZCal = 'E:\Data\Leuven Data\2018\03-Mar\22\ZCalibration\';
+path2SRCal = 'E:\Data\Leuven Data\2018\03-Mar\22\PlaneCaibration\';
+
+MPLocMov = Core.MPLocMovie(path2File,calib.getCal,path2SRCal,path2ZCal);
+
+
+
+
+
+
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
 for i = 1:8
