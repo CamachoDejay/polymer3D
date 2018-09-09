@@ -339,6 +339,7 @@ classdef MPLocMovie < Core.MPMovie
     end
     
     methods (Static)
+        
         %method linked to candidate
         function [run,candidate] = existCandidate(Path,ext)
             
@@ -798,63 +799,7 @@ classdef MPLocMovie < Core.MPMovie
     
     methods (Access = private)
         
-        %Methods linked to Candidate
-        function [candidate] = detectCandidate(obj,detectParam,frames)
-            %Do the actual localization
-            assert(~isempty(obj.calibrated),'Data should be calibrated to detect candidate');
-            assert(isstruct(detectParam),'Detection parameter should be a struct with two fields');
-            nFrames = length(frames);
-            currentCandidate = obj.candidatePos;
             
-            if(isempty(currentCandidate))
-                
-                candidate = cell(obj.calibrated.nFrames,1);
-                
-            else
-                
-                candidate = currentCandidate;
-                
-            end
-            
-            %parameter for localization
-            FWHM_pix = obj.info.FWHM_px;
-            delta  = detectParam.delta;
-            chi2   = detectParam.chi2;
-            h = waitbar(0,'detection of candidates...');
-            
-            for i = 1 : 1:nFrames
-                
-                position = zeros(1000,3);
-                [volIm] = obj.getFrame(frames(i));
-                nameFields = fieldnames(volIm);
-                
-                for j = 1:length(nameFields)
-                    %localization occurs here
-                    [ pos, ~, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
-                        delta, FWHM_pix, chi2 );
-                    startIdx = find(position==0,1,'First');
-                    pos(:,3) = j;
-                    position(startIdx:startIdx+size(pos,1)-1,:) = pos;
-                    
-                end
-                
-                idx = find(position==0,1,'First');
-                if isempty(idx)
-                    
-                    candidate{frames(i)} = position;
-                    
-                else
-                    
-                    candidate{frames(i)} = position(1:idx-1,:);
-                    
-                end
-                waitbar(i/nFrames,h,...
-                    sprintf('detection of candidates in Frame %d/%d done',i,nFrames));
-            end
-            
-            close(h);
-        end
-        
         %Methods linked to consolidation
         function [finalCandidate] = consolidatePos(obj, data, frameCandidate, roiSize)
             %SuperRes fitting and GLRT focus metric are determined here and

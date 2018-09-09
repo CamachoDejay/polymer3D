@@ -1,10 +1,10 @@
-classdef ZCalMovie < Core.MPLocMovie
+classdef ZCalMovie < Core.MPCalMovie
     %zCal will hold the information related to zCalibration movies as well as all
     %the method linked to the zzCalibrationration.
     
     properties (SetAccess = 'private')
         zData
-        traces
+       
     end
     
     methods
@@ -12,7 +12,7 @@ classdef ZCalMovie < Core.MPLocMovie
         function obj = ZCalMovie(raw,cal,candidatePos)
             %UNTITLED6 Construct an instance of this class
             %   Detailed explanation goes here
-            obj  = obj@Core.MPLocMovie(raw,cal);
+            obj  = obj@Core.MPCalMovie(raw,cal);
             
             if nargin == 3
                 
@@ -182,7 +182,7 @@ classdef ZCalMovie < Core.MPLocMovie
             obj.zData.syncEllip = zSyncCalData;
         end
         
-        function [traces,counter] = trackInZ(obj,trackParam)
+        function [traces,counter] = zTracking(obj,trackParam)
             %track the particle in the Z direction (3rd dimension here)
             %Here we do not expect any big movement from one frame to the
             %other so we give a warning if the tracking parameter seems to

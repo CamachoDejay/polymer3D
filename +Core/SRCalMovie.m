@@ -1,4 +1,4 @@
-classdef SRCalMovie < Core.ZCalMovie
+classdef SRCalMovie < Core.MPCalMovie
     %SuperResCal will hold information about the operation that needs to be
     %performed on the coordinates to match them to the plane of reference.
     
@@ -22,7 +22,7 @@ classdef SRCalMovie < Core.ZCalMovie
         %Constructor
         function obj = SRCalMovie(raw, cal)
             
-            obj  = obj@Core.ZCalMovie(raw,cal);
+            obj  = obj@Core.MPCalMovie(raw,cal);
             
         end
         
