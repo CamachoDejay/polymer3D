@@ -177,6 +177,36 @@ classdef MPMovie < Core.Movie
             %TODO: code this function
         end
         
+        function [xStep, xPosMotor] = getXPosMotor(obj)
+              %small function that extract the zStep from the info in the raw
+            nFrames = obj.raw.maxFrame(1);
+            xPosMotor = zeros(nFrames,1);
+            
+            for i = 1 : obj.raw.maxFrame(1)
+                
+                xPosMotor(i) = obj.raw.frameInfo(2*i).Pos(1);
+                
+            end
+            
+            xStep = mean(diff(xPosMotor));
+            
+        end
+        
+        function [yStep, yPosMotor] = getYPosMotor(obj)
+            %small function that extract the zStep from the info in the raw
+            nFrames = obj.raw.maxFrame(1);
+            yPosMotor = zeros(nFrames,1);
+
+            for i = 1 : obj.raw.maxFrame(1)
+
+                yPosMotor(i) = obj.raw.frameInfo(2*i).Pos(2);
+
+            end
+
+            yStep = mean(diff(yPosMotor));
+
+        end
+        
         function [zStep, zPosMotor] = getZPosMotor(obj)
             %small function that extract the zStep from the info in the raw
             nFrames = obj.raw.maxFrame(1);
@@ -190,7 +220,7 @@ classdef MPMovie < Core.Movie
             
             zStep = mean(diff(zPosMotor));
             
-        end
+        end 
                 
     end
     

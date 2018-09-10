@@ -2,7 +2,7 @@ classdef ZCalMovie < Core.MPCalMovie
     %zCal will hold the information related to zCalibration movies as well as all
     %the method linked to the zzCalibrationration.
     
-    properties (SetAccess = 'private')
+    properties (SetAccess = 'protected')
         zData
        
     end

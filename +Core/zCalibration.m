@@ -168,8 +168,13 @@ classdef ZCalibration < handle
             %storage to the object
             obj.calib.file = zCalibration;
             
+            cal.fitZParam = obj.calib.fitZParam;
+            cal.fitZParam(1).type = 'polynomial';
+            cal.fitZParam(2).type = 'spline';
+            cal.calib = obj.calib.file;
+            
             fileName = sprintf('%s%szCalibration.mat',obj.path,'\');
-            save(fileName,'zCalibration');
+            save(fileName,'cal');
 
         end
         
@@ -310,7 +315,7 @@ classdef ZCalibration < handle
                 zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
                 
                 p = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),deg);
-                p2= spline(binnedData(:,1),binnedData(:,2));
+                p2 = spline(binnedData(:,1),binnedData(:,2));
                 %fit = polyval(p,zVec);
                 
                 zCalibration{i} = p;

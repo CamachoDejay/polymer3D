@@ -120,10 +120,29 @@ path2SRCal = 'E:\Data\Leuven Data\2018\03-Mar\22\PlaneCaibration\';
 
 MPLocMov = Core.MPLocMovie(path2File,calib.getCal,path2SRCal,path2ZCal);
 
+%% Detection
 
+MPLocMov.giveInfo
+%find candidate
+MPLocMov.findCandidatePos(detectParam);
 
+%fit position
+MPLocMov.SRLocalizeCandidate;
 
+%% Data correction
+rot = false;
+refPlane = 5;
+MPLocMov.applySRCal(rot,refPlane);
+%% e-Z transformation
+MPLocMov.applyZCal;
 
+%% Plane consolidation
+
+MPLocMov.consolidatePlanes
+
+%% plot
+
+MPLocMov.showCorrLoc;
 
 %% example of a frame list I will grow this into the frame object
 frameList = mcodekit.list.dl_list();
