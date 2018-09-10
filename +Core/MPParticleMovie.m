@@ -2,7 +2,7 @@ classdef MPParticleMovie < Core.MPMovie
     %UNTITLED2 Summary of this class goes here
     %   Detailed explanation goes here
     
-    properties (SetAccess = 'private')
+    properties (SetAccess = 'protected')
         
         candidatePos
         localizedPos
@@ -66,7 +66,7 @@ classdef MPParticleMovie < Core.MPMovie
             save(fileName,'candidate');
             
             obj.candidatePos = candidate;
-            
+            obj.info.detectParam = detectParam;
         end
         
         function [candidate] = getCandidatePos(obj, frames)
@@ -107,7 +107,8 @@ classdef MPParticleMovie < Core.MPMovie
                     error('too many inputs');
                         
             end
-            
+               [run,locPos] = obj.existLocPos(obj.raw.movInfo.Path,'.mat');
+               if run
                 locPos = cell(size(obj.candidatePos));
                 h = waitbar(0,'Fitting candidates ...');
                 nFrames = length(frames);
@@ -132,6 +133,8 @@ classdef MPParticleMovie < Core.MPMovie
                     waitbar(i/nFrames,h,['Fitting candidates: frame ' num2str(i) '/' num2str(nFrames) ' done']);
                 end
                 close(h)
+               else
+               end
                 %save the data
             fileName = sprintf('%s%sSRLocPos.mat',obj.raw.movInfo.Path,'\');
             save(fileName,'locPos');
@@ -415,6 +418,44 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 run = true;
                 candidate =[];
+            end
+        end
+        
+        %method linked to fitting
+        function [run,SRLocPos] = existLocPos(Path,ext)
+            
+            [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+            
+            %Check if some candidate were already stored
+            if any(contains({file2Analyze.name},'SRLocPos')==true)
+                quest = 'Some fitted positions were found in the raw folder, do you want to load them or run again ?';
+                title = 'Question to User';
+                btn1  = 'Load';
+                btn2 = 'run again';
+                defbtn = 'Load';
+                answer = questdlg(quest,title,btn1,btn2,defbtn);
+                
+                switch answer
+                    case 'Load'
+                        
+                        SRLocPos = load([file2Analyze(1).folder filesep 'SRLocPos.mat']);
+                        name = fieldnames(SRLocPos);
+                        SRLocPos = SRLocPos.(name{1});
+                        run = false;
+                        
+                    case 'run again'
+                        
+                        run = true;
+                        SRLocPos =[];
+                        
+                    otherwise
+                        error('Unknown answer to user input dialog, most likely due to cancelation')
+                end
+                
+            else
+                
+                run = true;
+                SRLocPos =[];
             end
         end
         
