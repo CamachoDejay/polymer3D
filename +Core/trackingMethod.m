@@ -26,18 +26,15 @@ classdef trackingMethod < handle
                 end
                 part2Track = List{currentIdx(1)}{currentIdx(2)};
                 [checkRes] = Core.trackingMethod.checkListBool(listBool,currentIdx(1)+1);
-                nPartInFrame = length(checkRes);
+                
                 
                 if ~all(checkRes==0)
                     %We use reshape to input the different particles of the next
                     %frame at once by storing them in the 3rd dimension
                     nextPart = List{currentIdx(1)+1};
                     nextPart = nextPart(logical(checkRes));
-                    
-                    shape = [size(nextPart{1},1) size(nextPart{1},2) nPartInFrame];%Unused particle are expected to be still 5x5
-                    nextParts(:,:,1:nPartInFrame) = reshape(cell2mat(List{currentIdx(1)+1}'),shape);
-                    nextParts = nextParts(:,:,logical(checkRes));
-                    [isPart] = Core.trackingMethod.isPartFrame(part2Track,nextParts,1,trackParam);
+                    %used to be additional use of checkRes, why?
+                    [isPart] = Core.trackingMethod.isPartFrame(part2Track,nextPart,1,trackParam);
                     
                    
                     if(length(find(isPart==1))>1)
@@ -77,81 +74,65 @@ classdef trackingMethod < handle
         function [commonPlanes]  = findCommonPlanes(planeInCurrent,planeInNext)
             %Check how many common planes are between two candidates (one
             %of the criteria to determine if they can be partner)
-            commonPlanes = zeros(size(planeInNext,1),2,size(planeInNext,2));
-            
-            for i = 1 : size(planeInNext,2)
-                
-                commonPlanes(:,1,i) = ismember(planeInCurrent,planeInNext(:,i));
-                commonPlanes(:,2,i) = ismember(planeInNext(:,i),planeInCurrent);
-                
-            end
-            commonPlanes = logical(squeeze(commonPlanes));
+            commonPlanes(:,1) = ismember(planeInCurrent,planeInNext);
+            commonPlanes(:,2) = ismember(planeInNext,planeInCurrent);
+
+            commonPlanes = logical(commonPlanes);
         end
         
         function [isPart]   = isPartFrame(current, next, direction, trackParam)
             %This function is designed to have PSFE plate ON
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
-            assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
+            assert(and(istable(current),iscell(next)), 'unexpected format in partners to track');
             
-            if ~all(isnan(next))
                 %ZStack, consolidation between frame
                 %The calculation here is ran in parallel, we check if
                 %the current particle is a partner of one of the
                 %particles in the next frame. Some indexing or step
                 %might therefore seems unnecessary but allow to take
                 %any number of particles
-                isEdgePlane = or(~isempty(find(current(:,end)==1,1)),~isempty(find(current(:,end)==8,1)));
                 
-                if isEdgePlane
-                    
-                    nConsistentPlanes = 2;
-                    
-                else
-                    
-                    nConsistentPlanes = 2;
-                    
-                end
+                nConsistentPlanes = trackParam.commonPlanes;
+                nPart = length(next);
+                isPart = zeros(nPart,1);
                 
-                isPart = zeros(size(next,3),1);
-                %check focus is not more than one plane away
-                roughcheck1 = squeeze(abs(current(3,end)-next(3,end,:))<=1);
-                
-                if all(roughcheck1 ==0)
-                    disp('Something is wrong your focus changed more than one plane between 2 frames');
-                else
-                    %Check that at least 2 planes are in common
-                    commonPlanes = Core.trackingMethod.findCommonPlanes(current(:,end),squeeze(next(:,end,:)));
-                    roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
-                    if all(roughcheck2 ==0)
-                        disp('Less than 2 planes in common, breaking out');
+                for i = 1 : nPart
+                    
+                    nextPart = next{i};
+                    %check focus is not more than one plane away
+                    roughcheck1 = squeeze(abs(current.plane(3)-nextPart.plane(3))<=1);
+
+                    if roughcheck1 ==0
+                        %disp('Something is wrong your focus changed more than one plane between 2 frames');
                     else
-                        
-                        for i = 1 : size(next,3)
-                            % Test Euclidian distance
-                            Thresh = trackParam.euDistPx; %in px
-                            [checkRes1] = Core.MPParticleMovie.checkEuDist(current(commonPlanes(:,1,i),1:2),...
-                                squeeze(next(commonPlanes(:,2,i),1:2,i)),Thresh);
-                            
-                            % Test ellipticity
-                            eWeight = [1 2 3 2 1];
-                            thresh = trackParam.ellip;
-                            [checkRes2] = Core.MPParticleMovie.checkEllipticity(current(commonPlanes(:,1,i),3),...
-                                squeeze(next(commonPlanes(:,2,i),3,i)),direction,thresh,eWeight(commonPlanes(:,1,i)));
-                            %To be a particle, we want the position to be
-                            %consistent in at least 2 planes and
-                            %ellipticity to pass the test.
-                            isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes, checkRes2);
-                            
+                        %Check that at least 2 planes are in common
+                        commonPlanes = Core.trackingMethod.findCommonPlanes(current.plane,nextPart.plane);
+                        roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
+                        if all(roughcheck2 ==0)
+                            disp('Less than 2 planes in common, breaking out');
+                        else
+
+                                % Test Euclidian distance
+                                Thresh = trackParam.euDistPx; %in px
+                                [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row(commonPlanes(:,1)) current.col(commonPlanes(:,1))],...
+                                    [nextPart.row(commonPlanes(:,2)), nextPart.col(commonPlanes(:,2))],Thresh);
+
+                                % Test ellipticity
+                                [checkRes2] = Core.MPParticleMovie.checkEllipticity(current.ellip(commonPlanes(:,1)),...
+                                    nextPart.ellip(commonPlanes(:,2)),direction);
+                                
+                                %To be a particle, we want the position and ellipticity to be
+                                %consistent in at least 2 planes 
+                                isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes,...
+                                    length(find(checkRes2))>=nConsistentPlanes);
+
                         end
-                        
                     end
                 end
                 
                 isPart = logical(isPart);
                 
-            else
-                isPart = false(size(next,1),1);
-            end
+            
         end
         
         function [listCopy] = copyList(List, filling)

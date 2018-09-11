@@ -3,7 +3,7 @@ classdef MPCalMovie < Core.MPParticleMovie
     %   Detailed explanation goes here
     
     properties
-        traces
+        
     end
     
     methods
@@ -12,7 +12,7 @@ classdef MPCalMovie < Core.MPParticleMovie
             obj  = obj@Core.MPParticleMovie(raw,cal);
         end
         
-        function [traces, counter] = trackInZ(obj,trackParam)
+        function [trace, counter] = trackInZ(obj,trackParam)
             %track the particle in the Z direction (3rd dimension here)
             %Here we do not expect any big movement from one frame to the
             %other so we give a warning if the tracking parameter seems to
@@ -21,18 +21,14 @@ classdef MPCalMovie < Core.MPParticleMovie
             assert(and(isfield(trackParam,'euDistPx'),isfield(trackParam,'ellip')),...
                 'Tracking parameter is expected to be a struct with two field "euDistPx" and "ellip"')
             
-            if trackParam.euDistPx > 1
+            if trackParam.euDistPx > 2
                 warning('Current euclidian distance thresholds is probably too high, we do not expect much movement from one frame to the next here')
             end
             
-            if or(trackParam.ellip > 6, trackParam.ellip<=3)
-                warning('Requested ellipticity thresold is better to be close to 5 which means that at least 2 of the best focus plane should be consistent ([1 2 3 2 1])');
-            end
+            [trace,counter] = obj.zTracking(trackParam);
             
-            [traces,counter] = obj.zTracking(trackParam);
-            
-            obj.traces.trace = traces;
-            obj.traces.nTrace = counter;
+            obj.particles.traces = trace;
+            obj.particles.nTraces = counter;
             
         end
        
@@ -45,8 +41,8 @@ classdef MPCalMovie < Core.MPParticleMovie
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zzCalibrationration');
             assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZzCalibrationration');
             assert(isstruct(trackParam),'Tracking parameter is expected to be a struct with two field "euDistPx" and "ellip"')
-            assert(and(isfield(trackParam,'euDistPx'),isfield(trackParam,'ellip')),...
-                'Tracking parameter is expected to be a struct with two field "euDistPx" and "ellip"')
+            assert(and(isfield(trackParam,'euDistPx'),isfield(trackParam,'commonPlanes')),...
+                'Tracking parameter is expected to be a struct with two field "euDistPx" and "commonPlanes"')
             %We copy the List as boolean to keep track of where there are
             %still particles left
             [listBool] = Core.trackingMethod.copyList(obj.particles.List,1);

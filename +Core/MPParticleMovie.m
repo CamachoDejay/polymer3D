@@ -216,14 +216,18 @@ classdef MPParticleMovie < Core.MPMovie
                         %#2 Consolidate the position of the given frame
                         %across plane
                           %Calculate a focus metric (FM) combining ellipticity and GLRT FM.
-                            [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet(:,3),fCandMet(:,4));
+                            [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.LRT);
 
                             %reformating to keep the same format as how the data is saved
                             %later
-                            fCandMet = [fCandMet fCandMet(:,end)];
-                            fCandMet(:,6) = fCandMet(:,5);
-                            fCandMet(:,5) = focusMetric;
-                            fCandMet(:,4) = [];
+                            fCandMet.LRT = focusMetric;
+                            fCandMet.Properties.VariableNames{5} = 'ellipLRT';
+                            
+%                             fCandMet = [fCandMet fCandMet(:,end)];
+%                             fCandMet(:,6) = fCandMet(:,5);
+%                             fCandMet(:,5) = focusMetric;
+%                             fCandMet(:,4) = [];
+
                             focusMetric((1-corrEllip)>0.3) = NaN;
                             
                             %Plane Consolidation occur here
@@ -507,18 +511,17 @@ classdef MPParticleMovie < Core.MPMovie
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
             assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
             
-            Thresh = 2*sqrt(2); %in Px As the superResCal is not
-            %performed yet we allow 2px in both direction
-            [checkRes1] = Core.MPParticleMovie.checkEuDist(current(:,1:2),...
-                next(:,1:2),Thresh);
+            thresh = 2 * sqrt(2);
+            [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row, current.col],...
+                [next.row, next.col],thresh);
             
             % Test ellipticity
-            [checkRes2] = Core.MPParticleMovie.checkEllipticity(current(:,3),...
-                next(:,3),direction);
+            [checkRes2] = Core.MPParticleMovie.checkEllipticity(current.ellip,...
+                next.ellip,direction);
             
             % Test focus Metric
-            maxExpFM = current(4)+0.1*current(4);
-            checkRes3 = next(:,4) < maxExpFM;
+            maxExpFM = current.ellipLRT+0.1*current.ellipLRT;
+            checkRes3 = next.ellipLRT < maxExpFM;
             
             %isPart will only be true for particle that passes the 3 tests
             isPart = checkRes1.*checkRes2.*checkRes3;
@@ -546,7 +549,7 @@ classdef MPParticleMovie < Core.MPMovie
             
         end
         
-        function [checkRes] = checkEllipticity(current, next, direction, thresh, eWeight)
+        function [checkRes] = checkEllipticity(current, next, direction)
             %Use to check if the Ellipticity make sense with what we
             %expect from the behavior of the PSFEngineering plate
             switch direction
@@ -561,16 +564,8 @@ classdef MPParticleMovie < Core.MPMovie
                     
             end
             
-            if size(current,1)>1
-                
-                checkRes = sum(ellip .* eWeight(:))>=thresh;
-                
-            else
-                
-                checkRes = ellip;
-                
-            end
-            
+            checkRes = ellip;
+
             if isempty(checkRes)
                 checkRes = false;
             end
@@ -709,8 +704,16 @@ classdef MPParticleMovie < Core.MPMovie
                     currentk = currentk+k;
                 end
             end
+            
+             z = zeros(size(candMet,1),1);
+             candMet = [candMet(:,1:2) z candMet(:,3:end)];
+             varNames = {'row','col','z','ellip','LRT','fMetric','plane'};
+             
+             candMet = table(candMet(:,1),candMet(:,2),candMet(:,3),candMet(:,4),...
+                 candMet(:,5),candMet(:,6),candMet(:,7),'VariableNames',varNames);
+             
         end
-        
+              
         function [candidateList] = planeConsolidation(obj,candMet,focusMetric)
             %Loop through all candidate of a given frame and match them
             %between frame until none can be match or all are matched.
@@ -730,7 +733,7 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 %Find candidate in best focus
                 [~,idx] = max(focusMetric);
-                currentPlane = candMet(idx,end);
+                currentPlane = candMet.plane(idx);
                 
                 %Check which planes are to be checked (currently 2 planes
                 %above and 2 planes below the given plane
@@ -741,27 +744,30 @@ classdef MPParticleMovie < Core.MPMovie
                 currentCand = candMet(idx,:);
                 direction = -1;%Start by checking above
                 
-                particle = nan(5,6);
+                particle = table(nan(5,1),nan(5,1),nan(5,1),nan(5,1),nan(5,1),...
+                    nan(5,1),nan(5,1),'VariableNames',{'row','col','z',...
+                    'ellip','ellipLRT','fMetric','plane'});
                 particle(3,:) = currentCand;
                 nCheck = length(planes2Check);
+                
                 for i = 1:nCheck
                     
-                    cand = candMet(candMet(:,end) == planes2Check(i),:);
+                    cand = candMet(candMet.plane == planes2Check(i),:);
                     if(planes2Check(i) > currentPlane)
                         direction = +1;%check below (Plane 1 is the uppest plane 8 is lowest)
                     end
                     
                     [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction);
                     if ~all(isPart ==0)
-                        id = cand(isPart,end)-currentCand(end);
-                        particle(round(length(currentCand)/2)+id,:) = cand(isPart,:);
+                        id = cand.plane(isPart)-currentCand.plane;
+                        particle(3+id,:) = cand(isPart,:);
                     end
                     
                 end
                 
                 %Check if the resulting configuration of the plane make
                 %sense e.g. no hole in the configuration
-                planeConfig = particle(:,end);
+                planeConfig = particle.plane;
                 [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes);
                 %Store
                 if checkRes

@@ -10,7 +10,7 @@ classdef ZCalibration < handle
         calib
         traces3D
         zPosMotor
-        zAccuracy
+        
     end
     
     methods
@@ -140,12 +140,12 @@ classdef ZCalibration < handle
              %Sort the data
             allData{1,3} = obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{1,3};
             for j = 1: length(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip)
-                [~,ind] = sort(allData{j,1}(:,1));
+                [~,ind] = sort(allData{j,1}.z);
                 allData{j,1} = allData{j,1}(ind,:);
                 
             end
             %Sort all data together
-            [~,ind] = sort(allData{1,2}(:,1));
+            [~,ind] = sort(allData{1,2}.z);
             allData{1,2} = allData{1,2}(ind,:);
             
             
@@ -191,8 +191,8 @@ classdef ZCalibration < handle
             figure()
             for i = 1 : length(obj.calib.data)
                 
-                z =  obj.calib.data{i}(:,1)+relZ(i);
-                ellip = obj.calib.data{i}(:,2);
+                z =  obj.calib.data{i}.z+relZ(i);
+                ellip = obj.calib.data{i}.ellip;
                 
                 ellip1 = ellip(ellip>=1);
                 z1 = z(ellip>=1);
@@ -228,7 +228,7 @@ classdef ZCalibration < handle
           
             for i = 1 : length(obj.calib.data)
                 dataCurrentPlane = obj.calib.data{i};
-                scatter(dataCurrentPlane(:,1), dataCurrentPlane(:,2),25,'filled',...
+                scatter(dataCurrentPlane.z, dataCurrentPlane.ellip,25,'filled',...
                     'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4,'DisplayName',['Plane ' num2str(i) ' - ' num2str(relZ(i))])
                
             %scatter(obj.calib.data{1,2}(:,1),obj.calib.data{1,2}(:,2));
@@ -238,14 +238,16 @@ classdef ZCalibration < handle
             legend(gca,'show')
             title('Ellipticity-Z curve for all the planes superimposed')
             hold off
+            
             %Plot #3
             figure()            
             for i = 1 : length(obj.calib.data)
                 
                 dataCurrentPlane = obj.calib.data{i};
                 
-                [binnedData] = Plotting.qBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
-                zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
+                [binnedData] = Plotting.qBinning([dataCurrentPlane.z,...
+                    dataCurrentPlane.ellip],length(dataCurrentPlane.z)/5);
+                zVec = min(dataCurrentPlane.z):max(dataCurrentPlane.z);
                 %retrieving fit to display
                 p = obj.calib.file{i};
                 p2= obj.calib.file{i,2};
@@ -253,7 +255,7 @@ classdef ZCalibration < handle
                 fit2= ppval(p2,zVec);
                 %shifting according to the plane
                 zVec = zVec + relZ(i) ;
-                dataCurrentPlane(:,1) = dataCurrentPlane(:,1)+ relZ(i);
+                dataCurrentPlane.z = dataCurrentPlane.z+ relZ(i);
                 binnedData(:,1) = binnedData(:,1) +relZ(i);
                 
                 subplot(1,2,1)
@@ -264,7 +266,7 @@ classdef ZCalibration < handle
                 
                 subplot(1,2,2)
                 hold on
-                scatter(dataCurrentPlane(:,1),dataCurrentPlane(:,2))
+                scatter(dataCurrentPlane.z,dataCurrentPlane.ellip)
                 plot(zVec,fit,'r','LineWidth',2)
                 title('Full data fitted with polynomial')
                 
@@ -273,19 +275,21 @@ classdef ZCalibration < handle
             
         end
         
-        function evalAccuracy(obj)
-            
+        function evalAccuracy(obj,fittingType)
+            %obj.calib.fitZParam.fittingType = fittingType;
             nfields = numel(fieldnames(obj.zCalMovies));
             zMotor = cell(nfields,1);
             trace3D  = cell(nfields,1);
+            
             
             for i = 1: nfields
                 
                 disp(['Retrieving 3D traces ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 [~,zMotor{i}] = obj.zCalMovies.(['zCal' num2str(i)]).getZPosMotor;
-                trace3D{i} = obj.zCalMovies.(['zCal' num2str(i)]).get3DTraces (obj.calib.file,obj.calib.fitZParam);
+                trace3D{i} = obj.zCalMovies.(['zCal' num2str(i)]).get3DTraces (obj.calib.file,obj.calib.fitZParam,fittingType);
                 
             end
+                
             obj.traces3D = trace3D;
             obj.zPosMotor = zMotor;
             
@@ -310,11 +314,12 @@ classdef ZCalibration < handle
             for i = 1: length(zSyncCalData)
                 disp(['Fitting of plane ' num2str(i)]);
                 dataCurrentPlane = zSyncCalData{i};
-                [binnedData] = Plotting.qBinning(dataCurrentPlane,length(dataCurrentPlane)/5);
+                [binnedData] = Plotting.qBinning([dataCurrentPlane.z,...
+                    dataCurrentPlane.ellip],length(dataCurrentPlane.z)/5);
                 
-                zVec = min(dataCurrentPlane(:,1)):max(dataCurrentPlane(:,1));
+                %zVec = min(dataCurrentPlane.z):max(dataCurrentPlane.z);
                 
-                p = polyfit(dataCurrentPlane(:,1),dataCurrentPlane(:,2),deg);
+                p = polyfit(dataCurrentPlane.z,dataCurrentPlane.ellip,deg);
                 p2 = spline(binnedData(:,1),binnedData(:,2));
                 %fit = polyval(p,zVec);
                 
@@ -395,8 +400,8 @@ classdef ZCalibration < handle
             disp(['Accuracy in Z for best focus is ' num2str(mean(accuracyFocus))]);
             disp(['Accuracy in Z for mean  ' num2str(mean(accuracyMean))]);
             
-            obj.zAccuracy.BF = mean(accuracyFocus);
-            obj.zAccuracy.M  = mean(accuracyMean);
+            obj.calib.zAccuracy.BF = mean(accuracyFocus);
+            obj.calib.zAccuracy.M  = mean(accuracyMean);
     end
         
     end

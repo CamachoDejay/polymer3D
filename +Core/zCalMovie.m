@@ -41,13 +41,15 @@ classdef ZCalMovie < Core.MPCalMovie
                     
                     for j = 1:length(traces{i})
                         if ~isnan(traces{i}{j})
-                            planes = obj.particles.List{i}{j}(:,end);
+                            currentParticle = obj.particles.List{i}{j}; 
+                            planes = currentParticle.plane;
                             planes = planes (~isnan(planes));
                             
                             for k = 1 : length(planes)
                                 data2Store = obj.particles.List{i}{j};
-                                data2Store = data2Store(data2Store(:,end) == planes(k),:);
-                                zCalData{planes(k),traces{i}{j}}(i,:) = [data2Store(3:end) i] ;
+                                data2Store = data2Store(data2Store.plane == planes(k),:);
+                                data2Store.frame = i;
+                                zCalData{planes(k),traces{i}{j}}(i,:) = data2Store ;
                                 
                             end
                         else
@@ -62,7 +64,7 @@ classdef ZCalMovie < Core.MPCalMovie
                     
                     if ~isempty(zCalData{i,j})
                         
-                        zCalData{i,j}(zCalData{i,j}(:,1)==0,:) = [];
+                        zCalData{i,j}(zCalData{i,j}.row==0,:) = [];
                         
                     else
                     end
@@ -131,8 +133,8 @@ classdef ZCalMovie < Core.MPCalMovie
                     %Extract data in acceptable ellipticity range
                     
                     if ~isempty(zCalData{i,j})
-                        zPos = zCalData{i,j}(:,5)*zStep;
-                        ellipt = zCalData{i,j}(:,1);
+                        zPos = zCalData{i,j}.frame*zStep;
+                        ellipt = zCalData{i,j}.ellip;
                         zPos = zPos(and(ellipt<maxEllipt, ellipt > minEllipt));
                         ellipt = ellipt(and(ellipt<maxEllipt, ellipt > minEllipt));
                         
@@ -160,23 +162,24 @@ classdef ZCalMovie < Core.MPCalMovie
                             [~,idx] = min(abs(fit-1));
                             focus2 = zVec(idx);
                             shift = focus1+focus2;%take into account both synchronization
-                            zCalData{i,j}(:,6) = ((zCalData{i,j}(:,5))*zStep -shift)*1000;%transform into nm keeping particle separated
-                            fullSync = ((zCalData{i,j}(:,5))*zStep -shift)*1000;%mix all particle together
+                            zCalData{i,j}.z = ((zCalData{i,j}.frame)*zStep -shift)*1000;%transform into nm keeping particle separated
+                            fullSync = ((zCalData{i,j}.frame)*zStep -shift)*1000;%mix all particle together
                             %tmp Store
-                            zSyncCalData{i,1} = [zSyncCalData{i,1}; zCalData{i,j}(:,[6 1])];
-                            zSyncCalData{1,2} = [zSyncCalData{1,2}; [fullSync zCalData{i,j}(:,1)]];
+                            zSyncCalData{i,1} = [zSyncCalData{i,1}; zCalData{i,j}(:,{'z','ellip'})];
+                            zSyncCalData{1,2} = [zSyncCalData{1,2}; zCalData{i,j}(:,{'z','ellip'})];
+                            
                         end
                     end
                 end
                 %tmp Store
                 if ~isempty (zSyncCalData{i,1})
-                    [~,ind] = sort(zSyncCalData{i,1}(:,1));
+                    [~,ind] = sort(zSyncCalData{i,1}.z);
                     zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
                 end
                 
             end
             %final storing and output
-            [~,ind] = sort(zSyncCalData{1,2}(:,1));
+            [~,ind] = sort(zSyncCalData{1,2}.z);
             zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
             zSyncCalData{1,3} = [minEllipt, maxEllipt, deg];
             obj.zData.syncEllip = zSyncCalData;
@@ -206,15 +209,15 @@ classdef ZCalMovie < Core.MPCalMovie
             
         end
         
-        function [traces] = get3DTraces(obj,calib,fitZParam)
+        function [traces] = get3DTraces(obj,calib,fitZParam,fittingType)
             
             %Extract 3D traces for each particles
             list = obj.particles.List;
-            tracesIdx = obj.traces.trace;
+            tracesIdx = obj.particles.traces;
             pxSize = obj.info.pxSize;
             
             %ellipt range used for fitting
-            elliptRange = fitZParam.ellipRange(1):0.01:fitZParam.ellipRange(2);
+            elliptRange = fitZParam.ellipRange(1):0.001:fitZParam.ellipRange(2);
             %we weigh the average later base on how much out of focus the
             %plane was.
             wRange1 = length(elliptRange(elliptRange<=1));
@@ -224,15 +227,15 @@ classdef ZCalMovie < Core.MPCalMovie
             finalWeight = [weight1 weight2];
             
             %Calculation of x-y-z position occurs within the loop here
-            traces = zeros(length(list),6,obj.traces.nTrace);
+            traces = zeros(length(list),6,obj.particles.nTraces);
             for i = 1 : length(list)
                 if ~isempty(list{i})
                     for j = 1 : length(list{i})
                         if ~isnan(tracesIdx{i}{j})
                             currentPart = list{i}{j};
                             %find indices to data in correct ellipticity range
-                            id = and(currentPart(:,3)>=elliptRange(1),...
-                                currentPart(:,3)<=elliptRange(end));
+                            id = and(currentPart.ellip>=elliptRange(1),...
+                                currentPart.ellip<=elliptRange(end));
                             if all(id==0)
                                 if i>3
                                     if and(traces(i-3,1,tracesIdx{i}{j})~=0,traces(i-2,1,tracesIdx{i}{j})~=0)
@@ -250,7 +253,7 @@ classdef ZCalMovie < Core.MPCalMovie
                                 
                             else
                                 
-                                ellip2Keep = currentPart(id,3);
+                                ellip2Keep = currentPart.ellip(id);
                                 idx = ellip2Keep;
                                 for k = 1 :length(ellip2Keep)
                                     
@@ -261,15 +264,15 @@ classdef ZCalMovie < Core.MPCalMovie
                                 
                                 weight = finalWeight(idx);
                                 %Weighed average
-                                xAvg = sum(diag(list{i}{j}(id,2)* weight))/sum(weight) * pxSize;
-                                yAvg = sum(diag(list{i}{j}(id,1)* weight))/sum(weight) * pxSize;
+                                xAvg = sum(diag(list{i}{j}.col(id)* weight))/sum(weight) * pxSize;
+                                yAvg = sum(diag(list{i}{j}.col(id)* weight))/sum(weight) * pxSize;
                                 %best focus Value
-                                x = list{i}{j}(3,2)* pxSize;
-                                y = list{i}{j}(3,1)* pxSize;
+                                x = list{i}{j}.col(3)* pxSize;
+                                y = list{i}{j}.row(3)* pxSize;
                                 
                                 if ~isempty(calib)
                                     %Calculation for Z is occur here
-                                    [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight,calib);
+                                    [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight,calib,fittingType);
                                     
                                 else
                                     
@@ -290,26 +293,38 @@ classdef ZCalMovie < Core.MPCalMovie
                 end
             end
             
+            
+            for i = 1: size(traces,3)
+            
+                
+            end
+            
         end
         
-        function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight,calib)
+        function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight,calib,fittingType)
             %extract Z position based on ellipticity and zCalibrationration curve
             assert(~isempty(calib),'No zCalibration found, please give the zCalibration using giveZCal before calculating Z position');
             zCal = calib;
             relZ = obj.calibrated.oRelZPos;
             syncEllip = obj.zData.syncEllip;
             
-            zVec = min(syncEllip{particle(3,end),1}) : 1 : max(syncEllip{particle(3,end),1});
-            fit = polyval(zCal{particle(3,end),1},zVec);
-            %fit = ppval(zCal{particle(3,end),2},zVec);%spline
+            zVec = min(syncEllip{particle.plane(3),1}.z) : 1 : max(syncEllip{particle.plane(3),1}.z);
+            switch fittingType
+                case 'poly'
+                    fit = polyval(zCal{particle.plane(3),1},zVec);
+                case 'spline'
+                    fit = ppval(zCal{particle.plane(3),2},zVec);%spline
+                otherwise
+                    error('Unknown fitting type- only know "poly" and "spline"...')
+            end
             
             %find the index of the value the closest to the particle
             %ellipticity
-            [~,idx] = min(abs(fit-particle(3,3)));
-            zPos = zVec(idx)+ relZ(particle(3,end))*1000;
+            [~,idx] = min(abs(fit-particle.ellip(3)));
+            zPos = zVec(idx)+ relZ(particle.plane(3))*1000;
             
-            id = and(particle(:,3)>=elliptRange(1),...
-                particle(:,3)<=elliptRange(end));
+            id = and(particle.ellip>=elliptRange(1),...
+                particle.ellip<=elliptRange(end));
             data2Keep = particle(id,:);
             
             idx1 = zeros(size(data2Keep,1),1);
@@ -317,13 +332,24 @@ classdef ZCalMovie < Core.MPCalMovie
             %Calculate z occur withing the loop
             for k = 1 :size(data2Keep,1)
                 
-                [~,idx1(k)] = min(abs(elliptRange-data2Keep(k,3)));
+                [~,idx1(k)] = min(abs(elliptRange-data2Keep.ellip(k)));
                 
-                zVectmp = min(syncEllip{data2Keep(k,end),1}) : 1 : max(syncEllip{data2Keep(k,end),1});
-                %fit = polyval(zCal{data2Keep(k,end),1},zVectmp); %polynomial
-                fit = ppval(zCal{data2Keep(k,end),2},zVectmp);%spline
-                [~,idx] = min(abs(fit-data2Keep(k,3)));
-                zAvg(k) = zVectmp(idx) + relZ(data2Keep(k,end))*1000;
+                zVectmp = min(syncEllip{data2Keep.plane(k),1}.z) : 1 : max(syncEllip{data2Keep.plane(k),1}.z);
+                
+                switch fittingType
+                case 'poly'
+                    fit = polyval(zCal{data2Keep.plane(k),1},zVectmp);
+                case 'spline'
+                    fit = ppval(zCal{data2Keep.plane(k),2},zVectmp);%spline
+                otherwise
+                    error('Unknown fitting type- only know "poly" and "spline"...')
+                end
+
+%                 fit = polyval(zCal{data2Keep.plane(k),1},zVectmp); %polynomial
+%                 %fit = ppval(zCal{data2Keep.plane(k),2},zVectmp);%spline
+                [~,idx] = min(abs(fit-data2Keep.ellip(k)));
+                zAvg(k) = zVectmp(idx) + relZ(data2Keep.plane(k))*1000;
+                
             end
             
             weight = finalWeight(idx1);

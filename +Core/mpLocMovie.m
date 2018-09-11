@@ -102,7 +102,6 @@ classdef MPLocMovie < Core.MPParticleMovie
             data = obj.localizedPos;
             rotMat = obj.SRCal.rotation;
             transMat = obj.SRCal.translation;
-            pxSize   = obj.info.pxSize;
            % correctedData = cell(size(data));
             disp(['Applying SR calibration...']);
             for i = 1 : length(data)
@@ -118,7 +117,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                         [corrData] = obj.applyRot(corrData, rotMat,refPlane,currentPlane);
                     end
                     %we store the corrected data
-                    obj.corrLocPos{i}(currData(:,end)==currentPlane,1:2) = corrData*pxSize;
+                    obj.corrLocPos{i}(currData(:,end)==currentPlane,1:2) = corrData;
                     
                 end
                 %correctedData{i}(:,3) = data{i}(:,3);
@@ -138,7 +137,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 warning('Z calibration is currently being applied on non-SRCorrected (X-Y) data');
             end
             
-            data = obj.localizedPos;
+            data = obj.localizedPos; 
             zCal = obj.ZCal;
             
             %Here we translate ellipticity into z position based on
@@ -153,14 +152,11 @@ classdef MPLocMovie < Core.MPParticleMovie
                     currentEllip = currData(j,3);
                     currentPlane = currData(j,end);
                     [zPos] = getZPosition(obj,currentEllip,zCal,currentPlane);
-
                     obj.corrLocPos{i}(j,3) = zPos;
                     
                 end
                
             end
-            
-            
             
             %Here we translate the ellipticity range into zRange for each
             %plane
@@ -186,105 +182,105 @@ classdef MPLocMovie < Core.MPParticleMovie
             end
         end
            
-        function consolidatePlanes(obj,frames)
-            
-            %Consolidation refers to connect molecules that were localized
-            %at similar position in different plane on a single frame.
-            assert(~isempty(obj.calibrated),'Data should be calibrated to consolidate');
-            assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');
-            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
-            assert(~isempty(obj.localizedPos),'Localization needs to be performed before consolidation');
-           
-            %Check if some particles were saved already.
-            [run, particle] = Core.MPParticleMovie.existParticles(obj.raw.movInfo.Path, '.mat');
-            
-            if run
-                %Check the number of function input
-                switch nargin
-                    case 1
-                        
-                        frames = 1: obj.calibrated.nFrames;
-                        
-                        disp('Running consolidation on every frame...');
-                        
-                    case 2
-                        
-                       [frames] = Movie.checkFrame(frames,obj.raw.maxFrame(1));
-                       
-                    otherwise
-                        
-                        error('Something wrong with input');
-                        
-                end
-                
-                nFrames = length(frames);
-                %allocate for storage
-                particleList = cell(1,obj.raw.maxFrame(1));
-                nParticles = zeros(1,obj.raw.maxFrame(1));
-                idx2TP = zeros(1,obj.raw.maxFrame(1));
-                h = waitbar(0,'Consolidating candidate ...');
-                
-                %Consolidation occurs here
-                for i = 1 : 1:nFrames
-                    disp(['Consolidating frame ' num2str(i) ' / ' num2str(nFrames)]);
-                    idx = frames(i);
-                    %#1 Extract localized Position for specific frame
-                    [fCandMet] = obj.getLocPos(idx);
-                    [candMet]  = obj.getCorrLocPos(idx);
-                    if isempty(fCandMet)
-                        
-                        warning('Frame %d did not contain any localized positions',idx);
-                        particleList{idx} = [];
-                        %particleList{idx}{1} = nan(5);
-                        nParticles(idx) = 0;
-                        
-                    else
-                        %#2 Consolidate the position of the given frame
-                        %across plane
-                          %Calculate a focus metric (FM) combining ellipticity and GLRT FM.
-                            [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet(:,3),fCandMet(:,4));
-
-                            %reformating to keep the same format as how the data is saved
-                            %later
-                            candMet = [candMet candMet(:,end)];
-                            candMet(:,6) = candMet(:,5);
-                            candMet(:,5) = focusMetric;
-                            candMet(:,4) = [];
-                            focusMetric((1-corrEllip)>0.3) = NaN;
-                            
-                            %Plane Consolidation occur here
-                            [part] = obj.planeConsolidation(candMet,focusMetric,fCandMet(:,3));
-
-                            %we delete empty cells from the array
-                            idx2Empty = cellfun(@isempty,part);
-                            part(idx2Empty(:,1),:) = [];
-                   
-                            particleList{idx} = part;
-                            nParticles(idx) = length(part);
-                            
-                            if ~isempty(part)
-                                idx2TP(idx) = idx;
-                            end
-                        
-                    end
-                    waitbar(i/nFrames,h,['Consolidating candidate... ' num2str(i) '/' num2str(nFrames) ' done']);
-                end
-                close(h);
-                
-                %#3 Storing List
-                particle.List       = particleList;
-                particle.nParticles = nParticles;
-                particle.tPoint     = nFrames;
-                particle.idx2TP     = nonzeros(idx2TP);
-                particle.Traces     = [];
-                particle.nTraces    = [];
-                
-                fileName = sprintf('%s%sparticle.mat',obj.raw.movInfo.Path,'\');
-                save(fileName,'particle');
-            end
-            %#4 Storing particles in the object
-            obj.particles = particle;
-        end
+%         function consolidatePlanes(obj,frames)
+%             
+%             %Consolidation refers to connect molecules that were localized
+%             %at similar position in different plane on a single frame.
+%             assert(~isempty(obj.calibrated),'Data should be calibrated to consolidate');
+%             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');
+%             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
+%             assert(~isempty(obj.localizedPos),'Localization needs to be performed before consolidation');
+%            
+%             %Check if some particles were saved already.
+%             [run, particle] = Core.MPParticleMovie.existParticles(obj.raw.movInfo.Path, '.mat');
+%             
+%             if run
+%                 %Check the number of function input
+%                 switch nargin
+%                     case 1
+%                         
+%                         frames = 1: obj.calibrated.nFrames;
+%                         
+%                         disp('Running consolidation on every frame...');
+%                         
+%                     case 2
+%                         
+%                        [frames] = Movie.checkFrame(frames,obj.raw.maxFrame(1));
+%                        
+%                     otherwise
+%                         
+%                         error('Something wrong with input');
+%                         
+%                 end
+%                 
+%                 nFrames = length(frames);
+%                 %allocate for storage
+%                 particleList = cell(1,obj.raw.maxFrame(1));
+%                 nParticles = zeros(1,obj.raw.maxFrame(1));
+%                 idx2TP = zeros(1,obj.raw.maxFrame(1));
+%                 h = waitbar(0,'Consolidating candidate ...');
+%                 
+%                 %Consolidation occurs here
+%                 for i = 1 : 1:nFrames
+%                     disp(['Consolidating frame ' num2str(i) ' / ' num2str(nFrames)]);
+%                     idx = frames(i);
+%                     %#1 Extract localized Position for specific frame
+%                     [fCandMet] = obj.getLocPos(idx);
+%                     [candMet]  = obj.getCorrLocPos(idx);
+%                     if isempty(fCandMet)
+%                         
+%                         warning('Frame %d did not contain any localized positions',idx);
+%                         particleList{idx} = [];
+%                         %particleList{idx}{1} = nan(5);
+%                         nParticles(idx) = 0;
+%                         
+%                     else
+%                         %#2 Consolidate the position of the given frame
+%                         %across plane
+%                           %Calculate a focus metric (FM) combining ellipticity and GLRT FM.
+%                             [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet(:,3),fCandMet(:,4));
+% 
+%                             %reformating to keep the same format as how the data is saved
+%                             %later
+%                             candMet = [candMet candMet(:,end)];
+%                             candMet(:,6) = candMet(:,5);
+%                             candMet(:,5) = focusMetric;
+%                             candMet(:,4) = [];
+%                             focusMetric((1-corrEllip)>0.3) = NaN;
+%                             
+%                             %Plane Consolidation occur here
+%                             [part] = obj.planeConsolidation(candMet,focusMetric,fCandMet(:,3));
+% 
+%                             %we delete empty cells from the array
+%                             idx2Empty = cellfun(@isempty,part);
+%                             part(idx2Empty(:,1),:) = [];
+%                    
+%                             particleList{idx} = part;
+%                             nParticles(idx) = length(part);
+%                             
+%                             if ~isempty(part)
+%                                 idx2TP(idx) = idx;
+%                             end
+%                         
+%                     end
+%                     waitbar(i/nFrames,h,['Consolidating candidate... ' num2str(i) '/' num2str(nFrames) ' done']);
+%                 end
+%                 close(h);
+%                 
+%                 %#3 Storing List
+%                 particle.List       = particleList;
+%                 particle.nParticles = nParticles;
+%                 particle.tPoint     = nFrames;
+%                 particle.idx2TP     = nonzeros(idx2TP);
+%                 particle.Traces     = [];
+%                 particle.nTraces    = [];
+%                 
+%                 fileName = sprintf('%s%sparticle.mat',obj.raw.movInfo.Path,'\');
+%                 save(fileName,'particle');
+%             end
+%             %#4 Storing particles in the object
+%             obj.particles = particle;
+%         end
         
         function showCorrLoc(obj)
             part = obj.particles.List;
@@ -328,12 +324,12 @@ classdef MPLocMovie < Core.MPParticleMovie
             %metric.
             assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
             
-            Thresh = 100*sqrt(2); %~1px (100 nm) max as we SR-corrected the data 
+            Thresh = 150; %~1px (100 nm) max as we SR-corrected the data 
             [checkRes1] = Core.MPParticleMovie.checkEuDist(current(:,1:2),...
                 next(:,1:2),Thresh);
             
             % Test Z
-            checkRes2 = zeros(size(checkRes1));
+            checkRes2 = fef;
             for i = 1: length(fCand)
                 if fCand(i)
                 threshold = 500; %nm
@@ -535,7 +531,6 @@ classdef MPLocMovie < Core.MPParticleMovie
                     
                     cand = candMet(candMet(:,end) == planes2Check(i),:);
                     fCand = fCandMet(candMet(:,end) == planes2Check(i),:);
-                    fCand = and(fCand >= ellipRange(1),fCand <= ellipRange(2));
                     [isPart] = Core.MPLocMovie.isPartPlane(currentCand,cand,fCand);
                     if ~all(isPart ==0)
                         id = cand(isPart,end)-currentCand(end);

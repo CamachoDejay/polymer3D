@@ -37,6 +37,7 @@ MPLocMov.applyZCal;
 %% Plane consolidation
 
 MPLocMov.consolidatePlanes
+%% STOPPED HERE NEED TO CODE SUPER RESOLVE POSITION SO WE GET 1 position per particle per time point !!! 
 
 %% plot
 

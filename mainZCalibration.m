@@ -23,8 +23,8 @@ detectParam.chi2 = 80;
 fitZParam.deg = 5;
 fitZParam.ellipRange = [0.77 1.6];
 
-trackParam.euDistPx = 1; 
-trackParam.ellip = 5;
+trackParam.euDistPx = 2; 
+trackParam.commonPlanes = 2;
 
 testZCal.retrieveZCalData(detectParam, fitZParam,trackParam);
 
@@ -38,4 +38,6 @@ testZCal.zCalibrate;
 testZCal.showZCalibration
 
 %% test Calibration
-testZCal.evalAccuracy;
+fittingType = 'poly';
+fittingType = 'spline';
+testZCal.evalAccuracy(fittingType);
