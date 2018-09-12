@@ -17,9 +17,9 @@ classdef MPCalMovie < Core.MPParticleMovie
             %Here we do not expect any big movement from one frame to the
             %other so we give a warning if the tracking parameter seems to
             %soft.
-            assert(isstruct(trackParam),'Tracking parameter is expected to be a struct with two field "euDistPx" and "ellip"')
-            assert(and(isfield(trackParam,'euDistPx'),isfield(trackParam,'ellip')),...
-                'Tracking parameter is expected to be a struct with two field "euDistPx" and "ellip"')
+            assert(isstruct(trackParam),'Tracking parameter is expected to be a struct with two field "euDistPx" and "commonPlanes"')
+            assert(and(isfield(trackParam,'euDistPx'),isfield(trackParam,'commonPlanes')),...
+                'Tracking parameter is expected to be a struct with two field "euDistPx" and "commonPlanes"')
             
             if trackParam.euDistPx > 2
                 warning('Current euclidian distance thresholds is probably too high, we do not expect much movement from one frame to the next here')

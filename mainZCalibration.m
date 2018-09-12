@@ -41,3 +41,8 @@ testZCal.showZCalibration
 fittingType = 'poly';
 fittingType = 'spline';
 testZCal.evalAccuracy(fittingType);
+%% Save cal
+
+testZCal.save;
+
+

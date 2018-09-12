@@ -10,6 +10,7 @@ classdef ZCalibration < handle
         calib
         traces3D
         zPosMotor
+        zAccuracy
         
     end
     
@@ -20,6 +21,10 @@ classdef ZCalibration < handle
             %   Detailed explanation goes here
             obj.path = path2zCal;
             obj.cal2D = cal2D;
+            
+            %We prepare zAccuracy
+            obj.zAccuracy.spline = table(0,0,'VariableNames',{'BestFocus','Mean'});
+            obj.zAccuracy.poly   = table(0,0,'VariableNames',{'BestFocus','Mean'});
         end
         
         function set.path(obj, path)
@@ -90,7 +95,7 @@ classdef ZCalibration < handle
             assert(nargin==4, 'retrieveZCalData expects 3 inputs, 1)detection Parameters, fit z parameter, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
             assert(and(isstruct(fitZParam),and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRange'))),'fitZParam is expected to be a struct with 2 fields "deg" for the degree of polynomial parameter, "ellipRange" holding the min and max value of accepted ellipticity. ');
-            assert(and(isstruct(trackParam),and(isfield(trackParam,'euDistPx'),isfield(trackParam,'ellip'))),'trackParam is expected to be a struct with 2 fields "euDistPx", the tolerated euclidian distance between consecutive frames, "ellip" ellipticity score to reach to be considered as frame consistent ([1 9])');
+            assert(and(isstruct(trackParam),and(isfield(trackParam,'euDistPx'),isfield(trackParam,'commonPlanes'))),'trackParam is expected to be a struct with 2 fields "euDistPx", the tolerated euclidian distance between consecutive frames, "commonPlanes" nplane consistent to be considered as frame consistent ([1 4])');
             
             %Extraction of zData
             nfields = numel(fieldnames(obj.zCalMovies));
@@ -167,15 +172,7 @@ classdef ZCalibration < handle
             zCalibration = obj.calZCalibration(allData);
             %storage to the object
             obj.calib.file = zCalibration;
-            
-            cal.fitZParam = obj.calib.fitZParam;
-            cal.fitZParam(1).type = 'polynomial';
-            cal.fitZParam(2).type = 'spline';
-            cal.calib = obj.calib.file;
-            
-            fileName = sprintf('%s%szCalibration.mat',obj.path,'\');
-            save(fileName,'cal');
-
+ 
         end
         
         function showZCalibration(obj)
@@ -276,7 +273,7 @@ classdef ZCalibration < handle
         end
         
         function evalAccuracy(obj,fittingType)
-            %obj.calib.fitZParam.fittingType = fittingType;
+            obj.calib.fitZParam.fittingType = fittingType;
             nfields = numel(fieldnames(obj.zCalMovies));
             zMotor = cell(nfields,1);
             trace3D  = cell(nfields,1);
@@ -299,7 +296,17 @@ classdef ZCalibration < handle
             disp('=================> DONE <===================');
         end
         
-        
+        function save(obj)
+            cal.fitZParam = obj.calib.fitZParam;
+            cal.fitZParam(1).type = 'polynomial';
+            cal.fitZParam(2).type = 'spline';
+            cal.calib = obj.calib.file;
+            cal.zAccuracy = obj.zAccuracy;
+            
+            fileName = sprintf('%s%szCalibration.mat',obj.path,'\');
+            save(fileName,'cal');
+
+        end
     end
     
     methods (Access = private)
@@ -400,8 +407,17 @@ classdef ZCalibration < handle
             disp(['Accuracy in Z for best focus is ' num2str(mean(accuracyFocus))]);
             disp(['Accuracy in Z for mean  ' num2str(mean(accuracyMean))]);
             
-            obj.calib.zAccuracy.BF = mean(accuracyFocus);
-            obj.calib.zAccuracy.M  = mean(accuracyMean);
+            switch obj.calib.fitZParam.fittingType
+                case 'poly'
+                    obj.zAccuracy.poly.('BestFocus') = mean(accuracyFocus);
+                    obj.zAccuracy.poly.Mean      = mean(accuracyMean);
+                case 'spline'
+                    obj.zAccuracy.spline.BestFocus = mean(accuracyFocus);
+                    obj.zAccuracy.spline.Mean      = mean(accuracyMean);
+                otherwise
+                    error('Unknown fitting type used, only currently known are "poly" and "spline"');
+            end
+            
     end
         
     end
