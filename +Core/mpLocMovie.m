@@ -292,7 +292,13 @@ classdef MPLocMovie < Core.MPParticleMovie
         end
         
         function superResolve(obj)
-            %TO BE PROGRAMMED
+            data2Resolve = obj.particles.List;
+            
+            for i = 1:length(data2Resolve)
+                
+                
+            end
+            
         end
                    
         function showCorrLoc(obj)

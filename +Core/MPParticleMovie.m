@@ -681,6 +681,7 @@ classdef MPParticleMovie < Core.MPMovie
      end
      
      methods (Access = private)
+         
         %Methods linked to Candidate
         function [candidate] = detectCandidate(obj,detectParam,frames)
             %Do the actual localization
@@ -742,53 +743,54 @@ classdef MPParticleMovie < Core.MPMovie
             %Candidate metric are determined here (x,y,e,+focusmetric)
             delta = roiSize;
             sig = [obj.info.sigma_px obj.info.sigma_px];
-            currentk = 1;
-            candMet = zeros(length(frameCandidate),6);
-            nP = numel(fields(data));
-            
-            for j = 1 : nP
+ 
+            varNames = {'row','col','z','ellip','magX','magY','LRT','focGrad','plane'};
+                candMet = table(zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
+                    zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
+                    zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
+                    zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
+                    zeros(size(frameCandidate,1),1),'VariableNames',varNames);
                 
-                planeCandidate = frameCandidate(frameCandidate(:,3)==j,1:2);
-                planeData = data.(sprintf('plane%d',j));
+            for i = 1:size(frameCandidate,1)
                 
-                cM = zeros(size(planeCandidate,1),5);
-                if(~isempty(planeCandidate))
-                    for k = 1 : size(planeCandidate,1)
-                        %Get the ROI
-                        [roi_lims] = EmitterSim.getROI(planeCandidate(k,2), planeCandidate(k,1),...
-                            delta, size(planeData,2), size(planeData,1));
-                        ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
-                        %Phasor fitting to get x,y,e
-                        [row,col,e] = Localization.phasor(ROI);
-                        %LRT focus metric
-                        [LRT,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
-                        rowPos = planeCandidate(k,1) + row;
-                        colPos = planeCandidate(k,2) + col;
-                        
-                        [grad,~] = imgradient(ROI);
-                        Grad = max(max(grad,[],2),[],1);
-                        cM(k,:) = [rowPos colPos e LRT Grad];
-                        
-                    end
-                    %candidate Metric: phasor localization Res, Likelihood Res,
-                    %indexCandidate in plane, Plane.
-                    candMet(currentk:currentk+k-1,:) = [cM j*ones(k,1)];
-                    %candidateMetric: [row col e LRT Grad J]
-                    currentk = currentk+k;
+                plane = frameCandidate(i,3);
+                planeData = data.(sprintf('plane%d',plane));
+                %Get the ROI
+                [roi_lims] = EmitterSim.getROI(frameCandidate(i,2), frameCandidate(i,1),...
+                    delta, size(planeData,2), size(planeData,1));
+                ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
+                %Phasor fitting to get x,y,e
+                [row,col,e,magX,magY] = Localization.phasor(ROI);
+                
+                if magX>=magY
+                    sig(1) = sig(1) * magX/magY;
+                else
+                    sig(2) = sig(2) * magY/magX;
                 end
+                
+                %LRT focus metric
+                [LRT,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
+                
+                rowPos = frameCandidate(i,1) + row;
+                colPos = frameCandidate(i,2) + col;
+
+                [grad,~] = imgradient(ROI);
+                Grad = max(max(grad,[],2),[],1);
+                
+                %storing info
+                candMet.row(i) = rowPos;
+                candMet.col(i) = colPos;
+                candMet.z(i) = 0;
+                candMet.ellip(i) = e;
+                candMet.magX(i) = magX;
+                candMet.magY(i) = magY;
+                candMet.LRT(i) = LRT;
+                candMet.focGrad(i) = Grad;
+                candMet.plane(i) = plane;
             end
-            
-             z = zeros(size(candMet,1),1);
-             candMet = [candMet(:,1:2) z candMet(:,3:end)];
-             varNames = {'row','col','z','ellip','LRT','fMetric','plane'};
-             
-             candMet = table(candMet(:,1),candMet(:,2),candMet(:,3),candMet(:,4),...
-                 candMet(:,5),candMet(:,6),candMet(:,7),'VariableNames',varNames);
-             
+
         end
               
-       
-        
      end
 end
 
