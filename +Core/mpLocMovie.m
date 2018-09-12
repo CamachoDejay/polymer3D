@@ -293,11 +293,21 @@ classdef MPLocMovie < Core.MPParticleMovie
         
         function superResolve(obj)
             data2Resolve = obj.particles.List;
-            
+            resData = xxxx;
             for i = 1:length(data2Resolve)
-                
-                
+                frameData = data2Resolve{i};
+                for j = 1:length(frameData)
+                    
+                    partData = frameData{j};
+                    [x,y,z] = resolveXYZ(partData({'row','col','ellipticity'}));
+                    
+                    resData(i,j,:) = [x,y,z];
+                    
+                end
             end
+                
+                
+           
             
         end
                    
@@ -477,6 +487,10 @@ classdef MPLocMovie < Core.MPParticleMovie
              
              zRange = [zPos1, zPos2];
              
+        end
+        
+        function [x,y,z]  = resolveXYZ(obj,partData)
+            %TO BE CODED
         end
        
     end
