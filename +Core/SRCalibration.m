@@ -85,7 +85,7 @@ classdef SRCalibration < handle
             %Checking user input
             assert(nargin==3, 'retrieveSRCalData expects 3 inputs, 1)detection Parameters, fit z parameter, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
-            assert(and(isstruct(trackParam),and(isfield(trackParam,'euDistPx'),isfield(trackParam,'ellip'))),'trackParam is expected to be a struct with 2 fields "euDistPx", the tolerated euclidian distance between consecutive frames, "ellip" ellipticity score to reach to be considered as frame consistent ([1 9])');
+            assert(and(isstruct(trackParam),and(isfield(trackParam,'euDistPx'),isfield(trackParam,'commonPlanes'))),'trackParam is expected to be a struct with 2 fields "euDistPx", the tolerated euclidian distance between consecutive frames, "commonPlanes" nPlane to be considered as frame consistent ([1 9])');
             
             %Extraction of SRData
             nfields = numel(fieldnames(obj.SRCalMovies));
@@ -120,8 +120,8 @@ classdef SRCalibration < handle
                 
                 for j = 1:length(allData)
                     allData{j} = [allData{j} ; SRCalibData{j} ];
-                    calPerPlane{j} = [calPerPlane{j}; dataPerPlane{j}(dataPerPlane{j}(:,3)<1,:)];
-                    calPerPlane{j+1} = [calPerPlane{j+1};dataPerPlane{j+1}(dataPerPlane{j+1}(:,3)>1,:)];
+                    calPerPlane{j} = [calPerPlane{j}; dataPerPlane{j}(dataPerPlane{j}.ellip<1,:)];
+                    calPerPlane{j+1} = [calPerPlane{j+1};dataPerPlane{j+1}(dataPerPlane{j+1}.ellip>1,:)];
                 end
                 
             end
@@ -136,48 +136,55 @@ classdef SRCalibration < handle
             
         end
         
-        function [transMat,corrData] = corrTranslation(obj,refPlane)
+        function [corrMat,corrData] = corrTranslation(obj,refPlane)
             assert(~isempty(obj.calib.data),'You need to extract the SR calibration data before correction for translation');
             SRCalibData = obj.calib.data;
             data2Corr = obj.calib.dataPerPlane;
             %Calculate the translation
-            [transMat] = Core.SRCalMovie.getTrans(SRCalibData);
+            [corrMat] = Core.SRCalMovie.getTrans(SRCalibData);
             
             %Correct the data
-            [corrData] = Core.SRCalMovie.applyTrans(data2Corr,transMat,refPlane);
+            [corrData] = Core.SRCalMovie.applyTrans(data2Corr,corrMat,refPlane);
             
-            
-            obj.calib.SRCorrData = corrData;
-            obj.calib.translation = transMat;
-            
-            cal.translation = transMat;
-            cal.rotation = [1 1 1;...
+            corrMat.rot(:,:) = {[1 1 1;...
                             1 1 1;...
-                            1 1 1];
+                            1 1 1]};
+             %reshaping
+            corrMat = corrMat(:,{'rowTrans','colTrans','rot','transformation'});
+                        
+            %storing
+            obj.calib.SRCorrData = corrData;
+            obj.calib.corr = corrMat;
+            
+            %Saving
+            SRCal = corrMat;
             fileName = sprintf('%s%sSRCalibration.mat',obj.path,'\');
-            save(fileName,'cal');
+            save(fileName,'SRCal');
 
         end
         
-        function [transMat,rotMat,corrData] = corrRotation(obj,refPlane)
+        function [corrMat,corrData] = corrRotation(obj,refPlane)
             SRCalibData = obj.calib.data;
            
-            [transMat,corrData] = obj.corrTranslation(refPlane);
+            [corrMat,corrData] = obj.corrTranslation(refPlane);
             
             %Calculate the rotation
-            [rotMat] = Core.SRCalMovie.getRot(SRCalibData);
+            [corrMat] = Core.SRCalMovie.getRot(SRCalibData,corrMat);
             
             %Correct the data
-            [corrData] = Core.SRCalMovie.applyRot(corrData,rotMat, refPlane);
-                        
-            obj.calib.SRCorrData = corrData;
-            obj.calib.translation = transMat;
-            obj.calib.rotation = rotMat;
+            [corrData] = Core.SRCalMovie.applyRot(corrData,corrMat, refPlane);
             
-            cal.translation = transMat;
-            cal.rotation = rotMat
+            %reshaping
+             corrMat = corrMat(:,{'rowTrans','colTrans','rot','transformation'});
+                        
+            %storing
+            obj.calib.SRCorrData = corrData;
+            obj.calib.corr = corrMat;
+            
+            %Saving
+            SRCal = corrMat;
             fileName = sprintf('%s%sSRCalibration.mat',obj.path,'\');
-            save(fileName,'cal');
+            save(fileName,'SRCal');
             
         end
         
@@ -198,17 +205,26 @@ classdef SRCalibration < handle
             %Calculate the error on euclidian distance before and after
             %correction for each individual beads used for calibration
             for i = 1:length(data)-1
+                %Here we compare the data of plane x with ellipticity <1
+                %with the data of plane x+1 with ellipticity >1 before and
+                %after correction.
                 
-                errRow{i} = data{i,1}(data{i,1}(:,3)<1,1) - data{i+1,1}(data{i+1,1}(:,3)>1,1);
-                errCol{i} = data{i,1}(data{i,1}(:,3)<1,2) - data{i+1,1}(data{i+1,1}(:,3)>1,2);
+                mData = data{i};
+                nData = data{i+1};
+                
+                errRow{i} = mData.row(mData.ellip<1) - nData.row(nData.ellip>1);
+                errCol{i} = mData.col(mData.ellip<1) - nData.col(nData.ellip>1);
                 euclDist{i} = sqrt(errRow{i}.^2+errCol{i}.^2);
                 
-                errCRow{i} = corrData{i,1}(corrData{i,1}(:,3)<1,1) - corrData{i+1,1}(corrData{i+1,1}(:,3)>1,1);
-                errCCol{i} = corrData{i,1}(corrData{i,1}(:,3)<1,2) - corrData{i+1,1}(corrData{i+1,1}(:,3)>1,2);
+                cData = corrData{i};
+                dData = corrData{i+1};
+                
+                errCRow{i}   =  cData.row(cData.ellip<1) - dData.row(dData.ellip>1);
+                errCCol{i}   =  cData.col(cData.ellip<1) - dData.col(dData.ellip>1);
                 euclCDist{i} = sqrt(errCRow{i}.^2+errCCol{i}.^2);
                 
-                allDist = [allDist; data{i,1}(:,1) data{i,1}(:,2)];
-                allCorrDist = [allCorrDist; corrData{i,1}(:,1) corrData{i,1}(:,2)];
+                allDist = [allDist; mData.row mData.col];
+                allCorrDist = [allCorrDist; cData.row cData.col];
                 
             end
             
@@ -255,6 +271,7 @@ classdef SRCalibration < handle
             fErrBin = fErrEdge(1:end-1)+(fErrEdge(2)-fErrEdge(1));
             [fErrCN, fErrCEdge] = histcounts(fullCErrRow,[-2:0.2:2]);
             fErrCBin = fErrCEdge(1:end-1)+(fErrCEdge(2)-fErrCEdge(1));
+            
             %Compare all errors before and after
             subplot(1,3,3)
             hold on

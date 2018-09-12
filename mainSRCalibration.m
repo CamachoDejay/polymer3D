@@ -21,19 +21,20 @@ testSRCal.retrieveSRCalMov;
 detectParam.delta = 6;
 detectParam.chi2 = 80;
 
-trackParam.euDistPx = 1; 
-trackParam.ellip = 5;
+trackParam.commonPlanes = 2; 
+trackParam.euDistPx = 2;
 
 testSRCal.retrieveSRCalData(detectParam,trackParam);
 
 % calibrate
 %% calc translation
-refPlane = 3;
+refPlane = 5;
 testSRCal.corrTranslation(refPlane);
 
 testSRCal.checkAccuracy(refPlane);
 
 %% calc rotation
 testSRCal.corrRotation(refPlane);
+
 
 testSRCal.checkAccuracy(refPlane);

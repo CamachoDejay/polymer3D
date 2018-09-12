@@ -52,34 +52,39 @@ classdef SRCalMovie < Core.MPCalMovie
             disp('==========> DONE ! <============');
         end
         
-        function [transMat,corrData] = corrTranslation(obj,refPlane)
+        function [corrMat,corrData] = corrTranslation(obj,refPlane)
             assert(~isempty(obj.SRCalData),'You need to extract the SR calibration data before correction for translation');
             SRCalibData = obj.SRCalData;
             data2Corr = obj.calDataPerPlane;
    
             %Calculate the translation 
-            [transMat] = obj.getTrans(SRCalibData);
+            [corrMat] = obj.getTrans(SRCalibData);
             
             %Correct the data
-            [corrData] = obj.applyTrans(data2Corr,transMat,refPlane);
+            [corrData] = obj.applyTrans(data2Corr,corrMat,refPlane);
             
             obj.SRCorrData = corrData;
-            obj.SRCorr.translation = transMat;
+            obj.SRCorr = corrMat;
         end
         
-        function [transMat,rotMat,corrData] = corrRotation(obj,refPlane)
+        function [corrMat,corrData] = corrRotation(obj,refPlane)
             
-            [transMat,corrData] = obj.corrTranslation(refPlane);
+            [corrMat,corrData] = obj.corrTranslation(refPlane);
             SRCalibData = obj.SRCalData;
              %Calculate the rotation
-            [rotMat] = obj.getRot(SRCalibData);
+            [corrMat] = obj.getRot(SRCalibData,corrMat);
             
             %Correct the data
-            [corrData] = obj.applyRot(corrData,rotMat, refPlane);
-   
+            [corrData] = obj.applyRot(corrData,corrMat, refPlane);
+            
+            
+            %Reformat table
+            
+            
+            
             obj.SRCorrData = corrData;
-            obj.SRCorr.translation = transMat;
-            obj.SRCorr.rotation = rotMat;
+            obj.SRCorr = corrMat;
+            
         end
         
         function checkAccuracy(obj,refPlane)
@@ -99,13 +104,17 @@ classdef SRCalMovie < Core.MPCalMovie
             %Calculate the error on euclidian distance before and after
             %correction for each individual beads used for calibration
             for i = 1:length(data)-1
-                
-                    errRow{i} = data{i,1}(data{i,1}(:,3)<1,1) - data{i+1,1}(data{i+1,1}(:,3)>1,1);
-                    errCol{i} = data{i,1}(data{i,1}(:,3)<1,2) - data{i+1,1}(data{i+1,1}(:,3)>1,2);
+                    mData = data{i,1};
+                    nData = data{i+1,1};
+                    
+                    errRow{i} = mData.row(mData.ellip<1) - nData.row(nData.ellip>1);
+                    errCol{i} = mData.col(mData.ellip<1) - nData.col(nData.ellip>1);
                     euclDist{i} = sqrt(errRow{i}.^2+errCol{i}.^2);
                     
-                    errCRow{i} = corrData{i,1}(corrData{i,1}(:,3)<1,1) - corrData{i+1,1}(corrData{i+1,1}(:,3)>1,1);
-                    errCCol{i} = corrData{i,1}(corrData{i,1}(:,3)<1,2) - corrData{i+1,1}(corrData{i+1,1}(:,3)>1,2);
+                    cData = corrData{i,1};
+                    dData = corrData{i+1,1};
+                    errCRow{i} =  cData.row(cData.ellip<1) - dData.row(dData.ellip>1);
+                    errCCol{i} =  cData.col(cData.ellip<1) - dData.row(dData.ellip>1);
                     euclCDist{i} = sqrt(errCRow{i}.^2+errCCol{i}.^2);
 
                     allDist = [allDist; data{i,1}(:,1) data{i,1}(:,2)];                   
@@ -223,333 +232,6 @@ classdef SRCalMovie < Core.MPCalMovie
             hold off 
         end
         
-        
-    end
-    
-    methods (Static)
-        
-        function [transMat] = getTrans(SRCalibData)
-            nL = length(SRCalibData);
-            transMat = cell(nL,1);
-            for i = 1:nL
-                %split in two plane
-                idx2FrameA = SRCalibData{i}(:,4) == i;
-                idx2FrameB = SRCalibData{i}(:,4) == i+1;
-                
-                %Center of mass col row for plane a (ellip>1)
-                colCMa = mean(SRCalibData{i}(idx2FrameA,1));
-                rowCMa = mean(SRCalibData{i}(idx2FrameA,2));
-                
-                %Center of mass col row plane b (ellip<1)
-                colCMb = mean(SRCalibData{i}(idx2FrameB,1));
-                rowCMb = mean(SRCalibData{i}(idx2FrameB,2));
-                
-                %if we want to add the correction (not subtract)
-                colTrans = colCMa-colCMb;
-                rowTrans = rowCMa-rowCMb;
-                
-                %store
-                transMat{i} = [colTrans rowTrans];
-                
-            end
-            
-            
-        end
-        
-        function [rotMat]   = getRot(SRCalibData)
-            nL = length(SRCalibData);
-            rotMat = cell(nL,1);
-            
-            for i = 1:nL
-                %split in two planes
-                idx2FrameA = SRCalibData{i}(:,4) == i;
-                idx2FrameB = SRCalibData{i}(:,4) == i+1;
-                
-                planeA = SRCalibData{i}(idx2FrameA,1:3);
-                planeB = SRCalibData{i}(idx2FrameB,1:3);
-                
-                planeA(:,3) = 0;
-                planeB(:,3) = 0;
-                
-                planeA = planeA - mean(planeA,1);
-                planeB = planeB - mean(planeB,1);
-                %check that format is okay
-                if and(size(planeA,1)~=3, size(planeA,2)==3)
-                    planeA = planeA';
-                    planeB = planeB';
-                elseif size(planeA,1)==3
-                else
-                    error('Something is wrong with the dimension of your data, expect a three 3D vector (x;y;z)')
-                end
-                
-                %Calculate rotation matrix (Procedure found at
-                %http://nghiaho.com/?page_id=671)
-                
-                %Calculate covariance matrix
-                H = planeA*planeB';
-                
-                %Single value decomposition
-                [U, S, V] = svd(H);
-                
-                %getting the rotation
-                rotMat{i} = V*U';
-                
-%                 %test if okay
-%                 euclDist = mean(sqrt((planeA(1,:) - planeB(1,:)).^2 +...
-%                     (planeA(2,:) - planeB(2,:)).^2 + ...
-%                     (planeA(2,:) - planeB(2,:)).^2));
-%                 
-%                 rotPlaneA = rotMat{i}*planeA;
-%                 euclDistCorr = mean(sqrt((rotPlaneA(1,:) - planeB(1,:)).^2 +...
-%                     (rotPlaneA(2,:) - planeB(2,:)).^2 + ...
-%                     (rotPlaneA(3,:) - planeB(3,:)).^2));
-%                 
-%                 Test = euclDistCorr < euclDist;
-            end
-        end
-        
-        function [corrData] = applyTrans(data,corr,refPlane)%Refplane
-            corrData = data;
-            nPlanes = length(corrData);
-            %Loop through the planes
-            for i = 1 : nPlanes
-                 currentPlane = i;
-                %act depending on whether the current plane is smaller or
-                %bigger than the user-selected reference plane
-                if currentPlane < refPlane
-                    
-                    idx2Corr = currentPlane:refPlane-1;
-                    sign = -1;
-                    
-                elseif currentPlane > refPlane
-                    
-                    idx2Corr = refPlane:currentPlane-1;
-                    idx2Corr = fliplr(idx2Corr);
-                    sign = +1;
-                    
-                else
-                    
-                    idx2Corr = [];
-                    
-                end
-                %1 Translation
-                if ~isempty(idx2Corr)
-                    for j = 1:length(idx2Corr)
-                        corrData{i}(:,1:2) = corrData{i}(:,1:2) + sign* corr{idx2Corr(j)};
-                    end
-                end
-%                     %remove CM 
-%                     corrData{i}(corrData{i}(:,3)<1,1:2) = corrData{i}(corrData{i}(:,3)<1,1:2)-mean(corrData{i}(corrData{i}(:,3)<1,1:2));
-%                     corrData{i}(corrData{i}(:,3)>1,1:2) = corrData{i}(corrData{i}(:,3)>1,1:2)- mean(corrData{i}(corrData{i}(:,3)>1,1:2));
-%                      
-            end
-            
-        end
-        
-        function [corrData] = applyRot(data,corr,refPlane)
-            corrData = data;
-            nPlanes = length(corrData);
-            %Loop through the planes
-            for i = 1 : nPlanes
-                currentPlane = i;
-                %act depending on whether the current plane is smaller or
-                %bigger than the user-selected reference plane
-                if currentPlane < refPlane
-                    
-                    idx2Corr = currentPlane:refPlane-1;
-                    sign = false;
-                    
-                elseif currentPlane > refPlane
-                    
-                    idx2Corr = refPlane:currentPlane-1;
-                    idx2Corr = fliplr(idx2Corr);
-                    sign = true;
-                    
-                else
-                    
-                    idx2Corr = [];
-                    
-                end
-                
-                %Rotation
-                if ~isempty(idx2Corr)
-                    
-                    data2Corr = corrData{i}(:,1:3);
-                    data2Corr(:,3) = 0;
-                    
-                    %corrDA = data2Corr(corrData{i}(:,3)<1,:);
-                    %corrDB = data2Corr(corrData{i}(:,3)>1,:);
-                    CM = mean(data2Corr);
-                   % CMb = mean(corrDB);
-                        
-%                     corrDA = corrDA - CMa;
-%                     corrDB = corrDB - CMb;
-                    data2Corr = data2Corr - CM;
-                    
-                    if and(size( data2Corr,1)~=3, size( data2Corr,2)==3)
-                         data2Corr =  data2Corr';
-                        %corrDB = corrDB';
-                    elseif size(planeA,1)==3
-                    else
-                        error('Something is wrong with the dimension of your data, expect a three 3D vector (x;y;z)')
-                    end
-                    
-                    for j = 1:length(idx2Corr)
-                        
-                        if sign
-                            rot = corr{idx2Corr(j)}';
-                        else
-                            rot = corr{idx2Corr(j)};
-                        end
-
-%                         if isempty(corrDB)
-                            
-                            data2Corr = (rot*data2Corr);
-                            data2Store = data2Corr';
-                            corrData{i}(:,1:2) = data2Store(:,1:2)+CM(1:2);
-                            
-% %                         elseif isempty(corrDA)
-%                             
-%                             corrDB = (rot*corrDB);
-%                             data2Store = corrDB';
-%                             corrData{i}(corrData{i}(:,3)>1,1:2) = data2Store(:,1:2)+CMb(1:2);
-%                             
-%                         else
-%                             
-%                             corrDA = (rot*corrDA);
-%                             corrDB = (rot*corrDB);
-%                             data2Store = corrDA';
-%                             corrData{i}(corrData{i}(:,3)<1,1:2) = data2Store(:,1:2)+CMa(1:2);
-%                             data2Store = corrDB';
-%                             corrData{i}(corrData{i}(:,3)>1,1:2) = data2Store(:,1:2)+CMb(1:2);
-                            
-                        %end
-                    end
-                end
-            end
-            
-        end
-        
-    end
-    
-    methods (Access = private)
-        
-        function [partData] = extractPartData(obj)
-            list = obj.particles.List;
-            traces = obj.traces.trace;
-            nTraces = obj.traces.nTrace;
-            
-            %Allocate Memory
-            partData = cell(1,nTraces);
-            %Extraction of particule data occurs here
-            for i = 1 : length(traces)
-                if ~isempty(traces{i})
-                    for j = 1 : length(traces{i})
-                        idx2Part = traces{i}{j};
-                        if ~isnan(idx2Part)
-                            startIdx = size(partData{idx2Part},1)+1;
-                            currentData = list{i}{j}(~isnan(list{i}{j}(:,1)),[1:3, end]);
-                            idx = repmat(i,size(currentData,1),1);
-                            partData{idx2Part}(startIdx:startIdx+size(currentData,1)-1,:) = [list{i}{j}(~isnan(list{i}{j}(:,1)),[1:3, end]) idx];
-                        else
-                        end
-                    end
-                end
-            end
-            
-            % Here we clean the data keeping only the particles that were
-            % observed in every planes
-            for i = 1: size(partData,2)
-                
-                data2Test = partData{i};
-                test = unique(data2Test(:,4));
-                
-                if length(test)<obj.calibrated.nPlanes
-                    %put empty cells where test fails
-                    partData{i} = [];
-                else%we check if data above and below focus is encountered
-                    del = false;
-                    for j = 1: length(test)
-                        data2Test2 = data2Test(data2Test(:,4)==j,:);
-                        if or(isempty(data2Test2(data2Test2(:,3)<1)),isempty(data2Test2(data2Test2(:,3)>1)))
-                            del = true;
-                        end
-                    end
-                    if del
-                        partData{i} = [];
-                    end
-                end
-                
-               
-            end
-            %Deleting empty cells of the cell array
-            partData(cellfun('isempty',partData)) = [];
-            
-        end
-        
-        function [defocusFrame] = findDefocusedFrame(obj,partData)
-            
-            defocusFrame = cell(size(partData));
-            
-            for i = 1:size(partData,2)
-                currentData = partData{i};
-                planes = unique(currentData(:,4));
-                for j = 1:max(planes)-1
-                    dataPlaneA = currentData(currentData(:,4) == planes(j),:);
-                    dataPlaneB = currentData(currentData(:,4) == planes(j+1),:);
-                    
-                    idx = obj.findOptimalDefocusing(dataPlaneA,dataPlaneB);
-                    
-                    defocusFrame{i}(j,:) = [j idx];
-                    
-                end
-            end
-        end
-        
-        function [idx] = findOptimalDefocusing(obj,dataPlaneA,dataPlaneB)
-            nFrames = unique(dataPlaneA(dataPlaneA(:,3)<1,end));
-            bestVal = [2 1];
-            for i = 1: length(nFrames)
-                currentFrame = nFrames(i);
-                currentVal = [dataPlaneA(dataPlaneA(:,5)==currentFrame,3) dataPlaneB(dataPlaneB(:,5)==currentFrame,3)];
-                cmpVal = [abs(1-1/currentVal(1)) abs(1-currentVal(2))];
-                
-                if  and(abs(cmpVal(1) - cmpVal(2))< abs(bestVal(1) - bestVal(2)), currentVal(2)>1)
-                    bestVal = cmpVal;
-                    idx = nFrames(i);
-                end
-                
-            end
-            
-        end
-        
-        function [SRCalibData,dataPerPlane] = getCalibData(obj,partData,idx2Frame)
-            nPlanes = obj.calibrated.nPlanes;
-            SRCalibData = cell(nPlanes-1,1);
-            dataPerPlane = cell(nPlanes,1);
-            
-            for i =1:size(partData,2)
-                currentData = partData{i};
-                for j = 1:nPlanes-1
-                    %Data Plane x
-                    idx = and(currentData(:,4)==j,currentData(:,5)==idx2Frame{i}(j,2));
-                    idx2LEllip = currentData(:,3)<=1;
-                    idx2HEllip = currentData(:,3)>1;
-                    idx2LData  = logical(idx.*idx2LEllip);
-                    SRCalibData{j} = [SRCalibData{j}; currentData(idx2LData,:) ];
-                    %Data Plane x+1
-                    idx = and(currentData(:,4)==j+1,currentData(:,5)==idx2Frame{i}(j,2));
-                    idx2HData = logical(idx.*idx2HEllip);
-                    SRCalibData{j} = [SRCalibData{j}; currentData(idx2HData,:)];
-                    
-                    %data per plane
-                    dataPerPlane{j} = [dataPerPlane{j}; currentData(idx2LData,:)];
-                    dataPerPlane{j+1} = [dataPerPlane{j+1}; currentData(idx2HData,:)];
-                end
-            end
-            
-        end
-                        
         function correctionUnitTesting(obj,angle,shift,refPlane)
  %/////////////WARNING This function is made to test that the correction of
               %translation and rotation are working fine. It actually modify
@@ -603,6 +285,328 @@ classdef SRCalMovie < Core.MPCalMovie
             obj.checkAccuracy(refPlane);
             
         end
+        
+        
+    end
+    
+    methods (Static)
+        
+        function [corrMat]  = getTrans(SRCalibData)
+            nL = length(SRCalibData);
+            transfo = {'1->2';'2->3';'3->4';'4->5';'5->6';'6->7';'7->8'};
+            corrMat = table(zeros(nL,1),zeros(nL,1),transfo,'VariableNames',{'rowTrans','colTrans','transformation'});
+            for i = 1:nL
+                currentData = SRCalibData{i};
+                %split in two plane
+                idx2FrameA = currentData.plane == i;
+                idx2FrameB = currentData.plane == i+1;
+                
+                %Center of mass col row for plane a (ellip>1)
+                colCMa = mean(currentData.col(idx2FrameA));
+                rowCMa = mean(currentData.row(idx2FrameA));
+                
+                %Center of mass col row plane b (ellip<1)
+                colCMb = mean(currentData.col(idx2FrameB));
+                rowCMb = mean(currentData.row(idx2FrameB));
+                
+                %if we want to add the correction (not subtract)
+                colTrans = colCMa-colCMb;
+                rowTrans = rowCMa-rowCMb;
+                
+                %store
+                corrMat(i,{'rowTrans','colTrans'}) = table(rowTrans, colTrans);
+                
+            end
+            
+            
+        end
+        
+        function [corrMat]  = getRot(SRCalibData,corrMat)
+            nL = length(SRCalibData);
+           
+            for i = 1:nL
+                planeA =[];
+                planeB =[];
+                
+                currCalData = SRCalibData{i};
+                %split in two planes
+                idx2FrameA = currCalData.plane == i;
+                idx2FrameB = currCalData.plane == i+1;
+                
+                planeA(:,1) = currCalData.row(idx2FrameA);
+                planeA(:,2) = currCalData.col(idx2FrameA);
+                planeA(:,3) = zeros(size(planeA,1),1);
+                
+                planeB(:,1) = currCalData.row(idx2FrameB);
+                planeB(:,2) = currCalData.col(idx2FrameB);
+                planeB(:,3) = zeros(size(planeB,1),1);
+                
+                               
+                planeA = planeA - mean(planeA,1);
+                planeB = planeB - mean(planeB,1);
+                %check that format is okay
+                if and(size(planeA,1)~=3, size(planeA,2)==3)
+                    planeA = planeA';
+                    planeB = planeB';
+                elseif size(planeA,1)==3
+                else
+                    error('Something is wrong with the dimension of your data, expect a three 3D vector (x;y;z)')
+                end
+                
+                %Calculate rotation matrix (Procedure found at
+                %http://nghiaho.com/?page_id=671)
+                
+                %Calculate covariance matrix
+                H = planeA*planeB';
+                
+                %Single value decomposition
+                [U, S, V] = svd(H);
+                
+                %getting the rotation
+                corrMat.rot(i) = {V*U'};
+                
+           end
+        end
+        
+        function [corrData] = applyTrans(data,corr,refPlane)%Refplane
+            corrData = data;
+            nPlanes = length(corrData);
+            %Loop through the planes
+            for i = 1 : nPlanes
+                 currentPlane = i;
+                 currData = corrData{i};
+                 
+                %act depending on whether the current plane is smaller or
+                %bigger than the user-selected reference plane
+                if currentPlane < refPlane
+                    
+                    idx2Corr = currentPlane:refPlane-1;
+                    sign = -1;
+                    
+                elseif currentPlane > refPlane
+                    
+                    idx2Corr = refPlane:currentPlane-1;
+                    idx2Corr = fliplr(idx2Corr);
+                    sign = +1;
+                    
+                else
+                    
+                    idx2Corr = [];
+                    
+                end
+                %1 Translation
+                row = currData.row;
+                col = currData.col;
+                if ~isempty(idx2Corr)
+                    for j = 1:length(idx2Corr)
+                        
+                        row = row +sign*corr.rowTrans(idx2Corr(j));
+                        col = col +sign*corr.colTrans(idx2Corr(j));
+
+                    end
+                    currData(:,'row') = table(row);
+                    currData(:,'col') = table(col);
+                    
+                end
+%                     
+                corrData{i} = currData;
+            end
+            
+        end
+        
+        function [corrData] = applyRot(data,corr,refPlane)
+            corrData = data;
+            nPlanes = length(corrData);
+            %Loop through the planes
+            for i = 1 : nPlanes
+                data2Corr = [];
+                currentPlane = i;
+                currentData = corrData{i};
+                %act depending on whether the current plane is smaller or
+                %bigger than the user-selected reference plane
+                if currentPlane < refPlane
+                    
+                    idx2Corr = currentPlane:refPlane-1;
+                    sign = false;
+                    
+                elseif currentPlane > refPlane
+                    
+                    idx2Corr = refPlane:currentPlane-1;
+                    idx2Corr = fliplr(idx2Corr);
+                    sign = true;
+                    
+                else
+                    
+                    idx2Corr = [];
+                    
+                end
+                
+                %Rotation
+                if ~isempty(idx2Corr)
+                    
+                    data2Corr(:,1) = currentData.row;
+                    data2Corr(:,2) = currentData.col;
+                    data2Corr(:,3) = zeros(length(currentData.row),1);
+                    
+                    CM = mean(data2Corr);
+                    data2Corr = data2Corr - CM;
+                    
+                    if and(size( data2Corr,1)~=3, size( data2Corr,2)==3)
+                        
+                         data2Corr =  data2Corr';
+                         
+                    elseif size(planeA,1)==3
+                        
+                    else
+                        
+                        error('Something is wrong with the dimension of your data, expect a three 3D vector (x;y;z)')
+                    
+                    end
+                    
+                    for j = 1:length(idx2Corr)
+                        
+                        if sign
+                            rot = corr.rot{idx2Corr(j)}';
+                        else
+                            rot = corr.rot{idx2Corr(j)};
+                        end
+                            
+                            
+                            data2Corr = (rot*data2Corr);
+                            data2Store = data2Corr';
+                            
+                            currentData.row = data2Store(:,1)+CM(1);
+                            currentData.col = data2Store(:,2)+CM(2);
+                           
+                    end
+                end
+                
+                 corrData{i} = currentData;
+            end
+            
+        end
+        
+    end
+    
+    methods (Access = private)
+        
+        function [partData] = extractPartData(obj)
+            list = obj.particles.List;
+            traces = obj.particles.traces;
+            nTraces = obj.particles.nTraces;
+            
+            %Allocate Memory
+            partData = cell(1,nTraces);
+            %Extraction of particule data occurs here
+            for i = 1 : length(traces)
+                if ~isempty(traces{i})
+                    for j = 1 : length(traces{i})
+                        idx2Part = traces{i}{j};
+                        if ~isnan(idx2Part)
+                            startIdx = size(partData{idx2Part},1)+1;
+                            currentData = list{i}{j}(~isnan(list{i}{j}.row),{'row','col','ellip','plane'});
+                            idx = table(repmat(i,size(currentData.row,1),1),'VariableNames',{'frame'});
+                            partData{idx2Part}(startIdx:startIdx+size(currentData.row,1)-1,:) = [currentData idx];
+                        else
+                        end
+                    end
+                end
+            end
+            
+            % Here we clean the data keeping only the particles that were
+            % observed in every planes
+            for i = 1: size(partData,2)
+                
+                data2Test = partData{i};
+                test = unique(data2Test.plane);
+                
+                if length(test)<obj.calibrated.nPlanes
+                    %put empty cells where test fails
+                    partData{i} = [];
+                else%we check if data above and below focus is encountered
+                    del = false;
+                    for j = 1: length(test)
+                        data2Test2 = data2Test(data2Test.plane==j,:);
+                        if or(isempty(data2Test2(data2Test2.ellip<1,:)),isempty(data2Test2(data2Test2.ellip>1,:)))
+                            del = true;
+                        end
+                    end
+                    if del
+                        partData{i} = [];
+                    end
+                end
+                
+               
+            end
+            %Deleting empty cells of the cell array
+            partData(cellfun('isempty',partData)) = [];
+            
+        end
+        
+        function [defocusFrame] = findDefocusedFrame(obj,partData)
+            
+            defocusFrame = cell(size(partData));
+            
+            for i = 1:size(partData,2)
+                currentData = partData{i};
+                planes = unique(currentData.plane);
+                for j = 1:max(planes)-1
+                    dataPlaneA = currentData(currentData.plane == planes(j),:);
+                    dataPlaneB = currentData(currentData.plane == planes(j+1),:);
+                    
+                    idx = obj.findOptimalDefocusing(dataPlaneA,dataPlaneB);
+                    
+                    defocusFrame{i}(j,:) = [j idx];
+                    
+                end
+            end
+        end
+        
+        function [idx] = findOptimalDefocusing(obj,dataPlaneA,dataPlaneB)
+            nFrames = unique(dataPlaneA.frame(dataPlaneA.ellip<1));
+            bestVal = [2 1];
+            for i = 1: length(nFrames)
+                currentFrame = nFrames(i);
+                currentVal = [dataPlaneA.ellip(dataPlaneA.frame==currentFrame) dataPlaneB.ellip(dataPlaneB.frame==currentFrame)];
+                cmpVal = [abs(1-1/currentVal(1)) abs(1-currentVal(2))];
+                
+                if  and(abs(cmpVal(1) - cmpVal(2))< abs(bestVal(1) - bestVal(2)), currentVal(2)>1)
+                    bestVal = cmpVal;
+                    idx = nFrames(i);
+                end
+                
+            end
+            
+        end
+        
+        function [SRCalibData,dataPerPlane] = getCalibData(obj,partData,idx2Frame)
+            nPlanes = obj.calibrated.nPlanes;
+            SRCalibData = cell(nPlanes-1,1);
+            dataPerPlane = cell(nPlanes,1);
+            
+            for i =1:size(partData,2)
+                currentData = partData{i};
+                for j = 1:nPlanes-1
+                    %Data Plane x
+                    idx = and(currentData.plane==j,currentData.frame==idx2Frame{i}(j,2));
+                    idx2LEllip = currentData.ellip<=1;
+                    idx2HEllip = currentData.ellip>1;
+                    idx2LData  = logical(idx.*idx2LEllip);
+                    SRCalibData{j} = [SRCalibData{j}; currentData(idx2LData,:) ];
+                    %Data Plane x+1
+                    idx = and(currentData.plane==j+1,currentData.frame==idx2Frame{i}(j,2));
+                    idx2HData = logical(idx.*idx2HEllip);
+                    SRCalibData{j} = [SRCalibData{j}; currentData(idx2HData,:)];
+                    
+                    %data per plane
+                    dataPerPlane{j} = [dataPerPlane{j}; currentData(idx2LData,:)];
+                    dataPerPlane{j+1} = [dataPerPlane{j+1}; currentData(idx2HData,:)];
+                end
+            end
+            
+        end
+                        
+       
         
         
         

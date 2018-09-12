@@ -84,7 +84,7 @@ zCalMov.showTraces
 
 %% SuperResCalMovie
 trackParam.euDistPx = 1; 
-trackParam.ellip = 5;
+trackParam.commonPlanes = 2;
 SRCalMov = Core.SRCalMovie(path2Cal,calib.getCal);
 
 SRCalMov.giveInfo;

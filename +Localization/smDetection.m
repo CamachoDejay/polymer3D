@@ -1,4 +1,4 @@
-function [ pos, inten, FAR ] = smDetection( im, delta, FWHM_pix, chi2 )
+function [ pos, meanFAR, FAR ] = smDetection( im, delta, FWHM_pix, chi2 )
 %smDetection finds the positions where a single molecule is most probably
 %located in the input image using the generalized likelihood ratio test.
 %   These postions should be further tested to ensure that a SM is in fact
@@ -18,7 +18,7 @@ L  = bwlabel(BW);
 stats = regionprops(L,FAR,'MeanIntensity','WeightedCentroid');
 % generate outputs
 pos      = cat(1,stats.WeightedCentroid);
-inten    = cat(1,stats.MeanIntensity);
+meanFAR    = cat(1,stats.MeanIntensity);
 
 % note that due to the way that regionprops works the centroid positions
 % are some what shifted eg if the image is of dimentions [200 500] you can

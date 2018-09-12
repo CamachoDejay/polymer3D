@@ -222,11 +222,6 @@ classdef MPParticleMovie < Core.MPMovie
                             %later
                             fCandMet.LRT = focusMetric;
                             fCandMet.Properties.VariableNames{5} = 'ellipLRT';
-                            
-%                             fCandMet = [fCandMet fCandMet(:,end)];
-%                             fCandMet(:,6) = fCandMet(:,5);
-%                             fCandMet(:,5) = focusMetric;
-%                             fCandMet(:,4) = [];
 
                             focusMetric((1-corrEllip)>0.3) = NaN;
                             
@@ -385,6 +380,83 @@ classdef MPParticleMovie < Core.MPMovie
                 end
             end
         end
+        
+        function [candidateList] = planeConsolidation(obj,candMet,focusMetric)
+            %Loop through all candidate of a given frame and match them
+            %between frame until none can be match or all are matched.
+            nPlanes = obj.calibrated.nPlanes;
+            counter = 1;
+            nPart = 0;
+            maxIt = size(candMet,1);
+            candidateList = cell(max(size(find(~isnan(focusMetric)))),1);
+            %continue until the list is not empty
+            while and(~isempty(focusMetric), ~isnan(nanmax(focusMetric)))
+                
+                if counter> maxIt
+                    
+                    error('While loop ran for an unexpectedly long time, something might be wrong');
+                    
+                end
+                
+                %Find candidate in best focus
+                [~,idx] = max(focusMetric);
+                currentPlane = candMet.plane(idx);
+                
+                %Check which planes are to be checked (currently 2 planes
+                %above and 2 planes below the given plane
+                planes2Check = currentPlane-2:currentPlane-1;
+                planes2Check = planes2Check(planes2Check>0);
+                planes2Check = [planes2Check currentPlane+1:currentPlane+2];
+                planes2Check = planes2Check(planes2Check<nPlanes+1);
+                currentCand = candMet(idx,:);
+                direction = -1;%Start by checking above
+                
+                particle = table(nan(5,1),nan(5,1),nan(5,1),nan(5,1),nan(5,1),...
+                    nan(5,1),nan(5,1),'VariableNames',{'row','col','z',...
+                    'ellip','ellipLRT','fMetric','plane'});
+                particle(3,:) = currentCand;
+                nCheck = length(planes2Check);
+                
+                for i = 1:nCheck
+                    
+                    cand = candMet(candMet.plane == planes2Check(i),:);
+                    if(planes2Check(i) > currentPlane)
+                        direction = +1;%check below (Plane 1 is the uppest plane 8 is lowest)
+                    end
+                    
+                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction);
+                    if ~all(isPart ==0)
+                        id = cand.plane(isPart)-currentCand.plane;
+                        particle(3+id,:) = cand(isPart,:);
+                    end
+                    
+                end
+                
+                %Check if the resulting configuration of the plane make
+                %sense e.g. no hole in the configuration
+                planeConfig = particle.plane;
+                [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes);
+                %Store
+                if checkRes
+                    
+                    nPart = nPart +1;
+                    candidateList{nPart,1} = particle;
+                    %We remove the particle(s) from the list
+                    focusMetric(ismember(candMet(:,1), particle(:,1))) = [];
+                    candMet(ismember(candMet(:,1), particle(:,1)),:) = [];
+                    
+                else
+                    %Otherwise we remove it from the best focus search list
+                    %by putting focus metric to NaN
+                    focusMetric(idx) = NaN;
+                    
+                end
+                
+                counter = counter+1;
+                
+            end
+        end
+                
 
     end
      methods (Static)
@@ -604,7 +676,8 @@ classdef MPParticleMovie < Core.MPMovie
                 
             end
         end
-                
+        
+       
      end
      
      methods (Access = private)
@@ -714,81 +787,7 @@ classdef MPParticleMovie < Core.MPMovie
              
         end
               
-        function [candidateList] = planeConsolidation(obj,candMet,focusMetric)
-            %Loop through all candidate of a given frame and match them
-            %between frame until none can be match or all are matched.
-            nPlanes = obj.calibrated.nPlanes;
-            counter = 1;
-            nPart = 0;
-            maxIt = size(candMet,1);
-            candidateList = cell(max(size(find(~isnan(focusMetric)))),1);
-            %continue until the list is not empty
-            while and(~isempty(focusMetric), ~isnan(nanmax(focusMetric)))
-                
-                if counter> maxIt
-                    
-                    error('While loop ran for an unexpectedly long time, something might be wrong');
-                    
-                end
-                
-                %Find candidate in best focus
-                [~,idx] = max(focusMetric);
-                currentPlane = candMet.plane(idx);
-                
-                %Check which planes are to be checked (currently 2 planes
-                %above and 2 planes below the given plane
-                planes2Check = currentPlane-2:currentPlane-1;
-                planes2Check = planes2Check(planes2Check>0);
-                planes2Check = [planes2Check currentPlane+1:currentPlane+2];
-                planes2Check = planes2Check(planes2Check<nPlanes+1);
-                currentCand = candMet(idx,:);
-                direction = -1;%Start by checking above
-                
-                particle = table(nan(5,1),nan(5,1),nan(5,1),nan(5,1),nan(5,1),...
-                    nan(5,1),nan(5,1),'VariableNames',{'row','col','z',...
-                    'ellip','ellipLRT','fMetric','plane'});
-                particle(3,:) = currentCand;
-                nCheck = length(planes2Check);
-                
-                for i = 1:nCheck
-                    
-                    cand = candMet(candMet.plane == planes2Check(i),:);
-                    if(planes2Check(i) > currentPlane)
-                        direction = +1;%check below (Plane 1 is the uppest plane 8 is lowest)
-                    end
-                    
-                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction);
-                    if ~all(isPart ==0)
-                        id = cand.plane(isPart)-currentCand.plane;
-                        particle(3+id,:) = cand(isPart,:);
-                    end
-                    
-                end
-                
-                %Check if the resulting configuration of the plane make
-                %sense e.g. no hole in the configuration
-                planeConfig = particle.plane;
-                [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes);
-                %Store
-                if checkRes
-                    
-                    nPart = nPart +1;
-                    candidateList{nPart,1} = particle;
-                    %We remove the particle(s) from the list
-                    focusMetric(ismember(candMet(:,1), particle(:,1))) = [];
-                    candMet(ismember(candMet(:,1), particle(:,1)),:) = [];
-                    
-                else
-                    %Otherwise we remove it from the best focus search list
-                    %by putting focus metric to NaN
-                    focusMetric(idx) = NaN;
-                    
-                end
-                
-                counter = counter+1;
-                
-            end
-        end
+       
         
      end
 end

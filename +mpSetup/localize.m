@@ -23,9 +23,9 @@ for i = 1:8
     % change to double is needed for GLRT
     im = double(im);
     % find molecules in the image
-    [ pos, inten ] = Localization.smDetection( im, delta, FWHMpix, chi2 );
+    [ pos, meanFAR ] = Localization.smDetection( im, delta, FWHMpix, chi2 );
     % store positions
-    totLoc{i} = [pos,inten];
+    totLoc{i} = [pos,meanFAR];
     
     % now we consolidate the positions
     
