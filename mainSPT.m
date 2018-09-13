@@ -100,7 +100,7 @@ SRCalMov.showParticles(50);
 SRCalMov.getSRCalData(trackParam);
 
 %% calc translation
-refPlane = 6;
+refPlane = 5;
 SRCalMov.corrTranslation(refPlane);
 
 SRCalMov.checkAccuracy(refPlane);
@@ -111,7 +111,7 @@ SRCalMov.corrRotation(refPlane);
 SRCalMov.checkAccuracy(refPlane);
 
 %% Unit testing
-SRCalMov.correctionUnitTesting(0.2,[-0.3,0.5,0],5);
+SRCalMov.correctionUnitTesting(0.2,[-0.3,0.5,0],8);
 
 %% MPLocMovie
 

@@ -216,13 +216,12 @@ classdef MPParticleMovie < Core.MPMovie
                         %#2 Consolidate the position of the given frame
                         %across plane
                           %Calculate a focus metric (FM) combining ellipticity and GLRT FM.
-                            [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.LRT);
+                            [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.fMetric);
 
                             %reformating to keep the same format as how the data is saved
                             %later
-                            fCandMet.LRT = focusMetric;
-                            fCandMet.Properties.VariableNames{5} = 'ellipLRT';
-
+                            fCandMet.fMetric = focusMetric;
+                            
                             focusMetric((1-corrEllip)>0.3) = NaN;
                             
                             %Plane Consolidation occur here
@@ -411,9 +410,9 @@ classdef MPParticleMovie < Core.MPMovie
                 currentCand = candMet(idx,:);
                 direction = -1;%Start by checking above
                 
-                particle = table(nan(5,1),nan(5,1),nan(5,1),nan(5,1),nan(5,1),...
-                    nan(5,1),nan(5,1),'VariableNames',{'row','col','z',...
-                    'ellip','ellipLRT','fMetric','plane'});
+                particle = array2table(nan(5,size(currentCand,2)));
+                particle.Properties.VariableNames = currentCand.Properties.VariableNames;
+                
                 particle(3,:) = currentCand;
                 nCheck = length(planes2Check);
                 
@@ -592,8 +591,8 @@ classdef MPParticleMovie < Core.MPMovie
                 next.ellip,direction);
             
             % Test focus Metric
-            maxExpFM = current.ellipLRT+0.1*current.ellipLRT;
-            checkRes3 = next.ellipLRT < maxExpFM;
+            maxExpFM = current.fMetric+0.1*current.fMetric;
+            checkRes3 = next.fMetric < maxExpFM;
             
             %isPart will only be true for particle that passes the 3 tests
             isPart = checkRes1.*checkRes2.*checkRes3;
@@ -744,7 +743,7 @@ classdef MPParticleMovie < Core.MPMovie
             delta = roiSize;
             sig = [obj.info.sigma_px obj.info.sigma_px];
  
-            varNames = {'row','col','z','ellip','magX','magY','LRT','focGrad','plane'};
+            varNames = {'row','col','z','ellip','magX','magY','fMetric','gFitMet','plane'};
                 candMet = table(zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
                     zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
                     zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
@@ -762,6 +761,9 @@ classdef MPParticleMovie < Core.MPMovie
                 %Phasor fitting to get x,y,e
                 [row,col,e,magX,magY] = Localization.phasor(ROI);
                 
+                 %LRT focus metric
+                [fMetric,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
+                
                 if magX>=magY
                     sig(1) = sig(1) * magX/magY;
                 else
@@ -769,13 +771,13 @@ classdef MPParticleMovie < Core.MPMovie
                 end
                 
                 %LRT focus metric
-                [LRT,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
+                [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
                 
                 rowPos = frameCandidate(i,1) + row;
                 colPos = frameCandidate(i,2) + col;
 
-                [grad,~] = imgradient(ROI);
-                Grad = max(max(grad,[],2),[],1);
+%                 [grad,~] = imgradient(ROI);
+%                 Grad = max(max(grad,[],2),[],1);
                 
                 %storing info
                 candMet.row(i) = rowPos;
@@ -784,8 +786,8 @@ classdef MPParticleMovie < Core.MPMovie
                 candMet.ellip(i) = e;
                 candMet.magX(i) = magX;
                 candMet.magY(i) = magY;
-                candMet.LRT(i) = LRT;
-                candMet.focGrad(i) = Grad;
+                candMet.fMetric(i) = fMetric;
+                candMet.gFitMet(i) = gFitMet;
                 candMet.plane(i) = plane;
             end
 

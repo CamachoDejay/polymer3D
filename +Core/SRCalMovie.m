@@ -52,38 +52,44 @@ classdef SRCalMovie < Core.MPCalMovie
             disp('==========> DONE ! <============');
         end
         
-        function [corrMat,corrData] = corrTranslation(obj,refPlane)
+        function [transMat,corrData] = corrTranslation(obj,refPlane)
             assert(~isempty(obj.SRCalData),'You need to extract the SR calibration data before correction for translation');
             SRCalibData = obj.SRCalData;
             data2Corr = obj.calDataPerPlane;
    
             %Calculate the translation 
-            [corrMat] = obj.getTrans(SRCalibData);
+            [transMat] = obj.getTrans(SRCalibData);
             
             %Correct the data
-            [corrData] = obj.applyTrans(data2Corr,corrMat,refPlane);
-            
+            corrData = cell(length(data2Corr),1);
+             %Correct the data for rotation
+            for i = 1:length(data2Corr)
+                currentData = data2Corr{i};
+                [cData] = obj.applyTrans(currentData,transMat,refPlane);
+                corrData{i} = cData;
+            end
+                      
             obj.SRCorrData = corrData;
-            obj.SRCorr = corrMat;
+            obj.SRCorr.trans = transMat;
         end
         
-        function [corrMat,corrData] = corrRotation(obj,refPlane)
+        function [rotMat,corrData] = corrRotation(obj,refPlane)
+            data2Corr = obj.calDataPerPlane;
             
-            [corrMat,corrData] = obj.corrTranslation(refPlane);
             SRCalibData = obj.SRCalData;
              %Calculate the rotation
-            [corrMat] = obj.getRot(SRCalibData,corrMat);
+            [rotMat] = obj.getRot(SRCalibData);
             
-            %Correct the data
-            [corrData] = obj.applyRot(corrData,corrMat, refPlane);
-            
-            
-            %Reformat table
-            
-            
-            
+            corrData = cell(length(data2Corr),1);
+             %Correct the data for rotation
+            for i = 1:length(data2Corr)
+                currentData = data2Corr{i};
+                [cData] = obj.applyRot(currentData,rotMat,refPlane);
+                corrData{i} = cData;
+            end
+
             obj.SRCorrData = corrData;
-            obj.SRCorr = corrMat;
+            obj.SRCorr.rot = rotMat;
             
         end
         
@@ -117,8 +123,8 @@ classdef SRCalMovie < Core.MPCalMovie
                     errCCol{i} =  cData.col(cData.ellip<1) - dData.row(dData.ellip>1);
                     euclCDist{i} = sqrt(errCRow{i}.^2+errCCol{i}.^2);
 
-                    allDist = [allDist; data{i,1}(:,1) data{i,1}(:,2)];                   
-                    allCorrDist = [allCorrDist; corrData{i,1}(:,1) corrData{i,1}(:,2)];
+                    allDist = [allDist; mData.row mData.col];                   
+                    allCorrDist = [allCorrDist; cData.row cData.col];
                     
             end
             
@@ -252,8 +258,9 @@ classdef SRCalMovie < Core.MPCalMovie
                       sin(angle),  cos(angle), 0 ;
                           0            0       1];
             %take care of the Data
-            cData = dataPerPlane{1}(:,1:2);
-            cData(:,3) =0;
+            cData = dataPerPlane{1}(:,{'row','col'});
+            cData.z = zeros(size(cData.row,1),1);
+            cData = table2array(cData);
             for i = 1:length(dataPerPlane)-1
                 cDataPrev = cData;
                 
@@ -268,11 +275,11 @@ classdef SRCalMovie < Core.MPCalMovie
                 %do the translation and transpose back
                 cData = (cData+cCM'-shift')';
                 
-                dataPerPlane{i}(dataPerPlane{i}(:,3)<1,1:2) = cDataPrev(:,1:2);
-                dataPerPlane{i+1}(dataPerPlane{i+1}(:,3)>1,1:2) = cData(:,1:2);
+                dataPerPlane{i}(dataPerPlane{i}.ellip<1,{'row','col'}) = array2table(cDataPrev(:,1:2));
+                dataPerPlane{i+1}(dataPerPlane{i+1}.ellip>1,{'row','col'}) =array2table(cData(:,1:2));
                 
-                SRCalDat{i}(SRCalDat{i}(:,3)<1,1:2) = cDataPrev(:,1:2);
-                SRCalDat{i}(SRCalDat{i}(:,3)>1,1:2) = cData(:,1:2);
+                SRCalDat{i}(SRCalDat{i}.ellip<1,1:2) =  array2table(cDataPrev(:,1:2));
+                SRCalDat{i}(SRCalDat{i}.ellip>1,1:2) =  array2table(cData(:,1:2));
             end
                   
             obj.SRCalData = SRCalDat;
@@ -293,8 +300,13 @@ classdef SRCalMovie < Core.MPCalMovie
         
         function [corrMat]  = getTrans(SRCalibData)
             nL = length(SRCalibData);
+            
             transfo = {'1->2';'2->3';'3->4';'4->5';'5->6';'6->7';'7->8'};
-            corrMat = table(zeros(nL,1),zeros(nL,1),transfo,'VariableNames',{'rowTrans','colTrans','transformation'});
+            corrMat = table(zeros(nL,1),zeros(nL,1),zeros(nL,1),zeros(nL,1),...
+                zeros(nL,1),zeros(nL,1),zeros(nL,1),transfo,'VariableNames',...
+                {'rowTrans','colTrans','rowCMa','colCMa','rowCMb','colCMb',...
+                'rot','transformation'});
+            
             for i = 1:nL
                 currentData = SRCalibData{i};
                 %split in two plane
@@ -315,15 +327,16 @@ classdef SRCalMovie < Core.MPCalMovie
                 
                 %store
                 corrMat(i,{'rowTrans','colTrans'}) = table(rowTrans, colTrans);
-                
+                corrMat(i,{'rowCMa','colCMa'}) = table(rowCMa,colCMa);
+                corrMat(i,{'rowCMb','colCMb'}) = table(rowCMb,colCMb);
             end
             
             
         end
         
-        function [corrMat]  = getRot(SRCalibData,corrMat)
+        function [rotMat]   = getRot(SRCalibData)
             nL = length(SRCalibData);
-           
+            rotMat = table(cell(nL,1),cell(nL,1),cell(nL,1),'VariableNames',{'CMa','CMb','rot'});
             for i = 1:nL
                 planeA =[];
                 planeB =[];
@@ -335,23 +348,27 @@ classdef SRCalMovie < Core.MPCalMovie
                 
                 planeA(:,1) = currCalData.row(idx2FrameA);
                 planeA(:,2) = currCalData.col(idx2FrameA);
-                planeA(:,3) = zeros(size(planeA,1),1);
-                
+
                 planeB(:,1) = currCalData.row(idx2FrameB);
                 planeB(:,2) = currCalData.col(idx2FrameB);
-                planeB(:,3) = zeros(size(planeB,1),1);
                 
+                 %Center of mass col row for plane a (ellip>1)
+                rowCMa = mean(planeA(:,1));
+                colCMa = mean(planeA(:,2));
+                CMa = [rowCMa colCMa];
+                
+                %Center of mass col row plane b (ellip<1)
+                rowCMb = mean(planeB(:,1));
+                colCMb = mean(planeB(:,2));
+                
+                CMb = [rowCMb colCMb];
                                
-                planeA = planeA - mean(planeA,1);
-                planeB = planeB - mean(planeB,1);
-                %check that format is okay
-                if and(size(planeA,1)~=3, size(planeA,2)==3)
-                    planeA = planeA';
-                    planeB = planeB';
-                elseif size(planeA,1)==3
-                else
-                    error('Something is wrong with the dimension of your data, expect a three 3D vector (x;y;z)')
-                end
+                planeA = planeA - CMa;
+                planeB = planeB - CMb;
+               
+                planeA = planeA';
+                planeB = planeB';
+               
                 
                 %Calculate rotation matrix (Procedure found at
                 %http://nghiaho.com/?page_id=671)
@@ -363,19 +380,18 @@ classdef SRCalMovie < Core.MPCalMovie
                 [U, S, V] = svd(H);
                 
                 %getting the rotation
-                corrMat.rot(i) = {V*U'};
+                rotMat(i,{'CMa'}) = table({CMa});
+                rotMat(i,{'CMb'})= table({CMb});
+                rotMat(i,{'rot'}) = table({V*U'});
                 
            end
         end
         
-        function [corrData] = applyTrans(data,corr,refPlane)%Refplane
-            corrData = data;
-            nPlanes = length(corrData);
-            %Loop through the planes
-            for i = 1 : nPlanes
-                 currentPlane = i;
-                 currData = corrData{i};
-                 
+        function [corrData] = applyTrans(data,corr,refPlane)
+            %Refplane
+
+                currentPlane = data.plane(1);
+                corrData = data;
                 %act depending on whether the current plane is smaller or
                 %bigger than the user-selected reference plane
                 if currentPlane < refPlane
@@ -395,8 +411,8 @@ classdef SRCalMovie < Core.MPCalMovie
                     
                 end
                 %1 Translation
-                row = currData.row;
-                col = currData.col;
+                row = corrData.row;
+                col = corrData.col;
                 if ~isempty(idx2Corr)
                     for j = 1:length(idx2Corr)
                         
@@ -404,36 +420,31 @@ classdef SRCalMovie < Core.MPCalMovie
                         col = col +sign*corr.colTrans(idx2Corr(j));
 
                     end
-                    currData(:,'row') = table(row);
-                    currData(:,'col') = table(col);
+                    corrData(:,'row') = table(row);
+                    corrData(:,'col') = table(col);
                     
                 end
-%                     
-                corrData{i} = currData;
-            end
+ 
             
         end
         
         function [corrData] = applyRot(data,corr,refPlane)
-            corrData = data;
-            nPlanes = length(corrData);
-            %Loop through the planes
-            for i = 1 : nPlanes
+                
                 data2Corr = [];
-                currentPlane = i;
-                currentData = corrData{i};
+                currentPlane = data.plane(1);
+                corrData = data;
                 %act depending on whether the current plane is smaller or
                 %bigger than the user-selected reference plane
                 if currentPlane < refPlane
                     
                     idx2Corr = currentPlane:refPlane-1;
-                    sign = false;
+                    sign = true;
                     
                 elseif currentPlane > refPlane
                     
                     idx2Corr = refPlane:currentPlane-1;
                     idx2Corr = fliplr(idx2Corr);
-                    sign = true;
+                    sign = false;
                     
                 else
                     
@@ -444,45 +455,43 @@ classdef SRCalMovie < Core.MPCalMovie
                 %Rotation
                 if ~isempty(idx2Corr)
                     
-                    data2Corr(:,1) = currentData.row;
-                    data2Corr(:,2) = currentData.col;
-                    data2Corr(:,3) = zeros(length(currentData.row),1);
-                    
-                    CM = mean(data2Corr);
-                    data2Corr = data2Corr - CM;
-                    
-                    if and(size( data2Corr,1)~=3, size( data2Corr,2)==3)
-                        
-                         data2Corr =  data2Corr';
-                         
-                    elseif size(planeA,1)==3
-                        
-                    else
-                        
-                        error('Something is wrong with the dimension of your data, expect a three 3D vector (x;y;z)')
-                    
-                    end
-                    
+                    data2Corr(:,1) = data.row;
+                    data2Corr(:,2) = data.col;
+                                       
                     for j = 1:length(idx2Corr)
                         
                         if sign
-                            rot = corr.rot{idx2Corr(j)}';
-                        else
                             rot = corr.rot{idx2Corr(j)};
+                            CM2Sub = corr.CMa{idx2Corr(j)};
+                            CM2add = corr.CMb{idx2Corr(j)};
+                            
+                            
+                        else
+                            rot = corr.rot{idx2Corr(j)}';
+                            
+                            CM2Sub = corr.CMb{idx2Corr(j)};
+                            CM2add = corr.CMa{idx2Corr(j)};
+                            
+
                         end
-                            
-                            
+
+                            data2Corr = data2Corr - CM2Sub;
+                            data2Corr = data2Corr';
                             data2Corr = (rot*data2Corr);
-                            data2Store = data2Corr';
-                            
-                            currentData.row = data2Store(:,1)+CM(1);
-                            currentData.col = data2Store(:,2)+CM(2);
-                           
+                            data2Corr = data2Corr' + CM2add;
+
                     end
+                    
+                    corrData.row = data2Corr(:,1);
+                    corrData.col = data2Corr(:,2);
+                    
+                else
+                    corrData = data;
+                    
                 end
                 
-                 corrData{i} = currentData;
-            end
+                
+            
             
         end
         

@@ -138,6 +138,9 @@ classdef MPLocMovie < Core.MPParticleMovie
             data = obj.localizedPos; 
             zCal = obj.ZCal;
             
+            %we check which method is best:
+            [method] = obj.pickZFitMethod;
+            
             %Here we translate ellipticity into z position based on
             %calibration
             disp('Applying Z Calibration');
@@ -149,7 +152,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                     
                     currentEllip = currData.ellip(j);
                     currentPlane = currData.plane(j);
-                    [zPos] = getZPosition(obj,currentEllip,zCal,currentPlane);
+                    [zPos] = obj.getZPosition(currentEllip,zCal,currentPlane,method);
                     obj.corrLocPos{i}.z(j) = zPos;
                     
                 end
@@ -163,7 +166,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             nPlanes = obj.calibrated.nPlanes;
             zRange = cell(nPlanes,1);
             for i = 1 : nPlanes
-                zRange{i} = obj.getZRange(ellipRange,zCal,i);
+                zRange{i} = obj.getZRange(ellipRange,zCal,i,method);
             end
             disp('=======> DONE ! <========');
         end
@@ -242,18 +245,12 @@ classdef MPLocMovie < Core.MPParticleMovie
                         %#2 Consolidate the position of the given frame
                         %across plane
                           %Calculate a focus metric (FM) combining ellipticity and GLRT FM.
-                            [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.LRT);
+                            [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.fMetric);
 
                             %reformating to keep the same format as how the data is saved
                             %later
-                            fCandMet.LRT = focusMetric;
-                            fCandMet.Properties.VariableNames{5} = 'ellipLRT';
+                            fCandMet.fMetric = focusMetric;
                             
-%                             fCandMet = [fCandMet fCandMet(:,end)];
-%                             fCandMet(:,6) = fCandMet(:,5);
-%                             fCandMet(:,5) = focusMetric;
-%                             fCandMet(:,4) = [];
-
                             focusMetric((1-corrEllip)>0.3) = NaN;
                             
                             %Plane Consolidation occur here
@@ -292,27 +289,30 @@ classdef MPLocMovie < Core.MPParticleMovie
         end
         
         function superResolve(obj)
+            disp('super resolving positions ... ');
             data2Resolve = obj.particles.List;
-            resData = xxxx;
+            SRList = cell(data2Resolve);
             for i = 1:length(data2Resolve)
                 frameData = data2Resolve{i};
                 for j = 1:length(frameData)
-                    
+                    SRList{i}{j} = SRList{i}{j}(1,{'row','col','z'});
                     partData = frameData{j};
-                    [x,y,z] = resolveXYZ(partData({'row','col','ellipticity'}));
+                    [row,col,z] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}));
                     
-                    resData(i,j,:) = [x,y,z];
+                    SRList{i}{j}.row = row;
+                    SRList{i}{j}.col = col;
+                    SRList{i}{j}.z = z;
                     
                 end
             end
                 
-                
-           
+            obj.particles.SRList = SRList;    
+           disp('========> DONE ! <=========');
             
         end
                    
         function showCorrLoc(obj)
-            part = obj.particles.List;
+            part = obj.particles.SRList;
             
             figure()
             hold on
@@ -322,7 +322,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                     
                     for j = 1: length(currentFrame)
                         currentPart = currentFrame{j};
-                        data = table2array(currentPart(3,{'row','col','z'}));
+                        data = table2array(currentPart(1,{'row','col','z'}));
                         sizeMarker = 5;
                         scatter3(data(1),data(2),data(3),sizeMarker,data(3),'filled');
                        
@@ -447,14 +447,20 @@ classdef MPLocMovie < Core.MPParticleMovie
   
         end
     
-        function [zPos,inRange] = getZPosition(obj,ellip,zCal,currentPlane)
-            
+        function [zPos,inRange] = getZPosition(obj,ellip,zCal,currentPlane,method)
+            %ADDD SWITCH ONTO METHOD
             relZ = obj.calibrated.oRelZPos;
                        
             zVec = -2000:1:2000; %Here we assume accuracy >= 1nm
-                       
-            fit = polyval(zCal.calib{currentPlane,1},zVec);
-            %fit = ppval(zCal{particle(3,end),2},zVec);%spline
+            
+            switch method
+                case 'poly'
+                    
+                    fit = polyval(zCal.calib{currentPlane,1},zVec);
+                
+                case 'spline'
+                    fit = ppval(zCal.calib{currentPlane,2},zVec);
+            end
             
             %find the index of the value the closest to the particle
             %ellipticity
@@ -467,14 +473,20 @@ classdef MPLocMovie < Core.MPParticleMovie
 
         end
         
-        function [zRange] = getZRange(obj,ellipRange,zCal,currentPlane)
+        function [zRange] = getZRange(obj,ellipRange,zCal,currentPlane,method)
             
             relZ = obj.calibrated.oRelZPos;
                        
             zVec = -2000:1:2000; %Here we assume accuracy >= 1nm
-                       
-            fit = polyval(zCal.calib{currentPlane,1},zVec);
-            %fit = ppval(zCal{particle(3,end),2},zVec);%spline
+            
+            switch method
+                case 'poly'
+                    
+                    fit = polyval(zCal.calib{currentPlane,1},zVec);
+                
+                case 'spline'
+                    fit = ppval(zCal.calib{currentPlane,2},zVec);
+            end
             
             %find the index of the value the closest to the particle
             %ellipticity
@@ -489,8 +501,49 @@ classdef MPLocMovie < Core.MPParticleMovie
              
         end
         
-        function [x,y,z]  = resolveXYZ(obj,partData)
-            %TO BE CODED
+        function [row,col,z]  = resolveXYZ(obj,partData)
+            ellipRange = obj.ZCal.fitZParam.ellipRange;            
+            idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
+            
+            row = mean(partData.row(idx2Keep));
+            col = mean(partData.col(idx2Keep));
+            z   = mean(partData.z(idx2Keep));
+            
+        end
+        
+        function [method] = pickZFitMethod(obj)
+            
+            names = fieldnames(obj.ZCal.zAccuracy);
+            nMethod = numel(names);
+            
+            if nMethod == 1
+                method = names{1};
+            else
+                for i = 1: nMethod
+                  currentMethod = names{i};
+                  currentAccuracy = obj.ZCal.zAccuracy.(names{i}).Mean;
+                  
+                  %Here accuracy should be small (high accuracy mean small
+                  %number)
+                  if i==1
+                    
+                  elseif and(i>1, currentAccuracy > previousAccuracy)
+                      
+                      finalMethod = currentMethod;
+                  
+                  elseif and(i>1, currentAccuracy< previousAccuracy)
+                  
+                      finalMethod = currentMethod;
+                  
+                  end
+                  
+                  previousAccuracy = currentAccuracy;
+                                   
+                end
+                method = finalMethod;
+            end
+            
+            
         end
        
     end
