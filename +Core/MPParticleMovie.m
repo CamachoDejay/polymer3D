@@ -87,29 +87,31 @@ classdef MPParticleMovie < Core.MPMovie
             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
             
-            switch nargin
-                
-                case 1
-                    roiSize = 6;
-                    frames = 1: obj.calibrated.nFrames;
-                    disp('Running SRLocalization on every frame with ROI of 6 pixel radius');
+            [run,locPos] = obj.existLocPos(obj.raw.movInfo.Path,'.mat');
+            
+            if run
+                switch nargin
 
-                case 2
+                    case 1
+                        roiSize = 6;
+                        frames = 1: obj.calibrated.nFrames;
+                        disp('Running SRLocalization on every frame with ROI of 6 pixel radius');
 
-                    frames = 1: obj.calibrated.nFrames;
-                    disp('Running SRLocalization on every frame');
+                    case 2
 
-                case 3
+                        frames = 1: obj.calibrated.nFrames;
+                        disp('Running SRLocalization on every frame');
 
-                    [frames] = obj.checkFrame(frames);
+                    case 3
 
-                otherwise
+                        [frames] = obj.checkFrame(frames);
 
-                    error('too many inputs');
-                        
-            end
-               [run,locPos] = obj.existLocPos(obj.raw.movInfo.Path,'.mat');
-               if run
+                    otherwise
+
+                        error('too many inputs');
+
+                end
+               
                 locPos = cell(size(obj.candidatePos));
                 h = waitbar(0,'Fitting candidates ...');
                 nFrames = length(frames);
@@ -134,8 +136,8 @@ classdef MPParticleMovie < Core.MPMovie
                     waitbar(i/nFrames,h,['Fitting candidates: frame ' num2str(i) '/' num2str(nFrames) ' done']);
                 end
                 close(h)
-               else
-               end
+            else
+            end
                 %save the data
             fileName = sprintf('%s%sSRLocPos.mat',obj.raw.movInfo.Path,'\');
             save(fileName,'locPos');
@@ -710,21 +712,25 @@ classdef MPParticleMovie < Core.MPMovie
             
             for i = 1 : 1:nFrames
                 
-                position = zeros(1000,3);
+                position = table(zeros(500,1),zeros(500,1),zeros(500,1),...
+                    zeros(500,1),'VariableNames',{'row', 'col', 'meanFAR','plane'});
                 [volIm] = obj.getFrame(frames(i));
                 nameFields = fieldnames(volIm);
                 
                 for j = 1:length(nameFields)
                     %localization occurs here
-                    [ pos, ~, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
+                    [ pos, meanFAR, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
                         delta, FWHM_pix, chi2 );
-                    startIdx = find(position==0,1,'First');
-                    pos(:,3) = j;
-                    position(startIdx:startIdx+size(pos,1)-1,:) = pos;
-                    
+                    if ~isempty(pos)
+                        startIdx = find(position.row==0,1,'First');
+                        pos(:,3) = meanFAR;
+                        pos(:,4) = j;
+                        position(startIdx:startIdx+size(pos,1)-1,:) = array2table(pos);
+                    else
+                    end
                 end
                 
-                idx = find(position==0,1,'First');
+                idx = find(position.row==0,1,'First');
                 if isempty(idx)
                     
                     candidate{frames(i)} = position;
@@ -745,20 +751,21 @@ classdef MPParticleMovie < Core.MPMovie
             %Candidate metric are determined here (x,y,e,+focusmetric)
             delta = roiSize;
             sig = [obj.info.sigma_px obj.info.sigma_px];
- 
-            varNames = {'row','col','z','ellip','magX','magY','fMetric','gFitMet','plane'};
+            %initialize table
+            varNames = {'row','col','z','ellip','magX','magY','meanFAR','fMetric','gFitMet','plane'};
                 candMet = table(zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
                     zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
                     zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
                     zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
-                    zeros(size(frameCandidate,1),1),'VariableNames',varNames);
+                    zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
+                    'VariableNames',varNames);
                 
             for i = 1:size(frameCandidate,1)
                 
-                plane = frameCandidate(i,3);
+                plane = frameCandidate.plane(i);
                 planeData = data.(sprintf('plane%d',plane));
                 %Get the ROI
-                [roi_lims] = EmitterSim.getROI(frameCandidate(i,2), frameCandidate(i,1),...
+                [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
                 ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
                 %Phasor fitting to get x,y,e
@@ -776,8 +783,8 @@ classdef MPParticleMovie < Core.MPMovie
                 %LRT focus metric
                 [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
                 
-                rowPos = frameCandidate(i,1) + row;
-                colPos = frameCandidate(i,2) + col;
+                rowPos = frameCandidate.row(i) + row;
+                colPos = frameCandidate.col(i) + col;
 
 %                 [grad,~] = imgradient(ROI);
 %                 Grad = max(max(grad,[],2),[],1);
@@ -789,6 +796,7 @@ classdef MPParticleMovie < Core.MPMovie
                 candMet.ellip(i) = e;
                 candMet.magX(i) = magX;
                 candMet.magY(i) = magY;
+                candMet.meanFAR(i) = frameCandidate.meanFAR(i);
                 candMet.fMetric(i) = fMetric;
                 candMet.gFitMet(i) = gFitMet;
                 candMet.plane(i) = plane;
