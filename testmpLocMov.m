@@ -28,7 +28,7 @@ MPLocMov.findCandidatePos(detectParam);
 MPLocMov.SRLocalizeCandidate;
 
 %% Data correction
-rot = false;
+rot = true;
 refPlane = 5;
 MPLocMov.applySRCal(rot,refPlane);
 %% e-Z transformation

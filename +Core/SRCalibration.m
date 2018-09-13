@@ -136,53 +136,53 @@ classdef SRCalibration < handle
             
         end
         
-        function [corrMat,corrData] = corrTranslation(obj,refPlane)
+        function [transMat,corrData] = corrTranslation(obj,refPlane)
             assert(~isempty(obj.calib.data),'You need to extract the SR calibration data before correction for translation');
             SRCalibData = obj.calib.data;
             data2Corr = obj.calib.dataPerPlane;
             %Calculate the translation
-            [corrMat] = Core.SRCalMovie.getTrans(SRCalibData);
+            [transMat] = Core.SRCalMovie.getTrans(SRCalibData);
             
             %Correct the data
-            [corrData] = Core.SRCalMovie.applyTrans(data2Corr,corrMat,refPlane);
+              %Correct the data for rotation
+              corrData = cell(size(data2Corr));
+            for i = 1:length(data2Corr)
+                currentData = data2Corr{i};
+                [cData] = Core.SRCalMovie.applyTrans(currentData,transMat,refPlane);
+                corrData{i} = cData;
+            end
             
-            corrMat.rot(:,:) = {[1 1 1;...
-                            1 1 1;...
-                            1 1 1]};
-             %reshaping
-            corrMat = corrMat(:,{'rowTrans','colTrans','rot','transformation'});
-                        
             %storing
             obj.calib.SRCorrData = corrData;
-            obj.calib.corr = corrMat;
+            obj.calib.corr.trans = transMat;
             
             %Saving
-            SRCal = corrMat;
+            SRCal = obj.calib.corr;
             fileName = sprintf('%s%sSRCalibration.mat',obj.path,'\');
             save(fileName,'SRCal');
 
         end
         
-        function [corrMat,corrData] = corrRotation(obj,refPlane)
+        function [rotMat,corrData] = corrRotation(obj,refPlane)
+            
             SRCalibData = obj.calib.data;
-           
-            [corrMat,corrData] = obj.corrTranslation(refPlane);
+            data2Corr = obj.calib.dataPerPlane;
+           %Calculate the rotation
+            [rotMat] = Core.SRCalMovie.getRot(SRCalibData);
             
-            %Calculate the rotation
-            [corrMat] = Core.SRCalMovie.getRot(SRCalibData,corrMat);
-            
-            %Correct the data
-            [corrData] = Core.SRCalMovie.applyRot(corrData,corrMat, refPlane);
-            
-            %reshaping
-             corrMat = corrMat(:,{'rowTrans','colTrans','rot','transformation'});
-                        
-            %storing
+            corrData = cell(length(data2Corr),1);
+             %Correct the data for rotation
+            for i = 1:length(data2Corr)
+                currentData = data2Corr{i};
+                [cData] = Core.SRCalMovie.applyRot(currentData,rotMat,refPlane);
+                corrData{i} = cData;
+            end
+
             obj.calib.SRCorrData = corrData;
-            obj.calib.corr = corrMat;
-            
+            obj.calib.corr.rot = rotMat;
+
             %Saving
-            SRCal = corrMat;
+            SRCal = obj.calib.corr;
             fileName = sprintf('%s%sSRCalibration.mat',obj.path,'\');
             save(fileName,'SRCal');
             

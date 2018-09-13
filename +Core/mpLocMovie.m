@@ -48,8 +48,8 @@ classdef MPLocMovie < Core.MPParticleMovie
                 cal = load(fileName);
                 field = fieldnames(cal);
                 cal = cal.(field{1});
-                assert(istable(cal),...
-                    'SR calibration is supposed to be a table');
+                assert(and(isstruct(cal), and(isfield(cal,'trans'),isfield(cal,'rot'))),...
+                    'SR calibration is supposed to be a struct with 2 fields');
                 
                 obj.SRCal = cal; 
             end
@@ -100,22 +100,27 @@ classdef MPLocMovie < Core.MPParticleMovie
             end
             
             data = obj.localizedPos;
-           corrMat = obj.SRCal;
+            
             disp(['Applying SR calibration...']);
             for i = 1 : length(data)
                 currData = data{i};
                 currPlanes = unique(currData.plane);
                 for j = 1 : length(currPlanes)
                     currentPlane = currPlanes(j);
-                    data2Corr = currData(currData.plane==currentPlane,{'row','col'});
+                    data2Corr = currData(currData.plane==currentPlane,{'row','col','plane'});
                     
-                    [corrData] = obj.applyTrans(data2Corr,corrMat,refPlane,currentPlane);
                     
-                    if rot 
-                        [corrData] = obj.applyRot(corrData, corrMat,refPlane,currentPlane);
+                    if rot
+                        corrMat = obj.SRCal.rot;
+                        [corrData] = Core.SRCalMovie.applyRot(data2Corr, corrMat,refPlane);
+                        
+                    else
+                        corrMat = obj.SRCal.trans;
+                         [corrData] = Core.SRCalMovie.applyTrans(data2Corr,corrMat,refPlane);                    
                     end
+                    
                     %we store the corrected data
-                    obj.corrLocPos{i}(currData.plane==currentPlane,{'row','col'}) = corrData;
+                    obj.corrLocPos{i}(currData.plane==currentPlane,{'row','col','plane'}) = corrData;
                     
                 end
                 %correctedData{i}(:,3) = data{i}(:,3);

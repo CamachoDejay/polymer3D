@@ -389,7 +389,6 @@ classdef SRCalMovie < Core.MPCalMovie
         
         function [corrData] = applyTrans(data,corr,refPlane)
             %Refplane
-
                 currentPlane = data.plane(1);
                 corrData = data;
                 %act depending on whether the current plane is smaller or

@@ -36,5 +36,4 @@ testSRCal.checkAccuracy(refPlane);
 %% calc rotation
 testSRCal.corrRotation(refPlane);
 
-
 testSRCal.checkAccuracy(refPlane);
