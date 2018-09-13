@@ -7,8 +7,6 @@ classdef MPLocMovie < Core.MPParticleMovie
         
         SRCal
         ZCal
-        corrLocPos
-    
     end
     
     methods
@@ -89,7 +87,7 @@ classdef MPLocMovie < Core.MPParticleMovie
         end
         
         function applySRCal(obj, rot, refPlane)
-            assert(~isempty(obj.localizedPos),'You need to find candidate and SR Localized them before applying corrections');
+            assert(~isempty(obj.unCorrLocPos),'You need to find candidate and SR Localized them before applying corrections');
             assert(~isempty(obj.SRCal),'SR Calibration needed to correct the data');
             
             if nargin <2
@@ -99,7 +97,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 obj.corrLocPos = obj.localizedPos;
             end
             
-            data = obj.localizedPos;
+            data = obj.unCorrLocPos;
             
             disp(['Applying SR calibration...']);
             for i = 1 : length(data)
@@ -123,16 +121,16 @@ classdef MPLocMovie < Core.MPParticleMovie
                     obj.corrLocPos{i}(currData.plane==currentPlane,{'row','col','plane'}) = corrData;
                     
                 end
-                %correctedData{i}(:,3) = data{i}(:,3);
+               
             end
-            disp('========> DONE ! <=========');
-           % obj.corrLocPos = correctedData;
             
+            disp('========> DONE ! <=========');
+
         end
         
         function applyZCal(obj)
             
-            assert(~isempty(obj.localizedPos),'You need to find candidate and SR Localized them before applying corrections');
+            assert(~isempty(obj.unCorrLocPos),'You need to find candidate and SR Localized them before applying corrections');
             assert(~isempty(obj.ZCal),'Z Calibration needed to correct the data');
             
             if isempty(obj.corrLocPos)
@@ -140,7 +138,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 warning('Z calibration is currently being applied on non-SRCorrected (X-Y) data');
             end
             
-            data = obj.localizedPos; 
+            data = obj.corrLocPos; 
             zCal = obj.ZCal;
             
             %we check which method is best:
@@ -176,7 +174,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             disp('=======> DONE ! <========');
         end
         
-        function [locPos] = getCorrLocPos(obj,frames)
+        function [locPos] = getLocPos(obj,frames)
              %Extract the position of the candidate of a given frame
             [idx] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
             locPos = obj.corrLocPos{idx};
@@ -187,112 +185,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 
             end
         end
-        
-        function consolidatePlanes(obj,roiSize,frames)
-            %Consolidation refers to connect molecules that were localized
-            %at similar position in different plane on a single frame.
-            assert(~isempty(obj.calibrated),'Data should be calibrated to consolidate');
-            assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');
-            assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
-            assert(~isempty(obj.localizedPos),'Localization needs to be performed before consolidation');
-           
-            %Check if some particles were saved already.
-            [run, particle] = Core.MPParticleMovie.existParticles(obj.raw.movInfo.Path, '.mat');
-            
-            if run
-                %Check the number of function input
-                switch nargin
-                    case 1
-                        
-                        frames = 1: obj.calibrated.nFrames;
-                        roiSize = 6;
-                        disp('Running consolidation on every frame with roi of 6 pixel');
-                        
-                    case 2
-                        
-                        frames = 1: obj.calibrated.nFrames;
-                        disp('Running consolidation on every frame')
-                        
-                    case 3
-                        
-                        [frames] = Movie.checkFrame(frames,obj.raw.maxFrame(1));
-                        assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
-                        assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
-                        
-                    otherwise
-                        
-                        error('Something wrong with input');
-                        
-                end
                 
-                nFrames = length(frames);
-                %allocate for storage
-                particleList = cell(1,obj.raw.maxFrame(1));
-                nParticles = zeros(1,obj.raw.maxFrame(1));
-                idx2TP = zeros(1,obj.raw.maxFrame(1));
-                h = waitbar(0,'Consolidating candidate ...');
-                
-                %Consolidation occurs here
-                for i = 1 : 1:nFrames
-                    disp(['Consolidating frame ' num2str(i) ' / ' num2str(nFrames)]);
-                    idx = frames(i);
-                    %#1 Extract localized Position for specific frame
-                    [fCandMet] = getCorrLocPos(obj,idx);
-                    
-                    if isempty(fCandMet)
-                        
-                        warning('Frame %d did not contain any localized positions',idx);
-                        particleList{idx} = [];
-                        %particleList{idx}{1} = nan(5);
-                        nParticles(idx) = 0;
-                        
-                    else
-                        %#2 Consolidate the position of the given frame
-                        %across plane
-                          %Calculate a focus metric (FM) combining ellipticity and GLRT FM.
-                            [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.fMetric);
-
-                            %reformating to keep the same format as how the data is saved
-                            %later
-                            fCandMet.fMetric = focusMetric;
-                            
-                            focusMetric((1-corrEllip)>0.3) = NaN;
-                            
-                            %Plane Consolidation occur here
-                            [part] = obj.planeConsolidation(fCandMet,focusMetric);
-
-                            %we delete empty cells from the array
-                            idx2Empty = cellfun(@isempty,part);
-                            part(idx2Empty(:,1),:) = [];
-                   
-                            particleList{idx} = part;
-                            nParticles(idx) = length(part);
-                            
-                            if ~isempty(part)
-                                idx2TP(idx) = idx;
-                            end
-                        
-                    end
-                    waitbar(i/nFrames,h,['Consolidating candidate... ' num2str(i) '/' num2str(nFrames) ' done']);
-                end
-                close(h);
-                
-                %#3 Storing List
-                particle.List       = particleList;
-                particle.nParticles = nParticles;
-                particle.tPoint     = nFrames;
-                particle.idx2TP     = nonzeros(idx2TP);
-                particle.roiSize    = roiSize;
-                particle.Traces     = [];
-                particle.nTraces    = [];
-                
-                fileName = sprintf('%s%sparticle.mat',obj.raw.movInfo.Path,'\');
-                save(fileName,'particle');
-            end
-            %#4 Storing particles in the object
-            obj.particles = particle;
-        end
-        
         function superResolve(obj)
             disp('super resolving positions ... ');
             data2Resolve = obj.particles.List;

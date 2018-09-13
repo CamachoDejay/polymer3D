@@ -5,7 +5,8 @@ classdef MPParticleMovie < Core.MPMovie
     properties (SetAccess = 'protected')
         
         candidatePos
-        localizedPos
+        unCorrLocPos
+        corrLocPos
         particles
         
     end
@@ -139,13 +140,15 @@ classdef MPParticleMovie < Core.MPMovie
             fileName = sprintf('%s%sSRLocPos.mat',obj.raw.movInfo.Path,'\');
             save(fileName,'locPos');
             
-            obj.localizedPos = locPos;
+            %store in the object
+            obj.unCorrLocPos = locPos;
+            obj.corrLocPos   = locPos;
         end
         
         function [locPos] = getLocPos(obj,frames)
              %Extract the position of the candidate of a given frame
             [idx] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
-            locPos = obj.localizedPos{idx};
+            locPos = obj.unCorrLocPos{idx};
             
             if isempty(locPos)
                 
@@ -160,7 +163,7 @@ classdef MPParticleMovie < Core.MPMovie
             assert(~isempty(obj.calibrated),'Data should be calibrated to consolidate');
             assert(~isempty(obj.info),'Information about the setup are missing to consolidate, please fill them in using giveInfo method');
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before consolidation');
-            assert(~isempty(obj.localizedPos),'Localization needs to be performed before consolidation');
+            assert(~isempty(obj.unCorrLocPos),'Localization needs to be performed before consolidation');
            
             %Check if some particles were saved already.
             [run, particle] = Core.MPParticleMovie.existParticles(obj.raw.movInfo.Path, '.mat');
@@ -203,7 +206,7 @@ classdef MPParticleMovie < Core.MPMovie
                     disp(['Consolidating frame ' num2str(i) ' / ' num2str(nFrames)]);
                     idx = frames(i);
                     %#1 Extract localized Position for specific frame
-                    [fCandMet] = getLocPos(obj,idx);
+                    [fCandMet] = obj.getLocPos(idx);
                     
                     if isempty(fCandMet)
                         
@@ -222,7 +225,7 @@ classdef MPParticleMovie < Core.MPMovie
                             %later
                             fCandMet.fMetric = focusMetric;
                             
-                            focusMetric((1-corrEllip)>0.3) = NaN;
+                            %focusMetric((1-corrEllip)>0.3) = NaN;
                             
                             %Plane Consolidation occur here
                             [part] = obj.planeConsolidation(fCandMet,focusMetric);
