@@ -7,6 +7,7 @@ classdef MPLocMovie < Core.MPParticleMovie
         
         SRCal
         ZCal
+        corrected
     end
     
     methods
@@ -123,7 +124,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 end
                
             end
-            
+            obj.corrected.XY = true;
             disp('========> DONE ! <=========');
 
         end
@@ -171,6 +172,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             for i = 1 : nPlanes
                 zRange{i} = obj.getZRange(ellipRange,zCal,i,method);
             end
+            obj.corrected.Z = true;
             disp('=======> DONE ! <========');
         end
         
