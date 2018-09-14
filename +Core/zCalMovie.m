@@ -133,9 +133,13 @@ classdef ZCalMovie < Core.MPCalMovie
                     %Extract data in acceptable ellipticity range
                     
                     if ~isempty(zCalData{i,j})
-                        zPos = zCalData{i,j}.frame*zStep;
+                        frames = zCalData{i,j}.frame;
+                        zPos = frames*zStep;
+                        fMetric = zCalData{i,j}.fMetric;
                         ellipt = zCalData{i,j}.ellip;
                         zPos = zPos(and(ellipt<maxEllipt, ellipt > minEllipt));
+                        fMetric = fMetric(and(ellipt<maxEllipt, ellipt > minEllipt));
+                        frames = frames(and(ellipt<maxEllipt, ellipt > minEllipt));
                         ellipt = ellipt(and(ellipt<maxEllipt, ellipt > minEllipt));
                         
                         %Now we shift in z the value closest to ellipt =1 for
@@ -149,7 +153,7 @@ classdef ZCalMovie < Core.MPCalMovie
                             %anyhting
                             %we only process the data if there are point above
                             %and below focus.
-                        elseif and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1)))
+                        elseif and(and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1))),fMetric(idx)>60)
                             %Do the fit and extract the exact z position of the focus
                             p = polyfit(zPos,ellipt,deg);
                             zVec = min(zPos):0.001:max(zPos);%1nm step
@@ -159,25 +163,44 @@ classdef ZCalMovie < Core.MPCalMovie
                             end
                             
                             fit = polyval(p,zVec);
-                            [~,idx] = min(abs(fit-1));
+                            %Here we extract the portion of the fit that is
+                            %relevant to ellipticity range (avoid getting
+                            %multiple path through ellip =1. We can do so
+                            %because we only consider the data that has
+                            %data above and below the ellipticity thus
+                            %insuring that we pass through ellip ==1
+                            %%%%%% NEEED IMPROVEMENT !!!!!!!!!!!!!!
+                            fit2 = fit(and(fit<=max(ellipt),fit>=min(ellipt)));
+                            [~,idx] = min(abs(fit2-1));
                             focus2 = zVec(idx);
                             shift = focus1+focus2;%take into account both synchronization
-                            zCalData{i,j}.z = ((zCalData{i,j}.frame)*zStep -shift)*1000;%transform into nm keeping particle separated
-                            fullSync = ((zCalData{i,j}.frame)*zStep -shift)*1000;%mix all particle together
-                            %tmp Store
-                            zSyncCalData{i,1} = [zSyncCalData{i,1}; zCalData{i,j}(:,{'z','ellip'})];
-                            zSyncCalData{1,2} = [zSyncCalData{1,2}; zCalData{i,j}(:,{'z','ellip'})];
                             
+                             zToNm = (frames*zStep - shift)*1000;
+% %                             [~,index] = (min(abs(1-ellipt)));
+% %                             [~,index2] = (max(fMetric));
+% %                             err = abs(zToNm(index)- abs(zToNm(index2)));
+                             testEllipt = and(ellipt>0.9,ellipt<1.1);
+                             err = abs(mean(zToNm(testEllipt)));
+                             if err > 50
+                                 disp('Something wrong with the focus');
+                             end
+
+                                data2Store = table(zToNm,ellipt,'VariableNames',{'z','ellip'});
+                                %tmp Store
+                                zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
+                                zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
+                                
                         end
                     end
                 end
+             end
                 %tmp Store
                 if ~isempty (zSyncCalData{i,1})
                     [~,ind] = sort(zSyncCalData{i,1}.z);
                     zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
                 end
                 
-            end
+            
             %final storing and output
             [~,ind] = sort(zSyncCalData{1,2}.z);
             zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
@@ -308,55 +331,60 @@ classdef ZCalMovie < Core.MPCalMovie
             relZ = obj.calibrated.oRelZPos;
             syncEllip = obj.zData.syncEllip;
             
-            zVec = min(syncEllip{particle.plane(3),1}.z) : 1 : max(syncEllip{particle.plane(3),1}.z);
-            switch fittingType
-                case 'poly'
-                    fit = polyval(zCal{particle.plane(3),1},zVec);
-                case 'spline'
-                    fit = ppval(zCal{particle.plane(3),2},zVec);%spline
-                otherwise
-                    error('Unknown fitting type- only know "poly" and "spline"...')
-            end
-            
-            %find the index of the value the closest to the particle
-            %ellipticity
-            [~,idx] = min(abs(fit-particle.ellip(3)));
-            zPos = zVec(idx)+ relZ(particle.plane(3))*1000;
-            
-            id = and(particle.ellip>=elliptRange(1),...
-                particle.ellip<=elliptRange(end));
-            data2Keep = particle(id,:);
-            
-            idx1 = zeros(size(data2Keep,1),1);
-            zAvg = zeros(size(data2Keep,1),1);
-            %Calculate z occur withing the loop
-            for k = 1 :size(data2Keep,1)
-                
-                [~,idx1(k)] = min(abs(elliptRange-data2Keep.ellip(k)));
-                
-                zVectmp = min(syncEllip{data2Keep.plane(k),1}.z) : 1 : max(syncEllip{data2Keep.plane(k),1}.z);
-                
+            if ~isempty(syncEllip{particle.plane(3),1})
+                zVec = min(syncEllip{particle.plane(3),1}.z) : 1 : max(syncEllip{particle.plane(3),1}.z);
                 switch fittingType
-                case 'poly'
-                    fit = polyval(zCal{data2Keep.plane(k),1},zVectmp);
-                case 'spline'
-                    fit = ppval(zCal{data2Keep.plane(k),2},zVectmp);%spline
-                otherwise
-                    error('Unknown fitting type- only know "poly" and "spline"...')
+                    case 'poly'
+                        fit = polyval(zCal{particle.plane(3),1},zVec);
+                    case 'spline'
+                        fit = ppval(zCal{particle.plane(3),2},zVec);%spline
+                    otherwise
+                        error('Unknown fitting type- only know "poly" and "spline"...')
                 end
 
-%                 fit = polyval(zCal{data2Keep.plane(k),1},zVectmp); %polynomial
-%                 %fit = ppval(zCal{data2Keep.plane(k),2},zVectmp);%spline
-                [~,idx] = min(abs(fit-data2Keep.ellip(k)));
-                zAvg(k) = zVectmp(idx) + relZ(data2Keep.plane(k))*1000;
-                
+                %find the index of the value the closest to the particle
+                %ellipticity
+                [~,idx] = min(abs(fit-particle.ellip(3)));
+                zPos = zVec(idx)+ relZ(particle.plane(3))*1000;
+
+                id = and(particle.ellip>=elliptRange(1),...
+                    particle.ellip<=elliptRange(end));
+                data2Keep = particle(id,:);
+
+                idx1 = zeros(size(data2Keep,1),1);
+                zAvg = zeros(size(data2Keep,1),1);
+                %Calculate z occur withing the loop
+                for k = 1 :size(data2Keep,1)
+
+                    [~,idx1(k)] = min(abs(elliptRange-data2Keep.ellip(k)));
+
+                    zVectmp = min(zVec*2) : 1 : max(zVec*2);
+
+                    switch fittingType
+                    case 'poly'
+                        fit = polyval(zCal{data2Keep.plane(k),1},zVectmp);
+                    case 'spline'
+                        fit = ppval(zCal{data2Keep.plane(k),2},zVectmp);%spline
+                    otherwise
+                        error('Unknown fitting type- only know "poly" and "spline"...')
+                    end
+
+    %                 fit = polyval(zCal{data2Keep.plane(k),1},zVectmp); %polynomial
+    %                 %fit = ppval(zCal{data2Keep.plane(k),2},zVectmp);%spline
+                    [~,idx] = min(abs(fit-data2Keep.ellip(k)));
+                    zAvg(k) = zVectmp(idx) + relZ(data2Keep.plane(k))*1000;
+
+                end
+
+                weight = finalWeight(idx1);
+                %weighed average occur here
+                %diag is taken because of the matrix operation between weight
+                %and zAvg
+                zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
+            else
+                zAvg = NaN;
+                zPos = NaN;
             end
-            
-            weight = finalWeight(idx1);
-            %weighed average occur here
-            %diag is taken because of the matrix operation between weight
-            %and zAvg
-            zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
             
         end
         

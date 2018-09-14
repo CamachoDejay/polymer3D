@@ -88,6 +88,7 @@ classdef ZCalibration < handle
                     end
                 end
             end
+            disp('=======> DONE ! <========')
         end
         
         function retrieveZCalData(obj,detectParam, fitZParam, trackParam)
@@ -405,8 +406,8 @@ classdef ZCalibration < handle
                 end
             end
             
-            disp(['Accuracy in Z for best focus is ' num2str(mean(accuracyFocus))]);
-            disp(['Accuracy in Z for mean  ' num2str(mean(accuracyMean))]);
+            disp(['Accuracy in Z for best focus is ' num2str(nanmean(accuracyFocus))]);
+            disp(['Accuracy in Z for mean  ' num2str(nanmean(accuracyMean))]);
             
             switch obj.calib.fitZParam.fittingType
                 case 'poly'

@@ -420,7 +420,7 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 particle(3,:) = currentCand;
                 nCheck = length(planes2Check);
-                
+                camConfig = obj.calibrated.camConfig;
                 for i = 1:nCheck
                     
                     cand = candMet(candMet.plane == planes2Check(i),:);
@@ -428,7 +428,7 @@ classdef MPParticleMovie < Core.MPMovie
                         direction = +1;%check below (Plane 1 is the uppest plane 8 is lowest)
                     end
                     
-                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction);
+                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction,camConfig);
                     if ~all(isPart ==0)
                         id = cand.plane(isPart)-currentCand.plane;
                         particle(3+id,:) = cand(isPart,:);
@@ -438,8 +438,10 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 %Check if the resulting configuration of the plane make
                 %sense e.g. no hole in the configuration
+                
                 planeConfig = particle.plane;
-                [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes);
+                
+                [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes,camConfig);
                 %Store
                 if checkRes
                     
@@ -586,8 +588,8 @@ classdef MPParticleMovie < Core.MPMovie
             %This function is designed to have PSFE plate ON
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
             assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
-            
-            thresh = 2 * sqrt(2);
+
+            thresh = 2*sqrt(2);
             [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row, current.col],...
                 [next.row, next.col],thresh);
             
@@ -648,7 +650,7 @@ classdef MPParticleMovie < Core.MPMovie
             
         end
         
-        function [checkRes] = checkPlaneConfig(planeConfig,nPlanes)
+        function [checkRes] = checkPlaneConfig(planeConfig,nPlanes,camConfig)
             %Here we will check that the consolidation found based on the
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
@@ -662,9 +664,14 @@ classdef MPParticleMovie < Core.MPMovie
                 testPlanes = length(find(~isnan(planeConfig)==true)) >= 2;
                 
             else
-                
-                testPlanes = length(find(~isnan(planeConfig)==true)) >= 3;
-                
+                switch camConfig
+                    case 'fullRange'
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= 2;
+                    case 'alternated'
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= 3;
+                    otherwise
+                        error('unknown camera configuration');
+                end
             end
             
             

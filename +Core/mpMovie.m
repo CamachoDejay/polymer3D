@@ -101,6 +101,8 @@ classdef MPMovie < Core.Movie
             end
 
             obj.calibrated = calibrate;
+            [camConfig] = obj.determineCAMConfig;
+            obj.calibrated.camConfig = camConfig;
 
         end
         
@@ -221,7 +223,24 @@ classdef MPMovie < Core.Movie
             zStep = mean(diff(zPosMotor));
             
         end 
+        
+         function [camConfig] = determineCAMConfig(obj)
+            
+             planeDist = abs(mean(diff(obj.calibrated.oRelZPos)))*1000;
+             if planeDist > 450
+                 camConfig = 'fullRange';
+             elseif and(planeDist < 350, planeDist>250)
+                 camConfig = 'alternated';
+             else
+                 error('Something is wrong with your distance between planes')
+             end
+             
+         end
                 
+    end
+    
+    methods (Static)
+       
     end
     
     methods (Access = private)
@@ -285,6 +304,8 @@ classdef MPMovie < Core.Movie
             save(fName,'calib');
             
          end
+         
+         
 
     end
 end
