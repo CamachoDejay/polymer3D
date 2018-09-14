@@ -750,7 +750,7 @@ classdef MPParticleMovie < Core.MPMovie
         function [candMet] = superResLocFit(obj,data,frameCandidate,roiSize)
             %Candidate metric are determined here (x,y,e,+focusmetric)
             delta = roiSize;
-            sig = [obj.info.sigma_px obj.info.sigma_px];
+            
             %initialize table
             varNames = {'row','col','z','ellip','magX','magY','meanFAR','fMetric','gFitMet','plane'};
                 candMet = table(zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
@@ -764,6 +764,7 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 plane = frameCandidate.plane(i);
                 planeData = data.(sprintf('plane%d',plane));
+                sig = [obj.info.sigma_px obj.info.sigma_px];
                 %Get the ROI
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
