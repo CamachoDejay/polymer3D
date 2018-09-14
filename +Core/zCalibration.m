@@ -305,6 +305,7 @@ classdef ZCalibration < handle
             
             fileName = sprintf('%s%szCalibration.mat',obj.path,'\');
             save(fileName,'cal');
+            disp('The calibration was succesfully saved');
 
         end
     end

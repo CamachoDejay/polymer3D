@@ -4,7 +4,7 @@ close all
 clear 
 
 path2ZCal = 'E:\Data\Leuven Data\2018\03-Mar\22\ZCalibration\';
-path2SRCal = 'E:\Data\Leuven Data\2018\03-Mar\22\PlaneCaibration\';
+path2SRCal = 'E:\Data\Leuven Data\2018\03-Mar\22\ZCalibration\';
 
 path2File = 'E:\Data\Leuven Data\2018\03-Mar\22\ZCalibration\BeadsZCalibration_2';
 path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
@@ -37,7 +37,7 @@ MPLocMov.applyZCal;
 %% Plane consolidation
 
 MPLocMov.consolidatePlanes
-%% STOPPED HERE NEED TO CODE SUPER RESOLVE POSITION SO WE GET 1 position per particle per time point !!! 
+%% Super resolve
 
 MPLocMov.superResolve;
 %% plot
