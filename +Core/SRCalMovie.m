@@ -574,13 +574,20 @@ classdef SRCalMovie < Core.MPCalMovie
             nFrames = unique(dataPlaneA.frame(dataPlaneA.ellip<1));
             bestVal = [2 1];
             for i = 1: length(nFrames)
+                
                 currentFrame = nFrames(i);
                 currentVal = [dataPlaneA.ellip(dataPlaneA.frame==currentFrame) dataPlaneB.ellip(dataPlaneB.frame==currentFrame)];
-                cmpVal = [abs(1-1/currentVal(1)) abs(1-currentVal(2))];
+                test = length(currentVal) == 2;
                 
-                if  and(abs(cmpVal(1) - cmpVal(2))< abs(bestVal(1) - bestVal(2)), currentVal(2)>1)
-                    bestVal = cmpVal;
-                    idx = nFrames(i);
+                if test
+                    
+                   cmpVal = [abs(1-1/currentVal(1)) abs(1-currentVal(2))];
+
+                    if  and(abs(cmpVal(1) - cmpVal(2))< abs(bestVal(1) - bestVal(2)), currentVal(2)>1)
+                        bestVal = cmpVal;
+                        idx = nFrames(i);
+                    end
+                    
                 end
                 
             end
