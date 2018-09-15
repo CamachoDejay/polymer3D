@@ -55,7 +55,7 @@ classdef Movie < handle
                 
             end
             
-            fullPath = [file2Analyze.folder filesep file2Analyze(1).name];
+            fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
             [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
             %Check info for 2 cam
             assert(length(movInfo.Cam) == 2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
