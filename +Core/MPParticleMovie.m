@@ -428,7 +428,7 @@ classdef MPParticleMovie < Core.MPMovie
                         direction = +1;%check below (Plane 1 is the uppest plane 8 is lowest)
                     end
                     
-                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction,camConfig);
+                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction);
                     if ~all(isPart ==0)
                         id = cand.plane(isPart)-currentCand.plane;
                         particle(3+id,:) = cand(isPart,:);

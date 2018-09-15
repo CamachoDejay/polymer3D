@@ -153,14 +153,15 @@ classdef ZCalMovie < Core.MPCalMovie
                             %anyhting
                             %we only process the data if there are point above
                             %and below focus.
-                        elseif and(and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1))),fMetric(idx)>60)
+                        elseif and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1)))
                             %Do the fit and extract the exact z position of the focus
                             p = polyfit(zPos,ellipt,deg);
                             zVec = min(zPos):0.001:max(zPos);%1nm step
                             %this extraction has a 1nm accuracy
-                            if or(min(zPos)>-0.1, max(zPos) <0.1)
-                                zVec = -1:0.001:1;
-                            end
+                            
+%                             if or(min(zPos)>-0.1, max(zPos) <0.1)
+%                                 zVec = -1:0.001:1;
+%                             end
                             
                             fit = polyval(p,zVec);
                             %Here we extract the portion of the fit that is
@@ -170,22 +171,23 @@ classdef ZCalMovie < Core.MPCalMovie
                             %data above and below the ellipticity thus
                             %insuring that we pass through ellip ==1
                             %%%%%% NEEED IMPROVEMENT !!!!!!!!!!!!!!
-                            fit2 = fit(and(fit<=max(ellipt),fit>=min(ellipt)));
-                            [~,idx] = min(abs(fit2-1));
+                           % fit2 = fit(and(fit>=min(ellipt),fit<=max(ellipt)));
+                            [~,idx] = min(abs(fit-1));
                             focus2 = zVec(idx);
                             shift = focus1+focus2;%take into account both synchronization
                             
-                             zToNm = (frames*zStep - shift)*1000;
+                             zToNm = (zCalData{i,j}.frame*zStep - shift)*1000;
+                             ellip2Store = zCalData{i,j}.ellip;
 % %                             [~,index] = (min(abs(1-ellipt)));
 % %                             [~,index2] = (max(fMetric));
 % %                             err = abs(zToNm(index)- abs(zToNm(index2)));
-                             testEllipt = and(ellipt>0.9,ellipt<1.1);
-                             err = abs(mean(zToNm(testEllipt)));
-                             if err > 50
-                                 disp('Something wrong with the focus');
-                             end
+%                              testEllipt = and(ellipt>0.9,ellipt<1.1);
+%                              err = abs(mean(zToNm(testEllipt)));
+%                              if err > 50
+%                                  disp('Something wrong with the focus');
+%                              end
 
-                                data2Store = table(zToNm,ellipt,'VariableNames',{'z','ellip'});
+                                data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
                                 %tmp Store
                                 zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
                                 zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
@@ -245,8 +247,8 @@ classdef ZCalMovie < Core.MPCalMovie
             %plane was.
             wRange1 = length(elliptRange(elliptRange<=1));
             wRange2 = length(elliptRange(elliptRange>=1));
-            weight1 = linspace(1,5,wRange1);
-            weight2 = linspace(5,1,wRange2);
+            weight1 = linspace(1,10,wRange1);
+            weight2 = linspace(10,1,wRange2);
             finalWeight = [weight1 weight2];
             
             %Calculation of x-y-z position occurs within the loop here
@@ -287,15 +289,15 @@ classdef ZCalMovie < Core.MPCalMovie
                                 
                                 weight = finalWeight(idx);
                                 %Weighed average
-                                xAvg = sum(diag(list{i}{j}.col(id)* weight))/sum(weight) * pxSize;
-                                yAvg = sum(diag(list{i}{j}.col(id)* weight))/sum(weight) * pxSize;
+                                rowAvg = sum(diag(currentPart.row(id)* weight))/sum(weight) * pxSize;
+                                colAvg = sum(diag(currentPart.col(id)* weight))/sum(weight) * pxSize;
                                 %best focus Value
-                                x = list{i}{j}.col(3)* pxSize;
-                                y = list{i}{j}.row(3)* pxSize;
+                                row = currentPart.row(3)* pxSize;
+                                col = currentPart.col(3)* pxSize;
                                 
                                 if ~isempty(calib)
                                     %Calculation for Z is occur here
-                                    [z,zAvg] = obj.getZPosition(list{i}{j},elliptRange,finalWeight,calib,fittingType);
+                                    [z,zAvg] = obj.getZPosition(currentPart,elliptRange,finalWeight,calib,fittingType);
                                     
                                 else
                                     
@@ -305,7 +307,7 @@ classdef ZCalMovie < Core.MPCalMovie
                                 end
                                 
                                 if ~isnan(tracesIdx{i}{j})
-                                    traces(i,:,tracesIdx{i}{j}) = [x y z xAvg yAvg zAvg];
+                                    traces(i,:,tracesIdx{i}{j}) = [row col z rowAvg colAvg zAvg];
                                 else
                                 end
                                 
@@ -368,9 +370,7 @@ classdef ZCalMovie < Core.MPCalMovie
                     otherwise
                         error('Unknown fitting type- only know "poly" and "spline"...')
                     end
-
-    %                 fit = polyval(zCal{data2Keep.plane(k),1},zVectmp); %polynomial
-    %                 %fit = ppval(zCal{data2Keep.plane(k),2},zVectmp);%spline
+                    
                     [~,idx] = min(abs(fit-data2Keep.ellip(k)));
                     zAvg(k) = zVectmp(idx) + relZ(data2Keep.plane(k))*1000;
 
