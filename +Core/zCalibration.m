@@ -55,10 +55,9 @@ classdef ZCalibration < handle
         function retrieveZCalMov(obj)
             %we get the zCalibration directory
             folder2Mov = dir(obj.path);
+            folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
             %loop through the content of the directory
             for i = 3:size(folder2Mov,1)
-                %If element i is a folder
-                if folder2Mov(i).isdir
                     %Check if the directory
                     currDir = dir([folder2Mov(i).folder filesep folder2Mov(i).name]);
                     idx = contains({currDir.name}, 'ome.tif');
@@ -86,7 +85,7 @@ classdef ZCalibration < handle
                         warning([folder2Mov(i).folder filesep folder2Mov(i).name ' did not contain any ome.Tif and is therefore ignored']);
                     
                     end
-                end
+                
             end
             disp('=======> DONE ! <========')
         end
@@ -347,11 +346,12 @@ classdef ZCalibration < handle
             motor =  zPosMotor;
             accuracyFocus = [];
             accuracyMean = [];
+            
             %plot XYZ for every particles       
             nfields = numel(fieldnames(obj.zCalMovies));
             figure()
             for i = 1: nfields
-                
+                zStep = diff(motor{i});
                 currentTrace = trace{i};
                 currentMotor = motor{i};
                 currentMotor = (currentMotor - currentMotor(1))*1000;
@@ -362,16 +362,20 @@ classdef ZCalibration < handle
                     if ~all(data==0)
                         frameVec = find(data(:,3),1,'first'):find(data(:,3),1,'last');
                         data = data(data(:,1)~=0,:);
-                        accuracyF2plot = (data(:,3) - data(find(data(:,3),1,'first'),3)) - currentMotor(1:size(data,1));
-                        accuracyM2plot  = (data(:,6) - data(find(data(:,3),1,'first'),6)) - currentMotor(1:size(data,1));
+                        bFit = mean(data(:,3)-zStep(1)*1000.*frameVec(:));
+                        data2SubZ = zStep(1)*1000*frameVec+bFit;
+                        accuracyF2plot = (data(:,3)-data2SubZ(:));
+                        bFit = mean(data(:,6)-zStep(1)*1000.*frameVec(:));
+                        data2SubZavg = zStep(1)*1000*frameVec+bFit;
+                        accuracyM2plot  = (data(:,6)-data2SubZavg(:));
                         
                         accuracyMean = [accuracyMean mean(abs(accuracyM2plot))];
                         accuracyFocus = [accuracyFocus mean(abs(accuracyF2plot))];
                           
                         subplot(2,2,1)
                         hold on
-                        scatter(1:size(data(:,3),1),data(:,3) - data(1,3));
-                        plot(currentMotor,'-b');
+                        scatter(1:size(data(:,3),1),data(:,3) );
+                        plot(data2SubZ,'-b');
 
                         title('Z position for different particle in best focus')
                         xlabel('Frame')
@@ -380,8 +384,8 @@ classdef ZCalibration < handle
 
                         subplot(2,2,2)
                         hold on
-                        scatter(1:size(data,1),data(:,6) - data(1,6));
-                        plot(currentMotor,'-b');
+                        scatter(1:size(data,1),data(:,6));
+                        plot(data2SubZavg,'-b');
                         xlabel('Frame')
                         ylabel('Position(nm)')
                         title('Z position for different particle mean')

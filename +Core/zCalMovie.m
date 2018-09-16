@@ -153,7 +153,7 @@ classdef ZCalMovie < Core.MPCalMovie
                             %anyhting
                             %we only process the data if there are point above
                             %and below focus.
-                        elseif and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1)))
+                        elseif and(and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1))),fMetric(idx)>50)
                             %Do the fit and extract the exact z position of the focus
                             p = polyfit(zPos,ellipt,deg);
                             zVec = min(zPos):0.001:max(zPos);%1nm step
@@ -176,7 +176,7 @@ classdef ZCalMovie < Core.MPCalMovie
                             focus2 = zVec(idx);
                             shift = focus1+focus2;%take into account both synchronization
                             
-                             zToNm = (zCalData{i,j}.frame*zStep - shift)*1000;
+                             zToNm = (frames*zStep - shift)*1000;
                              ellip2Store = zCalData{i,j}.ellip;
 % %                             [~,index] = (min(abs(1-ellipt)));
 % %                             [~,index2] = (max(fMetric));
@@ -187,7 +187,7 @@ classdef ZCalMovie < Core.MPCalMovie
 %                                  disp('Something wrong with the focus');
 %                              end
 
-                                data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
+                                data2Store = table(zToNm,ellipt,'VariableNames',{'z','ellip'});
                                 %tmp Store
                                 zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
                                 zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
