@@ -361,8 +361,9 @@ classdef MPLocMovie < Core.MPParticleMovie
         function [zPos,inRange] = getZPosition(obj,ellip,zCal,currentPlane,method)
             
             relZ = obj.calibrated.oRelZPos;
-                       
-            zVec = -1200:1:1200; %Here we assume accuracy >= 1nm
+            zRange = zCal.fitZParam.zRange;
+            zRange = zRange{currentPlane};
+            zVec = zRange(1):1:zRange(2); %Here we assume accuracy >= 1nm
             
             switch method
                 case 'poly'
@@ -375,20 +376,11 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             %find the index of the value the closest to the particle
             %ellipticity
-             if ellip < 1
-                 %find minimum
-                 [~,idx1] = min(fit);
-                 [~,idx] = min(abs(fit(idx1:end)-ellip));
-                 zVec2 = zVec(idx1:end);
-             else
-                 [~,idx1] = max(fit);
-                 [~,idx] = min(abs(fit(1:idx1)-ellip));
-                 zVec2 = zVec(1:idx1);
-             end
+             [~,idx] = min(abs(fit-ellip));
              
-             zPos = zVec2(idx)+ relZ(currentPlane)*1000;          
+             zPos = zVec(idx)+ relZ(currentPlane)*1000;          
              inRange = and(ellip>=zCal.fitZParam(1).ellipRange(1),...
-                 ellip<= zCal.fitZParam(1).ellipRange(2));
+                 ellip<=zCal.fitZParam(1).ellipRange(2));
              if isempty(zPos)
                  disp('ouuups zpos is empty');
              end

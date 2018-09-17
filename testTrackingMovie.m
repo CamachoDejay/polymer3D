@@ -42,11 +42,12 @@ val2Use = 'bestFocus';
 MPTrackMov.superResolve(val2Use);
 %% plot
 frames = 1:100;
+
 MPTrackMov.showCorrLoc(frames);
 
 %% showFrame
 
-%MPTrackMov.showFrame(500);
+MPTrackMov.showFrame(500);
 
 %% tracking
 trackParam.euDistXY = 250;

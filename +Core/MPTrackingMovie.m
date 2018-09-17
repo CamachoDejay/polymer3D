@@ -14,6 +14,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
              
         end
         
+
         function trackParticle(obj,trackParam)
             
              %track the particle in the Z direction (3rd dimension here)
