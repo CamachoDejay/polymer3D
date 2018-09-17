@@ -37,7 +37,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             errCount =1;
             while (idx)
                 %loop until there is no particle (pickParticle return false)
-                if errCount>1000
+                if errCount>10000
                     warning('While loop ran for unexpectedly longer time');
                     break;
                     

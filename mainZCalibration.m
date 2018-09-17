@@ -18,10 +18,11 @@ testZCal = Core.ZCalibration(path2zCal,calib.getCal);
 testZCal.retrieveZCalMov;
 
 %% extract zData
+
 detectParam.delta = 6;
 detectParam.chi2 = 80;
 fitZParam.deg = 6;
-fitZParam.ellipRange = [0.5 2];
+fitZParam.ellipRange = [0.50 2];
 
 trackParam.euDistPx = 6; 
 trackParam.commonPlanes = 2;
@@ -38,7 +39,7 @@ testZCal.zCalibrate;
 testZCal.showZCalibration
 
 %% test Calibration
-fittingType = 'poly';
+%fittingType = 'poly';
 fittingType = 'spline';
 testZCal.evalAccuracy(fittingType);
 %% Save cal

@@ -46,6 +46,7 @@ classdef SRCalibration < handle
         function retrieveSRCalMov(obj)
             %we get the zCalibration directory
             folder2Mov = dir(obj.path);
+            folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
             %loop through the content of the directory
             for i = 3:size(folder2Mov,1)
                 %If element i is a folder

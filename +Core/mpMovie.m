@@ -4,7 +4,7 @@ classdef MPMovie < Core.Movie
     %Extension will be centered around localization but SOFI movie could
     %also be a branch of this object
     
-    properties (SetAccess = 'private')
+    properties (SetAccess = 'protected')
         cal2D %calibration data
         calibrated %Path to calibrated data and Info
     end

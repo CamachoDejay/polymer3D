@@ -176,7 +176,7 @@ classdef ZCalMovie < Core.MPCalMovie
                             focus2 = zVec(idx);
                             shift = focus1+focus2;%take into account both synchronization
                             
-                             zToNm = (frames*zStep - shift)*1000;
+                             zToNm = (zCalData{i,j}.frame*zStep - shift)*1000;
                              ellip2Store = zCalData{i,j}.ellip;
 % %                             [~,index] = (min(abs(1-ellipt)));
 % %                             [~,index2] = (max(fMetric));
@@ -187,7 +187,9 @@ classdef ZCalMovie < Core.MPCalMovie
 %                                  disp('Something wrong with the focus');
 %                              end
 
-                                data2Store = table(zToNm,ellipt,'VariableNames',{'z','ellip'});
+                                data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
+                                data2Store.fMetric = zCalData{i,j}.fMetric;
+                                data2Store.gFitMet =  zCalData{i,j}.gFitMet;
                                 %tmp Store
                                 zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
                                 zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
@@ -240,15 +242,15 @@ classdef ZCalMovie < Core.MPCalMovie
             list = obj.particles.List;
             tracesIdx = obj.particles.traces;
             pxSize = obj.info.pxSize;
-            
+            zRange = fitZParam.zRange;
             %ellipt range used for fitting
             elliptRange = fitZParam.ellipRange(1):0.001:fitZParam.ellipRange(2);
             %we weigh the average later base on how much out of focus the
             %plane was.
             wRange1 = length(elliptRange(elliptRange<=1));
             wRange2 = length(elliptRange(elliptRange>=1));
-            weight1 = linspace(1,10,wRange1);
-            weight2 = linspace(10,1,wRange2);
+            weight1 = linspace(1,5,wRange1);
+            weight2 = linspace(5,1,wRange2);
             finalWeight = [weight1 weight2];
             
             %Calculation of x-y-z position occurs within the loop here
@@ -297,7 +299,7 @@ classdef ZCalMovie < Core.MPCalMovie
                                 
                                 if ~isempty(calib)
                                     %Calculation for Z is occur here
-                                    [z,zAvg] = obj.getZPosition(currentPart,elliptRange,finalWeight,calib,fittingType);
+                                    [z,zAvg] = obj.getZPosition(currentPart,elliptRange,zRange,finalWeight,calib,fittingType);
                                     
                                 else
                                     
@@ -317,16 +319,10 @@ classdef ZCalMovie < Core.MPCalMovie
                     end
                 end
             end
-            
-            
-            for i = 1: size(traces,3)
-            
-                
-            end
-            
+                      
         end
         
-        function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,finalWeight,calib,fittingType)
+        function [zPos,zAvg] = getZPosition(obj,particle,elliptRange,zRange,finalWeight,calib,fittingType)
             %extract Z position based on ellipticity and zCalibrationration curve
             assert(~isempty(calib),'No zCalibration found, please give the zCalibration using giveZCal before calculating Z position');
             zCal = calib;
@@ -334,7 +330,7 @@ classdef ZCalMovie < Core.MPCalMovie
             syncEllip = obj.zData.syncEllip;
             
             if ~isempty(syncEllip{particle.plane(3),1})
-                zVec = min(syncEllip{particle.plane(3),1}.z) : 1 : max(syncEllip{particle.plane(3),1}.z);
+                zVec = zRange{particle.plane(3)}(1):zRange{particle.plane(3)}(2);
                 switch fittingType
                     case 'poly'
                         fit = polyval(zCal{particle.plane(3),1},zVec);
@@ -380,7 +376,26 @@ classdef ZCalMovie < Core.MPCalMovie
                 %weighed average occur here
                 %diag is taken because of the matrix operation between weight
                 %and zAvg
-                zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
+                camConfig = obj.calibrated.camConfig;
+                switch camConfig
+                    case 'fullRange'
+                        if and(particle.ellip(3)>0.9,particle.ellip(3)>1.11)
+                            avg = false;
+                        else
+                            avg = true;
+                        end
+                           
+                    case 'alternated'
+                        avg = true;
+                    otherwise
+                        error('unknown camera config');
+                end
+                
+                if avg
+                    zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
+                else 
+                    zAvg = zPos;
+                end
             else
                 zAvg = NaN;
                 zPos = NaN;

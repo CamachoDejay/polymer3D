@@ -6,7 +6,7 @@ clear
 path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - NormObjCorr';
 path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - normObjCorrPSFE';
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\29\1K - 0_25mgmL\TL-FluoBeads200nm-PIC0_25mgmL-1K_1';
+path2File = 'E:\Data\Leuven Data\2018\06-June\29\1K - 0_25mgmL\TL-FluoBeads200nm-PIC0_25mgmL-1K_2';
 path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
 
 detectParam.delta = 6;
@@ -38,11 +38,15 @@ MPTrackMov.applyZCal;
 
 MPTrackMov.consolidatePlanes
 %% Super resolve
-
-MPTrackMov.superResolve;
+val2Use = 'bestFocus';
+MPTrackMov.superResolve(val2Use);
 %% plot
+frames = 1:100;
+MPTrackMov.showCorrLoc(frames);
 
-MPTrackMov.showCorrLoc;
+%% showFrame
+
+%MPTrackMov.showFrame(500);
 
 %% tracking
 trackParam.euDistXY = 250;

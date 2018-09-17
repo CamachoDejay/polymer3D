@@ -157,6 +157,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                     currentEllip = currData.ellip(j);
                     currentPlane = currData.plane(j);
                     [zPos] = obj.getZPosition(currentEllip,zCal,currentPlane,method);
+                   
                     obj.corrLocPos{i}.z(j) = zPos;
                     
                 end
@@ -173,6 +174,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 zRange{i} = obj.getZRange(ellipRange,zCal,i,method);
             end
             obj.corrected.Z = true;
+            obj.calibrated.zRange = zRange;
             disp('=======> DONE ! <========');
         end
         
@@ -188,16 +190,17 @@ classdef MPLocMovie < Core.MPParticleMovie
             end
         end
                 
-        function superResolve(obj)
+        function superResolve(obj, val2Use)
             disp('super resolving positions ... ');
             data2Resolve = obj.particles.List;
+            
             SRList = cell(data2Resolve);
             for i = 1:length(data2Resolve)
                 frameData = data2Resolve{i};
                 for j = 1:length(frameData)
                     SRList{i}{j} = SRList{i}{j}(1,{'row','col','z'});
                     partData = frameData{j};
-                    [row,col,z] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}));
+                    [row,col,z] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}),val2Use);
                     
                     SRList{i}{j}.row = row;
                     SRList{i}{j}.col = col;
@@ -207,18 +210,26 @@ classdef MPLocMovie < Core.MPParticleMovie
             end
                 
             obj.particles.SRList = SRList;    
-           disp('========> DONE ! <=========');
+            disp('========> DONE ! <=========');
             
         end
                    
-        function showCorrLoc(obj)
-            part = obj.particles.SRList;
+        function showCorrLoc(obj,frames)
+             part = obj.particles.SRList;
+            switch nargin
+                case 1
+                    frames = 1:length(part);
+                case 2 
+                    [frames] = obj.checkFrame(frames,obj.raw.maxFrame(1));
+            end
+           
             
             figure()
             hold on
-            for i = 1:length(part)
-                currentFrame = part{i};
-                if ~isempty(length(part{i}))
+            for i = 1:length(frames)
+                cFrame = frames(i);
+                currentFrame = part{cFrame};
+                if ~isempty(length(part{cFrame}))
                     
                     for j = 1: length(currentFrame)
                         currentPart = currentFrame{j};
@@ -348,10 +359,10 @@ classdef MPLocMovie < Core.MPParticleMovie
         end
     
         function [zPos,inRange] = getZPosition(obj,ellip,zCal,currentPlane,method)
-            %ADDD SWITCH ONTO METHOD
+            
             relZ = obj.calibrated.oRelZPos;
                        
-            zVec = -2000:1:2000; %Here we assume accuracy >= 1nm
+            zVec = -1200:1:1200; %Here we assume accuracy >= 1nm
             
             switch method
                 case 'poly'
@@ -364,12 +375,23 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             %find the index of the value the closest to the particle
             %ellipticity
-            
-             [~,idx] = min(abs(fit-ellip));
+             if ellip < 1
+                 %find minimum
+                 [~,idx1] = min(fit);
+                 [~,idx] = min(abs(fit(idx1:end)-ellip));
+                 zVec2 = zVec(idx1:end);
+             else
+                 [~,idx1] = max(fit);
+                 [~,idx] = min(abs(fit(1:idx1)-ellip));
+                 zVec2 = zVec(1:idx1);
+             end
              
-             zPos = zVec(idx)+ relZ(currentPlane)*1000;          
+             zPos = zVec2(idx)+ relZ(currentPlane)*1000;          
              inRange = and(ellip>=zCal.fitZParam(1).ellipRange(1),...
                  ellip<= zCal.fitZParam(1).ellipRange(2));
+             if isempty(zPos)
+                 disp('ouuups zpos is empty');
+             end
 
         end
         
@@ -401,13 +423,23 @@ classdef MPLocMovie < Core.MPParticleMovie
              
         end
         
-        function [row,col,z]  = resolveXYZ(obj,partData)
-            ellipRange = obj.ZCal.fitZParam.ellipRange;            
-            idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
-            
-            row = mean(partData.row(idx2Keep));
-            col = mean(partData.col(idx2Keep));
-            z   = mean(partData.z(idx2Keep));
+        function [row,col,z]  = resolveXYZ(obj,partData,val2Use)
+            ellipRange = obj.ZCal.fitZParam.ellipRange;  
+            pxSize = obj.info.pxSize;
+            switch val2Use
+                case 'bestFocus'
+                   row = partData.row(3)*pxSize;
+                   col = partData.col(3)*pxSize;
+                   z = partData.z(3);
+                case 'mean'
+                    idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
+                    row = mean(partData.row(idx2Keep))*pxSize;
+                    col = mean(partData.col(idx2Keep))*pxSize;
+                    z   = mean(partData.z(idx2Keep));
+                otherwise
+                    error('Unknown value to use, only know "bestFocus" and "mean"');
+            end
+          
             
         end
         
@@ -421,24 +453,22 @@ classdef MPLocMovie < Core.MPParticleMovie
             else
                 for i = 1: nMethod
                   currentMethod = names{i};
-                  currentAccuracy = obj.ZCal.zAccuracy.(names{i}).Mean;
+                  currentAccuracy = obj.ZCal.zAccuracy.(names{i}).BestFocus;
                   
                   %Here accuracy should be small (high accuracy mean small
                   %number)
                   if i==1
-                    
-                  elseif and(i>1, currentAccuracy > previousAccuracy)
+                    finalMethod = currentMethod;
+                  elseif and(i>1, or(currentAccuracy > finalMethod,currentAccuracy==0))
                       
-                      finalMethod = currentMethod;
+                      %finalMethod stay the same
                   
-                  elseif and(i>1, currentAccuracy< previousAccuracy)
+                  elseif and(i>1, and(currentAccuracy <  finalMethod,currentAccuracy>0))
                   
-                      finalMethod = currentMethod;
-                  
+                      finalMethod = currentMethod;              
+                       
                   end
-                  
-                  previousAccuracy = currentAccuracy;
-                                   
+                                                    
                 end
                 method = finalMethod;
             end

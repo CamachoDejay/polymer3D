@@ -96,7 +96,7 @@ classdef ZCalibration < handle
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
             assert(and(isstruct(fitZParam),and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRange'))),'fitZParam is expected to be a struct with 2 fields "deg" for the degree of polynomial parameter, "ellipRange" holding the min and max value of accepted ellipticity. ');
             assert(and(isstruct(trackParam),and(isfield(trackParam,'euDistPx'),isfield(trackParam,'commonPlanes'))),'trackParam is expected to be a struct with 2 fields "euDistPx", the tolerated euclidian distance between consecutive frames, "commonPlanes" nplane consistent to be considered as frame consistent ([1 4])');
-            
+            obj.calib.fitZParam.ellipRange = fitZParam.ellipRange;
             %Extraction of zData
             nfields = numel(fieldnames(obj.zCalMovies));
             allData = cell(8,3);
@@ -185,6 +185,8 @@ classdef ZCalibration < handle
             
             %Plot #1
             relZ = obj.zCalMovies.('zCal1').calibrated.oRelZPos*1000;%in nm
+            zRange = obj.calib.fitZParam.zRange;
+            ellipRange = obj.calib.fitZParam.ellipRange;
             figure()
             for i = 1 : length(obj.calib.data)
                 
@@ -224,8 +226,8 @@ classdef ZCalibration < handle
             hold on
           
             for i = 1 : length(obj.calib.data)
-                dataCurrentPlane = obj.calib.data{i};
-                scatter(dataCurrentPlane.z, dataCurrentPlane.ellip,25,'filled',...
+                dataCurrPlane = obj.calib.data{i};
+                scatter(dataCurrPlane.z, dataCurrPlane.ellip,25,'filled',...
                     'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4,'DisplayName',['Plane ' num2str(i) ' - ' num2str(relZ(i))])
                
             %scatter(obj.calib.data{1,2}(:,1),obj.calib.data{1,2}(:,2));
@@ -240,11 +242,16 @@ classdef ZCalibration < handle
             figure()            
             for i = 1 : length(obj.calib.data)
                 
-                dataCurrentPlane = obj.calib.data{i};
+                dataCurrPlane = obj.calib.data{i};
+                idx2Keep = and(dataCurrPlane.ellip>ellipRange(1),...
+                    dataCurrPlane.ellip<ellipRange(2));
                 
-                [binnedData] = Plotting.qBinning([dataCurrentPlane.z,...
-                    dataCurrentPlane.ellip],length(dataCurrentPlane.z)/5);
-                zVec = min(dataCurrentPlane.z):max(dataCurrentPlane.z);
+                [Res] = Core.ZCalibration.findConsecVal(idx2Keep);
+ 
+                dataCurrPlane = dataCurrPlane(Res(1):Res(2),:);
+                [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
+                    dataCurrPlane.ellip],length(dataCurrPlane.z)/5);
+                zVec = zRange{i}(1):zRange{i}(2);
                 %retrieving fit to display
                 p = obj.calib.file{i};
                 p2= obj.calib.file{i,2};
@@ -252,7 +259,7 @@ classdef ZCalibration < handle
                 fit2= ppval(p2,zVec);
                 %shifting according to the plane
                 zVec = zVec + relZ(i) ;
-                dataCurrentPlane.z = dataCurrentPlane.z+ relZ(i);
+                dataCurrPlane.z = dataCurrPlane.z+ relZ(i);
                 binnedData(:,1) = binnedData(:,1) +relZ(i);
                 
                 subplot(1,2,1)
@@ -263,7 +270,7 @@ classdef ZCalibration < handle
                 
                 subplot(1,2,2)
                 hold on
-                scatter(dataCurrentPlane.z,dataCurrentPlane.ellip)
+                scatter(dataCurrPlane.z,dataCurrPlane.ellip)
                 plot(zVec,fit,'r','LineWidth',2)
                 title('Full data fitted with polynomial')
                 
@@ -309,31 +316,74 @@ classdef ZCalibration < handle
 
         end
     end
-    
+    methods (Static)
+         function [Res] = findConsecVal(bool)
+            %!!Assume the longuest section is more or less centered!!
+                
+                    idx1 = round(length(bool)/2);
+                    part1 = fliplr(bool(1:idx1)');
+                    part2 = bool(idx1:end);
+                    
+                    idxPart1 = find(part1==0,1,'first');
+                    idxPart2 = find(part2==0,1,'first');
+                    
+                    if and(isempty(idxPart1),isempty(idxPart2))
+                        idxPart1 = 1;
+                        idxPart2 = length(bool);
+                        Res = [idxPart1, idxPart2];
+                    
+                    elseif isempty(idxPart1)
+                         idxPart1 = 1;
+                         Res = [idxPart1, idx1+idxPart2];
+                    elseif isempty(idxPart2)
+                         idxPart2 = length(bool);
+                         Res = [idx1-idxPart1, idxPart2];
+                    else
+                         
+                        Res = [idx1-(idxPart1-1), idx1+(idxPart2-1)];
+                        
+                    end
+                    
+                    test = bool(Res);
+                    if all(test==1)
+                    else
+                        disp('Something went wrong with findConsecVal');
+                    end
+
+        end
+    end
     methods (Access = private)
         
-        function [zCalibration] = calZCalibration(~,zSyncCalData)
+        function [zCalibration] = calZCalibration(obj,zSyncCalData)
             %function that take the synchronized z-ellip Data and fit, for
             %each planes with a polynomial. It stores the coeff of the
             %polynomials
+            ellipRange = obj.calib.fitZParam.ellipRange;
             zCalibration = cell(length(zSyncCalData),2);
             deg = zSyncCalData{1,3}(3);
             disp('Starting fitting ...');
             for i = 1: length(zSyncCalData)
                 disp(['Fitting of plane ' num2str(i)]);
-                dataCurrentPlane = zSyncCalData{i};
-                [binnedData] = Plotting.qBinning([dataCurrentPlane.z,...
-                    dataCurrentPlane.ellip],length(dataCurrentPlane.z)/5);
+                dataCurrPlane = zSyncCalData{i};
+                idx2Keep = and(dataCurrPlane.ellip>ellipRange(1),...
+                    dataCurrPlane.ellip<ellipRange(2));
+                
+                [Res] = Core.ZCalibration.findConsecVal(idx2Keep);
+ 
+                dataCurrPlane = dataCurrPlane(Res(1):Res(2),:);
+                [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
+                    dataCurrPlane.ellip],length(dataCurrPlane.z)/5);
                 
                 %zVec = min(dataCurrentPlane.z):max(dataCurrentPlane.z);
                 
-                p = polyfit(dataCurrentPlane.z,dataCurrentPlane.ellip,deg);
+                p = polyfit(dataCurrPlane.z,dataCurrPlane.ellip,deg);
                 p2 = spline(binnedData(:,1),binnedData(:,2));
                 %fit = polyval(p,zVec);
                 
                 zCalibration{i} = p;
                 zCalibration{i,2} = p2;
-                
+                zRange = [min(dataCurrPlane.z), max(dataCurrPlane.z)];
+                obj.calib.fitZParam.zRange{i} = zRange;
             end
             disp('=================> DONE <===================');
         end
@@ -344,9 +394,10 @@ classdef ZCalibration < handle
             assert(~isempty(obj.traces3D),'You need to get the traces before displaying them, use evalAccuracy to get the traces');
             trace = traces3D;
             motor =  zPosMotor;
-            accuracyFocus = [];
-            accuracyMean = [];
-            
+            accuracyZFocus = [];
+            accuracyZMean = [];
+            accuracyXFocus = [];
+            accuracyYFocus = [];
             %plot XYZ for every particles       
             nfields = numel(fieldnames(obj.zCalMovies));
             figure()
@@ -364,14 +415,22 @@ classdef ZCalibration < handle
                         data = data(data(:,1)~=0,:);
                         bFit = mean(data(:,3)-zStep(1)*1000.*frameVec(:));
                         data2SubZ = zStep(1)*1000*frameVec+bFit;
-                        accuracyF2plot = (data(:,3)-data2SubZ(:));
+                        
+                        accuracyF2plot = (data(:,3)- data2SubZ(:));
+                        accuracyX2plot = data(:,1) - mean(data(:,1));
+                        accuracyY2plot = data(:,2) - mean(data(:,2));
+                        
                         bFit = mean(data(:,6)-zStep(1)*1000.*frameVec(:));
                         data2SubZavg = zStep(1)*1000*frameVec+bFit;
                         accuracyM2plot  = (data(:,6)-data2SubZavg(:));
                         
-                        accuracyMean = [accuracyMean mean(abs(accuracyM2plot))];
-                        accuracyFocus = [accuracyFocus mean(abs(accuracyF2plot))];
-                          
+                        accuracyZMean = [accuracyZMean mean(abs(accuracyM2plot))];
+                        accuracyZFocus = [accuracyZFocus mean(abs(accuracyF2plot))];
+                        
+                       
+                        accuracyXFocus = [accuracyXFocus mean(abs(accuracyX2plot))];
+                        accuracyYFocus = [accuracyXFocus mean(abs(accuracyY2plot))];
+                        
                         subplot(2,2,1)
                         hold on
                         scatter(1:size(data(:,3),1),data(:,3) );
@@ -410,22 +469,25 @@ classdef ZCalibration < handle
                 end
             end
             
-            disp(['Accuracy in Z for best focus is ' num2str(nanmean(accuracyFocus))]);
-            disp(['Accuracy in Z for mean  ' num2str(nanmean(accuracyMean))]);
+            disp(['Accuracy in Z for best focus is ' num2str(nanmean(accuracyZFocus))]);
+            disp(['Accuracy in X for best focus is ' num2str(nanmean(accuracyXFocus))]);
+            disp(['Accuracy in Y for best focus is ' num2str(nanmean(accuracyYFocus))]);
+            disp(['Accuracy in Z for mean  ' num2str(nanmean(accuracyZMean))]);
             
             switch obj.calib.fitZParam.fittingType
                 case 'poly'
-                    obj.zAccuracy.poly.('BestFocus') = mean(accuracyFocus);
-                    obj.zAccuracy.poly.Mean      = mean(accuracyMean);
+                    obj.zAccuracy.poly.('BestFocus') = mean(accuracyZFocus);
+                    obj.zAccuracy.poly.Mean      = mean(accuracyZMean);
                 case 'spline'
-                    obj.zAccuracy.spline.BestFocus = mean(accuracyFocus);
-                    obj.zAccuracy.spline.Mean      = mean(accuracyMean);
+                    obj.zAccuracy.spline.BestFocus = mean(accuracyZFocus);
+                    obj.zAccuracy.spline.Mean      = mean(accuracyZMean);
                 otherwise
                     error('Unknown fitting type used, only currently known are "poly" and "spline"');
             end
             
-    end
+        end
         
+       
     end
 end
 
