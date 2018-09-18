@@ -59,7 +59,10 @@ classdef Movie < handle
 %                 obj.raw.frameInfo{i} = frameInfo;
 %                 obj.raw.fullPath{i}  = fullPath;
 %                 obj.raw.maxFrame{i}  = movInfo.maxFrame;
-
+%                     
+              
+                
+                
             else
             
                 fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
