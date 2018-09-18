@@ -246,6 +246,8 @@ classdef MPMovie < Core.Movie
     methods (Access = private)
         
          function [calib] = applyCalib(obj)
+             
+             
             %Load and calibrate the movie using the calibration file
             frame = 1:obj.raw.movInfo.maxFrame(1);
             [data, ~, ~] = mpSetup.loadAndCal( obj.raw.fullPath, obj.cal2D.file, frame);

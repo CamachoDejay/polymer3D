@@ -51,33 +51,28 @@ classdef Movie < handle
       
             if length(file2Analyze)>1
                 fprintf('More than one Tiff, combining them %s \n', file2Analyze(1).name);
-                
-                for i = 1:size(file2Analyze,1)
-                    
-                    fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
-                    [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
-                    %Check info for 2 cam
-                    assert(length(movInfo.Cam) == 2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
-                    obj.raw.movInfo{i}   = movInfo;
-                    obj.raw.frameInfo{i} = frameInfo;
-                    obj.raw.fullPath{i}  = fullPath;
-                    obj.raw.maxFrame{i}  = movInfo.maxFrame;
-                    
-                end
-                
-                
+                fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
+                [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
+                %Check info for 2 cam
+              
+%                 obj.raw.movInfo{i}   = movInfo;
+%                 obj.raw.frameInfo{i} = frameInfo;
+%                 obj.raw.fullPath{i}  = fullPath;
+%                 obj.raw.maxFrame{i}  = movInfo.maxFrame;
+
             else
             
                 fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
                 [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
                 %Check info for 2 cam
                 assert(length(movInfo.Cam) == 2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
-                obj.raw.movInfo   = movInfo;
-                obj.raw.frameInfo = frameInfo;
-                obj.raw.fullPath  = fullPath;
-                obj.raw.maxFrame  = movInfo.maxFrame;
-                
+
             end
+            
+            obj.raw.movInfo   = movInfo;
+            obj.raw.frameInfo = frameInfo;
+            obj.raw.fullPath  = fullPath;
+            obj.raw.maxFrame  = movInfo.maxFrame;
         end
         
         function set.info(obj,inform)
