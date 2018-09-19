@@ -6,8 +6,8 @@ clear
 path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - NormObjCorr';
 path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - normObjCorrPSFE';
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\27\trackingCal - normObjCorr\TrackingX\FluoBeads200_TrackingX_320ms__1';
-path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
+path2File = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - NormObjCorr\zStackFluoBeads200_PIC1_270618__5';
+path2Cal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - normObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;
@@ -47,11 +47,19 @@ MPTrackMov.showCorrLoc();
 
 %% showFrame
 
-MPTrackMov.showFrame(500);
+MPTrackMov.showFrame(80);
+%MPTrackMov.showParticle;
 
 %% tracking
-trackParam.euDistXY = 250;
-trackParam.euDistZ  = 200;
+trackParam.euDistXY = 300;
+trackParam.euDistZ  = 400;
 MPTrackMov.trackParticle(trackParam);
 %% plot
 MPTrackMov.showTraces;
+
+%% eval accuracy
+MPTrackMov.evalAccuracy
+
+%% Susana's figure
+
+

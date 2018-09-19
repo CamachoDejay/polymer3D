@@ -126,6 +126,7 @@ classdef ZCalMovie < Core.MPCalMovie
             minEllipt = fitZParam.ellipRange(1);
             maxEllipt = fitZParam.ellipRange(2);
             [zStep,~] = obj.getZPosMotor;
+            zStep = zStep(1);
             zSyncCalData = cell(8,2);
             
             for i = 1:size(zCalData,1)

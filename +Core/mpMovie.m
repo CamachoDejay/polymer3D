@@ -190,7 +190,7 @@ classdef MPMovie < Core.Movie
                 
             end
             
-            xStep = mean(diff(xPosMotor));
+            xStep = diff(xPosMotor);
             
         end
         
@@ -205,7 +205,7 @@ classdef MPMovie < Core.Movie
 
             end
 
-            yStep = mean(diff(yPosMotor));
+            yStep = diff(yPosMotor);
 
         end
         
@@ -220,11 +220,11 @@ classdef MPMovie < Core.Movie
                 
             end
             
-            zStep = mean(diff(zPosMotor));
+            zStep = diff(zPosMotor);
             
         end 
         
-         function [camConfig] = determineCAMConfig(obj)
+        function [camConfig] = determineCAMConfig(obj)
             
              planeDist = abs(mean(diff(obj.calibrated.oRelZPos)))*1000;
              if planeDist > 450
@@ -248,9 +248,10 @@ classdef MPMovie < Core.Movie
         function [calib] = applyCalib(obj)
             frameInfo = obj.raw.frameInfo;
             movInfo   = obj.raw.movInfo;
-            frame = 1:obj.raw.movInfo.indivFrame(1);
+            
             
             if obj.raw.movInfo.isMultiImage
+                frame = 1:obj.raw.movInfo.indivFrame(1);
                 disp('Multiple frame, combining them in calibration, this may take a while...');
                 
                 nMovies = size(frameInfo,2)/max(frame)/2;
@@ -268,7 +269,7 @@ classdef MPMovie < Core.Movie
                 end
                 
             else
-               
+               frame = 1:obj.raw.movInfo.maxFrame(1);
                 [ movC1, movC2] = Load.Movie.ome.load( frameInfo, movInfo, frame );
 
             end
