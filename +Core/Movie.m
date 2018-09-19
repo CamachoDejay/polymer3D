@@ -53,16 +53,9 @@ classdef Movie < handle
                 fprintf('More than one Tiff, combining them %s \n', file2Analyze(1).name);
                 fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
                 [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
-                %Check info for 2 cam
-              
-%                 obj.raw.movInfo{i}   = movInfo;
-%                 obj.raw.frameInfo{i} = frameInfo;
-%                 obj.raw.fullPath{i}  = fullPath;
-%                 obj.raw.maxFrame{i}  = movInfo.maxFrame;
-%                     
-              
-                
-                
+                [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo,false);
+                movInfo.indivFrame = movInfo.maxFrame;
+                movInfo.maxFrame = totFrame;
             else
             
                 fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];

@@ -43,7 +43,7 @@ MPTrackMov.superResolve(val2Use);
 %% plot
 frames = 1:100;
 
-MPTrackMov.showCorrLoc(frames);
+MPTrackMov.showCorrLoc();
 
 %% showFrame
 
@@ -51,7 +51,7 @@ MPTrackMov.showFrame(500);
 
 %% tracking
 trackParam.euDistXY = 250;
-trackParam.euDistZ  = 500;
+trackParam.euDistZ  = 200;
 MPTrackMov.trackParticle(trackParam);
 %% plot
 MPTrackMov.showTraces;

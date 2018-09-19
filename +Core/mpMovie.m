@@ -245,12 +245,44 @@ classdef MPMovie < Core.Movie
     
     methods (Access = private)
         
-         function [calib] = applyCalib(obj)
-             
-             
-            %Load and calibrate the movie using the calibration file
-            frame = 1:obj.raw.movInfo.maxFrame(1);
-            [data, ~, ~] = mpSetup.loadAndCal( obj.raw.fullPath, obj.cal2D.file, frame);
+        function [calib] = applyCalib(obj)
+            frameInfo = obj.raw.frameInfo;
+            movInfo   = obj.raw.movInfo;
+            frame = 1:obj.raw.movInfo.indivFrame(1);
+            
+            if obj.raw.movInfo.isMultiImage
+                disp('Multiple frame, combining them in calibration, this may take a while...');
+                
+                nMovies = size(frameInfo,2)/max(frame)/2;
+                movC1 = zeros(movInfo.Length, movInfo.Width,nMovies*max(frame));
+                movC2 = movC1;
+                for i = 1: nMovies
+                    idx2Frame = (i-1)*(max(frame)*2)+1 : i*max(frame)*2;
+                    idx2FCam  = (i-1)*(max(frame))+1 : i*max(frame);
+                    currentFrameInfo = frameInfo(idx2Frame);
+                     % load the raw data 
+                    [ C1, C2] = Load.Movie.ome.load( currentFrameInfo, movInfo, frame );
+
+                    movC1(:,:,idx2FCam) = C1;
+                    movC2(:,:,idx2FCam) = C2;
+                end
+                
+            else
+               
+                [ movC1, movC2] = Load.Movie.ome.load( frameInfo, movInfo, frame );
+
+            end
+            %applying the calibration
+            [data] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
+            
+            %saving data per plane and info to cal
+            [calib] = obj.saveCalibrated(data);
+            
+           
+         end
+         
+         function [calib,fid] = saveCalibrated(obj,data)
+            cal = obj.cal2D.file;
             step = 100;
             calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
             mkdir(calDir);
@@ -260,6 +292,7 @@ classdef MPMovie < Core.Movie
             fprintf(fid,'The information in this file are intended to the user. They are generated automatically so please do not edit them\n');
             calib.mainPath = calDir;
             calib.nPlanes   = size(data,3);
+            
             for i = 1:size(data,3)
 
                 fName = sprintf('calibratedPlane%d.tif',i);
@@ -289,25 +322,21 @@ classdef MPMovie < Core.Movie
                 %text file
                 fprintf(fid,...
                 'Image plane %d: Cam %d, Channel %d Col1: %d Col2: %d, Rel. Zpos: %0.3f \n ',...
-                i,obj.cal2D.file.inFocus(obj.cal2D.file.neworder(i)).cam,...
-                obj.cal2D.file.inFocus(obj.cal2D.file.neworder(i)).ch,...
-                obj.cal2D.file.ROI(obj.cal2D.file.neworder(i),1),...
-                obj.cal2D.file.ROI(obj.cal2D.file.neworder(i),1)+...
-                obj.cal2D.file.ROI(obj.cal2D.file.neworder(i),3),...
-                obj.cal2D.file.inFocus(obj.cal2D.file.neworder(i)).zpos-...
-                obj.cal2D.file.inFocus(obj.cal2D.file.neworder(1)).zpos);
-                calib.oRelZPos(i) =  obj.cal2D.file.inFocus(obj.cal2D.file.neworder(i)).zpos-...
-                obj.cal2D.file.inFocus(obj.cal2D.file.neworder(1)).zpos;
-                
+                i,cal.inFocus(cal.neworder(i)).cam,...
+                cal.inFocus(cal.neworder(i)).ch,...
+                cal.ROI(cal.neworder(i),1),...
+                cal.ROI(cal.neworder(i),1)+...
+                cal.ROI(cal.neworder(i),3),...
+                cal.inFocus(cal.neworder(i)).zpos-...
+                cal.inFocus(cal.neworder(1)).zpos);
+                calib.oRelZPos(i) =  cal.inFocus(cal.neworder(i)).zpos-...
+                cal.inFocus(cal.neworder(1)).zpos;
+             
             end
-            %Finally we save the calibratedInfo as a matfile
             fclose(fid);
             fName = [calDir filesep 'calibrated.mat'];
             save(fName,'calib');
-            
          end
-         
-         
 
     end
 end
