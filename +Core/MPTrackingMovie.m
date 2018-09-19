@@ -14,6 +14,10 @@ classdef MPTrackingMovie < Core.MPLocMovie
              
         end
         
+        function [traces] = getTraces(obj)
+            assert(~isempty(obj.traces3D),'please run the tracking before getting the traces');
+            traces = obj.traces3D;
+        end
         
         function trackParticle(obj,trackParam)
             
