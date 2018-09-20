@@ -103,24 +103,41 @@ classdef MPTrackingMovie < Core.MPLocMovie
             hold off
         end
         
-        function evalAccuracy(obj)
+        function evalAccuracy(obj,dim)
             [xStep,xMotor] = obj.getXPosMotor;
             [yStep,yMotor] = obj.getYPosMotor;
             [zStep,zMotor] = obj.getZPosMotor;
+            
+            switch nargin
+                case 1
+                    
+                    dim = {'row','col','z'};
+                    obj.getAccuracy(xMotor,dim{2});
+                    obj.getAccuracy(yMotor,dim{1});
+                    obj.getAccuracy(zMotor,dim{3});
+         
+                case 2
+                    
+                    switch dim
+                        case 'x'
+                            dim = 'col';
+                            obj.getAccuracy(xMotor,dim{2});
+                        case 'y'
+                            dim = 'row';
+                            obj.getAccuracy(yMotor,dim{1});
+                        case 'z'
+                            obj.getAccuracy(zMotor,dim{3});
+                    end
+                    
+                otherwise
+                    error('too many input arguments');
+            end
             
             if all([xStep, yStep, zStep] ==0)
                 warning(['no movement of the motor to compare with,',...
                     'we will assume the sample does not move for evaluating accuracies',...
                     'if it is not the case, it might result in unexpected numbers']);
-            end
-            
-            obj.evalXAccuracy(xStep,xMotor);
-            obj.evalYAccuracy(yStep,yMotor);
-            obj.evalZAccuracy(zStep,zMotor);
-%             obj.eval3DAccuracy([xStep(:),yStep(:),zStep(:)],...
-%                                    [xMotor(:),yMotor(:), zMotor(:)]);
-%             
-            
+            end           
         end
          
     end
@@ -270,313 +287,33 @@ classdef MPTrackingMovie < Core.MPLocMovie
             
         end
         
-        function evalXAccuracy(obj,xStep,xMotor)
+        function getAccuracy(obj,Motor,dim)
+            assert(ischar(dim),'dimension is expected to be a char (row, col or z')
             traces = obj.traces3D;
-            %xChanges = find(xStep~=0)+1;
-            meanX = zeros(length(traces),1);
-            absMeanX = meanX;
-            stdX  = meanX;
-            xTrackAcc = meanX;
-            xChanges = find(xStep~=0);
+            
+            meanErr = zeros(length(traces),1);
+            absMeanErr = meanErr;
+            stdErr  = meanErr;
             for i = 1:length(traces)
+                
                 currentTrace = traces{i};
-                motorPos = xMotor(currentTrace.frame(1:end));
-                cXStep = xStep(currentTrace.frame(1:end));
-                xChangesFrames = find(cXStep~=0);
-                
-                if isempty(xChangesFrames)
-                    
-                    meanX(i)    = mean(currentTrace.col - mean(currentTrace.col));
-                    absMeanX(i) = mean(abs(currentTrace.col - mean(currentTrace.col)));
-                    stdX(i)     = std(currentTrace.col - mean(currentTrace.col));
-                
-                else
-                    
-                    tmpMean = zeros(length(xChangesFrames),1);
-                    tmpAbsMean = zeros(length(xChangesFrames),1);
-                    tmpSTD = zeros(length(xChangesFrames),1);
-                    tmpTracking = zeros(length(xChangesFrames),1);
-                    for j = 1: length(xChangesFrames)
-                        
-                        if j< length(xChangesFrames)
-                            if j ==1
-                                cRange = currentTrace(1:xChangesFrames(j),:);
-                                %range = intersect(1:xChanges(j),currentTrace.frame);
-                            else
-                                cRange = currentTrace(xChangesFrames(j-1)+1:xChangesFrames(j),:);
-                                %range = intersect(xChanges(j-1)+1:xChanges(j+1),currentTrace.frame);
-                                
-                            end
-                        else
-                            %range = intersect((j~=1)*xChanges(j)+1:length(xStep),currentTrace.frame);
-                            cRange = currentTrace(xChangesFrames(j):end,:);
-                        end
-                        
-                        tmpMean(j) = mean(cRange.col - mean(cRange.col));
-                        tmpAbsMean(j) = mean(abs(cRange.col - mean(cRange.col)));
-                        tmpSTD(j) = std((cRange.col - mean(cRange.col)));
-                        tmpTracking(j) = mean(cRange.col);
-  
-                    end
-                    
-                    meanX(i) = mean(tmpMean);
-                    absMeanX(i) = mean(tmpAbsMean);
-                    stdX(i) = mean(tmpSTD);
-                    xTrackAcc(i) = mean(diff(tmpTracking));
-
-                end
+                motorPos = Motor(currentTrace.frame(1:end))*1000;
+                                                
+                mot = motorPos - mean(motorPos);
+                traceErr = currentTrace.(dim) - mean(currentTrace.(dim));
+                meanErr(i)    = mean(traceErr - mot);
+                absMeanErr(i) = mean(abs(traceErr - mot));
+                stdErr(i)     = std(traceErr - mot);
                 
                 
-            end
-            disp(['mean accuracy: ', num2str(mean(meanX)), ' nm']);
-            disp(['abs mean X: ',num2str(mean(absMeanX)), ' nm']);
-            disp(['std X: ', num2str(mean(stdX)), ' nm']);
-            
-            
-            if all(xTrackAcc==0)
-            else
-            disp(['xTrackAcc: ', num2str(abs(nanmean(nonzeros(xTrackAcc)))), ' nm']);
-            %disp(['tracking compare to motor: ', num2str(abs(nanmean(nonzeros(abs(xTrackAcc))-abs(xStep(currentTrace.frame(xChangesFrames(1)))*1000)))), ' nm']);
-            end
-            
-            xStep  = fliplr(xStep(:)')';%direction are inverted
-            xMotorPos = fliplr(xMotor(:)')';
-            for i =1: length(traces)
-                currentTrace = traces{i};
-                cXStep = xStep(currentTrace.frame(1:end));
-                xChangesFrame = find(cXStep~=0, 1);
-                xChangesFrames = find(xStep~=0);
-                cMotor = xMotorPos(currentTrace.frame);
-                
-                if isempty(xChangesFrame)
-                col = currentTrace.col - mean(currentTrace.col);     
-                figure
-                hold on
-                scatter(currentTrace.frame,col-mean(col))
-                plot(currentTrace.frame,(cMotor-mean(cMotor))*1000)
-                    
-                else
-                
-                col = currentTrace.col - mean(currentTrace.col(1:xChangesFrame(1)));
-                
-                cMotor = cMotor-cMotor(1);
-                
-                
-                figure
-                hold on
-                scatter(currentTrace.frame,col)
-                plot(currentTrace.frame,cMotor*1000)
-                
-                
-                end
-                    
-                
-                
-                
-            end
-
-        end
-        
-        function evalYAccuracy(obj,yStep,yMotor)
-            traces = obj.traces3D;
-            %xChanges = find(xStep~=0)+1;
-            meanY = zeros(length(traces),1);
-            absMeanY = meanY;
-            stdY  = meanY;
-            yTrackAcc = meanY;
-            
-            for i = 1:length(traces)
-                currentTrace = traces{i};
-                motorPos = yMotor(currentTrace.frame(1:end));
-                cYStep = yStep(currentTrace.frame(1:end));
-                yChanges = find(cYStep~=0);
-                
-                if isempty(yChanges)
-                    
-                    meanY(i)    = mean(currentTrace.row - mean(currentTrace.row));
-                    absMeanY(i) = mean(abs(currentTrace.row - mean(currentTrace.row)));
-                    stdY(i)     = std(currentTrace.row - mean(currentTrace.row));
-                
-                else
-                    
-                    tmpMean = zeros(length(yChanges),1);
-                    tmpAbsMean = zeros(length(yChanges),1);
-                    tmpSTD = zeros(length(yChanges),1);
-                    tmpTracking = zeros(length(yChanges),1);
-                    for j = 1: length(yChanges)
-                        
-                        if j< length(yChanges)
-                            if j ==1
-                                cRange = currentTrace(1:yChanges(j),:);
-                                %range = intersect(1:xChanges(j),currentTrace.frame);
-                            else
-                                cRange = currentTrace(yChanges(j-1)+1:yChanges(j),:);
-                                %range = intersect(xChanges(j-1)+1:xChanges(j+1),currentTrace.frame);
-                                
-                            end
-                        else
-                            %range = intersect((j~=1)*xChanges(j)+1:length(xStep),currentTrace.frame);
-                            cRange = currentTrace(yChanges(j):end,:);
-                        end
-                        
-                        tmpMean(j) = mean(cRange.row - mean(cRange.row));
-                        tmpAbsMean(j) = mean(abs(cRange.row - mean(cRange.row)));
-                        tmpSTD(j) = std((cRange.row - mean(cRange.row)));
-                        tmpTracking(j) = mean(cRange.row);
-  
-                    end
-                    
-                    meanY(i) = mean(tmpMean);
-                    absMeanY(i) = mean(tmpAbsMean);
-                    stdY(i) = mean(tmpSTD);
-                    yTrackAcc(i) = mean(diff(tmpTracking));
-
-                end
-                
-                
-            end
-            disp(['mean accuracy Y: ', num2str(mean(meanY)), ' nm']);
-            disp(['abs mean Y: ',num2str(mean(absMeanY)), ' nm']);
-            disp(['std Y: ', num2str(mean(stdY)), ' nm']);
-            if all(yTrackAcc==0)
-            else
-            disp(['yTrackAcc: ', num2str(abs(mean(nonzeros(yTrackAcc)))), ' nm']);
-            %disp(['tracking compare to motor: ', num2str(abs(mean(nonzeros(abs(yTrackAcc))-abs(yStep(currentTrace.frame(yChanges(1)))*1000)))), ' nm']);
-            end
-            
-%            % yStep  = fliplr(yStep(:)')';%direction are inverted
-%             yMotorPos(yMotor<mean(yMotor)) =yMotor(yMotor<mean(yMotor))+ mean(yMotor) ;
-%             yMotorPos(yMotor>mean(yMotor)) =yMotor(yMotor>mean(yMotor))- mean(yMotor) ;
-            for i =1: length(traces)
-                currentTrace = traces{i};
-                cYStep = yStep(currentTrace.frame(1:end));
-                yChangesFrame = find(cYStep~=0, 1);
-                yChanges = find(yStep~=0);
-                cMotor = yMotor(currentTrace.frame);
-              
-                if isempty(yChangesFrame)
-                row = currentTrace.row - mean(currentTrace.row);    
-                figure
-                hold on
-                scatter(currentTrace.frame,row-mean(row))
-                plot(currentTrace.frame,(cMotor-mean(cMotor))*1000)
-                else
-                row = currentTrace.row - mean(currentTrace.row(1:yChangesFrame(1)));
-                
-                cMotor = cMotor-cMotor(1);
-
-                figure
-                hold on
-                scatter(currentTrace.frame,row)
-                plot(currentTrace.frame,cMotor*1000)
-                
-                
-                end
-                
-            end
-        end
-        
-        function evalZAccuracy(obj,zStep,zMotor)
-            traces = obj.traces3D;
-            %xChanges = find(xStep~=0)+1;
-            meanZ = zeros(length(traces),1);
-            absMeanZ = meanZ;
-            stdZ  = meanZ;
-            zTrackAcc = meanZ;
-            
-            for i = 1:length(traces)
-                currentTrace = traces{i};
-                motorPos = zMotor(currentTrace.frame(1:end));
-                cZStep = zStep(currentTrace.frame(1:end));
-                zChanges = find(cZStep~=0);
-                
-                if isempty(zChanges)
-                    
-                    meanZ(i)    = mean(currentTrace.z - mean(currentTrace.z));
-                    absMeanZ(i) = mean(abs(currentTrace.z - mean(currentTrace.z)));
-                    stdZ(i)     = std(currentTrace.z - mean(currentTrace.z));
-                    
-                else
-                    
-                    tmpMean = zeros(length(zChanges),1);
-                    tmpAbsMean = zeros(length(zChanges),1);
-                    tmpSTD = zeros(length(zChanges),1);
-                    tmpTracking = zeros(length(zChanges),1);
-                    for j = 1: length(zChanges)
-                        
-                        if j< length(zChanges)
-                            if j ==1
-                                cRange = currentTrace(1:zChanges(j),:);
-                                %range = intersect(1:xChanges(j),currentTrace.frame);
-                            else
-                                cRange = currentTrace(zChanges(j-1)+1:zChanges(j),:);
-                                %range = intersect(xChanges(j-1)+1:xChanges(j+1),currentTrace.frame);
-                                
-                            end
-                        else
-                            %range = intersect((j~=1)*xChanges(j)+1:length(xStep),currentTrace.frame);
-                            cRange = currentTrace(zChanges(j):end,:);
-                        end
-                        
-                        tmpMean(j) = mean(cRange.z - mean(cRange.z));
-                        tmpAbsMean(j) = mean(abs(cRange.z - mean(cRange.z)));
-                        tmpSTD(j) = std((cRange.z - mean(cRange.z)));
-                        tmpTracking(j) = mean(cRange.z);
-  
-                    end
-                    
-                    meanZ(i) = mean(tmpMean);
-                    absMeanZ(i) = mean(tmpAbsMean);
-                    stdZ(i) = mean(tmpSTD);
-                    zTrackAcc(i) = mean(diff(tmpTracking));
-
-                end
-                
-                
-            end
-            disp(['mean accuracy Z : ', num2str(mean(meanZ)), ' nm']);
-            disp(['abs mean Z: ',num2str(mean(absMeanZ)), ' nm']);
-            disp(['std Z: ', num2str(mean(stdZ)), ' nm']);
-            if all(zTrackAcc==0)
-            else
-            disp(['z Tracking Accuracy: ', num2str(abs(mean(nonzeros(zTrackAcc)))), ' nm']);
-        %    disp(['tracking compare to motor: ', num2str(abs(mean(nonzeros(abs(zTrackAcc))-abs(zStep(currentTrace.frame(zChanges(1)))*1000)))), ' nm']);
-            end
-            
-%             zStep  = fliplr(zStep(:)')';%direction are inverted
-             zMotorPos = zMotor;
-            for i =1: length(traces)
-                currentTrace = traces{i};
-                cZStep = zStep(currentTrace.frame(1:end));
-                zChangesFrame = find(cZStep~=0, 1);
-                zChanges = find(zStep~=0);
-                cMotor = zMotorPos(currentTrace.frame);
                
-                if isempty(zChangesFrame)
-                 z = currentTrace.z - mean(currentTrace.z);     
-                figure
-                hold on
-                scatter(currentTrace.frame,z-mean(z))
-                plot(currentTrace.frame,(cMotor-mean(cMotor))*1000)
-                else
-                 z = currentTrace.z - mean(currentTrace.z(1:zChangesFrame(1)));
-                cMotor = zMotorPos(currentTrace.frame);
-                
-                cMotor = cMotor-cMotor(1);
-                
-                
-                figure
-                hold on
-                scatter(currentTrace.frame,z)
-                plot(currentTrace.frame,cMotor*1000)
-                
-                
-                end
-                       
             end
-            
+            disp(['mean accuracy ', dim,': ', num2str(mean(meanErr)), ' nm']);
+            disp(['abs mean: ', dim,': ', num2str(mean(absMeanErr)), ' nm']);
+            disp(['std X: ',dim,': ', num2str(mean(stdErr)), ' nm']);
+                                      
         end
-        
+
     end
 end
 

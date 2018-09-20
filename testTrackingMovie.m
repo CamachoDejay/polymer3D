@@ -6,7 +6,7 @@ clear
 path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - NormObjCorr';
 path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - normObjCorrPSFE';
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\27\trackingCal - normObjCorr\TrackingXYZ\FluoBeads200_TrackingXYZ_320ms__2';
+path2File = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - NormObjCorr\zStackFluoBeads200_PIC1_270618__5';
 path2Cal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - normObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
 
 detectParam.delta = 6;
@@ -51,8 +51,8 @@ MPTrackMov.showFrame(80);
 %MPTrackMov.showParticle;
 
 %% tracking
-trackParam.euDistXY = 300;
-trackParam.euDistZ  = 400;
+trackParam.euDistXY = 250;
+trackParam.euDistZ  = 300;
 MPTrackMov.trackParticle(trackParam);
 %% plot
 MPTrackMov.showTraces;
@@ -63,17 +63,17 @@ MPTrackMov.evalAccuracy
 %% Susana's figure Movies
 raw = MPTrackMov.getRaw;
 traces = MPTrackMov.getTraces;
-roiRadius = 10;
+%roiRadius = 10;
 currentTraces = traces {1};
-frameRate = 3;
+frameRate = 5;
 mainPos = [round(mean(currentTraces.row)/95) round(mean(currentTraces.col(1)/95))];
-
+frames = 250;
 for i = 1:8
     currentPlane = MPTrackMov.getPlane(i);
-    
-    ROI = currentPlane(mainPos(1)-roiRadius:mainPos(1)+roiRadius,...
-        mainPos(2)-roiRadius:mainPos(2)+roiRadius,:);
-    mov = struct('cdata', cell(1,raw.maxFrame(1)), 'colormap', cell(1,raw.maxFrame(1)));
+    ROI = currentPlane;
+   % ROI = currentPlane(mainPos(1)-roiRadius:mainPos(1)+roiRadius,...
+      %  mainPos(2)-roiRadius:mainPos(2)+roiRadius,:);
+    mov = struct('cdata', cell(1,frames), 'colormap', cell(1,frames));
     Fig = figure;
   %to get as less white border as possible
     ax = gca;
@@ -84,17 +84,17 @@ for i = 1:8
     ax_width = outerpos(3) - ti(1) - ti(3);
     ax_height = outerpos(4) - ti(2) - ti(4);
     ax.Position = [left bottom ax_width ax_height];
-    for j = 1:raw.maxFrame(1)
+    for j = 1:frames
         
         gcf;
         
         imagesc(ROI(:,:,j))
         hold on
         %scale bar
-        x = size(ROI,2)-7:size(ROI,2)-2;
-        y = ones(1,length(x))*size(ROI,1)-2;
-        plot(x,y,'-w','LineWidth',10);
-        
+        x = size(ROI,2)-90:size(ROI,2)-50;
+        y = ones(1,length(x))*size(ROI,1)-40;
+        plot(x,y,'-w','LineWidth',5);
+        caxis([min(min(min(ROI))) max(max(max(ROI)))]);
         axis image;
         set(gca,'visible','off');
         colormap('hot')
