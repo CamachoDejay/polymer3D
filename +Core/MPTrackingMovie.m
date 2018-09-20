@@ -294,23 +294,46 @@ classdef MPTrackingMovie < Core.MPLocMovie
             meanErr = zeros(length(traces),1);
             absMeanErr = meanErr;
             stdErr  = meanErr;
+            figure
             for i = 1:length(traces)
                 
                 currentTrace = traces{i};
                 motorPos = Motor(currentTrace.frame(1:end))*1000;
                                                 
                 mot = motorPos - mean(motorPos);
+                if or(strcmp(dim,'col'),strcmp(dim,'row'))
+                   mot = motorPos - 2*(motorPos.*(mean(motorPos)/max(motorPos)))*mean(motorPos)/max(motorPos);
+                   mot = mot - mean(mot);
+                end
+                
                 traceErr = currentTrace.(dim) - mean(currentTrace.(dim));
                 meanErr(i)    = mean(traceErr - mot);
                 absMeanErr(i) = mean(abs(traceErr - mot));
                 stdErr(i)     = std(traceErr - mot);
                 
-                
-               
+                if size(currentTrace,1) > length(Motor)/2
+                    subplot(1,2,1)
+                    hold on
+                    scatter(currentTrace.frame,traceErr)
+                    plot(currentTrace.frame,mot,'Linewidth',2)
+                    xlabel('frame')
+                    ylabel([dim,' pos (nm) '])
+                    title([dim ' localization compared with motor']);
+                    
+                    subplot(1,2,2)
+                    hold on
+                    plot(traceErr-mot);
+                    
+                    xlabel('frame')
+                    ylabel([dim,' error compare to motor (nm) '])
+                    title(['tracking error']);
+                    hold off
+                end
+
             end
             disp(['mean accuracy ', dim,': ', num2str(mean(meanErr)), ' nm']);
-            disp(['abs mean: ', dim,': ', num2str(mean(absMeanErr)), ' nm']);
-            disp(['std X: ',dim,': ', num2str(mean(stdErr)), ' nm']);
+            disp(['abs mean ', dim,': ', num2str(mean(absMeanErr)), ' nm']);
+            disp(['std ',dim,': ', num2str(mean(stdErr)), ' nm']);
                                       
         end
 

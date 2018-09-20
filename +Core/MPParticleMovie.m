@@ -589,7 +589,7 @@ classdef MPParticleMovie < Core.MPMovie
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
             assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
 
-            thresh = 8;
+            thresh = 4;
             [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row, current.col],...
                 [next.row, next.col],thresh);
             
