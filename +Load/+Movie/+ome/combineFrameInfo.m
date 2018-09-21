@@ -6,7 +6,10 @@ function [frameInfo,totFrame] = combineFrameInfo(frameInfo,fullCombine)
     for i = 1 : size(frameInfo,1)
         cFrameInfo = frameInfo{i};
         tmp = [tmp, cFrameInfo];
-        totFrame = [totFrame(1) + str2double(cFrameInfo(end-1).T)+1,totFrame(2) + str2double(cFrameInfo(end).T)+1];
+        
+        fCam1 = {cFrameInfo(:,contains({cFrameInfo.C},'0')).T};
+        fCam2 = {cFrameInfo(:,contains({cFrameInfo.C},'1')).T};
+        totFrame = [totFrame(1) + str2double(fCam1{end})+1,totFrame(2) + str2double(fCam2{end})+1];
     end
 
     frameInfo = tmp;
@@ -53,5 +56,6 @@ function [frameInfo,totFrame] = combineFrameInfo(frameInfo,fullCombine)
 
         end
     end
+    assert(totFrame(1) == totFrame(2),'Number of frame of both camera are not consistent');
     %disp('combining done');
 end

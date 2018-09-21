@@ -153,6 +153,9 @@ classdef MPTrackingMovie < Core.MPLocMovie
                 
             end
             
+            int = mean(int);
+            SNR = mean(SNR);
+           
             
         end
         
@@ -430,7 +433,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             meanErr = zeros(length(traces),1);
             absMeanErr = meanErr;
             stdErr  = meanErr;
-            figure
+            Fig = figure;
             for i = 1:length(traces)
                 
                 currentTrace = traces{i};
@@ -470,7 +473,8 @@ classdef MPTrackingMovie < Core.MPLocMovie
             disp(['mean accuracy ', dim,': ', num2str(mean(meanErr)), ' nm']);
             disp(['abs mean ', dim,': ', num2str(mean(absMeanErr)), ' nm']);
             disp(['std ',dim,': ', num2str(mean(stdErr)), ' nm']);
-                                      
+            filename = [obj.raw.movInfo.Path filesep dim '-Fig'];
+            saveas(Fig,filename,'svg');
         end
 
     end

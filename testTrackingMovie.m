@@ -6,7 +6,7 @@ clear
 path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
 path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\27\trackingCal - maxObjCorr\TrackingX\FluoBeads200_TrackingX_320ms__1';
+path2File = 'E:\Data\Leuven Data\2018\06-June\27\trackingCal - maxObjCorr\TrackingX\FluoBeads200_TrackingX_160ms__1';
 path2Cal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
 
 detectParam.delta = 6;
@@ -71,5 +71,5 @@ ROIradius = 10;
 frameRate = 3;
 
 %MPTrackMov.getTracesMovie
-MPTrackMov.getTraces3DMovie(frame,idx2Trace,frameRate);
+%MPTrackMov.getTraces3DMovie(frame,idx2Trace,frameRate);
 %MPTrackMov.getPartMovie
