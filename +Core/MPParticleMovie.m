@@ -588,7 +588,7 @@ classdef MPParticleMovie < Core.MPMovie
             %This function is designed to have PSFE plate ON
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
             assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
-
+            
             thresh = 4;
             [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row, current.col],...
                 [next.row, next.col],thresh);
@@ -690,6 +690,45 @@ classdef MPParticleMovie < Core.MPMovie
             end
         end
         
+        function [int,SNR] = getIntensity(ROI,row,col,sig)
+            %extract central position
+            center = [ceil(size(ROI,1)/2),ceil(size(ROI,2)/2)];
+            rowPos = center(1)+round(row);
+            colPos = center(2)+round(col);
+            %we integrate at 3*sigma (take ROI
+            roiSignal = ceil(3*sig);
+            
+            %get the idx for the ROI to integrate
+            rowIdx = rowPos-roiSignal(1):rowPos+roiSignal(1);
+            colIdx = colPos-roiSignal(2):colPos+roiSignal(2);
+            
+            %Pixel to integrate for signal
+            px2SumInt = ROI(rowIdx,colIdx);
+            
+            %calculate signal
+            Signal = sum(sum(px2SumInt));
+            
+            %get number of pixel integrated to use the same for bkg
+            nPixel = size(px2SumInt,1)*size(px2SumInt,2);
+            
+            %get background pixels
+            bkgBackground = ROI;
+            bkgBackground(rowIdx,colIdx) = 0;
+            px2SumBkg = bkgBackground(bkgBackground~=0);
+            
+            %Sample background or scale it
+            if length(px2SumBkg(:))>= nPixel
+                px2SumBkg = datasample(px2SumBkg(:),nPixel);
+            	bkg = sum(px2SumBkg);
+            else
+                disp('padding bkg to integrate')
+                bkg = sum(px2SumBkg)*nPixel/length(px2SumBkg(:));
+            end
+            %calculate the intensity and the SNR
+            int = Signal-bkg;
+            SNR = int/std(double(px2SumBkg));
+
+        end
        
      end
      
@@ -768,12 +807,12 @@ classdef MPParticleMovie < Core.MPMovie
                     zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
                     zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
                     'VariableNames',varNames);
-                
+                sigSetup = [obj.info.sigma_px obj.info.sigma_px];
             for i = 1:size(frameCandidate,1)
                 
                 plane = frameCandidate.plane(i);
                 planeData = data.(sprintf('plane%d',plane));
-                sig = [obj.info.sigma_px obj.info.sigma_px];
+                
                 %Get the ROI
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
@@ -782,23 +821,23 @@ classdef MPParticleMovie < Core.MPMovie
                 [row,col,e,magX,magY] = Localization.phasor(ROI);
                 
                  %LRT focus metric
-                [fMetric,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
+                [fMetric,~] = Localization.likelihoodRatioTest(ROI,sigSetup,[row col]);
                 
                 if magX>=magY
-                    sig(1) = sig(1) * magX/magY;
+                    sig(1) = sigSetup(1) * magX/magY;
+                    sig(2) = sigSetup(2);
                 else
-                    sig(2) = sig(2) * magY/magX;
+                    sig(1) = sigSetup(1);
+                    sig(2) = sigSetup(2) * magY/magX;
                 end
-                
+               
+                [int,SNR] = obj.getIntensity(ROI,row,col,sigSetup);
                 %LRT focus metric
                 [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
                 
                 rowPos = frameCandidate.row(i) + row;
                 colPos = frameCandidate.col(i) + col;
 
-%                 [grad,~] = imgradient(ROI);
-%                 Grad = max(max(grad,[],2),[],1);
-                
                 %storing info
                 candMet.row(i) = rowPos;
                 candMet.col(i) = colPos;
@@ -806,14 +845,18 @@ classdef MPParticleMovie < Core.MPMovie
                 candMet.ellip(i) = e;
                 candMet.magX(i) = magX;
                 candMet.magY(i) = magY;
+                candMet.intensity(i) = int;
+                candMet.SNR(i) = SNR;
                 candMet.meanFAR(i) = frameCandidate.meanFAR(i);
                 candMet.fMetric(i) = fMetric;
                 candMet.gFitMet(i) = gFitMet;
                 candMet.plane(i) = plane;
+                
             end
 
         end
-              
+        
+       
      end
 end
 
