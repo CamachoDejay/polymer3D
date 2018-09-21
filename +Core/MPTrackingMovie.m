@@ -139,6 +139,141 @@ classdef MPTrackingMovie < Core.MPLocMovie
                     'if it is not the case, it might result in unexpected numbers']);
             end           
         end
+        
+        function [int,SNR] = getAvgIntensity(obj)
+            assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting average intensity');
+            traces = obj.traces3D;
+            nTraces = length(traces);
+            int = zeros(nTraces,1);
+            SNR = zeros(nTraces,1);
+            for i = 1: length(traces)
+                currentTrace = traces{i};
+                int(i) = mean(currentTrace.intensity);
+                SNR(i) = mean(currentTrace.SNR);
+                
+            end
+            
+            
+        end
+        
+        function getTracesMovie(obj,frames,idx2Trace,ROI,frameRate)
+            
+            obj.getPartMovie(obj,frames,idx2Trace,ROI,frameRate);
+            
+            obj.getTrace3DMovie(obj,frames,idx2Trace,frameRate);
+        end
+        
+          function getPartMovie(obj,frames,idx2Trace,ROI,frameRate)
+            
+            path2File = obj.raw.movInfo.Path;
+            traces = obj.traces3D;
+            roiRadius = ROI;
+            currentTraces = traces {idx2Trace};
+            mainPos = [round(mean(currentTraces.row)/95) round(mean(currentTraces.col(1)/95))];
+            nFrames = length(frames);
+            frames = currenTraces.frames(1:nFrames);
+            
+            for i = obj.calbrated.nPlanes
+                
+                currentPlane = MPTrackMov.getPlane(i);
+                % ROI = currentPlane;
+                ROI = currentPlane(mainPos(1)-roiRadius:mainPos(1)+roiRadius,...
+                mainPos(2)-roiRadius:mainPos(2)+roiRadius,:);
+                mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
+                Fig = figure;
+                %to get as less white border as possible
+                ax = gca;
+                outerpos = ax.OuterPosition;
+                ti = ax.TightInset; 
+                left = outerpos(1) + ti(1);
+                bottom = outerpos(2) + ti(2);
+                ax_width = outerpos(3) - ti(1) - ti(3);
+                ax_height = outerpos(4) - ti(2) - ti(4);
+                ax.Position = [left bottom ax_width ax_height];
+                
+                    for j = 1:nFrames
+                    
+                    gcf;
+                    imagesc(ROI(:,:,frames(j)))
+                    hold on
+                    %scale bar
+                    x = size(ROI,2)-13:size(ROI,2)-3;
+                    y = ones(1,length(x))*size(ROI,1)-3;
+                    plot(x,y,'-w','LineWidth',5);
+                    caxis([min(min(min(ROI))) max(max(max(ROI)))]);
+                    axis image;
+                    set(gca,'visible','off');
+                    colormap('hot')
+                    drawnow;
+
+                    hold off
+                    mov(j) = getframe(Fig);
+
+                    end
+                ext='.mp4';
+                filename=sprintf('%s%splane%d-Trace%d%s', path2File,'\',i,idx2Trace,ext);
+                v = VideoWriter(filename,'MPEG-4');
+                v.FrameRate = frameRate;
+                open(v)
+                writeVideo(v,mov);
+                close(v)
+            
+            end
+
+          end
+    
+          function getTraces3DMovie(obj,frames,idx2Trace,frameRate)
+            
+%             sizeMarker = 5;
+            Fig = figure;
+            
+            path2File = obj.raw.movInfo.Path;
+            traces = obj.traces3D;
+            currentTraces = traces {idx2Trace};
+           
+            nFrames = length(frames);
+            [frames] = obj.checkFrame(frames,size(currentTraces,1));
+            frames = currentTraces.frame(1:nFrames);
+            
+            xAx = [min(currentTraces.col-mean(currentTraces.col)),...
+                max(currentTraces.col-mean(currentTraces.col))];
+            yAx = [min(currentTraces.row-mean(currentTraces.row)),...
+                max(currentTraces.row-mean(currentTraces.row))];
+            zAx = [min(currentTraces.z-mean(currentTraces.z)),...
+                max(currentTraces.z-mean(currentTraces.z))];
+            mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
+            gcf;
+            hold on
+            for j = 1:nFrames
+                
+                colPlot = currentTraces.col(1:j) - mean(currentTraces.col);
+                rowPlot = currentTraces.row(1:j) - mean(currentTraces.row);
+                zPlot = currentTraces.z(1:j) - mean(currentTraces.z);
+                %plotting with z coloring:
+                patch([colPlot nan(size(colPlot))],[rowPlot nan(size(colPlot))],...
+                    [zPlot nan(size(colPlot))],[zPlot nan(size(colPlot))],...
+                    'EdgeColor','interp','FaceColor','none')
+               
+                xlim(xAx)
+                ylim(yAx)
+                zlim(zAx)
+                view(3);
+              
+                mov(j) = getframe(Fig);
+
+                xlabel('x Position (nm)');
+                ylabel('y Position(nm)');
+                zlabel('z Position(nm)');
+            end
+
+            ext='.mp4';
+            filename=sprintf('%s%sTracking-Trace%d%s', path2File,'\',idx2Trace,ext);
+            v = VideoWriter(filename,'MPEG-4');
+            v.FrameRate = frameRate;
+            open(v)
+            writeVideo(v,mov);
+            close(v)
+        end
          
     end
     
@@ -272,7 +407,8 @@ classdef MPTrackingMovie < Core.MPLocMovie
                     if ~isnan(currentTrace)
                         
                         traces3D{currentTrace}(fCounter(currentTrace),...
-                            {'row','col','z','frame'}) = [currentPart(:,{'row','col','z'}),  table(i)];
+                            {'row','col','z','intensity','SNR','frame'}) =...
+                            [currentPart(:,{'row','col','z','intensity','SNR'}),  table(i)];
                         
                         
                         fCounter(currentTrace) = fCounter(currentTrace)+1;
