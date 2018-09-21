@@ -200,12 +200,12 @@ classdef MPLocMovie < Core.MPParticleMovie
                 for j = 1:length(frameData)
                     SRList{i}{j} = SRList{i}{j}(1,{'row','col','z'});
                     partData = frameData{j};
-                    [row,col,z] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}),val2Use);
+                    [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}),val2Use);
                     
-                    SRList{i}{j}.row = row;
-                    SRList{i}{j}.col = col;
-                    SRList{i}{j}.z = z;
-                    
+                    SRList{i}{j} = data;
+                    SRList{i}{j}.intensity = partData.intensity(3);
+                    SRList{i}{j}.SNR = partData.SNR(3);
+
                 end
             end
                 
@@ -415,7 +415,7 @@ classdef MPLocMovie < Core.MPParticleMovie
              
         end
         
-        function [row,col,z]  = resolveXYZ(obj,partData,val2Use)
+        function [data]  = resolveXYZ(obj,partData,val2Use)
             ellipRange = obj.ZCal.fitZParam.ellipRange;  
             pxSize = obj.info.pxSize;
             switch val2Use
@@ -431,9 +431,8 @@ classdef MPLocMovie < Core.MPParticleMovie
                 otherwise
                     error('Unknown value to use, only know "bestFocus" and "mean"');
             end
-          
-            
-        end
+            data = table(row,col,z,'VariableNames',{'row','col','z'});
+         end
         
         function [method] = pickZFitMethod(obj)
             
