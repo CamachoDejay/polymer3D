@@ -4,19 +4,19 @@ close all
 clc
 
 %% Load block
-tmp = load('N:\Project Z-stacks\New stacks\1K_0.25mg_30 nm_sample 1\tif_1K_0.25 mg-30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
+tmp = load('N:\Project Z-stacks\New stacks\5K_0.25mg_30 nm_Sample 2\tif_5K_0.25mg_30 nm_Sample 2\correct stack\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table05 = tmp.(names{1});
 clear tmp names
 % Load second file
-tmp = load('N:\Project Z-stacks\New stacks\5K_0.25 mg_30 nm_Sample 1\tif_5K_0.25 mg_30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
+tmp = load('N:\Project Z-stacks\New stacks\5k_0.5 mg 30 nm_Sample 2\tif_5K_0.5mg_30 nm_Sample 2\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table075 = tmp.(names{1});
 clear tmp names
 % Loqd third file
-tmp = load('N:\Project Z-stacks\New stacks\1K_1 mg_30 nm_sample 1\TIF_1K_1 mg_0_30 nm_Sample1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
+tmp = load('N:\Project Z-stacks\New stacks\5K_1 mg_30nm_Sample 2\tif_5K_1 mg_30nm_Sample 2\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table1 = tmp.(names{1});

@@ -90,13 +90,13 @@ hold off
 a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
-title({'CCDF-plot for area of pores','PIC/pnipam; hydrogel 0.5 mg/ml heat response'})
+title({'3 concentrations','hydrogel 1K'})
 xlabel('Pore size (micrometer^2)')
 ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;
 % ylim([1e-6 1])
 % xlim([0.1 1e5])
-legend({'cold 1','hot 1','cold 2'})
+legend({'0.5 mg/ml','0.75 mg/ml','1 mg/ml'})
 
 %% Condition 1
 figure()
@@ -119,7 +119,7 @@ end
 a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
-title({'CCDF-plot for area of pores','PIC/pnipam; hydrogel 0.5 mg/ml heat response COLD 1'})
+title({'CCDF-plot for area of pores','1K PIC_sample 2_0.25 mg/ml'})
 xlabel('Pore size (micrometer^2)')
 ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;
@@ -149,7 +149,7 @@ end
 a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
-title({'CCDF-plot for area of pores','PIC/pnipam; hydrogel 0.5 mg/ml heat response HOT 1'})
+title({'CCDF-plot for area of pores','1K PIC_sample 2_0.5 mg/ml'})
 xlabel('Pore size (micrometer^2)')
 ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;
@@ -179,7 +179,7 @@ end
 a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
-title({'CCDF-plot for area of pores','PIC/pnipam; hydrogel 0.5 mg/ml heat response COLD 2'})
+title({'CCDF-plot for area of pores','1K PIC_sample 2_1 mg/ml'})
 xlabel('Pore size (micrometer^2)')
 ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;

@@ -159,8 +159,8 @@ function H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation)
     %Calculate the error bars
     uE=y+errBar(1,:);
     lE=y-errBar(2,:);
-
-
+    %!!!!!!! Edition of original code
+    lE(lE<=0) = min(abs(lE));
     %Add the patch error bar
 
 

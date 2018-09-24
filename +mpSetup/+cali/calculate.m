@@ -20,10 +20,10 @@ cal.reorder    = true;
 
 
 % load general information about the calibration movie
-[frameInfo, movInfo, ~ ]= loadMovie.ome.getInfo( fPath );
+[frameInfo, movInfo, ~ ]= Load.Movie.ome.getInfo( fPath );
 
 % load the data 
-[ movC1, movC2, idx ] = loadMovie.ome.load( frameInfo, movInfo, 1:movInfo.maxFrame );
+[ movC1, movC2, idx ] = Load.Movie.ome.load( frameInfo, movInfo, 1:movInfo.maxFrame );
 
 h = waitbar(0,'Please wait...');
 % store information about position given by the motors

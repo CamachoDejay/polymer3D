@@ -6,8 +6,8 @@ clear
 close all
 clc
 
-fPath = 'E:\Data\Leuven Data\2018\03-Mar\22\PlaneCaibration\BeadsCalibrationZStack_1';
-fName = 'BeadsCalibrationZStack_1_MMStack_Pos0.ome.tif';
+fPath = 'C:\Data\Boris\SetupCalibration\August';
+fName = 'PlaneCalibration_1_MMStack_Pos0.ome.tif';
 
 fPath = [fPath filesep fName];
 
@@ -19,7 +19,7 @@ fPath = [fPath filesep fName];
 zFocus = zeros(1,size(cal.focusMet,2));
 zFocus2 = zeros(1,size(cal.focusMet,2));
 for k=1:size(cal.focusMet,2)
-    [out,Fit] = Misc.gauss1DFit(cal.focusMet(:,k),cal.Zpos);
+    [out,Fit] = SimpleFitting.gauss1D(cal.focusMet(:,k),cal.Zpos);
     zFocus(k) = out(2);
 end
 zFocus = zFocus(cal.neworder); %give the right order to the channels
@@ -31,6 +31,8 @@ offTarget = mean(abs(offTarget1));
 
 message = sprintf('The difference between the target and the current plane conformation is %d',offTarget);
 disp(message);
+
+%%
 % load and calibrate, when applied to the calibration data then we should
 % be able to demonstrate that it works
 [data] = mpSetup.loadAndCal( fPath, cal );

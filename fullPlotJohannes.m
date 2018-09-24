@@ -68,7 +68,7 @@ title('1K all samples all stacks')
 legend([p13(1) p23(1) p12(1) p11(1)],{'Sample1-1.00mg/mL','Sample2-1.00mg/mL','0.50mg/mL','0.25mg/mL'})
 hold off
 
-clear p11 p12 p13 p21 p22 p23;
+%clear p11 p12 p13 p21 p22 p23;
 %% FullCDF picture 5K
 
 %#1 Try without error bars
@@ -163,6 +163,7 @@ for i = 1 : numField
 end
 hold off
 a = gca;
+ylim([1e-6 1]);
 a.XScale = 'log';
 a.YScale = 'log';
 xlabel('Pore Size (um^2)')
@@ -227,7 +228,7 @@ color = ['-g';'-b';'-r'];
 
 for i = 1 : numField
     
-    totData = [S1_5K.(name{i})(1).allCCDF; S2_5K.(name{i})(1).allCCDF];
+    totData = [S1_1K.(name{i})(1).allCCDF; S2_1K.(name{i})(1).allCCDF];
     [x,ind] = sort(totData(:,1));
     [midBin, Freq, LFreq] = Plotting.lnbin(x,nBins);
     y = totData(ind,2);
