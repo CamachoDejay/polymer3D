@@ -4,25 +4,32 @@
 % The program segments the stacks (e.g. binarization pore-material) and
 % save the information for further analysis
 
-clear
+clear 
 close all
 clc
 
 %% User Input
-prompt = {'Enter number of frame to analyze ',...
+prompt = {'Enter initial frame','Enter number of frames to analyze ',...
     'Enter the desired threshold sensitivity ([0 1])'};
 dlgTitle = 'User input for image segmentation';
 numLines = 1;
-defaultVal = {'244','0.6'};
+defaultVal = {'1','76','0.6'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 
 %% Checking user input
 assert(~isempty(answer),'User canceled input dialog, Simulation was aborted')
 
-nFrame = str2double(answer(1));
+iniFra = round(str2double(answer(1)));
+assert(~isnan(iniFra),'Initial frame should be numerical');%If not a number
+nFrame = round(str2double(answer(2)));
 assert(~isnan(nFrame),'Number of Frame should be numerical');%If not a number
 
-Threshold = str2double(answer(2));
+finFra = iniFra + nFrame - 1;
+assert(finFra>=iniFra, 'WTF not expected')
+frames2load = iniFra:finFra;
+assert(iniFra>0, 'indexing starts at 1')
+
+Threshold = str2double(answer(3));
 assert(~isnan(Threshold),'Number of Frame should be numerical');%If not a number
 assert(and(Threshold > 0, Threshold <=1),...
     'Threshold sensitivity should be between 0 and 1');
@@ -37,7 +44,7 @@ assert(~isempty(file2Analyze), sprintf('no %s found in the directory', fileExt))
 %% load full stack
 nFiles = size(file2Analyze,1);
 
-parfor i = 1 : nFiles
+for i = 1 : nFiles
 
     disp(['Loading stack --------------' file2Analyze(i).name])
     disp('This can take a few minutes ~2')
@@ -49,9 +56,9 @@ parfor i = 1 : nFiles
     warning('off','all');
     %Check number of Frame
     tNframes = fileInfo.Frame_n;
-    assert(tNframes>=nFrame,'Requested number of frame is larger than the number of frame in the file')
+    assert(tNframes>=finFra,'Requested number of frame is larger than the number of frame in the file')
     
-    IM     = Load.Movie.tif.getframes(p2file, 1:nFrame); %Loading on of the frame
+    IM     = Load.Movie.tif.getframes(p2file, frames2load); %Loading on of the frame
     warning('on','all');
     toc
     disp('DONE with loading --------------')
@@ -80,8 +87,19 @@ parfor i = 1 : nFiles
 
     % get list of indices
     dIDX = 512; % to split stack in 512*512*Z chunks
+    mod1 = mod(imSize(1),dIDX);
+    mod2 = mod(imSize(2),dIDX);
+    assert(or(mod1==0,mod1>50), 'Your chunck size is generating problems on 1st index')
+    assert(or(mod2==0,mod2>50), 'Your chunck size is generating problems on 2nd index')
+    
+    
     xi = 1:dIDX:imSize(1);
     xf = dIDX:dIDX:imSize(1);
+    if xf(end)~= imSize(1)
+        xf = [xf, imSize(1)];
+    end
+    assert(length(xi)==length(xf), 'Problems! indexing over the volume')
+    
     IDX = zeros(length(xi)*length(xf),4);
 
     [XX, YY] = meshgrid(xi,xf);
@@ -151,35 +169,11 @@ parfor i = 1 : nFiles
   
     
     fclose(fid);
-    close(h);
+    %close(h);
 end
 h = msgbox('The Data were succesfully saved !', 'Success');
+%%
 %%%%%%%%%%%%%%% Plotting %%%%%%%%%%%%%%%
-
-% figure(1)
-% shg
-% SE = strel('disk',3);
-% 
-% for j = round(linspace(1,nFrame,10))
-%     subplot(1,2,1)
-%     A = IMs(:,:,j);
-%     B = BWglobal(:,:,j);
-%     B = bwperim(B);
-%     B = imdilate(B,SE);
-%     C = imfuse(A,B,'ColorChannels',[2 1 0]);
-%     imagesc(C)
-%     axis image
-%     title('global')
-% 
-%     subplot(1,2,2)
-%     A = IMs(:,:,j);
-%     B = BWadapt(:,:,j);
-%     B = bwperim(B);
-%     B = imdilate(B,SE);
-%     C = imfuse(A,B,'ColorChannels',[2 1 0]);
-%     imagesc(C)
-%     axis image
-%     title('adaptive')
-%     waitforbuttonpress
-%
-%end
+idx = 1;
+path = file2Analyze.folder;
+imSegmentation.checkSegmentation(path,idx);

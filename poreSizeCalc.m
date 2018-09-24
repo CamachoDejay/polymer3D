@@ -2,10 +2,11 @@ clear;
 clc;
 close all;
 %% User Input
-prompt = {'Enter the pixel size: ','Enter number of frame to analyze: '};
+prompt = {'Enter the pixel size: ','Enter number of frame to analyze: ',...
+    'number of frame to ignore beginning:', 'number of frame to ignore end:','Stack to ignore:'};
 dlgTitle = 'User input for Pore size calculation';
 numLines = 1;
-defaultVal = {'100','244'};
+defaultVal = {'100','244','0','0','0'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 
 %% Checking user input
@@ -16,6 +17,15 @@ assert(~isnan(pxSize),'Number of Frame should be numerical');%If not a number
 
 nFrame = str2double(answer(2));
 assert(~isnan(nFrame),'Number of Frame should be numerical');%If not a number
+
+bIgnore = str2double(answer(3));
+assert(~isnan(bIgnore),'Number of Frame to ignore should be numerical');
+
+aIgnore = str2double(answer(4));
+assert(~isnan(aIgnore),'Number of Frame to ignore should be numerical');
+
+sIgnore = str2double(answer(3));
+assert(~isnan(bIgnore),'Number of Frame should be numerical');
 
 fileExt = '.tif';
 outputName = 'PoreSize-Results';
@@ -30,15 +40,38 @@ pxArea = pxSize*pxSize*1e-6; %in µm^2
 
 %h = waitbar(0);
 nImStacks = size(file2Analyze,1);
+idx2Stack = 1:nImStacks;
+if sIgnore~=0
+    nImStacks = nImStacks-length(sIgnore);
+    idx2Stack(idx2Stack == sIgnore) = [];
+end
 
-allDataAdapt = [];
-allDataAuto = [];
-parfor j = 1:nImStacks
+if bIgnore ~=0
+    startIdx = bIgnore;
+else
+    startIdx = 1;
+end
+
+if aIgnore ~= 0
+    endIdx = nFrame-aIgnore;
+else
+    endIdx = nFrame;  
+end
+
+allDataAdapt = struct('filename', [], 'Data', []);
+allDataAuto = struct('filename', [], 'Data', []);
+
+allDataAdapt(length(idx2Stack)/2).filename = [];
+allDataAuto(length(idx2Stack)/2).filename = [];
+nAdapt = 1;
+nAuto  = 1;
+for j = 1:length(idx2Stack)
+    jdx = idx2Stack(j);
    % hMessage = sprintf('Loading image stack number %d/%d',j,nImStacks);
     %waitbar(0,h,hMessage);
     %Data loading
-    path2Stacks = strcat(file2Analyze(j).folder,filesep);
-    tmpName = file2Analyze(j).name;
+    path2Stacks = strcat(file2Analyze(jdx).folder,filesep);
+    tmpName = file2Analyze(jdx).name;
     p2file      = strcat(path2Stacks,tmpName);
     warning('off','all')
     fileInfo    = Load.Movie.tif.getinfo(p2file);
@@ -55,7 +88,9 @@ parfor j = 1:nImStacks
     nIM = nFrame;
    % waitbar(j/nImStacks,h,hMessage);
     disp('Loading Data');
-    for i=1:nIM %% PARFOR CAN BE PLACED HERE
+    totVol = 0;
+    filledVolume = 0;
+    parfor i=startIdx:endIdx %% PARFOR CAN BE PLACED HERE
         
         % Loading image number i
         warning('off','all')
@@ -91,8 +126,9 @@ parfor j = 1:nImStacks
         regData = [tTmp, regData];
         % store
         tifStackData = [tifStackData; regData];
-        %TODO:
-        %Calculate pore volume fraction
+        totVol = totVol + numel(IM);
+        filledVolume  = filledVolume + sum(sum(~IM));
+       
     end
     
     % add info about tif index
@@ -103,9 +139,17 @@ parfor j = 1:nImStacks
     
     % store in main table
     if ~isempty(strfind(file2Analyze(j).name,'adapt'))
-        allDataAdapt = [allDataAdapt; tifStackData];
+        
+        %allDataAdapt = [allDataAdapt; tifStackData];
+        allDataAdapt(nAdapt).filename = file2Analyze(j).name;
+        allDataAdapt(nAdapt).Data = tifStackData;
+        allDataAdapt(nAdapt).Data.filledVolume(1) = filledVolume;%stillPX
+        allDataAdapt(nAdapt).Data.totVolume(1)    = totVol;%stillPX
+        nAdapt = nAdapt+1;
     else
-        allDataAuto = [allDataAuto; tifStackData];
+        allDataAuto(nAuto).filename = file2Analyze(j).name;
+        allDataAuto(nAuto).Data = tifStackData;
+        nAuto = nAuto+1;
     end
     disp('---------------------NEXT TIF ----------')
 end
@@ -128,11 +172,20 @@ save([ outDir 'Automated-poreProps.mat'],'allDataAuto')
 h = msgbox('The Data were succesfully saved !', 'Success');
 
 %% Plotting
-totalAdapt = allDataAdapt.Area;
+
+totalAdapt = [];
+totalGlobal = [];
+for i = 1 : length(allDataAdapt)
+    
+    totalAdapt  = [totalAdapt ; allDataAdapt(i).Data.Area];
+    totalGlobal = [totalGlobal ;  allDataAuto(i).Data.Area];
+
+end
+
 totalAdapt = totalAdapt(:);
 [CDF,CCDF] = Plotting.getCDF(totalAdapt);
 
-totalGlobal = allDataAuto.Area;
+
 totalGlobal  = totalGlobal (:);
 [CDF2,CCDF2] = Plotting.getCDF(totalGlobal);
 
