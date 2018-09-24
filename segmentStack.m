@@ -33,10 +33,11 @@ outputName  = 'SegmentedStacks';
 %% Loading Data
 %Load folder, and create a folder for data output.
 [file2Analyze,currentFolderName,outDir] = Load.Folder(fileExt,outputName);
-assert(~isempty(file2Analyze),'no %s file found in the directory', fileExt);
+assert(~isempty(file2Analyze), sprintf('no %s found in the directory', fileExt));
 %% load full stack
+nFiles = size(file2Analyze,1);
 
-for i = 1 : size(file2Analyze,2)
+parfor i = 1 : nFiles
 
     disp(['Loading stack --------------' file2Analyze(i).name])
     disp('This can take a few minutes ~2')
@@ -89,12 +90,12 @@ for i = 1 : size(file2Analyze,2)
     [XX, YY] = meshgrid(xf,xi);
     IDX(:,2) = XX(:);
     IDX(:,3) = YY(:);
-    clear XX YY xi xf 
+    %clear XX YY xi xf %Removed for parallel computing
 
     lastIDX = size(IDX,1);
     lastStr = num2str(lastIDX);
     diskDim = 4;
-    h = waitbar(0, sprintf('Starting segmentation of stack %d/%d...',i,size(file2Analyze,2)));
+  %  h = waitbar(0, sprintf('Starting segmentation of stack %d/%d...',i,nFiles));
     for j = 1:lastIDX
         tic
         iStr = num2str(j);
@@ -121,8 +122,8 @@ for i = 1 : size(file2Analyze,2)
         BWglobal(xi:xf,yi:yf,:) = BW;
         disp(['Done global step ' iStr '/' lastStr ])
         toc
-        waitbar(j/lastIDX,h,sprintf('Segmentation of stack %d/%d... %d percent achieved',...
-            i,size(file2Analyze,2), round(j/lastIDX*100)));
+%         waitbar(j/lastIDX,h,sprintf('Segmentation of stack %d/%d... %d percent achieved',...
+%             i,nFiles, round(j/lastIDX*100)));
     end
 
     %%%%%%%%%%%%%%% Data storing %%%%%%%%%%%%%%%
@@ -151,35 +152,34 @@ for i = 1 : size(file2Analyze,2)
     
     fclose(fid);
     close(h);
-
-    %%%%%%%%%%%%%%% Plotting %%%%%%%%%%%%%%%
-    if i==1 %only plot for the first stack
-        figure(1)
-        shg
-        SE = strel('disk',3);
-        for j = 1:50
-            subplot(1,2,1)
-            A = IMs(:,:,j);
-            B = BWglobal(:,:,j);
-            B = bwperim(B);
-            B = imdilate(B,SE);
-            C = imfuse(A,B,'ColorChannels',[2 1 0]);
-            imagesc(C)
-            axis image
-            title('global')
-
-            subplot(1,2,2)
-            A = IMs(:,:,j);
-            B = BWadapt(:,:,j);
-            B = bwperim(B);
-            B = imdilate(B,SE);
-            C = imfuse(A,B,'ColorChannels',[2 1 0]);
-            imagesc(C)
-            axis image
-            title('adaptive')
-            waitforbuttonpress
-
-        end
-    end
 end
+h = msgbox('The Data were succesfully saved !', 'Success');
+%%%%%%%%%%%%%%% Plotting %%%%%%%%%%%%%%%
 
+% figure(1)
+% shg
+% SE = strel('disk',3);
+% 
+% for j = round(linspace(1,nFrame,10))
+%     subplot(1,2,1)
+%     A = IMs(:,:,j);
+%     B = BWglobal(:,:,j);
+%     B = bwperim(B);
+%     B = imdilate(B,SE);
+%     C = imfuse(A,B,'ColorChannels',[2 1 0]);
+%     imagesc(C)
+%     axis image
+%     title('global')
+% 
+%     subplot(1,2,2)
+%     A = IMs(:,:,j);
+%     B = BWadapt(:,:,j);
+%     B = bwperim(B);
+%     B = imdilate(B,SE);
+%     C = imfuse(A,B,'ColorChannels',[2 1 0]);
+%     imagesc(C)
+%     axis image
+%     title('adaptive')
+%     waitforbuttonpress
+%
+%end
