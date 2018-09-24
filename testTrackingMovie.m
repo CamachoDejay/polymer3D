@@ -6,11 +6,11 @@ clear
 path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
 path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\27\trackingCal - maxObjCorr\TrackingX\FluoBeads200_TrackingX_160ms__1';
-path2Cal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
+path2File = 'E:\Data\Leuven Data\2018\06-June\29\5K - 0_25mgmL\TL-FluoBeads200nm-PIC0_25mgmL-5K_1';
+path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 60;
 %%
 calib = Core.MPCalibration(path2Cal);
 
@@ -43,20 +43,20 @@ MPTrackMov.superResolve(val2Use);
 %% plot
 frames = 1:100;
 
-MPTrackMov.showCorrLoc();
+%MPTrackMov.showCorrLoc();
 
 %% showFrame
 
-MPTrackMov.showFrame(80);
+%MPTrackMov.showFrame(80);
 %MPTrackMov.showParticle;
 
 %% tracking
-trackParam.euDistXY = 300;
-trackParam.euDistZ  = 300;
+trackParam.euDistXY = 600;
+trackParam.euDistZ  = 600;
 MPTrackMov.trackParticle(trackParam);
 traces = MPTrackMov.getTraces;
 %% plot
-MPTrackMov.showTraces;
+%MPTrackMov.showTraces;
 
 %% eval accuracy
 MPTrackMov.evalAccuracy

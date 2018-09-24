@@ -75,6 +75,11 @@ classdef MPTrackingMovie < Core.MPLocMovie
             
             obj.traces3D = trace3D;
             
+            filename =[obj.raw.movInfo.Path filesep 'Traces3D.mat'];
+            
+            save(filename,'trace3D');
+            
+            
         end
         
         function showTraces(obj)
@@ -454,7 +459,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
                     subplot(1,2,1)
                     hold on
                     scatter(currentTrace.frame,traceErr)
-                    plot(currentTrace.frame,mot,'Linewidth',2)
+                    plot(currentTrace.frame,mot,'-r','Linewidth',2)
                     xlabel('frame')
                     ylabel([dim,' pos (nm) '])
                     title([dim ' localization compared with motor']);

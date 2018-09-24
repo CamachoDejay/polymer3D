@@ -589,7 +589,7 @@ classdef MPParticleMovie < Core.MPMovie
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
             assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
             
-            thresh = 4;
+            thresh = 6;
             [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row, current.col],...
                 [next.row, next.col],thresh);
             
@@ -690,11 +690,11 @@ classdef MPParticleMovie < Core.MPMovie
             end
         end
         
-        function [int,SNR] = getIntensity(ROI,row,col,sig)
+        function [int,SNR] = getIntensity(ROI,sig)
             %extract central position
             center = [ceil(size(ROI,1)/2),ceil(size(ROI,2)/2)];
-            rowPos = center(1)+round(row);
-            colPos = center(2)+round(col);
+            rowPos = center(1);
+            colPos = center(2);
             %we integrate at 3*sigma (take ROI
             roiSignal = ceil(3*sig);
             
@@ -831,7 +831,7 @@ classdef MPParticleMovie < Core.MPMovie
                     sig(2) = sigSetup(2) * magY/magX;
                 end
                
-                [int,SNR] = obj.getIntensity(ROI,row,col,sigSetup);
+                [int,SNR] = obj.getIntensity(ROI,sigSetup);
                 %LRT focus metric
                 [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
                 
