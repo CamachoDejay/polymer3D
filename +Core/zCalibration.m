@@ -400,6 +400,7 @@ classdef ZCalibration < handle
             accuracyYFocus = [];
             %plot XYZ for every particles       
             nfields = numel(fieldnames(obj.zCalMovies));
+            zPlot =[];
             figure()
             for i = 1: nfields
                 zStep = diff(motor{i});
@@ -419,6 +420,8 @@ classdef ZCalibration < handle
                         accuracyF2plot = (data(:,3)- data2SubZ(:));
                         accuracyX2plot = data(:,1) - mean(data(:,1));
                         accuracyY2plot = data(:,2) - mean(data(:,2));
+                        
+                        zPlot = [zPlot; data(:,3), accuracyF2plot];
                         
                         bFit = mean(data(:,6)-zStep(1)*1000.*frameVec(:));
                         data2SubZavg = zStep(1)*1000*frameVec+bFit;
@@ -484,6 +487,33 @@ classdef ZCalibration < handle
                 otherwise
                     error('Unknown fitting type used, only currently known are "poly" and "spline"');
             end
+            
+            [~,idx] = sort(zPlot(:,1));
+            zPlot = zPlot(idx,:);
+            
+           
+            
+            minBin = min(zPlot(:,1)):100:max(zPlot(:,1));
+            maxBin = minBin + minBin(2)-minBin(1);
+            midBin = (maxBin+minBin)/2;
+
+            meanEllip = zeros(1,length(minBin));
+            stdEllip   = zeros(1,length(minBin));
+
+            for i=1:length(minBin)
+
+            meanEllip(i) = 0;
+            stdEllip(i) = mean(abs(zPlot(and(zPlot(:,1)>=minBin(i),zPlot(:,1)>=minBin(i)),2)));
+            end
+
+
+            figure
+            Plotting.shadedErrorBar(midBin, meanEllip, stdEllip,'lineprops','-r','transparent',1)
+            
+            xlabel('Z position (nm)')
+            ylabel('Mean error')
+            
+            
             
         end
         
