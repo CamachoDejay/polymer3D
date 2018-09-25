@@ -122,22 +122,24 @@ for i = 1 : nFiles
         yi = IDX(j,3);
         yf = IDX(j,4);
         tmp = IMs(xi:xf,yi:yf,:);
-
-        th = adaptthresh(tmp,Threshold,'neigh',[301 301 151],'Fore','bright');
-        BW = imbinarize(tmp,th);
-        BW = ~BW;
-        BW = bwareaopen(BW,connectivity);
-        SE = strel('disk',diskDim);
-        BW = imopen(BW,SE);
-        BWadapt (xi:xf,yi:yf,:) = BW;
+        
+        [gBW,aBW] = imSegmentation.segmentStack(tmp,1:imSize(3),connectivity,'both',Threshold,diskDim);
+        
+%         th = adaptthresh(tmp,Threshold,'neigh',[301 301 151],'Fore','bright');
+%         BW = imbinarize(tmp,th);
+%         BW = ~BW;
+%         BW = bwareaopen(BW,connectivity);
+%         SE = strel('disk',diskDim);
+%         BW = imopen(BW,SE);
+        BWadapt (xi:xf,yi:yf,:) = aBW;
         disp(['Done adaptive step ' iStr '/' lastStr ])
 
-        BW = imbinarize(tmp,'global');
-        BW = ~BW;
-        BW = bwareaopen(BW,connectivity);
-        SE = strel('disk',diskDim);
-        BW = imopen(BW,SE);
-        BWglobal(xi:xf,yi:yf,:) = BW;
+%         BW = imbinarize(tmp,'global');
+%         BW = ~BW;
+%         BW = bwareaopen(BW,connectivity);
+%         SE = strel('disk',diskDim);
+%         BW = imopen(BW,SE);
+        BWglobal(xi:xf,yi:yf,:) = gBW;
         disp(['Done global step ' iStr '/' lastStr ])
         toc
 %         waitbar(j/lastIDX,h,sprintf('Segmentation of stack %d/%d... %d percent achieved',...
@@ -176,4 +178,4 @@ h = msgbox('The Data were succesfully saved !', 'Success');
 %%%%%%%%%%%%%%% Plotting %%%%%%%%%%%%%%%
 idx = 1;
 path = file2Analyze.folder;
-imSegmentation.checkSegmentation(path,idx);
+imSegmentation.checkSeg(path,idx);
