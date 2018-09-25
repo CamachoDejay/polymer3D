@@ -123,7 +123,8 @@ for i = 1 : nFiles
         yf = IDX(j,4);
         tmp = IMs(xi:xf,yi:yf,:);
         
-        [gBW,aBW] = imSegmentation.segmentStack(tmp,1:imSize(3),connectivity,'both',Threshold,diskDim);
+        [gBW,aBW] = imSegmentation.segmentStack(tmp,'threshold',Threshold,...
+            'connectivity',connectivity,'diskDim',diskDim);
         
 %         th = adaptthresh(tmp,Threshold,'neigh',[301 301 151],'Fore','bright');
 %         BW = imbinarize(tmp,th);

@@ -1,76 +1,87 @@
-function [gSegStack,aSegStack] = segmentStack(imStack,frames,connectivity,method,threshold,diskDim)
+function [gSegStack,aSegStack] = segmentStack(imStack,varargin)
+% segment an 2D or 3D image.
+%
+% function [gSegStack,aSegStack] = segmentStack(imStack, ...)
+%
+% Purpose 
+% Segment images for further analysis (e.g. polymer network)
+%
+%
+%    Inputs (required)
+% imStack - 2D or 3D matrix where the two first dimension represent an
+% image(x,y). 3rd dimension is variation of the image in space (z)
+%
+%   Inputs (optional, param/value pairs)
+% 'frames' - [imSize(3) by default]define frame range to be analyze
+%
+% 'connectivity' -[8 or 216 by default for 2D and 3D segmentation respectively
+% define the pixel connectivity needed to belong to the same cluster?
+% 
+% 'method' - ['both' by default]: 'global', 'adaptive' or 'both'
+% segmentation method
+%
+% 'threshold' - [0.5 by default] defines the sensitivity for adaptive
+% threshold
+%          
+% 'diskDim' - [4  by default] defines the diameter of the disk for cleaning
+% up the binary image
+
+% 'neigh'  - [301 301 151 by default] the number of neighbor to be consider
+% for adaptive threshold
+
+%   Outputs
+%'gSegStack' - binarized image with global method
+%'aSegStack' - binarized image with adaptive method
+
+
+%parse user input
+narginchk(1,inf)
+
 %Calculate size and dimensions of the image stack
 imSize = size(imStack);
 dim = length(imSize);
 assert(ismember(dim,[2 3]),'imStack is expected to be a 2D or 3D matrix');
 
-%Check number of input argument and provide default input if not provided
-switch nargin
-    case 1
-        frames = 1:size(imStack,3);
-        threshold = 0.5;
-        method = 'both';
-        if dim == 3
-            connectivity = 216;
-        else
-            connectivity = 8;
-        end
-        diskDim = 4;
-    case 2
-        
-        threshold = 0.5;
-        method = 'both';
-        if dim == 3
-            connectivity = 216;
-        else
-            connectivity = 8;
-        end
-        diskDim = 4;
-    case 3
-        
-        threshold = 0.5;
-        method = 'both';
-        diskDim = 4;
-        
-    case 4
-        
-        threshold = 0.5;
-        diskDim = 4;
-        
-    case 5
-        
-        diskDim = 4;
-    case 6
-        
-    otherwise
-        
-        error('Too many input arguments')
-        
-end
-%Check User input            
-assert(max(frames) <= size(imStack,3),'requested number of frame exceed max frame');
-assert(isnumeric(connectivity),'connectivity is expected to be a number');
-assert(ischar(method),'method is expected to be a chain of char, valid input are: global, adaptive, both');
-assert (isnumeric(threshold),'threshold is expected to be a number');
-assert(and(threshold >=0, threshold <= 1),'threshold is expected to be comprised between 0 and 1');
+params = inputParser;
+params.CaseSensitive = false;
+params.addParameter('frames', 1:imSize(3), @(x) isnumeric(x) && isvector(x) && all(x>0));
+params.addParameter('connectivity', 8*double(dim==2)+216*double(dim==3),...
+    @(x) isnumeric(x) || x> 0);
+params.addParameter('method', 'both',...
+    @(x) ischar(x) && (strcmp(x,'both') || strcmp(x,'adaptive') || strcmp(x,'global')));
+params.addParameter('threshold',0.5,@(x) isnumeric(x) && x<=1 && x>0);
+params.addParameter('diskDim', 4, @(x) isnumeric(x) && x>1 );
+params.addParameter('neigh',[301 301 151],@(x) all(isnumeric(x)) && length(size(x))==dim && all(x>1));
+
+params.parse(varargin{:});
+
+%Extract values from the inputParser
+frames =  params.Results.frames;
+connectivity =  params.Results.connectivity;
+method = params.Results.method;
+threshold = params.Results.threshold;
+diskDim = params.Results.diskDim;
+neigh = params.Results.neigh;
+
+imStack = imStack(:,:,frames);
 
 %act depending on the method chosen by the user
 switch method
     case 'global'
         
-        [BWglobal] = imSegmentation.globThresh(imStack,connectivity,diskDim);
+        [BWglobal] = globThresh(imStack,connectivity,diskDim);
         gSegStack = BWglobal;
         aSegStack = [];
     case 'adapt'
         
-        [BWadapt] = imSegmentation.adaptiveThresh(imStack,connectivity,threshold,diskDim);
+        [BWadapt] = adaptiveThresh(imStack,connectivity,threshold,diskDim,neigh);
         gSegStack = [];
         aSegStack = BWadapt;
         
     case 'both'
         
-        [BWglobal] = imSegmentation.globThresh(imStack,connectivity,diskDim);
-        [BWadapt]  = imSegmentation.adaptiveThresh(imStack,connectivity,threshold,diskDim);
+        [BWglobal] = globThresh(imStack,connectivity,diskDim);
+        [BWadapt]  = adaptiveThresh(imStack,connectivity,threshold,diskDim,neigh);
         aSegStack  = BWadapt;
         gSegStack  = BWglobal;
     otherwise
@@ -79,4 +90,26 @@ switch method
 
 end
 
+end
+
+
+function [BW] = globThresh(imStack,connectivity,diskDim)
+        
+    BW = imbinarize(imStack,'global');
+    BW = ~BW;
+    BW = bwareaopen(BW,connectivity);
+    SE = strel('disk',diskDim);
+    BW = imopen(BW,SE);
+    
+end
+
+function [BW] = adaptiveThresh(imStack,connectivity,threshold,diskDim,neigh)
+               
+        th = adaptthresh(imStack,threshold,'neigh',neigh,'Fore','bright');
+        BW = imbinarize(imStack,th);
+        BW = ~BW;
+        BW = bwareaopen(BW,connectivity);
+        SE = strel('disk',diskDim);
+        BW = imopen(BW,SE);
+        
 end
