@@ -158,7 +158,7 @@ for i = 1 : numField
     midBin(isnan(meanSamples))=[];
     stdSamples(isnan(meanSamples)) = [];
     meanSamples((isnan(meanSamples))) =[];
-    p1K(i) = Plotting.shadedErrorBar(midBin(:),meanSamples(:),stdSamples(:),'lineProps',color(i,:));
+    p1K(i) = Plotting.shadedErrorBar(midBin(:),meanSamples(:),stdSamples(:),'lineProps',color(i,:),'logScale',true);
     
 end
 hold off

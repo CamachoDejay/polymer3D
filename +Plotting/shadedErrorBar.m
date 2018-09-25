@@ -76,6 +76,7 @@ params.CaseSensitive = false;
 params.addParameter('lineProps', '-k', @(x) ischar(x) | iscell(x));
 params.addParameter('transparent', true, @(x) islogical(x) || x==0 || x==1);
 params.addParameter('patchSaturation', 0.2, @(x) isnumeric(x) && x>=0 && x<=1);
+params.addParameter('logScale',false,@(x) islogical(x) || x==0 || x==1);
 
 params.parse(varargin{:});
 
@@ -83,6 +84,7 @@ params.parse(varargin{:});
 lineProps =  params.Results.lineProps;
 transparent =  params.Results.transparent;
 patchSaturation = params.Results.patchSaturation;
+logScale = params.Results.logScale;
 
 if ~iscell(lineProps), lineProps={lineProps}; end
 
@@ -123,7 +125,7 @@ end
 initialHoldStatus=ishold;
 if ~initialHoldStatus, hold on,  end
 
-H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation);
+H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation,logScale);
 
 if ~initialHoldStatus, hold off, end
 
@@ -133,7 +135,7 @@ end
 
 
 
-function H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation)
+function H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation,logScale)
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Plot to get the parameters of the line
@@ -159,8 +161,22 @@ function H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation)
     %Calculate the error bars
     uE=y+errBar(1,:);
     lE=y-errBar(2,:);
+    
     %!!!!!!! Edition of original code
-    lE(lE<=0) = min(abs(lE));
+    if logScale
+        if(~isempty(lE<=0)||~isempty(uE<=0))
+            warning(['Some value were below or equal to 0 while logScale was selected '...
+                'those values were arbitrarily set to 1e-50 to avoid breaking Patch when using log scale']);
+            idx = uE==0;
+            lE(idx) = [];
+            lE(lE<0)  = min(abs(lE));
+            x(idx)  = [];
+            uE(idx) = [];
+          
+        else
+        end
+    else
+    end
     %Add the patch error bar
 
 
