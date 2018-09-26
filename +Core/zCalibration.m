@@ -175,7 +175,7 @@ classdef ZCalibration < handle
  
         end
         
-        function showZCalibration(obj)
+        function showZCalibration(obj,method)
             %Checking object before going further
             assert(~isempty(obj.calib),'No calibration data was found found, please run  "zCalibrate" before display');
             assert(isfield(obj.calib,'data'),'No calibration data was found, please run retrieveZCalData before calibrating');
@@ -239,7 +239,8 @@ classdef ZCalibration < handle
             hold off
             
             %Plot #3
-            figure()            
+            figure()   
+            
             for i = 1 : length(obj.calib.data)
                 
                 dataCurrPlane = obj.calib.data{i};
@@ -250,22 +251,33 @@ classdef ZCalibration < handle
  
                 dataCurrPlane = dataCurrPlane(Res(1):Res(2),:);
                 [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
-                    dataCurrPlane.ellip],length(dataCurrPlane.z)/5);
-                zVec = zRange{i}(1):zRange{i}(2);
+                    dataCurrPlane.ellip],length(dataCurrPlane.z)/7);
+                
+                zVec = zRange{1}(1):zRange{1}(2);
+               
+                switch method
+                    case 'poly'
+                         p = obj.calib.file{i};
+                         fit = polyval(p,zVec);
+                    case 'spline'
+                         p   = obj.calib.file{i,2};
+                         fit = ppval(p,zVec);
+                
+                    otherwise
+                        error('unknown method requested by the user');
+                end
                 %retrieving fit to display
-                p = obj.calib.file{i};
-                p2= obj.calib.file{i,2};
-                fit = polyval(p,zVec);
-                fit2= ppval(p2,zVec);
+               
                 %shifting according to the plane
                 zVec = zVec + relZ(i) ;
                 dataCurrPlane.z = dataCurrPlane.z+ relZ(i);
                 binnedData(:,1) = binnedData(:,1) +relZ(i);
-                
+                zVec = zVec(and(fit<ellipRange(2),fit>ellipRange(1)));
+                fit = fit(and(fit<ellipRange(2),fit>ellipRange(1)));
                 subplot(1,2,1)
                 hold on
                 scatter(binnedData(:,1),binnedData(:,2))
-                plot(zVec,fit2,'r')
+                plot(zVec,fit,'r')
                 title('Binned data fitted with Spline')
                 
                 subplot(1,2,2)
@@ -378,7 +390,7 @@ classdef ZCalibration < handle
  
                 dataCurrPlane = dataCurrPlane(Res(1):Res(2),:);
                 [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
-                    dataCurrPlane.ellip],length(dataCurrPlane.z)/5);
+                    dataCurrPlane.ellip],length(dataCurrPlane.z)/7);
                 
                 %zVec = min(dataCurrentPlane.z):max(dataCurrentPlane.z);
                 
