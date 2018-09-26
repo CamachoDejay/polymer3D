@@ -303,6 +303,12 @@ classdef ZCalibration < handle
             disp('=================> DONE <===================');
         end
         
+        function [cal] = getCal(obj)
+            
+            cal = obj.calib;
+            
+        end
+        
         function save(obj)
             cal.fitZParam = obj.calib.fitZParam;
             cal.fitZParam(1).type = 'polynomial';

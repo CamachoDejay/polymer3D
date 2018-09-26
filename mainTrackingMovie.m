@@ -10,7 +10,7 @@ path2File = 'E:\Data\Leuven Data\2018\06-June\29\5K - 0_25mgmL\TL-FluoBeads200nm
 path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
 
 detectParam.delta = 6;
-detectParam.chi2 = 60;
+detectParam.chi2 = 80;
 %%
 calib = Core.MPCalibration(path2Cal);
 
@@ -60,6 +60,10 @@ traces = MPTrackMov.getTraces;
 
 %% eval accuracy
 MPTrackMov.evalAccuracy
+
+%% get RMSD
+
+[RMSD,D] = MPTrackMov.getRMSD('2D');
 
 %% Intensity and SNR
 [int,SNR] = MPTrackMov.getAvgIntensity;

@@ -165,124 +165,157 @@ classdef MPTrackingMovie < Core.MPLocMovie
         end
         
         function getTracesMovie(obj,frames,idx2Trace,ROI,frameRate)
-            
+            assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting movies');
             obj.getPartMovie(obj,frames,idx2Trace,ROI,frameRate);
             
             obj.getTrace3DMovie(obj,frames,idx2Trace,frameRate);
         end
         
-          function getPartMovie(obj,frames,idx2Trace,ROI,frameRate)
-            
-            path2File = obj.raw.movInfo.Path;
-            traces = obj.traces3D;
-            roiRadius = ROI;
-            currentTraces = traces {idx2Trace};
-            mainPos = [round(mean(currentTraces.row)/95) round(mean(currentTraces.col(1)/95))];
-            nFrames = length(frames);
-            frames = currenTraces.frames(1:nFrames);
-            
-            for i = obj.calbrated.nPlanes
-                
-                currentPlane = MPTrackMov.getPlane(i);
-                % ROI = currentPlane;
-                ROI = currentPlane(mainPos(1)-roiRadius:mainPos(1)+roiRadius,...
-                mainPos(2)-roiRadius:mainPos(2)+roiRadius,:);
-                mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
-                Fig = figure;
-                %to get as less white border as possible
-                ax = gca;
-                outerpos = ax.OuterPosition;
-                ti = ax.TightInset; 
-                left = outerpos(1) + ti(1);
-                bottom = outerpos(2) + ti(2);
-                ax_width = outerpos(3) - ti(1) - ti(3);
-                ax_height = outerpos(4) - ti(2) - ti(4);
-                ax.Position = [left bottom ax_width ax_height];
-                
-                    for j = 1:nFrames
-                    
-                    gcf;
-                    imagesc(ROI(:,:,frames(j)))
-                    hold on
-                    %scale bar
-                    x = size(ROI,2)-13:size(ROI,2)-3;
-                    y = ones(1,length(x))*size(ROI,1)-3;
-                    plot(x,y,'-w','LineWidth',5);
-                    caxis([min(min(min(ROI))) max(max(max(ROI)))]);
-                    axis image;
-                    set(gca,'visible','off');
-                    colormap('hot')
-                    drawnow;
+        function getPartMovie(obj,frames,idx2Trace,ROI,frameRate)
+        assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting particle trace movie');
+        path2File = obj.raw.movInfo.Path;
+        traces = obj.traces3D;
+        roiRadius = ROI;
+        currentTraces = traces {idx2Trace};
+        mainPos = [round(mean(currentTraces.row)/95) round(mean(currentTraces.col(1)/95))];
+        nFrames = length(frames);
+        frames = currenTraces.frames(1:nFrames);
 
-                    hold off
-                    mov(j) = getframe(Fig);
+        for i = obj.calbrated.nPlanes
 
-                    end
-                ext='.mp4';
-                filename=sprintf('%s%splane%d-Trace%d%s', path2File,'\',i,idx2Trace,ext);
-                v = VideoWriter(filename,'MPEG-4');
-                v.FrameRate = frameRate;
-                open(v)
-                writeVideo(v,mov);
-                close(v)
-            
-            end
-
-          end
-    
-          function getTraces3DMovie(obj,frames,idx2Trace,frameRate)
-            
-%             sizeMarker = 5;
-            Fig = figure;
-            
-            path2File = obj.raw.movInfo.Path;
-            traces = obj.traces3D;
-            currentTraces = traces {idx2Trace};
-           
-            nFrames = length(frames);
-            [frames] = obj.checkFrame(frames,size(currentTraces,1));
-            frames = currentTraces.frame(1:nFrames);
-            
-            xAx = [min(currentTraces.col-mean(currentTraces.col)),...
-                max(currentTraces.col-mean(currentTraces.col))];
-            yAx = [min(currentTraces.row-mean(currentTraces.row)),...
-                max(currentTraces.row-mean(currentTraces.row))];
-            zAx = [min(currentTraces.z-mean(currentTraces.z)),...
-                max(currentTraces.z-mean(currentTraces.z))];
+            currentPlane = MPTrackMov.getPlane(i);
+            % ROI = currentPlane;
+            ROI = currentPlane(mainPos(1)-roiRadius:mainPos(1)+roiRadius,...
+            mainPos(2)-roiRadius:mainPos(2)+roiRadius,:);
             mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
-            gcf;
-            hold on
-            for j = 1:nFrames
-                
-                colPlot = currentTraces.col(1:j) - mean(currentTraces.col);
-                rowPlot = currentTraces.row(1:j) - mean(currentTraces.row);
-                zPlot = currentTraces.z(1:j) - mean(currentTraces.z);
-                %plotting with z coloring:
-                patch([colPlot nan(size(colPlot))],[rowPlot nan(size(colPlot))],...
-                    [zPlot nan(size(colPlot))],[zPlot nan(size(colPlot))],...
-                    'EdgeColor','interp','FaceColor','none')
-               
-                xlim(xAx)
-                ylim(yAx)
-                zlim(zAx)
-                view(3);
-              
+            Fig = figure;
+            %to get as less white border as possible
+            ax = gca;
+            outerpos = ax.OuterPosition;
+            ti = ax.TightInset; 
+            left = outerpos(1) + ti(1);
+            bottom = outerpos(2) + ti(2);
+            ax_width = outerpos(3) - ti(1) - ti(3);
+            ax_height = outerpos(4) - ti(2) - ti(4);
+            ax.Position = [left bottom ax_width ax_height];
+
+                for j = 1:nFrames
+
+                gcf;
+                imagesc(ROI(:,:,frames(j)))
+                hold on
+                %scale bar
+                x = size(ROI,2)-13:size(ROI,2)-3;
+                y = ones(1,length(x))*size(ROI,1)-3;
+                plot(x,y,'-w','LineWidth',5);
+                caxis([min(min(min(ROI))) max(max(max(ROI)))]);
+                axis image;
+                set(gca,'visible','off');
+                colormap('hot')
+                drawnow;
+
+                hold off
                 mov(j) = getframe(Fig);
 
-                xlabel('x Position (nm)');
-                ylabel('y Position(nm)');
-                zlabel('z Position(nm)');
-            end
-
+                end
             ext='.mp4';
-            filename=sprintf('%s%sTracking-Trace%d%s', path2File,'\',idx2Trace,ext);
+            filename=sprintf('%s%splane%d-Trace%d%s', path2File,'\',i,idx2Trace,ext);
             v = VideoWriter(filename,'MPEG-4');
             v.FrameRate = frameRate;
             open(v)
             writeVideo(v,mov);
             close(v)
+
         end
-         
+
+        end
+
+        function getTraces3DMovie(obj,frames,idx2Trace,frameRate)
+        assert(~isempty(obj.traces3D),'You need to extract 3D traces before getting traces Movie');
+        %             sizeMarker = 5;
+        Fig = figure;
+
+        path2File = obj.raw.movInfo.Path;
+        traces = obj.traces3D;
+        currentTraces = traces {idx2Trace};
+
+        nFrames = length(frames);
+        [frames] = obj.checkFrame(frames,size(currentTraces,1));
+        frames = currentTraces.frame(1:nFrames);
+
+        xAx = [min(currentTraces.col-mean(currentTraces.col)),...
+            max(currentTraces.col-mean(currentTraces.col))];
+        yAx = [min(currentTraces.row-mean(currentTraces.row)),...
+            max(currentTraces.row-mean(currentTraces.row))];
+        zAx = [min(currentTraces.z-mean(currentTraces.z)),...
+            max(currentTraces.z-mean(currentTraces.z))];
+        mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
+        gcf;
+        hold on
+        for j = 1:nFrames
+
+            colPlot = currentTraces.col(1:j) - mean(currentTraces.col);
+            rowPlot = currentTraces.row(1:j) - mean(currentTraces.row);
+            zPlot = currentTraces.z(1:j) - mean(currentTraces.z);
+            %plotting with z coloring:
+            patch([colPlot nan(size(colPlot))],[rowPlot nan(size(colPlot))],...
+                [zPlot nan(size(colPlot))],[zPlot nan(size(colPlot))],...
+                'EdgeColor','interp','FaceColor','none')
+
+            xlim(xAx)
+            ylim(yAx)
+            zlim(zAx)
+            view(3);
+
+            mov(j) = getframe(Fig);
+
+            xlabel('x Position (nm)');
+            ylabel('y Position(nm)');
+            zlabel('z Position(nm)');
+        end
+
+        ext='.mp4';
+        filename=sprintf('%s%sTracking-Trace%d%s', path2File,'\',idx2Trace,ext);
+        v = VideoWriter(filename,'MPEG-4');
+        v.FrameRate = frameRate;
+        open(v)
+        writeVideo(v,mov);
+        close(v)
+        end
+        
+        function [RMSD,traces] = getRMSD(obj,dimension)
+            
+            assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting RMSD');
+            
+            traces = obj.traces3D;
+            
+            switch nargin
+                case 1
+                    
+                    dimension = '3D';
+                
+                case 2
+                    
+                otherwise
+                    
+                    error('too many input arguments');
+            
+            end
+            RMSD = cell(traces);
+            
+            for i = 1 : length(traces)
+                
+                currentTrace = traces{i};
+                coord = [currentTrace.col,currentTrace.row,currentTrace.z];
+                [MSD,~] = Core.MPTrackingMovie.calcMeanSqrD(coord,dimension);
+                currentTrace.RMSD = zeros(size(currentTrace.row,1),1);
+                currentTrace.RMSD(1:end-1) = MSD;
+                traces{i} = currentTrace;
+                RMSD{i} = MSD;
+            end
+            
+        end
+
     end
     
     methods (Static)
@@ -391,6 +424,96 @@ classdef MPTrackingMovie < Core.MPLocMovie
             checkRes = abs(Z1-Z2) <= Thresh;
         end 
         
+        function [RMSD,D] = calcMeanSqrD(coord,dimension)
+            %[D MSD]=meansqrD(cod, stp)
+        % the function gives the distance ('D') between each point and
+        % mean-squre-dispracement ('MSD')
+        %
+        %input parameters; cod is 2D or 3D aray including coordinate of trajectry.
+        if size(coord,1)< size(coord,2)
+
+            coord = coord';
+            warning('vector was wrongly oriented so we took the transpose');
+
+        end
+
+        dim = size(coord,2);
+
+        switch dim
+            case 1
+
+                coord(:,2:3) = 0;
+
+            case 2
+
+                coord(:,3) = 0;
+
+            case 3
+
+
+            otherwise
+
+                error('unexpected dimension for the vector')
+
+        end
+        
+        if strcmp(dimension,'2D')
+            
+            coord(:,3) = 0;
+            
+        elseif strcmp(dimension,'3D')
+            
+            assert(size(coord,2) ==3,'error with the dimension of the vector, expected 3D vector');
+            
+        end
+
+        %%%Fist calculate distance between each frame
+
+        DX = diff(coord(:,1).');
+        DY = diff(coord(:,2).');
+        DZ = diff(coord(:,3).');
+        D = sqrt(DX.^2 + DY.^2 + DZ.^2);
+
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        RMSD = zeros(length(coord)-1,1);
+        %Calculate mean-squere-displacement
+        for i = 1:length(coord)-1
+
+            stp = i;
+            cnt =  1;
+            D1  = [];
+            while cnt<=stp && cnt+stp<=length(coord)
+
+                idx = cnt:stp:length(coord);
+                DX  = diff(coord(idx,1).');
+                DY  = diff(coord(idx,2).');
+                DZ  = diff(coord(idx,3).');
+                D1  = [D1 sqrt(DX.^2 + DY.^2 + DZ.^2)];
+                cnt = cnt+1;
+
+                if ~isempty(D1)
+
+                    D2=D1(~isnan(D1));
+
+                    if ~isempty(D2)
+
+                        RMSD(i) = mean(D2.^2);
+
+                    else
+
+                        RMSD(i) = NaN;
+
+                    end
+                end
+            end %while
+        end
+
+        D   = D(:);
+        RMSD = RMSD(:);
+            
+        end
+        
                  
     end
     
@@ -481,6 +604,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             filename = [obj.raw.movInfo.Path filesep dim '-Fig'];
             saveas(Fig,filename,'svg');
         end
+        
 
     end
 end
