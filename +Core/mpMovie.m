@@ -77,6 +77,17 @@ classdef MPMovie < Core.Movie
                         fullpath = [file2Analyze.folder filesep file2Analyze.name];
                         tmp = load(fullpath);
                         calibrate = tmp.calib;
+                        
+                        for i = 1: length(fieldnames(calibrate.filePath))
+                            currentPath = calibrate.filePath.(['plane' num2str(i)]);
+                            idx1 = strfind(fullPath,'\calibrated');
+                            idx2 = strfind(currentPath,'\calibrated');
+                            
+                            newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
+                            
+                            calibrate.filePath.(['plane' num2str(i)]) = newPath;
+                            
+                        end
                         disp('Done');
 
                     else
