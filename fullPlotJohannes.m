@@ -201,7 +201,7 @@ for i = 1 : numField
     midBin(isnan(meanSamples))=[];
     stdSamples(isnan(meanSamples)) = [];
     meanSamples((isnan(meanSamples))) =[];
-    p5K(i) = Plotting.shadedErrorBar(midBin(:),meanSamples(:),stdSamples(:),'lineProps',color(i,:));
+    p5K(i) = Plotting.shadedErrorBar(midBin(:),meanSamples(:),stdSamples(:),'lineProps',color(i,:),'logScale',true);
     
 end
 hold off
@@ -242,7 +242,7 @@ for i = 1 : numField
     midBin(isnan(meanSamples))=[];
     stdSamples(isnan(meanSamples)) = [];
     meanSamples((isnan(meanSamples))) =[];
-    p1K(i) = Plotting.shadedErrorBar(midBin(:),meanSamples(:),stdSamples(:),'lineProps',color(i,:));
+    p1K(i) = Plotting.shadedErrorBar(midBin(:),meanSamples(:),stdSamples(:),'lineProps',color(i,:),'logScale',true);
     
 end
 
@@ -266,7 +266,7 @@ for i = 1 : numField
     midBin(isnan(meanSamples))=[];
     stdSamples(isnan(meanSamples)) = [];
     meanSamples((isnan(meanSamples))) =[];
-    p5K(i) = Plotting.shadedErrorBar(midBin(:),meanSamples(:),stdSamples(:),'lineProps',color(i,:));
+    p5K(i) = Plotting.shadedErrorBar(midBin(:),meanSamples(:),stdSamples(:),'lineProps',color(i,:),'logScale',true);
     
 end
 
@@ -279,8 +279,8 @@ ylabel('CCDF [0 1]')
 
 title('Comparison of 1K and 5K for 3 different concentration')
 
-legend([p1K(3).mainLine,p5K(3).mainLine,p1K(2).mainLine,p1K(1).mainLine],...
-    {'1K - 1.00mg/mL','5K - 1.00mg/mL','0.50mg/mL','0.25mg/mL'});
+legend([p1K(3).mainLine,p1K(2).mainLine,p1K(1).mainLine,p5K(3).mainLine p5K(2).mainLine,p5K(1).mainLine],...
+    {'1K - 1.00mg/mL', '1k - 0.50mg/mL','1k - 0.25mg/mL', '5K - 1.00mg/mL', '5k - 0.50mg/mL','5k - 0.25mg/mL'});
 
 end
 
