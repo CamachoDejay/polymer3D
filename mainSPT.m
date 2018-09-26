@@ -6,135 +6,317 @@ clear
 close all
 clc
 
-%% path to the callibration
-fPath = '/Users/rafa/Documents/MATLAB/data/Boris/180322-Boris-Calmultiplane/BeadsCalibrationZStack_2';
-fName = 'BeadsCalibrationZStack_2_MMStack_Pos0.ome.tif';
+% ad general paths that can be usefull
+addpath(genpath('Ext'));
 
-fPath = [fPath filesep fName];
+% path to the callibration
 
-% Calculate calibration
-[cal] = mpSetup.cali.calculate(fPath, false);
+path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
+path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
+path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
+detectParam.delta = 6;
+detectParam.chi2 = 80;
+
+%% create a Movie Object
+mov1 = Core.Movie(path2File);
+%mov2 = Core.Movie(path2zCal);
+%% showFrame
+mov1.showFrame(22);
+%mov2.showFrame(51);
+%% Calib
+calib = Core.MPCalibration(path2Cal);
+
+calib.calc;
 %%
-% load and calibrate, when applied to the calibration data then we should
-% be able to demonstrate that it works
+calib.showCal
 
-fPath = '/Users/rafa/Documents/MATLAB/data/Boris/180322-Boris-Calmultiplane/TL-OD2-200msExposureR2_1';
-fName = 'TL-OD2-200msExposureR2_1_MMStack_Pos0.ome.tif';
-fPath = [fPath filesep fName];
-[data, frameInfo, movInfo] = mpSetup.loadAndCal( fPath, cal, 1);
+%% Calibrate
+mpMov = Core.MPMovie(path2File,calib.getCal);
 
-% figure to show that it works
-% f = 1
-% for i =1:8
-%     subplot(2,4,i)
-%     imagesc(data(:,:,i,f))
-%     axis image
-%     grid on
-%     
-%     title(['Ordered channel ' num2str(i)])
-%     a = gca;
-%     a.XTickLabel = [];
-%     a.YTickLabel = [];
-% end
+mpMov.calibrate;
 
-%%
-delta = 4;
-pxSize = 100;
-FWHM_nm = 300;
-FWHM_pix = FWHM_nm / pxSize;
-% for GLRT
-chi2 = 50;
+mpMov.showFrame(15);
 
-% generate a list of all localized molecules per im plane, together with a
-% common list for all im planes
-tLoc{8,1}=[];
-rTh = 4;
-consLoc = [];
+%% MP Particle Movie
+mpPartMov = Core.MPParticleMovie(path2File,calib.getCal);
+mpPartMov.giveInfo;
+mpPartMov.calibrate;
+%% getCandidatePos
 
+mpPartMov.findCandidatePos(detectParam);
+candidate = mpPartMov.getCandidatePos(24);
+mpPartMov.showCandidate(24);
+
+%% SR Localize
+mpPartMov.SRLocalizeCandidate;
+%% planeConsolidation
+mpPartMov.consolidatePlanes;
+%% ZCal
+zCalMov = Core.ZCalMovie(path2zCal,calib.getCal);
+%% CandidatePos
+zCalMov.giveInfo;
+zCalMov.findCandidatePos(detectParam);
+zCalMov.SRLocalizeCandidate;
+zCalMov.consolidatePlanes;
+%% showParticles
+zCalMov.showParticles(24);
+
+%% ZCalibration
+trackParam.euDistPx = 1; 
+trackParam.ellip = 5;
+traces =  zCalMov.trackInZ(trackParam);
+
+%% Show traces
+zCalMov.showParticlesTracked(30);%ips
+%% ZCalibrate
+[zData] = zCalMov.zCalibrate;
+
+%% Show ZCalibration
+zCalMov.showZCalibration;
+
+%% Get 3D traces
+traces = zCalMov.get3DTraces;
+
+%% Show Traces
+
+zCalMov.showTraces
+
+%% SuperResCalMovie
+trackParam.euDistPx = 1; 
+trackParam.commonPlanes = 2;
+SRCalMov = Core.SRCalMovie(path2Cal,calib.getCal);
+
+SRCalMov.giveInfo;
+SRCalMov.findCandidatePos(detectParam);
+
+SRCalMov.showCandidate(50);
+
+SRCalMov.SRLocalizeCandidate;
+SRCalMov.consolidatePlanes;
+
+SRCalMov.showParticles(50);
+%% SuperResCalibrate
+SRCalMov.getSRCalData(trackParam);
+
+%% calc translation
+refPlane = 5;
+SRCalMov.corrTranslation(refPlane);
+
+SRCalMov.checkAccuracy(refPlane);
+
+%% calc rotation
+SRCalMov.corrRotation(refPlane);
+
+SRCalMov.checkAccuracy(refPlane);
+
+%% Unit testing
+SRCalMov.correctionUnitTesting(0.2,[-0.3,0.5,0],8);
+
+%% MPLocMovie
+
+path2ZCal = 'E:\Data\Leuven Data\2018\03-Mar\22\ZCalibration\';
+path2SRCal = 'E:\Data\Leuven Data\2018\03-Mar\22\PlaneCaibration\';
+
+MPLocMov = Core.MPLocMovie(path2File,calib.getCal,path2SRCal,path2ZCal);
+
+%% Detection
+
+MPLocMov.giveInfo
+%find candidate
+MPLocMov.findCandidatePos(detectParam);
+
+%fit position
+MPLocMov.SRLocalizeCandidate;
+
+%% Data correction
+rot = false;
+refPlane = 5;
+MPLocMov.applySRCal(rot,refPlane);
+%% e-Z transformation
+MPLocMov.applyZCal;
+
+%% Plane consolidation
+
+MPLocMov.consolidatePlanes
+
+%% plot
+
+MPLocMov.showCorrLoc;
+
+%% example of a frame list I will grow this into the frame object
+frameList = mcodekit.list.dl_list();
 for i = 1:8
+    tmp = data(:,:,i,1);
+    imP = Core.imPlane(tmp);
+    imP.setPixSizeNm(100);
+    imP.setTime(uint16(1)); 
+    frameList.append_key(imP);   
+end
+
+%% detect particles
+% for a water immersion obj the best-fit gasuss to the PSF has 
+% sigma = 0.25 wavelength / NA
+objNA  = 1.2;
+emWave = 600;
+sigma_nm = 0.25 * emWave/objNA;
+FWHMnm = sigma_nm * sqrt(8*log(2));         
+
+GLRTprops.delta  = 6;
+GLRTprops.pxSnm  = 100;
+GLRTprops.FWHMnm = FWHMnm;
+GLRTprops.chi2   = 80;
+
+rTh = 5; % in pixels
+ROIrad = 10;
+
+pList = [];
+p = [];
+partList = mcodekit.list.dl_list();
+
+for fIdx = frame(1:10)
     
-    im = data(:,:,i);
-    im = double(im);
-    [ pos, inten ] = Localization.smDetection( im, delta, FWHM_pix, chi2 );
-    tLoc{i} = [pos,inten];
+    sfData = data(:,:,:,fIdx);
+    imSize = size(sfData);
+    % detect particles
+    [consLoc,totLoc] = mpSetup.localize(sfData, rTh, GLRTprops);
+    % build ROIs
+    [ROIs] = Misc.getROIs(consLoc,ROIrad,imSize);
     
-    if isempty(consLoc)
-        consLoc = pos;
-    else
-        if ~isempty (pos)
-            [ consLoc ] = Localization.consolidatePos( consLoc, pos, rTh );
-        end
+    for i = 1:size(consLoc,1)
+        tmpLoc = consLoc(i,:);
+        tmpROI = ROIs(i,:);
+        p = Core.particle(tmpLoc,fIdx,tmpROI,sfData);
+
+        pList = [pList, p];
+        partList.append_key(p);
         
     end
-    
+    disp(['done for frame ' num2str(fIdx)])
+
+end
+
+%%
+objNA    = 1.2;
+emWave   = 600;
+pxSizeNm = 100;
+tic
+pList.setPSFprops(objNA, emWave, pxSizeNm);
+toc
+
+tic
+iterator = partList.get_iterator(); 
+            
+while (iterator.has_next())
+
+    pTmp = iterator.next();
+    pTmp.setPSFprops(objNA, emWave, pxSizeNm);
+%     idx = idx + 1;
+
+end
+toc
+
+%%
+ptest = partList.get_key(10);
+%%
+
+tic
+pList.superResolve;
+disp('Done with SR-loc')
+toc
+
+tic
+iterator = partList.get_iterator(); 
+            
+while (iterator.has_next())
+
+    pTmp = iterator.next();
+    pTmp.superResolve();
+%     idx = idx + 1;
+
+end
+toc
+
+ptest1 = pList(2);
+ptest2 = partList.get_key(2);
+
+%%
+tic
+test = findobj(pList,'frame',1);
+toc
+
+tic
+iterator = partList.get_iterator(); 
+ftotal = zeros(partList.size_,1);
+idx = 0;
+while (iterator.has_next())
+
+    idx = idx + 1;
+    pTmp = iterator.next();
+    ftotal(idx) = pTmp.frame;
+
+end
+
+idxList = find(ftotal==1);
+toc
+bla = [];
+for idx = idxList'
+    idx
+    tmp = partList.get_key(idx);
+    bla = [bla tmp];
 end
 %%
-% build ROIs
-ROIcent = round(consLoc);
-ROIcent(end,:) = [457,670];
-molRad = 5;
-nLoc   = size(ROIcent,1);
-imSize = [size(data,1),size(data,2)];
+% test = findobj(pList,'frame',1);
+% tmpVal = cat(1,test.superResLoc);
+% tmpX = tmpVal(:,1);
+% tmpY = tmpVal(:,2);
+% tmpZ = tmpVal(:,3);
+% % scatter3 (tmpX,tmpY, tmpZ)
+% scatter (tmpX,tmpY,'kx')
+% 
+% % axis image
+% shg
 
-% test for molecules to close to the im edges
-tVal = (ROIcent(:,1) - molRad);
-test = tVal < 1;
-ROIcent(test,1) = molRad +1;
+cols = {'k','r','g','b','y'};
 
-tVal = (ROIcent(:,2) - molRad);
-test = tVal < 1;
-ROIcent(test,2) = molRad +1;
-
-tVal = (ROIcent(:,1) + molRad);
-test = tVal > imSize(2);
-ROIcent(test,1) = imSize(2) - molRad;
-
-tVal = (ROIcent(:,2) + molRad);
-test = tVal > imSize(1);
-ROIcent(test,2) = imSize(1) - molRad;
-
-
-ROIs = zeros(nLoc,4);
-ROIs(:,1) = round(ROIcent(:,1))-molRad;
-ROIs(:,2) = round(ROIcent(:,1))+molRad;
-ROIs(:,3) = round(ROIcent(:,2))-molRad;
-ROIs(:,4) = round(ROIcent(:,2))+molRad;
-
-imLims = repmat([1 imSize(2) 1 imSize(1)],nLoc,1);
-test = [ROIs(:,1)>=imLims(:,1), ROIs(:,2)<=imLims(:,2),...
-        ROIs(:,3)>=imLims(:,3), ROIs(:,4)<=imLims(:,4)];
+for ii = 1:250
     
-assert(all(test(:)), 'Problems, unexpected issues during ROI definition')
-
-
-%%
-
-% figure to check
-figure(1)
-clf
-for i = 1:8
-    im = data(:,:,i);
-    pos = tLoc{i};
-
-    subplot(2,4,i)
-    imagesc(im)
-    axis image
+    test = findobj(pList,'frame',ii);
+    cidx = ceil(ii/50);
+    tmpVal = cat(1,test.superResLoc);
+    
+    tmpX = tmpVal(:,1);
+    tmpY = tmpVal(:,2);
+    tmpZ = tmpVal(:,3);
+%     scatter3 (tmpX,tmpY, tmpZ)
+    subplot(1,2,1)
+    scatter (tmpX,tmpY,[cols{cidx} 'x'])
     hold on
-    if ~isempty(pos)
-        plot(pos(:,1),pos(:,2),'og','markersize',20)
-    end
-    plot(consLoc(:,1),consLoc(:,2),'xr','markersize',5) 
-%     for j=1 : nLoc
-%         plot(ROI(1:2,j),ROI(3:4,j),'-b')
-%     end
-    hold off
-%     colormap hot
-%     title(['Im Channel: ' num2str(i)])
-%     a = gca;
-%     a.FontSize = 14;
-    
+    subplot(1,2,2)
+    scatter (tmpX,tmpY,[cols{cidx} 'x'])
+    hold on
 end
+subplot(1,2,1)
+hold off
+axis image
+d = .6;
+c = [270.5,243.6];
+xlim([c(1)-d c(1)+d])
+ylim([c(2)-d c(2)+d])
+% ylim([242 243])
+
+subplot(1,2,2)
+hold off
+axis image
+d = .6;
+c = [430.3,277.2];
+xlim([c(1)-d c(1)+d])
+ylim([c(2)-d c(2)+d])
+shg
+%%
+% subplot(1,2,1)
+% xlim([269.5,271.5])
+% ylim([243, 244])
 
 % make a common list of sm detections? should I have a test for seeing a
 % molecule in at least 3 (or X) planes? once I have the common list I have
@@ -143,6 +325,3 @@ end
 % matrix between all channels. This should be generated in order to use
 % info from multiple planes to increase fit accuracy. it is from z tacks of
 % beads that we can create such a registration.
-
-
-

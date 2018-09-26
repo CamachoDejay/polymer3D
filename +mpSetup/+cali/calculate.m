@@ -1,4 +1,4 @@
-function [cal] = calculate(fPath, correctInt, flipCam2)
+function [cal, movInfo] = calculate(fPath, correctInt, flipCam2)
 %CALCULATE calculates calibration for the multiplane setup. NOTE that if
 %you choose to correct for intensity differences the data changes form
 %uint16 to double because we have to multiply by a correction factor
@@ -13,7 +13,7 @@ switch nargin
         flipCam2 = true;
 end
 
-cal.correctInt = correctInt;
+cal.correctInt = false;
 
 
 cal.reorder    = true;
@@ -60,8 +60,9 @@ waitbar(.3,h,'getting channel data')
 waitbar(.4,h,'getting focus metric')
 % getting the focus metric as used in EPFL we might want to change this to
 % a gradient method.
-[ cal.focusMet, cal.inFocus ] = mpSetup.cali.getFocusMetric( chData1c, chData2c , Z1, Z2 );
+[ cal.focusMet, cal.inFocus, cal.fit ] = mpSetup.cali.getFocusMetric( chData1c, chData2c , Z1, Z2 );
 cal.Zpos = Z1;
+
 % figure(2)
 % for i = 1:4
 %     plot(Z1,focusMet(:,i))
@@ -76,11 +77,11 @@ waitbar(.5,h,'getting new order for channels')
 % find the new order for the camera channels
 [ cal.neworder, cal.inFocus ] = mpSetup.cali.getNewOrder( cal.inFocus );
 
-waitbar(.6,h,'getting image shifts')
+waitbar(.7,h,'getting image shifts')
 % find image shift in order to have the same ROIs to a pixel resoltuon
 [ imShifts ] = mpSetup.cali.simpleImShift( cal.inFocus, chData1c, chData2c );
 
-waitbar(.7,h,'refining ROIs')
+waitbar(.8,h,'refining ROIs')
 % refine the ROIs to consider the shifts
 [ cal.ROI ] = mpSetup.cali.refineROI( cal.ROI, imShifts );
 
@@ -102,7 +103,7 @@ title('Camera 2 with ROIs')
 
 
 if cal.correctInt
-    waitbar(.8,h,'Correcting intensity')
+    waitbar(.9,h,'Correcting intensity')
     % update the channel data
     [ chData1c, chData2c ] = mpSetup.cali.getChData( movC1, movC2, cal.ROI );
     % calculate intensity correction
