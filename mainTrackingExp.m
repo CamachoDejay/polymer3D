@@ -10,7 +10,7 @@ path2File = 'E:\Data\Leuven Data\2018\06-June\29\5K - 0_25mgmL\';
 path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 60;
 
 %% MP Cal
 

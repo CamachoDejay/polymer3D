@@ -3,6 +3,7 @@ classdef TrackingExperiment < handle
     %   Detailed explanation goes here
     
     properties
+        
         path
         trackMovies
         cal2D
@@ -10,6 +11,7 @@ classdef TrackingExperiment < handle
         SRCal
         traces3D
         RMSD
+        
     end
     
     methods
@@ -171,6 +173,10 @@ classdef TrackingExperiment < handle
             
             obj.traces3D = allTraces;
             
+            filename = [obj.path filesep 'traces3D.mat'];
+            save(filename,allTraces);
+            
+            
             disp('=================> DONE <===================');
         end
         
@@ -193,7 +199,7 @@ classdef TrackingExperiment < handle
                     
             end
             MSD = cell(traces);
-            
+            MSDmat = zeros(obj.trackMovies.('mov1').raw.movInfo.maxFrame(1),length(traces));
             for i = 1 : length(traces)
                 
                 currentTrace = traces{i};
@@ -203,10 +209,18 @@ classdef TrackingExperiment < handle
                 currentTrace.RMSD(1:end-1) = MSD;
                 traces{i} = currentTrace;
                 MSD{i} = MSD;
+                MSDmat(1:length(MSD),i) = MSD(:);
                 
             end 
             obj.RMSD = MSD;
             obj.traces3D = traces;
+                     
+            filename = [obj.path filesep 'traces3D.mat'];
+            save(filename,'traces');
+            
+            filename = [obj.path filesep 'RMSD-all.mat'];
+            save(filename,'MSDmat');
+            
         end
         
         function showRMSD(obj)

@@ -53,6 +53,7 @@ classdef Movie < handle
                 fprintf('More than one Tiff, loading only:\n %s', file2Analyze(1).name);
                 fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
                 [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
+                
                 if iscell(frameInfo)
                     disp('Those tiff are multi-Images, we combine the info...')
                     [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo,false);
