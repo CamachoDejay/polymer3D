@@ -3,11 +3,11 @@ clc
 close all
 clear 
 
-path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
-path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
+path2ZCal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\ZCal - NormObjCorr';
+path2SRCal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\2DCal - normObjCorrPSFE';
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\29\5K - 0_25mgmL\TL-FluoBeads200nm-PIC0_25mgmL-5K_1';
-path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
+path2File = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\trackingCal - normObjCorr\TrackingX\FluoBeads200_TrackingX_320ms__1';
+path2Cal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\2DCal - normObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;
