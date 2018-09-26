@@ -132,40 +132,42 @@ classdef TrackingExperiment < handle
             for i = 1: nfields
                 
                 disp(['Retrieving data from tracking file ' num2str(i) ' / ' num2str(nfields) ' ...']);
-                
+                currentTrackMov = obj.trackMovies.(['mov' num2str(i)]);
                 if i == 1
                     %Ask user for info about the setup for detection
-                    obj.trackMovies.(['mov' num2str(i)]).giveInfo;
+                    currentTrackMov.giveInfo;
                     
                 else
                     %get the info about the setup stored into the first
                     %object
-                    obj.trackMovies.(['mov' num2str(i)]).info = obj.trackMovies.(['mov' num2str(1)]).getInfo;
+                    currentTrackMov.info = obj.trackMovies.(['mov' num2str(1)]).getInfo;
                     
                 end
                 
                 %Molecule detection
-                obj.trackMovies.(['mov' num2str(i)]).findCandidatePos(detectParam);
+                currentTrackMov.findCandidatePos(detectParam);
                 
                 %SR fitting
-                obj.trackMovies.(['mov' num2str(i)]).SRLocalizeCandidate;
+                currentTrackMov.SRLocalizeCandidate;
                 
                 %apply SRCal
-                obj.trackMovies.(['mov' num2str(i)]).applySRCal(true,5);
+
+                currentTrackMov.applySRCal;
                 
                 %apply ZCal
-                obj.trackMovies.(['mov' num2str(i)]).applyZCal;
+                currentTrackMov.applyZCal;
                 
                 %Plane consolidation
-                obj.trackMovies.(['mov' num2str(i)]).consolidatePlanes;
+                currentTrackMov.consolidatePlanes;
                 
                 %superResolve
-                obj.trackMovies.(['mov' num2str(i)]).superResolve(val2Use);
+                currentTrackMov.superResolve(val2Use);
                 
                 %tracking occurs here
-                obj.trackMovies.(['mov' num2str(i)]).trackParticle(trackParam);
                 
-                traces = obj.trackMovies.(['mov' num2str(i)]).getTraces;
+                currentTrackMov.trackParticle(trackParam);
+                
+                currentTrackMov.getTraces;
                 
                 allTraces = [allTraces; traces];
                 

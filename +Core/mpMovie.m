@@ -270,21 +270,18 @@ classdef MPMovie < Core.Movie
             
             frameInfo = obj.raw.frameInfo;
             movInfo   = obj.raw.movInfo;
-            step = 200;
-            maxRange = obj.raw.movInfo.maxFrame(1)*2;%2Cam
-            maxFrame = obj.raw.movInfo.maxFrame(1);
-            
+            step = 200;         
+            maxFrame = obj.raw.movInfo.maxFrame(1); 
             nStep = ceil(maxRange/step);
-            range = 1:step:maxRange;
             frame = 1:step/2:maxFrame;
             
             for i = 1:nStep
+                
                 if i < nStep
-                    cRange = range(i):range(i+1)-1;
+                   
                     cFrame = frame(i):frame(i+1)-1;
                 else
-                    
-                    cRange = range(i):maxRange;
+
                     cFrame = frame(i):maxFrame;                    
                     
                 end
@@ -296,11 +293,11 @@ classdef MPMovie < Core.Movie
                 [data] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
 
                 %saving data per plane and info to cal
-                [calib] = obj.saveCalibrated(data);
+                [calib] = obj.saveCalibrated(data,maxFrame);
             end           
          end
          
-         function [calib,fid] = saveCalibrated(obj,data)
+         function [calib,fid] = saveCalibrated(obj,data,maxFrame)
             cal = obj.cal2D.file;
             calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
             mkdir(calDir);
@@ -317,7 +314,7 @@ classdef MPMovie < Core.Movie
                 fPathTiff = [calDir filesep fName];
                 fieldN = sprintf('plane%d',i);
                 calib.filePath.(fieldN) = fPathTiff;
-                calib.nFrames = size(data,4);
+                calib.nFrames = maxFrame;
                 t = Tiff(fPathTiff, 'a');
 
                 t = dataStorage.writeTiff(t,squeeze(data(:,:,i,:)),16);
