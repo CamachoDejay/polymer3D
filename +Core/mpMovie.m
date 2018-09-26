@@ -289,9 +289,8 @@ classdef MPMovie < Core.Movie
                     
                 end
 
-                currentFrameInfo = frameInfo(cRange);
                  % load the raw data 
-                [ movC1, movC2] = Load.Movie.ome.load( currentFrameInfo, movInfo, cFrame );
+                [ movC1, movC2] = Load.Movie.ome.load( frameInfo, movInfo, cFrame );
 
                 %applying the calibration
                 [data] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );

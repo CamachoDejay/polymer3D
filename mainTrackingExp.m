@@ -3,11 +3,11 @@ clear
 close all;
 
 
-path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
-path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
+path2ZCal = 'M:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
+path2SRCal = 'M:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\29\5K - 0_25mgmL\';
-path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
+path2File = 'M:\Data\Leuven Data\2018\06-June\29\5K - 0_25mgmL\';
+path2Cal = 'M:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
 
 detectParam.delta = 6;
 detectParam.chi2 = 60;
@@ -25,5 +25,11 @@ trackingExp = Core.TrackingExperiment(path2File,calib.getCal,path2SRCal,path2ZCa
 trackingExp.retrieveMovies;
 
 %% get TrackingData
+trackParam.euDistXY = 600;
+trackParam.euDistZ  = 600;
+val2Use = 'bestFocus';
+trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);
 
-trackingExp.retriveTrackData;
+%%
+
+trackingExp.getRMSD('3D');

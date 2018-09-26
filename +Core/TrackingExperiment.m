@@ -151,7 +151,7 @@ classdef TrackingExperiment < handle
                 obj.trackMovies.(['mov' num2str(i)]).SRLocalizeCandidate;
                 
                 %apply SRCal
-                obj.trackMovies.(['mov' num2str(i)]).applySRCal;
+                obj.trackMovies.(['mov' num2str(i)]).applySRCal(true,5);
                 
                 %apply ZCal
                 obj.trackMovies.(['mov' num2str(i)]).applyZCal;
@@ -163,11 +163,11 @@ classdef TrackingExperiment < handle
                 obj.trackMovies.(['mov' num2str(i)]).superResolve(val2Use);
                 
                 %tracking occurs here
-                obj.trackMovies(['mov' num2str(i)]).trackParticle(trackParam);
+                obj.trackMovies.(['mov' num2str(i)]).trackParticle(trackParam);
                 
-                traces = obj.trackMovies(['mov' num2str(i)]).getTraces;
+                traces = obj.trackMovies.(['mov' num2str(i)]).getTraces;
                 
-                allTraces = [allTraces traces];
+                allTraces = [allTraces; traces];
                 
             end
             
