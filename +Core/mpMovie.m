@@ -270,28 +270,23 @@ classdef MPMovie < Core.Movie
             
             frameInfo = obj.raw.frameInfo;
             movInfo   = obj.raw.movInfo;
-            step = 200;
-            maxRange = obj.raw.movInfo.maxFrame(1)*2;%2Cam
-            maxFrame = obj.raw.movInfo.maxFrame(1);
-            
+            step = 200;         
+            maxFrame = obj.raw.movInfo.maxFrame(1); 
             nStep = ceil(maxRange/step);
-            range = 1:step:maxRange;
             frame = 1:step/2:maxFrame;
             
             for i = 1:nStep
+                
                 if i < nStep
-                    cRange = range(i):range(i+1)-1;
+                   
                     cFrame = frame(i):frame(i+1)-1;
                 else
-                    
-                    cRange = range(i):maxRange;
+
                     cFrame = frame(i):maxFrame;                    
                     
                 end
-
-                currentFrameInfo = frameInfo(cRange);
                  % load the raw data 
-                [ movC1, movC2] = Load.Movie.ome.load( currentFrameInfo, movInfo, cFrame );
+                [ movC1, movC2] = Load.Movie.ome.load( frameInfo, movInfo, cFrame );
 
                 %applying the calibration
                 [data] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
