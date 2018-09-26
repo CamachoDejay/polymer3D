@@ -626,7 +626,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             end
             
             y = (mot-mean(mot))*1000 ;
-            err = std(allTraces-y,[],2);
+            err = mean(abs(allTraces-y),2);
             
             H   = Plotting.shadedErrorBar(x(:),y(:),err(:));
             
