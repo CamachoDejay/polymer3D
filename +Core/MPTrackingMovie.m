@@ -562,12 +562,14 @@ classdef MPTrackingMovie < Core.MPLocMovie
             absMeanErr = meanErr;
             stdErr  = meanErr;
             Fig = figure;
+            allTraces = zeros(length(Motor),length(traces));
             for i = 1:length(traces)
                 
                 currentTrace = traces{i};
                 motorPos = Motor(currentTrace.frame(1:end))*1000;
                                                 
                 mot = motorPos - mean(motorPos);
+                %reflect y axis because of inverted directions
                 if or(strcmp(dim,'col'),strcmp(dim,'row'))
                    mot = motorPos - 2*(motorPos.*(mean(motorPos)/max(motorPos)))*mean(motorPos)/max(motorPos);
                    mot = mot - mean(mot);
@@ -577,7 +579,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
                 meanErr(i)    = mean(traceErr - mot);
                 absMeanErr(i) = mean(abs(traceErr - mot));
                 stdErr(i)     = std(traceErr - mot);
-                
+                allTraces(currentTrace.frame(1:end),i) = traceErr;
                 if size(currentTrace,1) > length(Motor)/2
                     subplot(1,2,1)
                     hold on
@@ -602,6 +604,35 @@ classdef MPTrackingMovie < Core.MPLocMovie
             disp(['abs mean ', dim,': ', num2str(mean(absMeanErr)), ' nm']);
             disp(['std ',dim,': ', num2str(mean(stdErr)), ' nm']);
             filename = [obj.raw.movInfo.Path filesep dim '-Fig'];
+            saveas(Fig,filename,'svg');
+            
+            test = allTraces~=0;
+            
+            test = sum(test,1);
+            [~,idx] = max(test);
+            idx2Use = test==test(idx);
+            allTraces = allTraces(:,idx2Use);
+            Motor = Motor(allTraces(:,1)~=0);
+            allTraces = allTraces(allTraces(:,1)~=0,:);
+            
+            Fig = figure;
+            x = 1:length(Motor);
+            
+            
+            if or(strcmp(dim,'col'),strcmp(dim,'row'))
+                   mot = Motor - 2*(Motor.*(mean(Motor)/max(Motor)))*mean(Motor)/max(Motor);
+            else
+                mot = Motor;
+            end
+            
+            y = (mot-mean(mot))*1000 ;
+            err = std(allTraces-y,[],2);
+            
+            H   = Plotting.shadedErrorBar(x(:),y(:),err(:));
+            
+            xlabel('Frame');
+            ylabel([dim,'Tracking position']);
+            filename = [obj.raw.movInfo.Path filesep dim '-ShadedErrFig'];
             saveas(Fig,filename,'svg');
         end
         
