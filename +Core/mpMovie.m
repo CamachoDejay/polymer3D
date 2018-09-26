@@ -77,6 +77,17 @@ classdef MPMovie < Core.Movie
                         fullpath = [file2Analyze.folder filesep file2Analyze.name];
                         tmp = load(fullpath);
                         calibrate = tmp.calib;
+                        
+                        for i = 1: length(fieldnames(calibrate.filePath))
+                            currentPath = calibrate.filePath.(['plane' num2str(i)]);
+                            idx1 = strfind(fullPath,'\calibrated');
+                            idx2 = strfind(currentPath,'\calibrated');
+                            
+                            newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
+                            
+                            calibrate.filePath.(['plane' num2str(i)]) = newPath;
+                            
+                        end
                         disp('Done');
 
                     else
@@ -256,45 +267,42 @@ classdef MPMovie < Core.Movie
     methods (Access = private)
         
         function [calib] = applyCalib(obj)
+            
             frameInfo = obj.raw.frameInfo;
             movInfo   = obj.raw.movInfo;
+            step = 200;
+            maxRange = obj.raw.movInfo.maxFrame(1)*2;%2Cam
+            maxFrame = obj.raw.movInfo.maxFrame(1);
             
+            nStep = ceil(maxRange/step);
+            range = 1:step:maxRange;
+            frame = 1:step/2:maxFrame;
             
-            if obj.raw.movInfo.isMultiImage
-                frame = 1:obj.raw.movInfo.indivFrame(1);
-                disp('Multiple frame, combining them in calibration, this may take a while...');
-                
-                nMovies = size(frameInfo,2)/max(frame)/2;
-                movC1 = zeros(movInfo.Length, movInfo.Width,nMovies*max(frame));
-                movC2 = movC1;
-                for i = 1: nMovies
-                    idx2Frame = (i-1)*(max(frame)*2)+1 : i*max(frame)*2;
-                    idx2FCam  = (i-1)*(max(frame))+1 : i*max(frame);
-                    currentFrameInfo = frameInfo(idx2Frame);
-                     % load the raw data 
-                    [ C1, C2] = Load.Movie.ome.load( currentFrameInfo, movInfo, frame );
-
-                    movC1(:,:,idx2FCam) = C1;
-                    movC2(:,:,idx2FCam) = C2;
+            for i = 1:nStep
+                if i < nStep
+                    cRange = range(i):range(i+1)-1;
+                    cFrame = frame(i):frame(i+1)-1;
+                else
+                    
+                    cRange = range(i):maxRange;
+                    cFrame = frame(i):maxFrame;                    
+                    
                 end
-                
-            else
-               frame = 1:obj.raw.movInfo.maxFrame(1);
-                [ movC1, movC2] = Load.Movie.ome.load( frameInfo, movInfo, frame );
 
-            end
-            %applying the calibration
-            [data] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
-            
-            %saving data per plane and info to cal
-            [calib] = obj.saveCalibrated(data);
-            
-           
+                currentFrameInfo = frameInfo(cRange);
+                 % load the raw data 
+                [ movC1, movC2] = Load.Movie.ome.load( currentFrameInfo, movInfo, cFrame );
+
+                %applying the calibration
+                [data] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
+
+                %saving data per plane and info to cal
+                [calib] = obj.saveCalibrated(data);
+            end           
          end
          
          function [calib,fid] = saveCalibrated(obj,data)
             cal = obj.cal2D.file;
-            step = 100;
             calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
             mkdir(calDir);
             %Save the resulting planes in separated TIF and save a txt info
@@ -311,23 +319,10 @@ classdef MPMovie < Core.Movie
                 fieldN = sprintf('plane%d',i);
                 calib.filePath.(fieldN) = fPathTiff;
                 calib.nFrames = size(data,4);
-                t = Tiff(fPathTiff, 'w');
-                    %Saving occurs in 100 steps to avoid memory issue in
-                    %matlab
-                    for j = 1:step:calib.nFrames
-                        
-                    range = j:j+step-1;
-                    
-                        if max(range)>= calib.nFrames
-                            
-                        range = j:calib.nFrames;
-                        
-                        end
-                        
-                    t = dataStorage.writeTiff(t,squeeze(data(:,:,i,range)),16);
-                    
-                    end
-                    
+                t = Tiff(fPathTiff, 'a');
+
+                t = dataStorage.writeTiff(t,squeeze(data(:,:,i,:)),16);
+
                 t.close;
                 %We also write a few info about the calibrated data in a
                 %text file
