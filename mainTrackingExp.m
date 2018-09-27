@@ -6,7 +6,7 @@ close all;
 path2ZCal = 'M:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
 path2SRCal = 'M:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
 
-path2File = 'M:\Data\Leuven Data\2018\06-June\29\5K - 0_25mgmL\';
+path2File = 'M:\Data\Leuven Data\2018\06-June\29\1K - 0_25mgmL';
 path2Cal = 'M:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
 
 detectParam.delta = 6;

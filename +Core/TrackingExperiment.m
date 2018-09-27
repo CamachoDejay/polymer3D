@@ -152,7 +152,7 @@ classdef TrackingExperiment < handle
                 
                 %apply SRCal
 
-                currentTrackMov.applySRCal;
+                currentTrackMov.applySRCal(true,5);
                 
                 %apply ZCal
                 currentTrackMov.applyZCal;
@@ -167,7 +167,7 @@ classdef TrackingExperiment < handle
                 
                 currentTrackMov.trackParticle(trackParam);
                 
-                currentTrackMov.getTraces;
+                traces = currentTrackMov.getTraces;
                 
                 allTraces = [allTraces; traces];
                 
@@ -176,13 +176,13 @@ classdef TrackingExperiment < handle
             obj.traces3D = allTraces;
             
             filename = [obj.path filesep 'traces3D.mat'];
-            save(filename,allTraces);
+            save(filename,'allTraces');
             
             
             disp('=================> DONE <===================');
         end
         
-        function [MSD,traces] = getRMSD(obj,dimension)
+        function [RMSD,traces] = getRMSD(obj,dimension)
             
             assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting RMSD');
             
@@ -200,7 +200,7 @@ classdef TrackingExperiment < handle
                     error('too many input arguments');
                     
             end
-            MSD = cell(traces);
+            RMSD = cell(traces);
             MSDmat = zeros(obj.trackMovies.('mov1').raw.movInfo.maxFrame(1),length(traces));
             for i = 1 : length(traces)
                 
@@ -210,17 +210,17 @@ classdef TrackingExperiment < handle
                 currentTrace.RMSD = zeros(size(currentTrace.row,1),1);
                 currentTrace.RMSD(1:end-1) = MSD;
                 traces{i} = currentTrace;
-                MSD{i} = MSD;
+                RMSD{i} = MSD;
                 MSDmat(1:length(MSD),i) = MSD(:);
                 
             end 
-            obj.RMSD = MSD;
+            obj.RMSD = RMSD;
             obj.traces3D = traces;
                      
             filename = [obj.path filesep 'traces3D.mat'];
             save(filename,'traces');
             
-            filename = [obj.path filesep 'RMSD-all.mat'];
+            filename = [obj.path filesep 'RMSD-allMat.mat'];
             save(filename,'MSDmat');
             
         end

@@ -270,10 +270,10 @@ classdef MPMovie < Core.Movie
             
             frameInfo = obj.raw.frameInfo;
             movInfo   = obj.raw.movInfo;
-            step = 200;         
+            step = 100;         
             maxFrame = obj.raw.movInfo.maxFrame(1); 
-            nStep = ceil(maxRange/step);
-            frame = 1:step/2:maxFrame;
+            nStep = ceil(maxFrame/step);
+            frame = 1:step:maxFrame;
             
             for i = 1:nStep
                 
