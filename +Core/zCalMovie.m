@@ -179,6 +179,8 @@ classdef ZCalMovie < Core.MPCalMovie
                             
                              zToNm = (zCalData{i,j}.frame*zStep - shift)*1000;
                              ellip2Store = zCalData{i,j}.ellip;
+                             magX2Store = zCalData{i,j}.magX;
+                             magY2Store = zCalData{i,j}.magY;
 % %                             [~,index] = (min(abs(1-ellipt)));
 % %                             [~,index2] = (max(fMetric));
 % %                             err = abs(zToNm(index)- abs(zToNm(index2)));
@@ -189,8 +191,11 @@ classdef ZCalMovie < Core.MPCalMovie
 %                              end
 
                                 data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
+                                data2Store.magX = magX2Store;
+                                data2Store.magY = magY2Store;
                                 data2Store.fMetric = zCalData{i,j}.fMetric;
                                 data2Store.gFitMet =  zCalData{i,j}.gFitMet;
+                                
                                 %tmp Store
                                 zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
                                 zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
