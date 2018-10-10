@@ -71,9 +71,9 @@ MPTrackMov.evalAccuracy
 %% getTraces 3D
 frame = 1:200;
 idx2Trace = 5;
-ROIradius = 20;
+ROIradius = 7;
 frameRate = 3;
 scaleBar  = 500; %in nm 
-%MPTrackMov.getTracesMovie
-%MPTrackMov.getTraces3DMovie(frame,idx2Trace,frameRate);
-MPTrackMov.getPartMovie(frame,idx2Trace,ROIradius,frameRate);
+%MPTrackMov.getTracesMovie(frame,idx2Trace,ROIradius,frameRate);
+MPTrackMov.getTraces3DMovie(frame,idx2Trace,ROIradius,frameRate);
+%MPTrackMov.getPartMovie(frame,idx2Trace,ROIradius,frameRate);
