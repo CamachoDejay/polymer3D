@@ -171,19 +171,30 @@ classdef MPTrackingMovie < Core.MPLocMovie
             obj.getTrace3DMovie(obj,frames,idx2Trace,frameRate);
         end
         
-        function getPartMovie(obj,frames,idx2Trace,ROI,frameRate)
+        function getPartMovie(obj,frames,idx2Trace,ROI,frameRate,scaleBar)
         assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting particle trace movie');
+        if nargin <6
+            scaleBar = 500;
+        elseif nargin <5
+            error('not enough input arguments');
+        else
+            error('too many input arguments');
+        end
         path2File = obj.raw.movInfo.Path;
         traces = obj.traces3D;
         roiRadius = ROI;
+        pxSize = obj.info.pxSize;
         currentTraces = traces {idx2Trace};
-        mainPos = [round(mean(currentTraces.row)/95) round(mean(currentTraces.col(1)/95))];
+        mainPos = [round(mean(currentTraces.row)/pxSize) round(mean(currentTraces.col(1)/pxSize))];
         nFrames = length(frames);
-        frames = currenTraces.frames(1:nFrames);
+        frames = currentTraces.frame(1:nFrames);
+        scaleBarPx = scaleBar/pxSize;
+        pos.row = currentTraces.row/pxSize - mainPos(1) + roiRadius + 1;
+        pos.col = currentTraces.col/pxSize - mainPos(2) + roiRadius + 1;
+        
+        for i = 1:obj.calibrated.nPlanes
 
-        for i = obj.calbrated.nPlanes
-
-            currentPlane = MPTrackMov.getPlane(i);
+            currentPlane = obj.getPlane(i);
             % ROI = currentPlane;
             ROI = currentPlane(mainPos(1)-roiRadius:mainPos(1)+roiRadius,...
             mainPos(2)-roiRadius:mainPos(2)+roiRadius,:);
@@ -191,6 +202,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             Fig = figure;
             %to get as less white border as possible
             ax = gca;
+            
             outerpos = ax.OuterPosition;
             ti = ax.TightInset; 
             left = outerpos(1) + ti(1);
@@ -198,26 +210,30 @@ classdef MPTrackingMovie < Core.MPLocMovie
             ax_width = outerpos(3) - ti(1) - ti(3);
             ax_height = outerpos(4) - ti(2) - ti(4);
             ax.Position = [left bottom ax_width ax_height];
+            
+            for j = 1:nFrames
+            
+            gcf;
+           
+            imagesc(ROI(:,:,frames(j)))
+            hold on
+            %scale bar
+            x = size(ROI,2)-scaleBarPx-(0.05*size(ROI,2)):size(ROI,2)-0.05*size(ROI,2);
+            y = ones(1,length(x))*size(ROI,1)-0.05*size(ROI,2);
+            text(mean(x)-2,mean(y)-2,[num2str(scaleBar) ' nm'],'Color','white','fontWeight','bold');
+            plot(x,y,'-w','LineWidth',5);
+            plot(pos.col(1:j),pos.row(1:j),'-b')
+            caxis([min(min(min(ROI))) max(max(max(ROI)))]);
+            set(ax,'visible','off');
+            axis image;
+            
+            colormap('hot')
+            drawnow;
+            
+            hold off
+            mov(j) = getframe(Fig);
 
-                for j = 1:nFrames
-
-                gcf;
-                imagesc(ROI(:,:,frames(j)))
-                hold on
-                %scale bar
-                x = size(ROI,2)-13:size(ROI,2)-3;
-                y = ones(1,length(x))*size(ROI,1)-3;
-                plot(x,y,'-w','LineWidth',5);
-                caxis([min(min(min(ROI))) max(max(max(ROI)))]);
-                axis image;
-                set(gca,'visible','off');
-                colormap('hot')
-                drawnow;
-
-                hold off
-                mov(j) = getframe(Fig);
-
-                end
+            end
             ext='.mp4';
             filename=sprintf('%s%splane%d-Trace%d%s', path2File,'\',i,idx2Trace,ext);
             v = VideoWriter(filename,'MPEG-4');

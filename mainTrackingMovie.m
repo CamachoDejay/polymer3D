@@ -6,7 +6,7 @@ clear
 path2ZCal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\ZCal - NormObjCorr';
 path2SRCal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\2DCal - normObjCorrPSFE';
 
-path2File = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\trackingCal - normObjCorr\TrackingZ\FluoBeads200_TrackingZ_160ms__1';
+path2File = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\trackingCal - normObjCorr\TrackingX\FluoBeads200_TrackingX_320ms__1';
 path2Cal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\2DCal - normObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
 
 detectParam.delta = 6;
@@ -69,11 +69,11 @@ MPTrackMov.evalAccuracy
 [int,SNR] = MPTrackMov.getAvgIntensity;
 
 %% getTraces 3D
-frame = 1:100;
+frame = 1:200;
 idx2Trace = 5;
-ROIradius = 10;
+ROIradius = 20;
 frameRate = 3;
-
+scaleBar  = 500; %in nm 
 %MPTrackMov.getTracesMovie
 %MPTrackMov.getTraces3DMovie(frame,idx2Trace,frameRate);
-%MPTrackMov.getPartMovie
+MPTrackMov.getPartMovie(frame,idx2Trace,ROIradius,frameRate);
