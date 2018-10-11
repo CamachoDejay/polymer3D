@@ -11,16 +11,13 @@ classdef MPMovie < Core.Movie
     
     methods
         
-        function obj = MPMovie(raw,cal)
+        function obj = MPMovie(raw,cal,info)
            
-            obj = obj@Core.Movie(raw);
-            
-            switch nargin
-                case 1
-                case 2
-                    obj.cal2D = cal;
-                    obj.calibrated = raw;
-            end 
+            obj = obj@Core.Movie(raw,info);
+
+            obj.cal2D = cal;
+            obj.calibrated = raw;
+
         end
         
         function set.cal2D(obj,cal2D)
@@ -144,9 +141,16 @@ classdef MPMovie < Core.Movie
             h = figure(1);
             h.Name = sprintf('Frame %d',idx);
             for i = 1:nImages
-                
+                currentIM = frame.(fNames{i});
                 subplot(2,nImages/nsFig,i)
-                imagesc(frame.(fNames{i}))
+                if strcmp(obj.info.type,'transmission')
+                    colormap('gray');
+                    %calculate reflectance (somehow better than absorbance)
+                    currentIM = 1 - double(currentIM)./max(max(double(currentIM)));
+                else
+                    colormap('jet')
+                end
+                imagesc(currentIM)
                 axis image;
                 grid on;
                 a = gca;
@@ -154,7 +158,7 @@ classdef MPMovie < Core.Movie
                 a.YTickLabel = [];
                 a.GridColor = [1 1 1];
                 title({fNames{i},sprintf(' Zpos = %0.3f',zPos(i))});
-                colormap('jet')
+               
                 
             end
         end
@@ -248,9 +252,9 @@ classdef MPMovie < Core.Movie
         function [camConfig] = determineCAMConfig(obj)
             
              planeDist = abs(mean(diff(obj.calibrated.oRelZPos)))*1000;
-             if planeDist > 450
+             if planeDist > 350
                  camConfig = 'fullRange';
-             elseif and(planeDist < 350, planeDist>250)
+             elseif and(planeDist < 350, planeDist>200)
                  camConfig = 'alternated';
              else
                  error('Something is wrong with your distance between planes')
@@ -272,7 +276,7 @@ classdef MPMovie < Core.Movie
             movInfo   = obj.raw.movInfo;
             step = 200;         
             maxFrame = obj.raw.movInfo.maxFrame(1); 
-            nStep = ceil(maxRange/step);
+            nStep = ceil(maxFrame/step);
             frame = 1:step/2:maxFrame;
             
             for i = 1:nStep

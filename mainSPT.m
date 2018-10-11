@@ -10,16 +10,19 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
+path2File= 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\ZCalibration\PSFE\200nmGoldBeadsCalPSFE_3';
+path2Cal  = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\2DCal\200nmFluoBeadsCal_1';
 
-path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
-path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
-path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
+% path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
+% path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
+% path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 40;
+info.type = 'transmission';
 
 %% create a Movie Object
-mov1 = Core.Movie(path2File);
+mov1 = Core.Movie(path2File,info);
 %mov2 = Core.Movie(path2zCal);
 %% showFrame
 mov1.showFrame(22);
@@ -32,21 +35,21 @@ calib.calc;
 calib.showCal
 
 %% Calibrate
-mpMov = Core.MPMovie(path2File,calib.getCal);
+mpMov = Core.MPMovie(path2File,calib.getCal,info);
 
 mpMov.calibrate;
 
 mpMov.showFrame(15);
 
 %% MP Particle Movie
-mpPartMov = Core.MPParticleMovie(path2File,calib.getCal);
+mpPartMov = Core.MPParticleMovie(path2File,calib.getCal,info);
 mpPartMov.giveInfo;
 mpPartMov.calibrate;
 %% getCandidatePos
 
 mpPartMov.findCandidatePos(detectParam);
-candidate = mpPartMov.getCandidatePos(24);
-mpPartMov.showCandidate(24);
+%candidate = mpPartMov.getCandidatePos(24);
+mpPartMov.showCandidate(1);
 
 %% SR Localize
 mpPartMov.SRLocalizeCandidate;

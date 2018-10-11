@@ -7,9 +7,9 @@ classdef MPCalMovie < Core.MPParticleMovie
     end
     
     methods
-        function obj = MPCalMovie(raw,cal)
+        function obj = MPCalMovie(raw,cal,info)
             
-            obj  = obj@Core.MPParticleMovie(raw,cal);
+            obj  = obj@Core.MPParticleMovie(raw,cal,info);
         end
         
         function [trace, counter] = trackInZ(obj,trackParam)

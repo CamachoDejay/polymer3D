@@ -7,10 +7,10 @@ classdef MPTrackingMovie < Core.MPLocMovie
     end
     
     methods
-        function obj = MPTrackingMovie(raw, MPCal, SRCal, zCal)
+        function obj = MPTrackingMovie(raw, MPCal, info, SRCal, zCal)
             %trackingMovie Construct an instance of this class
             %   Detailed explanation goes here
-             obj  = obj@Core.MPLocMovie(raw,MPCal,SRCal,zCal);
+             obj  = obj@Core.MPLocMovie(raw,MPCal,info,SRCal,zCal);
              
         end
         

@@ -7,6 +7,7 @@ classdef ZCalibration < handle
         path
         zCalMovies
         cal2D
+        info
         calib
         traces3D
         zPosMotor
@@ -16,12 +17,12 @@ classdef ZCalibration < handle
     
     methods
         
-        function obj = ZCalibration(path2zCal,cal2D)
+        function obj = ZCalibration(path2zCal,cal2D,info)
             %zCalibration Construct an instance of this class
             %   Detailed explanation goes here
             obj.path = path2zCal;
             obj.cal2D = cal2D;
-            
+            obj.info = info;
             %We prepare zAccuracy
             obj.zAccuracy.spline = table(0,0,'VariableNames',{'BestFocus','Mean'});
             obj.zAccuracy.poly   = table(0,0,'VariableNames',{'BestFocus','Mean'});
@@ -64,7 +65,7 @@ classdef ZCalibration < handle
                     if ~all(idx==0)
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
-                        tmp = Core.ZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D);
+                        tmp = Core.ZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want
                         %any other movement here.
@@ -249,7 +250,7 @@ classdef ZCalibration < handle
                 
                 [Res] = Core.ZCalibration.findConsecVal(idx2Keep);
  
-                dataCurrPlane = dataCurrPlane(Res(1):Res(2),:);
+                dataCurrPlane = dataCurrPlane(Res,:);
                 [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
                     dataCurrPlane.ellip],length(dataCurrPlane.z)/7);
                 
@@ -338,28 +339,28 @@ classdef ZCalibration < handle
     methods (Static)
          function [Res] = findConsecVal(bool)
             %!!Assume the longuest section is more or less centered!!
-                
+                    %Divide the data in 2 part
                     idx1 = round(length(bool)/2);
                     part1 = fliplr(bool(1:idx1)');
-                    part2 = bool(idx1:end);
-                    
+                    part2 = bool(idx1+1:end);
+                    % find the first 0 in both part
                     idxPart1 = find(part1==0,1,'first');
                     idxPart2 = find(part2==0,1,'first');
                     
                     if and(isempty(idxPart1),isempty(idxPart2))
                         idxPart1 = 1;
                         idxPart2 = length(bool);
-                        Res = [idxPart1, idxPart2];
+                        Res = [idxPart1: idxPart2];
                     
                     elseif isempty(idxPart1)
                          idxPart1 = 1;
-                         Res = [idxPart1, idx1+idxPart2];
+                         Res = [idxPart1: idx1+(idxPart2-1)];
                     elseif isempty(idxPart2)
                          idxPart2 = length(bool);
-                         Res = [idx1-idxPart1, idxPart2];
+                         Res = [idx1-(idxPart1-2): idxPart2];
                     else
                          
-                        Res = [idx1-(idxPart1-1), idx1+(idxPart2-1)];
+                        Res = [idx1-(idxPart1-2): idx1+(idxPart2-1)];
                         
                     end
                     
@@ -389,7 +390,7 @@ classdef ZCalibration < handle
                 
                 [Res] = Core.ZCalibration.findConsecVal(idx2Keep);
  
-                dataCurrPlane = dataCurrPlane(Res(1):Res(2),:);
+                dataCurrPlane = dataCurrPlane(Res,:);
                 [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
                     dataCurrPlane.ellip],length(dataCurrPlane.z)/7);
                 

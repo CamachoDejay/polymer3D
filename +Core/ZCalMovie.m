@@ -9,12 +9,12 @@ classdef ZCalMovie < Core.MPCalMovie
     
     methods
         
-        function obj = ZCalMovie(raw,cal,candidatePos)
+        function obj = ZCalMovie(raw,cal,info,candidatePos)
             %UNTITLED6 Construct an instance of this class
             %   Detailed explanation goes here
-            obj  = obj@Core.MPCalMovie(raw,cal);
+            obj  = obj@Core.MPCalMovie(raw,cal,info);
             
-            if nargin == 3
+            if nargin == 4
                 
                 obj.candidatePos = candidatePos;
                 
@@ -154,7 +154,7 @@ classdef ZCalMovie < Core.MPCalMovie
                             %anyhting
                             %we only process the data if there are point above
                             %and below focus.
-                        elseif and(and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1))),fMetric(idx)>50)
+                        elseif and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1)))
                             %Do the fit and extract the exact z position of the focus
                             p = polyfit(zPos,ellipt,deg);
                             zVec = min(zPos):0.001:max(zPos);%1nm step

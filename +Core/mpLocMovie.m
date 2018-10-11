@@ -12,9 +12,9 @@ classdef MPLocMovie < Core.MPParticleMovie
     
     methods
         
-        function obj = MPLocMovie(raw, MPCal, SRCal, zCal)
+        function obj = MPLocMovie(raw, MPCal,info, SRCal, zCal)
             
-            obj  = obj@Core.MPParticleMovie(raw,MPCal);
+            obj  = obj@Core.MPParticleMovie(raw,MPCal,info);
             
             switch nargin
                 

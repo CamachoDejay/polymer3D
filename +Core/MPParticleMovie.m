@@ -12,9 +12,9 @@ classdef MPParticleMovie < Core.MPMovie
     end
     
     methods
-        function obj = MPParticleMovie(raw,cal)
+        function obj = MPParticleMovie(raw,cal,info)
             
-            obj  = obj@Core.MPMovie(raw,cal);
+            obj  = obj@Core.MPMovie(raw,cal,info);
             
         end
         
@@ -290,9 +290,9 @@ classdef MPParticleMovie < Core.MPMovie
             nsFig = 2;
             
             candidate = obj.getCandidatePos(idx);
-            rowPos    = candidate(:,1);
-            colPos    = candidate(:,2);
-            planeIdx  = candidate(:,3);
+            rowPos    = candidate.row;
+            colPos    = candidate.col;
+            planeIdx  = candidate.plane;
             
             h = figure(2);
             h.Name = sprintf('Frame %d',idx);
@@ -766,8 +766,13 @@ classdef MPParticleMovie < Core.MPMovie
                 nameFields = fieldnames(volIm);
                 
                 for j = 1:length(nameFields)
+                    currentIM = double(volIm.(nameFields{j}));
                     %localization occurs here
-                    [ pos, meanFAR, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
+                    if strcmp(obj.info.type,'transmission')
+                        %calc reflection
+                        currentIM = 1 - double(currentIM)./max(max(currentIM));
+                    end
+                    [ pos, meanFAR, ~ ] = Localization.smDetection(currentIM,...
                         delta, FWHM_pix, chi2 );
                     if ~isempty(pos)
                         startIdx = find(position.row==0,1,'First');
@@ -811,7 +816,12 @@ classdef MPParticleMovie < Core.MPMovie
             for i = 1:size(frameCandidate,1)
                 
                 plane = frameCandidate.plane(i);
-                planeData = data.(sprintf('plane%d',plane));
+                planeData = double(data.(sprintf('plane%d',plane)));
+
+                if strcmp(obj.info.type,'transmission')
+                    %calc reflection
+                    planeData = 1 - planeData./max(max(planeData));
+                end
                 
                 %Get the ROI
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...

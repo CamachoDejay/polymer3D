@@ -8,10 +8,10 @@ path2zCal = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\ZCalibration\PSF
 path2Cal  = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\2DCal\200nmFluoBeadsCal_1';
 
 %% Initialize a zCalibration Object
-
+info.type = 'transmission';
 calib = Core.MPCalibration(path2Cal);
 
-testZCal = Core.ZCalibration(path2zCal,calib.getCal);
+testZCal = Core.ZCalibration(path2zCal,calib.getCal,info);
 
 %% get zCalibrationMovie
 
@@ -20,8 +20,8 @@ testZCal.retrieveZCalMov;
 %% extract zData
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
-fitZParam.deg = 6;
+detectParam.chi2 = 40;
+fitZParam.deg = 3;
 fitZParam.ellipRange = [0.5 2];
 
 trackParam.euDistPx = 6; 
@@ -35,7 +35,7 @@ testZCal.zCalibrate;
 
 
 %% show calib
-method = 'spline';
+method = 'poly';
 testZCal.showZCalibration(method);
 
 %% test Calibration

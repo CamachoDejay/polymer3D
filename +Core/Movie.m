@@ -126,15 +126,13 @@ classdef Movie < handle
             FWHM_pix = FWHMnm/pxSize;
             sigmaPix = sigma_nm/pxSize;
             %store info        
-            inform.pxSize = pxSize;
-            inform.NA = NA;
-            inform.emW = emW;
-            inform.FWHM_px =  FWHM_pix;
-            inform.sigma_px = sigmaPix;
-            inform.comment = comment;
-            
-            obj.info = inform;
-            
+            obj.info.pxSize = pxSize;
+            obj.info.NA = NA;
+            obj.info.emW = emW;
+            obj.info.FWHM_px =  FWHM_pix;
+            obj.info.sigma_px = sigmaPix;
+            obj.info.comment = comment;
+
         end
         
         function showFrame(obj,idx)
@@ -152,9 +150,17 @@ classdef Movie < handle
             h.Name = sprintf('Frame %d',idx);
             
             for i = 1:nImages
-                
+                currentIM = frame.(fNames{i});
                 subplot(2,nImages/nsFig,i)
-                imagesc(frame.(fNames{i}))
+                if strcmp(obj.info.type,'transmission')
+                    colormap('gray');
+                    %calculate reflectance (somehow better than absorbance)
+                    currentIM = 1 - double(currentIM)./max(max(double(currentIM)));
+                else
+                    colormap('jet');
+                end
+                
+                imagesc(currentIM)
                 axis image;
                 grid on;
                 a = gca;
@@ -162,7 +168,7 @@ classdef Movie < handle
                 a.YTickLabel = [];
                 a.GridColor = [1 1 1];
                 title({fNames{i}, sprintf('Frame %d',idx)});
-                colormap('jet')
+                
                 
             end
         end
