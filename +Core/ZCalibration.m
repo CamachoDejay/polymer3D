@@ -276,13 +276,14 @@ classdef ZCalibration < handle
                 fit = fit(and(fit<ellipRange(2),fit>ellipRange(1)));
                 subplot(1,2,1)
                 hold on
+                markerSize = 25;
                 scatter(binnedData(:,1),binnedData(:,2))
                 plot(zVec,fit,'r')
                 title('Binned data fitted with Spline')
                 
                 subplot(1,2,2)
                 hold on
-                scatter(dataCurrPlane.z,dataCurrPlane.ellip)
+                scatter(dataCurrPlane.z,dataCurrPlane.ellip,markerSize,'filled')
                 plot(zVec,fit,'r','LineWidth',2)
                 title('Full data fitted with polynomial')
                 

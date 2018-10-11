@@ -4,8 +4,8 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\ZCal - NormObjCorr';
-path2Cal  = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\2DCal - normObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
+path2zCal = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\ZCalibration\PSFE';
+path2Cal  = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\2DCal\200nmFluoBeadsCal_1';
 
 %% Initialize a zCalibration Object
 
