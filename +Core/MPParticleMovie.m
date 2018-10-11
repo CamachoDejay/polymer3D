@@ -835,8 +835,8 @@ classdef MPParticleMovie < Core.MPMovie
                 %LRT focus metric
                 [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
                 
-                rowPos = frameCandidate.row(i) + row;
-                colPos = frameCandidate.col(i) + col;
+                rowPos = round(frameCandidate.row(i)) + row;
+                colPos = round(frameCandidate.col(i)) + col;
 
                 %storing info
                 candMet.row(i) = rowPos;

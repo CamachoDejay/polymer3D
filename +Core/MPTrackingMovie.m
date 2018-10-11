@@ -189,10 +189,11 @@ classdef MPTrackingMovie < Core.MPLocMovie
         mainPos = [round(mean(currentTraces.row)/pxSize) round(mean(currentTraces.col(1)/pxSize))];
         nFrames = length(frames);
         scaleBarPx = scaleBar/pxSize;
-        pos.row = currentTraces.row/pxSize - mainPos(1) + roiRadius + 1;
-        pos.col = currentTraces.col/pxSize - mainPos(2) + roiRadius + 1;
-        
-        for i = 1:obj.calibrated.nPlanes
+        pos.row = currentTraces.row/pxSize - mainPos(1) + roiRadius + 1/2;
+        pos.col = currentTraces.col/pxSize - mainPos(2) + roiRadius + 1/2;
+        framesIm = frames(ismember(frames,currentTraces.frame));
+        framesPos = find(ismember(currentTraces.frame,frames));
+        for i = 3:obj.calibrated.nPlanes
 
             currentPlane = obj.getPlane(i);
             % ROI = currentPlane;
@@ -213,11 +214,12 @@ classdef MPTrackingMovie < Core.MPLocMovie
             ext = '.gif';
             filename=sprintf('%s%splane%d-Trace%d%s', path2File,'\',i,idx2Trace,ext);
             for j = 1:nFrames
-            f0 = frames(1);
-            f = frames(j);
+            f0 = framesPos(1);
+            f = framesPos(j);
+            
             gcf;
            
-            imagesc(ROI(:,:,f))
+            imagesc(ROI(:,:,framesIm(j)))
             hold on
             %scale bar
             x = size(ROI,2)-scaleBarPx-(0.05*size(ROI,2)):size(ROI,2)-0.05*size(ROI,2);
@@ -225,7 +227,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             text(min(x),mean(y)-1,[num2str(scaleBar) ' nm'],'Color','white','fontWeight','bold','fontSize',14);
             plot(x,y,'-w','LineWidth',5);
             plot(pos.col(f0:f),pos.row(f0:f),'-b')
-            scatter(pos.col(f0:f),pos.row(f0:f),'filled','MarkerEdgeColor','blue',...
+            scatter(pos.col(f0:f),pos.row(f0:f),10,'filled','MarkerEdgeColor','blue',...
               'MarkerFaceColor','blue')
             caxis([min(min(min(ROI))) max(max(max(ROI)))]);
             set(ax,'visible','off');

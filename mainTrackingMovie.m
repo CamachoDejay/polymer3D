@@ -69,7 +69,7 @@ MPTrackMov.evalAccuracy
 [int,SNR] = MPTrackMov.getAvgIntensity;
 
 %% getTraces 3D
-frame =1:998;
+frame =1:999;
 idx2Trace = 1;
 ROIradius = 12;
 frameRate = 5;
