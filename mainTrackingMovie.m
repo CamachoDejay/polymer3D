@@ -3,11 +3,11 @@ clc
 close all
 clear 
 
-path2ZCal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\ZCal - NormObjCorr';
-path2SRCal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\2DCal - normObjCorrPSFE';
+path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
+path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
 
-path2File = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\trackingCal - normObjCorr\TrackingX\FluoBeads200_TrackingX_320ms__1';
-path2Cal = 'D:\Documents\Unif\PhD\2018-Data\06 - Jun\27\2DCal - normObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
+path2File = 'E:\Data\Leuven Data\2018\06-June\29\1K - 0_25mgmL\TL-FluoBeads200nm-PIC0_25mgmL-1K_2';
+path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;
@@ -51,8 +51,8 @@ frames = 1:100;
 %MPTrackMov.showParticle;
 
 %% tracking
-trackParam.euDistXY = 600;
-trackParam.euDistZ  = 600;
+trackParam.euDistXY = 1000;
+trackParam.euDistZ  = 1000;
 MPTrackMov.trackParticle(trackParam);
 traces = MPTrackMov.getTraces;
 %% plot
@@ -69,11 +69,11 @@ MPTrackMov.evalAccuracy
 [int,SNR] = MPTrackMov.getAvgIntensity;
 
 %% getTraces 3D
-frame = 1:200;
-idx2Trace = 5;
-ROIradius = 7;
-frameRate = 3;
+frame =1:998;
+idx2Trace = 1;
+ROIradius = 12;
+frameRate = 5;
 scaleBar  = 500; %in nm 
-%MPTrackMov.getTracesMovie(frame,idx2Trace,ROIradius,frameRate);
-MPTrackMov.getTraces3DMovie(frame,idx2Trace,ROIradius,frameRate);
+MPTrackMov.getTracesMovie(frame,idx2Trace,ROIradius,frameRate,scaleBar);
+%MPTrackMov.getTraces3DMovie(frame,idx2Trace,ROIradius,frameRate);
 %MPTrackMov.getPartMovie(frame,idx2Trace,ROIradius,frameRate);

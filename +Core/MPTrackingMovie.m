@@ -166,17 +166,18 @@ classdef MPTrackingMovie < Core.MPLocMovie
         
         function getTracesMovie(obj,frames,idx2Trace,ROI,frameRate,scaleBar)
             assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting movies');
-            obj.getPartMovie(obj,frames,idx2Trace,ROI,frameRate,scaleBar);
+            obj.getPartMovie(frames,idx2Trace,ROI,frameRate,scaleBar);
             
-            obj.getTrace3DMovie(obj,frames,idx2Trace,frameRate);
+            obj.getTrace3DMovie(frames,idx2Trace,ROI,frameRate);
         end
         
         function getPartMovie(obj,frames,idx2Trace,ROI,frameRate,scaleBar)
         assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting particle trace movie');
-        if nargin <6
+        if nargin < 6
             scaleBar = 500;
         elseif nargin <5
             error('not enough input arguments');
+        elseif nargin ==6
         else
             error('too many input arguments');
         end
@@ -187,7 +188,6 @@ classdef MPTrackingMovie < Core.MPLocMovie
         currentTraces = traces {idx2Trace};
         mainPos = [round(mean(currentTraces.row)/pxSize) round(mean(currentTraces.col(1)/pxSize))];
         nFrames = length(frames);
-        frames = currentTraces.frame(1:nFrames);
         scaleBarPx = scaleBar/pxSize;
         pos.row = currentTraces.row/pxSize - mainPos(1) + roiRadius + 1;
         pos.col = currentTraces.col/pxSize - mainPos(2) + roiRadius + 1;
@@ -210,19 +210,23 @@ classdef MPTrackingMovie < Core.MPLocMovie
             ax_width = outerpos(3) - ti(1) - ti(3);
             ax_height = outerpos(4) - ti(2) - ti(4);
             ax.Position = [left bottom ax_width ax_height];
-            
+            ext = '.gif';
+            filename=sprintf('%s%splane%d-Trace%d%s', path2File,'\',i,idx2Trace,ext);
             for j = 1:nFrames
-            
+            f0 = frames(1);
+            f = frames(j);
             gcf;
            
-            imagesc(ROI(:,:,frames(j)))
+            imagesc(ROI(:,:,f))
             hold on
             %scale bar
             x = size(ROI,2)-scaleBarPx-(0.05*size(ROI,2)):size(ROI,2)-0.05*size(ROI,2);
             y = ones(1,length(x))*size(ROI,1)-0.05*size(ROI,2);
-            text(mean(x)-2,mean(y)-2,[num2str(scaleBar) ' nm'],'Color','white','fontWeight','bold');
+            text(min(x),mean(y)-1,[num2str(scaleBar) ' nm'],'Color','white','fontWeight','bold','fontSize',14);
             plot(x,y,'-w','LineWidth',5);
-            plot(pos.col(1:j),pos.row(1:j),'-b')
+            plot(pos.col(f0:f),pos.row(f0:f),'-b')
+            scatter(pos.col(f0:f),pos.row(f0:f),'filled','MarkerEdgeColor','blue',...
+              'MarkerFaceColor','blue')
             caxis([min(min(min(ROI))) max(max(max(ROI)))]);
             set(ax,'visible','off');
             axis image;
@@ -231,7 +235,21 @@ classdef MPTrackingMovie < Core.MPLocMovie
             drawnow;
             
             hold off
-            mov(j) = getframe(Fig);
+            frame = getframe(Fig);
+            mov(j) = frame;
+            
+            im = frame2im(frame);
+            [imind,cm] = rgb2ind(im,256);
+           
+            if j == 1
+                
+                imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
+                
+            else
+                
+                imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
+           
+            end
 
             end
             ext='.mp4';
