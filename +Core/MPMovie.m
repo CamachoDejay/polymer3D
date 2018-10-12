@@ -143,13 +143,13 @@ classdef MPMovie < Core.Movie
             for i = 1:nImages
                 currentIM = frame.(fNames{i});
                 subplot(2,nImages/nsFig,i)
+                
                 if strcmp(obj.info.type,'transmission')
                     colormap('gray');
-                    %calculate 
-                    currentIM = imcomplement(currentIM);
                 else
                     colormap('jet')
                 end
+                
                 imagesc(currentIM)
                 axis image;
                 grid on;

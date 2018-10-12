@@ -346,9 +346,9 @@ classdef MPParticleMovie < Core.MPMovie
                         hold on
                         for j = 1 : nParticles
                             currPart = obj.particles.List{idx}{j};
-                            if(~isempty(currPart(currPart(:,end) == i)))
-                                part2Plot = currPart(currPart(:,end) == i,:);
-                                plot(part2Plot(2),part2Plot(1),'o',...
+                            if(~isempty(currPart(currPart.plane == i,:)))
+                                part2Plot = currPart(currPart.plane == i,:);
+                                plot(part2Plot.col,part2Plot.row,'o',...
                                     'LineWidth',2, 'MarkerSize',10, 'MarkerEdgeColor',colors(j,:));
                             end
                         end
@@ -362,15 +362,15 @@ classdef MPParticleMovie < Core.MPMovie
                         
                         currPart = obj.particles.List{idx}{i};
                         %Remove rows containing NaNs
-                        idx2NaN = isnan(currPart(:,1));
+                        idx2NaN = isnan(currPart.row);
                         currPart(idx2NaN,:) = [];
-                        planes = currPart(:,end);
+                        planes = currPart.plane;
                         figure(20+i)
                         hold on
                         for j = 1 : length(planes)
                             jdx = planes(j);
                             currFrame = frame.(sprintf('plane%d',jdx));
-                            ROI = EmitterSim.getROI(currPart(j,2), currPart(j,1),...
+                            ROI = EmitterSim.getROI(currPart.col(j), currPart.row(j),...
                                 roiSize, size(currFrame,2), size(currFrame,1));
                             subplot(1,length(planes),j)
                             imagesc(currFrame(ROI(3):ROI(4),ROI(1):ROI(2)));
@@ -463,7 +463,6 @@ classdef MPParticleMovie < Core.MPMovie
             end
         end
                 
-
     end
      methods (Static)
         %method linked to candidate

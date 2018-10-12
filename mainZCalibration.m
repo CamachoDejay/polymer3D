@@ -22,7 +22,7 @@ testZCal.retrieveZCalMov;
 detectParam.delta = 6;
 detectParam.chi2 = 40;
 fitZParam.deg = 3;
-fitZParam.ellipRange = [0.5 2];
+fitZParam.ellipRange = [0.7 1.42];
 
 trackParam.euDistPx = 6; 
 trackParam.commonPlanes = 2;
@@ -39,8 +39,8 @@ method = 'poly';
 testZCal.showZCalibration(method);
 
 %% test Calibration
-%fittingType = 'poly';
-fittingType = 'spline';
+fittingType = 'poly';
+%fittingType = 'spline';
 testZCal.evalAccuracy(fittingType);
 %% Save cal
 

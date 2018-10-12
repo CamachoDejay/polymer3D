@@ -26,7 +26,6 @@ classdef MPCalMovie < Core.MPParticleMovie
             end
             
             [trace,counter] = obj.zTracking(trackParam);
-            
             obj.particles.traces = trace;
             obj.particles.nTraces = counter;
             

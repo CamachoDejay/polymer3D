@@ -10,7 +10,7 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File= 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\ZCalibration\PSFE\200nmGoldBeadsCalPSFE_3';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\ZCalibration\PSFE\200nmGoldBeadsCalPSFE_4';
 path2Cal  = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\2DCal\200nmFluoBeadsCal_1';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
@@ -25,7 +25,7 @@ info.type = 'transmission';
 mov1 = Core.Movie(path2File,info);
 %mov2 = Core.Movie(path2zCal);
 %% showFrame
-mov1.showFrame(22);
+mov1.showFrame(60);
 %mov2.showFrame(51);
 %% Calib
 calib = Core.MPCalibration(path2Cal);
@@ -39,7 +39,7 @@ mpMov = Core.MPMovie(path2File,calib.getCal,info);
 
 mpMov.calibrate;
 
-mpMov.showFrame(15);
+mpMov.showFrame(60);
 
 %% MP Particle Movie
 mpPartMov = Core.MPParticleMovie(path2File,calib.getCal,info);
@@ -49,14 +49,16 @@ mpPartMov.calibrate;
 
 mpPartMov.findCandidatePos(detectParam);
 %candidate = mpPartMov.getCandidatePos(24);
-mpPartMov.showCandidate(1);
+mpPartMov.showCandidate(60);
 
 %% SR Localize
 mpPartMov.SRLocalizeCandidate;
 %% planeConsolidation
 mpPartMov.consolidatePlanes;
+%%
+mpPartMov.showParticles(60)
 %% ZCal
-zCalMov = Core.ZCalMovie(path2zCal,calib.getCal);
+zCalMov = Core.ZCalMovie(path2File,calib.getCal,info);
 %% CandidatePos
 zCalMov.giveInfo;
 zCalMov.findCandidatePos(detectParam);
@@ -67,14 +69,16 @@ zCalMov.showParticles(24);
 
 %% ZCalibration
 trackParam.euDistPx = 1; 
-trackParam.ellip = 5;
+trackParam.commonPlanes = 2;
 traces =  zCalMov.trackInZ(trackParam);
 
 %% Show traces
 zCalMov.showParticlesTracked(30);%ips
 %% ZCalibrate
-[zData] = zCalMov.zCalibrate;
-
+fitZParam.deg = 3;
+fitZParam.ellipRange = [0.5 2];
+calData = zCalMov.getCalData(traces,zCalMov.particles.nTraces);
+syncData = zCalMov.syncZCalData(calData,fitZParam);
 %% Show ZCalibration
 zCalMov.showZCalibration;
 
