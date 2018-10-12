@@ -155,7 +155,7 @@ classdef Movie < handle
                 if strcmp(obj.info.type,'transmission')
                     colormap('gray');
                     %calculate reflectance (somehow better than absorbance)
-                    currentIM = 1 - double(currentIM)./max(max(double(currentIM)));
+                    currentIM = imcomplement(currentIM);
                 else
                     colormap('jet');
                 end

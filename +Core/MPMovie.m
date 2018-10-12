@@ -145,8 +145,8 @@ classdef MPMovie < Core.Movie
                 subplot(2,nImages/nsFig,i)
                 if strcmp(obj.info.type,'transmission')
                     colormap('gray');
-                    %calculate reflectance (somehow better than absorbance)
-                    currentIM = 1 - double(currentIM)./max(max(double(currentIM)));
+                    %calculate 
+                    currentIM = imcomplement(currentIM);
                 else
                     colormap('jet')
                 end
@@ -312,7 +312,11 @@ classdef MPMovie < Core.Movie
             calib.nPlanes   = size(data,3);
             
             for i = 1:size(data,3)
-
+                data2Store = squeeze(data(:,:,i,:));
+                if strcmpi(obj.info.type,'transmission')
+                    data2Store = imcomplement(data2Store);
+                end
+                
                 fName = sprintf('calibratedPlane%d.tif',i);
                 fPathTiff = [calDir filesep fName];
                 fieldN = sprintf('plane%d',i);
@@ -320,7 +324,7 @@ classdef MPMovie < Core.Movie
                 calib.nFrames = maxFrame;
                 t = Tiff(fPathTiff, 'a');
 
-                t = dataStorage.writeTiff(t,squeeze(data(:,:,i,:)),16);
+                t = dataStorage.writeTiff(t,data2Store,16);
 
                 t.close;
                 %We also write a few info about the calibrated data in a

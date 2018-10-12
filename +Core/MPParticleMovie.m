@@ -768,10 +768,6 @@ classdef MPParticleMovie < Core.MPMovie
                 for j = 1:length(nameFields)
                     currentIM = double(volIm.(nameFields{j}));
                     %localization occurs here
-                    if strcmp(obj.info.type,'transmission')
-                        %calc reflection
-                        currentIM = 1 - double(currentIM)./max(max(currentIM));
-                    end
                     [ pos, meanFAR, ~ ] = Localization.smDetection(currentIM,...
                         delta, FWHM_pix, chi2 );
                     if ~isempty(pos)
@@ -817,12 +813,6 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 plane = frameCandidate.plane(i);
                 planeData = double(data.(sprintf('plane%d',plane)));
-
-                if strcmp(obj.info.type,'transmission')
-                    %calc reflection
-                    planeData = 1 - planeData./max(max(planeData));
-                end
-                
                 %Get the ROI
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
