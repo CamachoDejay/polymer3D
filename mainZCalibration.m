@@ -9,6 +9,7 @@ path2Cal  = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\2DCal\200nmFluoB
 
 %% Initialize a zCalibration Object
 info.type = 'transmission';
+info.runMethod = 'run';
 calib = Core.MPCalibration(path2Cal);
 
 testZCal = Core.ZCalibration(path2zCal,calib.getCal,info);

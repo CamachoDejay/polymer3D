@@ -28,7 +28,7 @@ classdef MPParticleMovie < Core.MPMovie
         function findCandidatePos(obj,detectParam, frames)
             %Method to perform localization on each plane for each frame
             %Check if some candidate exists already in the folder (previously saved)
-            [run, candidate] = Core.MPParticleMovie.existCandidate(obj.raw.movInfo.Path, '.mat');
+            [run, candidate] = obj.existCandidate(obj.raw.movInfo.Path, '.mat');
             
             if run
                 switch nargin
@@ -168,7 +168,7 @@ classdef MPParticleMovie < Core.MPMovie
             assert(~isempty(obj.unCorrLocPos),'Localization needs to be performed before consolidation');
            
             %Check if some particles were saved already.
-            [run, particle] = Core.MPParticleMovie.existParticles(obj.raw.movInfo.Path, '.mat');
+            [run, particle] = obj.existParticles(obj.raw.movInfo.Path, '.mat');
             
             if run
                 %Check the number of function input
@@ -465,118 +465,7 @@ classdef MPParticleMovie < Core.MPMovie
                 
     end
      methods (Static)
-        %method linked to candidate
-        function [run,candidate] = existCandidate(Path,ext)
-            
-            [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
-            
-            %Check if some candidate were already stored
-            if any(contains({file2Analyze.name},'candidatePos')==true)
-                quest = 'Some candidate were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                    case 'Load'
-                        
-                        candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
-                        candidate = candidate.candidate;
-                        run = false;
-                        
-                    case 'run again'
-                        
-                        run = true;
-                        candidate =[];
-                        
-                    otherwise
-                        error('Unknown answer to user input dialog, most likely due to cancelation')
-                end
-                
-            else
-                
-                run = true;
-                candidate =[];
-            end
-        end
-        
-        %method linked to fitting
-        function [run,SRLocPos] = existLocPos(Path,ext)
-            
-            [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
-            
-            %Check if some candidate were already stored
-            if any(contains({file2Analyze.name},'SRLocPos')==true)
-                quest = 'Some fitted positions were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                    case 'Load'
-                        
-                        SRLocPos = load([file2Analyze(1).folder filesep 'SRLocPos.mat']);
-                        name = fieldnames(SRLocPos);
-                        SRLocPos = SRLocPos.(name{1});
-                        run = false;
-                        
-                    case 'run again'
-                        
-                        run = true;
-                        SRLocPos =[];
-                        
-                    otherwise
-                        error('Unknown answer to user input dialog, most likely due to cancelation')
-                end
-                
-            else
-                
-                run = true;
-                SRLocPos =[];
-            end
-        end
-        
-        %method Linked to particles/planeConsolidation
-        function [run, particle] = existParticles(Path, ext)
-            
-            [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
-            %Check if some particles were already saved in the raw folder.
-            if any(contains({file2Analyze.name},'particle')==true)
-                quest = 'Some consolidated positions were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                    case 'Load'
-                        
-                        particle = load([file2Analyze(1).folder filesep 'particle.mat']);
-                        particle = particle.particle;
-                        run = false;
-                        
-                    case 'run again'
-                        
-                        run = true;
-                        particle = [];
-                        
-                    otherwise
-                        
-                        error('Unknown answer to user input dialog, most likely due to cancelation')
-                        
-                end
-            else
-                run = true;
-                particle = [];
-            end
-            
-        end
-        
+       
         function [isPart]   = isPartPlane(current, next, direction)
             %This function aim at determining whether a candidate from one
             %plane and the another are actually the same candidate on
@@ -732,7 +621,81 @@ classdef MPParticleMovie < Core.MPMovie
      end
      
      methods (Access = private)
-         
+        %method linked to candidate
+        function [run,candidate] = existCandidate(obj,Path,ext)
+            
+            runMethod = obj.info.runMethod;
+            switch runMethod
+                case 'load'
+                    [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+                    %Check if some candidate were already stored
+                    if any(contains({file2Analyze.name},'candidatePos')==true)
+                        candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
+                        candidate = candidate.candidate;
+                        run = false;
+                    else
+                
+                        run = true;
+                        candidate =[];
+                
+                    end
+                case 'run'
+                    run = true;
+                    candidate =[];
+            end
+        end
+        
+        %method linked to fitting
+        function [run,SRLocPos] = existLocPos(obj,Path,ext) 
+            runMethod = obj.info.runMethod;
+            switch runMethod
+                case 'load'
+                    [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+                    %Check if some candidate were already stored
+                    if any(contains({file2Analyze.name},'SRLocPos')==true)
+                        SRLocPos = load([file2Analyze(1).folder filesep 'SRLocPos.mat']);
+                        name = fieldnames(SRLocPos);
+                        SRLocPos = SRLocPos.(name{1});
+                        run = false;
+                    else
+                
+                         run = true;
+                        SRLocPos =[];
+                
+                    end
+                case 'run'
+                     run = true;
+                     SRLocPos =[];
+            end    
+        end
+        
+        %method Linked to particles/planeConsolidation
+        function [run, particle] = existParticles(obj,Path, ext)
+            
+            runMethod = obj.info.runMethod;
+            switch runMethod
+                case 'load'
+                    [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+                    %Check if some candidate were already stored
+                    if any(contains({file2Analyze.name},'particle')==true)
+                        particle = load([file2Analyze(1).folder filesep 'particle.mat']);
+                        particle = particle.particle;
+                        run = false;
+                    else
+                
+                        run = true;
+                        particle = [];
+                
+                    end
+                    
+                case 'run'
+                    
+                     run = true;
+                     particle = [];
+                     
+            end
+        end
+        
         %Methods linked to Candidate
         function [candidate] = detectCandidate(obj,detectParam,frames)
             %Do the actual localization

@@ -29,8 +29,31 @@ classdef Movie < handle
                 case 1 
                     
                      obj.raw = raw;
+                     info.type = 'normal';
+                     info.runMethod = 'load';
                      
                 case 2
+                    
+                    if ~isfield(info,'runMethod')
+                        quest = 'If we find data from previous analysis, do you want to load them or run the analysis again ?';
+                        title = 'Question to User';
+                        btn1  = 'Load';
+                        btn2 = 'run again';
+                        defbtn = 'Load';
+                        answer = questdlg(quest,title,btn1,btn2,defbtn);
+                        
+                        switch answer
+                            case 'Load'
+                                
+                                info.runMethod = 'load';
+                                
+                            case 'run again'
+                                
+                                info.runMethod = 'run';
+                            otherwise
+                                error('WTF');
+                        end
+                    end
                     
                     obj.raw = raw;
                     obj.info = info;
