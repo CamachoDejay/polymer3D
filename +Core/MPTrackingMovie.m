@@ -186,14 +186,14 @@ classdef MPTrackingMovie < Core.MPLocMovie
         roiRadius = ROI;
         pxSize = obj.info.pxSize;
         currentTraces = traces {idx2Trace};
-        mainPos = [round(mean(currentTraces.row)/pxSize) round(mean(currentTraces.col(1)/pxSize))];
+        mainPos = [round(mean(currentTraces.row)/pxSize) round(mean(currentTraces.col)/pxSize)];
         nFrames = length(frames);
         scaleBarPx = scaleBar/pxSize;
         pos.row = currentTraces.row/pxSize - mainPos(1) + roiRadius + 1/2;
         pos.col = currentTraces.col/pxSize - mainPos(2) + roiRadius + 1/2;
         framesIm = frames(ismember(frames,currentTraces.frame));
         framesPos = find(ismember(currentTraces.frame,frames));
-        for i = 3:obj.calibrated.nPlanes
+        for i = 1:obj.calibrated.nPlanes
 
             currentPlane = obj.getPlane(i);
             % ROI = currentPlane;

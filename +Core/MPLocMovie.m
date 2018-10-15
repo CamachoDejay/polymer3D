@@ -18,17 +18,14 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             switch nargin
                 
-                case 1
-                    error('MPCal is required to create MPLocMovie')
-                case 2
-                    obj.SRCal = [];
-                    obj.ZCal  = [];
-                case 3
-                    obj.SRCal = SRCal;
-                    obj.ZCal = [];
+                
                 case 4
                     obj.SRCal = SRCal;
+                    obj.ZCal = [];
+                case 5
+                    obj.SRCal = SRCal;
                     obj.ZCal = zCal;
+               
                 otherwise
                     error('Too many input arguments');
             end

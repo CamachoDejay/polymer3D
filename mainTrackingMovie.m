@@ -11,12 +11,14 @@ path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1'
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;
+info.runMethod = 'load';
+info.type = 'normal';
 %%
 calib = Core.MPCalibration(path2Cal);
 
 %%
 
-MPTrackMov = Core.MPTrackingMovie(path2File,calib.getCal,path2SRCal,path2ZCal);
+MPTrackMov = Core.MPTrackingMovie(path2File,calib.getCal,info,path2SRCal,path2ZCal);
 
 %% Detection
 
@@ -29,7 +31,7 @@ MPTrackMov.SRLocalizeCandidate;
 
 %% Data correction
 rot = true;
-refPlane = 5;
+refPlane = 3;
 MPTrackMov.applySRCal(rot,refPlane);
 %% e-Z transformation
 MPTrackMov.applyZCal;
@@ -63,13 +65,13 @@ MPTrackMov.evalAccuracy
 
 %% get RMSD
 
-[RMSD,D] = MPTrackMov.getRMSD('2D');
+[RMSD,D] = MPTrackMov.getRMSD('3D');
 
 %% Intensity and SNR
 [int,SNR] = MPTrackMov.getAvgIntensity;
 
 %% getTraces 3D
-frame =1:999;
+frame =1:100;
 idx2Trace = 1;
 ROIradius = 12;
 frameRate = 5;
