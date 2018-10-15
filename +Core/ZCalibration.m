@@ -350,6 +350,9 @@ classdef ZCalibration < handle
                         run = true;
                         while run
                             i = i+1;
+                            if i == length(bool)
+                                break;
+                            end
                             if bool(i) == 1
                                 endIdx = i;
                             else
