@@ -86,43 +86,50 @@ classdef MPLocMovie < Core.MPParticleMovie
         
         function applySRCal(obj, rot, refPlane)
             assert(~isempty(obj.unCorrLocPos),'You need to find candidate and SR Localized them before applying corrections');
-            assert(~isempty(obj.SRCal),'SR Calibration needed to correct the data');
-            
-            if nargin <2
-                refPlane = 5;
-            end
+           
             if isempty(obj.corrLocPos)
-                obj.corrLocPos = obj.localizedPos;
+                
+                    obj.corrLocPos = obj.localizedPos;
+                    
             end
             
-            data = obj.unCorrLocPos;
+            if(~isempty(obj.SRCal))
             
-            disp(['Applying SR calibration...']);
-            for i = 1 : length(data)
-                currData = data{i};
-                currPlanes = unique(currData.plane);
-                for j = 1 : length(currPlanes)
-                    currentPlane = currPlanes(j);
-                    data2Corr = currData(currData.plane==currentPlane,{'row','col','plane'});
-                    
-                    
-                    if rot
-                        corrMat = obj.SRCal.rot;
-                        [corrData] = Core.SRCalMovie.applyRot(data2Corr, corrMat,refPlane);
-                        
-                    else
-                        corrMat = obj.SRCal.trans;
-                         [corrData] = Core.SRCalMovie.applyTrans(data2Corr,corrMat,refPlane);                    
-                    end
-                    
-                    %we store the corrected data
-                    obj.corrLocPos{i}(currData.plane==currentPlane,{'row','col','plane'}) = corrData;
-                    
+                if nargin <2
+                    refPlane = 5;
                 end
-               
+
+                data = obj.unCorrLocPos;
+
+                disp(['Applying SR calibration...']);
+                for i = 1 : length(data)
+                    currData = data{i};
+                    currPlanes = unique(currData.plane);
+                    for j = 1 : length(currPlanes)
+                        currentPlane = currPlanes(j);
+                        data2Corr = currData(currData.plane==currentPlane,{'row','col','plane'});
+
+                        if rot
+                            corrMat = obj.SRCal.rot;
+                            [corrData] = Core.SRCalMovie.applyRot(data2Corr, corrMat,refPlane);
+
+                        else
+                            corrMat = obj.SRCal.trans;
+                             [corrData] = Core.SRCalMovie.applyTrans(data2Corr,corrMat,refPlane);                    
+                        end
+
+                        %we store the corrected data
+                        obj.corrLocPos{i}(currData.plane==currentPlane,{'row','col','plane'}) = corrData;
+
+                    end
+
+                end
+           
+            else
+                obj.corrected.XY = false;
+                disp('========> DONE ! <=========');
+                warning('SR Calibration not found, no correction was applied');
             end
-            obj.corrected.XY = true;
-            disp('========> DONE ! <=========');
 
         end
         
