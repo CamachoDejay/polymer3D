@@ -10,20 +10,22 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File= 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr\zStackFluoBeads200_PIC1_270618__1';
-path2Cal  = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE\zStackFluoBeads200_S3_270618__3';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\181009 - gold Trapping\trappingGold200nm_DryObj0_9NA-1Plane1msExp';
+path2Cal  = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\2DCal\200nmFluoBeadsCalPSFE_3';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
 % path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
-info.type = 'normal';
+detectParam.chi2 = 40;
+info.type = 'transmission';
 
 %% create a Movie Object
 mov1 = Core.Movie(path2File,info);
+mov1.giveInfo;
 %mov2 = Core.Movie(path2zCal);
+mov1.saveMovie('mp4',60,5,1:200);
 %% showFrame
 mov1.showFrame(60);
 %mov2.showFrame(51);
@@ -39,7 +41,7 @@ mpMov = Core.MPMovie(path2File,calib.getCal,info);
 
 mpMov.calibrate;
 
-mpMov.showFrame(60);
+mpMov.showFrame(1);
 
 %% MP Particle Movie
 mpPartMov = Core.MPParticleMovie(path2File,calib.getCal,info);
@@ -49,7 +51,7 @@ mpPartMov.calibrate;
 
 mpPartMov.findCandidatePos(detectParam);
 %candidate = mpPartMov.getCandidatePos(24);
-mpPartMov.showCandidate(60);
+mpPartMov.showCandidate(1);
 
 %% SR Localize
 mpPartMov.SRLocalizeCandidate;
@@ -68,7 +70,7 @@ zCalMov.consolidatePlanes;
 zCalMov.showParticles(24);
 
 %% ZCalibration
-trackParam.euDistPx = 1; 
+trackParam.euDistPx = 4; 
 trackParam.commonPlanes = 2;
 traces =  zCalMov.trackInZ(trackParam);
 
@@ -76,7 +78,7 @@ traces =  zCalMov.trackInZ(trackParam);
 zCalMov.showParticlesTracked(30);%ips
 %% ZCalibrate
 fitZParam.deg = 3;
-fitZParam.ellipRange = [0.5 2];
+fitZParam.ellipRange = [0.65 1.6];
 calData = zCalMov.getCalData(traces,zCalMov.particles.nTraces);
 syncData = zCalMov.syncZCalData(calData,fitZParam);
 %% Show ZCalibration
