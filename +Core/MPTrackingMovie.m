@@ -188,7 +188,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
         currentTraces = traces {idx2Trace};
         mainPos = [round(mean(currentTraces.row)/pxSize) round(mean(currentTraces.col)/pxSize)];
         nFrames = length(frames);
-        scaleBarPx = scaleBar/pxSize;
+        scaleBarPx = scaleBar/(pxSize/1000);%in µm
         pos.row = currentTraces.row/pxSize - mainPos(1) + roiRadius + 1/2;
         pos.col = currentTraces.col/pxSize - mainPos(2) + roiRadius + 1/2;
         framesIm = frames(ismember(frames,currentTraces.frame));
@@ -224,7 +224,8 @@ classdef MPTrackingMovie < Core.MPLocMovie
             %scale bar
             x = size(ROI,2)-scaleBarPx-(0.05*size(ROI,2)):size(ROI,2)-0.05*size(ROI,2);
             y = ones(1,length(x))*size(ROI,1)-0.05*size(ROI,2);
-            text(min(x),mean(y)-1,[num2str(scaleBar) ' nm'],'Color','white','fontWeight','bold','fontSize',14);
+            text(mean(x),mean(y)-0.05*size(currentIM,1),[num2str(scaleBar) ' µm'],...
+                'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',14);
             plot(x,y,'-w','LineWidth',5);
             plot(pos.col(f0:f),pos.row(f0:f),'-b')
             scatter(pos.col(f0:f),pos.row(f0:f),10,'filled','MarkerEdgeColor','blue',...
