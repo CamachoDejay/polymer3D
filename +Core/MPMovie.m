@@ -114,7 +114,7 @@ classdef MPMovie < Core.Movie
 
         end
         
-        function showFrame(obj,idx)
+        function h = showFrame(obj,idx,scaleBar)
             %Adapted method from the Core.Movie one, its behavior changed
             %depending on whether the data has been calibrated or not.
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
@@ -203,6 +203,10 @@ classdef MPMovie < Core.Movie
         function playMovie(obj)
             %TODO: code this function
         end
+        
+        function saveMovie(obj)
+        end
+        
         
         function [xStep, xPosMotor] = getXPosMotor(obj)
               %small function that extract the zStep from the info in the raw
