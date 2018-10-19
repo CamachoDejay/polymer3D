@@ -168,9 +168,10 @@ classdef MPMovie < Core.Movie
                 hold on 
                 x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
                 y = ones(1,length(x))*size(currentIM,1)-0.05*size(currentIM,2);
-                text(mean(x),mean(y)-0.05*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',14);
-                plot(x,y,'-w','LineWidth',5);
+                text(mean(x),mean(y)-0.06*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',8);
+                plot(x,y,'-w','LineWidth',2.5);
                 axis image;
+                caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
                 grid on;
                 a = gca;
                 a.XTickLabel = [];
