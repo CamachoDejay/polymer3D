@@ -124,6 +124,9 @@ classdef MPMovie < Core.Movie
             [frame] = getFrame(obj,idx);            
             assert(isstruct(frame),'Error unknown data format, data should be a struct');
             
+            pxSize = obj.info.pxSize/1000;%in µm
+            scaleBarPx = scaleBar/pxSize;
+            
             nImages = numel(fields(frame));
             fNames = fieldnames(frame);
             nsFig = 2;
@@ -137,9 +140,20 @@ classdef MPMovie < Core.Movie
                 zPos = zeros(size(fNames));
                 
             end
+            
             %Displaying occur hear
             h = figure(1);
             h.Name = sprintf('Frame %d',idx);
+            
+            ax = gca;
+            outerpos = ax.OuterPosition;
+            ti = ax.TightInset; 
+            left = outerpos(1) + ti(1);
+            bottom = outerpos(2) + ti(2);
+            ax_width = outerpos(3) - ti(1) - ti(3);
+            ax_height = outerpos(4) - ti(2) - ti(4);
+            ax.Position = [left bottom ax_width ax_height];
+            
             for i = 1:nImages
                 currentIM = frame.(fNames{i});
                 subplot(2,nImages/nsFig,i)
@@ -151,6 +165,11 @@ classdef MPMovie < Core.Movie
                 end
                 
                 imagesc(currentIM)
+                hold on 
+                x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
+                y = ones(1,length(x))*size(currentIM,1)-0.05*size(currentIM,2);
+                text(mean(x),mean(y)-0.05*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',14);
+                plot(x,y,'-w','LineWidth',5);
                 axis image;
                 grid on;
                 a = gca;
@@ -158,6 +177,7 @@ classdef MPMovie < Core.Movie
                 a.YTickLabel = [];
                 a.GridColor = [1 1 1];
                 title({fNames{i},sprintf(' Zpos = %0.3f',zPos(i))});
+                hold off
                
                 
             end
@@ -203,10 +223,6 @@ classdef MPMovie < Core.Movie
         function playMovie(obj)
             %TODO: code this function
         end
-        
-        function saveMovie(obj)
-        end
-        
         
         function [xStep, xPosMotor] = getXPosMotor(obj)
               %small function that extract the zStep from the info in the raw
