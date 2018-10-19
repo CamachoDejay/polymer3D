@@ -9,12 +9,12 @@ classdef ZCalMovie < Core.MPCalMovie
     
     methods
         
-        function obj = ZCalMovie(raw,cal,candidatePos)
+        function obj = ZCalMovie(raw,cal,info,candidatePos)
             %UNTITLED6 Construct an instance of this class
             %   Detailed explanation goes here
-            obj  = obj@Core.MPCalMovie(raw,cal);
+            obj  = obj@Core.MPCalMovie(raw,cal,info);
             
-            if nargin == 3
+            if nargin == 4
                 
                 obj.candidatePos = candidatePos;
                 
@@ -154,7 +154,7 @@ classdef ZCalMovie < Core.MPCalMovie
                             %anyhting
                             %we only process the data if there are point above
                             %and below focus.
-                        elseif and(and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1))),fMetric(idx)>50)
+                        elseif and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1)))
                             %Do the fit and extract the exact z position of the focus
                             p = polyfit(zPos,ellipt,deg);
                             zVec = min(zPos):0.001:max(zPos);%1nm step
@@ -179,6 +179,8 @@ classdef ZCalMovie < Core.MPCalMovie
                             
                              zToNm = (zCalData{i,j}.frame*zStep - shift)*1000;
                              ellip2Store = zCalData{i,j}.ellip;
+                             magX2Store = zCalData{i,j}.magX;
+                             magY2Store = zCalData{i,j}.magY;
 % %                             [~,index] = (min(abs(1-ellipt)));
 % %                             [~,index2] = (max(fMetric));
 % %                             err = abs(zToNm(index)- abs(zToNm(index2)));
@@ -189,8 +191,11 @@ classdef ZCalMovie < Core.MPCalMovie
 %                              end
 
                                 data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
+                                data2Store.magX = magX2Store;
+                                data2Store.magY = magY2Store;
                                 data2Store.fMetric = zCalData{i,j}.fMetric;
                                 data2Store.gFitMet =  zCalData{i,j}.gFitMet;
+                                
                                 %tmp Store
                                 zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
                                 zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];

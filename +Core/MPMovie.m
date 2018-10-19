@@ -11,16 +11,13 @@ classdef MPMovie < Core.Movie
     
     methods
         
-        function obj = MPMovie(raw,cal)
+        function obj = MPMovie(raw,cal,info)
            
-            obj = obj@Core.Movie(raw);
-            
-            switch nargin
-                case 1
-                case 2
-                    obj.cal2D = cal;
-                    obj.calibrated = raw;
-            end 
+            obj = obj@Core.Movie(raw,info);
+
+            obj.cal2D = cal;
+            obj.calibrated = raw;
+
         end
         
         function set.cal2D(obj,cal2D)
@@ -117,7 +114,7 @@ classdef MPMovie < Core.Movie
 
         end
         
-        function showFrame(obj,idx)
+        function h = showFrame(obj,idx,scaleBar)
             %Adapted method from the Core.Movie one, its behavior changed
             %depending on whether the data has been calibrated or not.
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
@@ -126,6 +123,9 @@ classdef MPMovie < Core.Movie
             %Get the data of the requested frame
             [frame] = getFrame(obj,idx);            
             assert(isstruct(frame),'Error unknown data format, data should be a struct');
+            
+            pxSize = obj.info.pxSize/1000;%in µm
+            scaleBarPx = scaleBar/pxSize;
             
             nImages = numel(fields(frame));
             fNames = fieldnames(frame);
@@ -140,21 +140,46 @@ classdef MPMovie < Core.Movie
                 zPos = zeros(size(fNames));
                 
             end
+            
             %Displaying occur hear
             h = figure(1);
             h.Name = sprintf('Frame %d',idx);
+            
+            ax = gca;
+            outerpos = ax.OuterPosition;
+            ti = ax.TightInset; 
+            left = outerpos(1) + ti(1);
+            bottom = outerpos(2) + ti(2);
+            ax_width = outerpos(3) - ti(1) - ti(3);
+            ax_height = outerpos(4) - ti(2) - ti(4);
+            ax.Position = [left bottom ax_width ax_height];
+            
             for i = 1:nImages
-                
+                currentIM = frame.(fNames{i});
                 subplot(2,nImages/nsFig,i)
-                imagesc(frame.(fNames{i}))
+                
+                if strcmp(obj.info.type,'transmission')
+                    colormap('gray');
+                else
+                    colormap('jet')
+                end
+                
+                imagesc(currentIM)
+                hold on 
+                x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
+                y = ones(1,length(x))*size(currentIM,1)-0.05*size(currentIM,2);
+                text(mean(x),mean(y)-0.06*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',8);
+                plot(x,y,'-w','LineWidth',2.5);
                 axis image;
+                caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
                 grid on;
                 a = gca;
                 a.XTickLabel = [];
                 a.YTickLabel = [];
                 a.GridColor = [1 1 1];
                 title({fNames{i},sprintf(' Zpos = %0.3f',zPos(i))});
-                colormap('jet')
+                hold off
+               
                 
             end
         end
@@ -248,9 +273,9 @@ classdef MPMovie < Core.Movie
         function [camConfig] = determineCAMConfig(obj)
             
              planeDist = abs(mean(diff(obj.calibrated.oRelZPos)))*1000;
-             if planeDist > 450
+             if planeDist > 350
                  camConfig = 'fullRange';
-             elseif and(planeDist < 350, planeDist>250)
+             elseif and(planeDist < 350, planeDist>200)
                  camConfig = 'alternated';
              else
                  error('Something is wrong with your distance between planes')
@@ -309,7 +334,11 @@ classdef MPMovie < Core.Movie
             calib.nPlanes   = size(data,3);
             
             for i = 1:size(data,3)
-
+                data2Store = squeeze(data(:,:,i,:));
+                if strcmpi(obj.info.type,'transmission')
+                    data2Store = imcomplement(data2Store);
+                end
+                
                 fName = sprintf('calibratedPlane%d.tif',i);
                 fPathTiff = [calDir filesep fName];
                 fieldN = sprintf('plane%d',i);
@@ -317,7 +346,7 @@ classdef MPMovie < Core.Movie
                 calib.nFrames = maxFrame;
                 t = Tiff(fPathTiff, 'a');
 
-                t = dataStorage.writeTiff(t,squeeze(data(:,:,i,:)),16);
+                t = dataStorage.writeTiff(t,data2Store,16);
 
                 t.close;
                 %We also write a few info about the calibrated data in a

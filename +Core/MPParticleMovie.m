@@ -12,9 +12,9 @@ classdef MPParticleMovie < Core.MPMovie
     end
     
     methods
-        function obj = MPParticleMovie(raw,cal)
+        function obj = MPParticleMovie(raw,cal,info)
             
-            obj  = obj@Core.MPMovie(raw,cal);
+            obj  = obj@Core.MPMovie(raw,cal,info);
             
         end
         
@@ -28,7 +28,7 @@ classdef MPParticleMovie < Core.MPMovie
         function findCandidatePos(obj,detectParam, frames)
             %Method to perform localization on each plane for each frame
             %Check if some candidate exists already in the folder (previously saved)
-            [run, candidate] = Core.MPParticleMovie.existCandidate(obj.raw.movInfo.Path, '.mat');
+            [run, candidate] = obj.existCandidate(obj.raw.movInfo.Path, '.mat');
             
             if run
                 switch nargin
@@ -168,7 +168,7 @@ classdef MPParticleMovie < Core.MPMovie
             assert(~isempty(obj.unCorrLocPos),'Localization needs to be performed before consolidation');
            
             %Check if some particles were saved already.
-            [run, particle] = Core.MPParticleMovie.existParticles(obj.raw.movInfo.Path, '.mat');
+            [run, particle] = obj.existParticles(obj.raw.movInfo.Path, '.mat');
             
             if run
                 %Check the number of function input
@@ -290,9 +290,9 @@ classdef MPParticleMovie < Core.MPMovie
             nsFig = 2;
             
             candidate = obj.getCandidatePos(idx);
-            rowPos    = candidate(:,1);
-            colPos    = candidate(:,2);
-            planeIdx  = candidate(:,3);
+            rowPos    = candidate.row;
+            colPos    = candidate.col;
+            planeIdx  = candidate.plane;
             
             h = figure(2);
             h.Name = sprintf('Frame %d',idx);
@@ -346,9 +346,9 @@ classdef MPParticleMovie < Core.MPMovie
                         hold on
                         for j = 1 : nParticles
                             currPart = obj.particles.List{idx}{j};
-                            if(~isempty(currPart(currPart(:,end) == i)))
-                                part2Plot = currPart(currPart(:,end) == i,:);
-                                plot(part2Plot(2),part2Plot(1),'o',...
+                            if(~isempty(currPart(currPart.plane == i,:)))
+                                part2Plot = currPart(currPart.plane == i,:);
+                                plot(part2Plot.col,part2Plot.row,'o',...
                                     'LineWidth',2, 'MarkerSize',10, 'MarkerEdgeColor',colors(j,:));
                             end
                         end
@@ -362,15 +362,15 @@ classdef MPParticleMovie < Core.MPMovie
                         
                         currPart = obj.particles.List{idx}{i};
                         %Remove rows containing NaNs
-                        idx2NaN = isnan(currPart(:,1));
+                        idx2NaN = isnan(currPart.row);
                         currPart(idx2NaN,:) = [];
-                        planes = currPart(:,end);
+                        planes = currPart.plane;
                         figure(20+i)
                         hold on
                         for j = 1 : length(planes)
                             jdx = planes(j);
                             currFrame = frame.(sprintf('plane%d',jdx));
-                            ROI = EmitterSim.getROI(currPart(j,2), currPart(j,1),...
+                            ROI = EmitterSim.getROI(currPart.col(j), currPart.row(j),...
                                 roiSize, size(currFrame,2), size(currFrame,1));
                             subplot(1,length(planes),j)
                             imagesc(currFrame(ROI(3):ROI(4),ROI(1):ROI(2)));
@@ -463,121 +463,9 @@ classdef MPParticleMovie < Core.MPMovie
             end
         end
                 
-
     end
      methods (Static)
-        %method linked to candidate
-        function [run,candidate] = existCandidate(Path,ext)
-            
-            [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
-            
-            %Check if some candidate were already stored
-            if any(contains({file2Analyze.name},'candidatePos')==true)
-                quest = 'Some candidate were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                    case 'Load'
-                        
-                        candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
-                        candidate = candidate.candidate;
-                        run = false;
-                        
-                    case 'run again'
-                        
-                        run = true;
-                        candidate =[];
-                        
-                    otherwise
-                        error('Unknown answer to user input dialog, most likely due to cancelation')
-                end
-                
-            else
-                
-                run = true;
-                candidate =[];
-            end
-        end
-        
-        %method linked to fitting
-        function [run,SRLocPos] = existLocPos(Path,ext)
-            
-            [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
-            
-            %Check if some candidate were already stored
-            if any(contains({file2Analyze.name},'SRLocPos')==true)
-                quest = 'Some fitted positions were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                    case 'Load'
-                        
-                        SRLocPos = load([file2Analyze(1).folder filesep 'SRLocPos.mat']);
-                        name = fieldnames(SRLocPos);
-                        SRLocPos = SRLocPos.(name{1});
-                        run = false;
-                        
-                    case 'run again'
-                        
-                        run = true;
-                        SRLocPos =[];
-                        
-                    otherwise
-                        error('Unknown answer to user input dialog, most likely due to cancelation')
-                end
-                
-            else
-                
-                run = true;
-                SRLocPos =[];
-            end
-        end
-        
-        %method Linked to particles/planeConsolidation
-        function [run, particle] = existParticles(Path, ext)
-            
-            [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
-            %Check if some particles were already saved in the raw folder.
-            if any(contains({file2Analyze.name},'particle')==true)
-                quest = 'Some consolidated positions were found in the raw folder, do you want to load them or run again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                    case 'Load'
-                        
-                        particle = load([file2Analyze(1).folder filesep 'particle.mat']);
-                        particle = particle.particle;
-                        run = false;
-                        
-                    case 'run again'
-                        
-                        run = true;
-                        particle = [];
-                        
-                    otherwise
-                        
-                        error('Unknown answer to user input dialog, most likely due to cancelation')
-                        
-                end
-            else
-                run = true;
-                particle = [];
-            end
-            
-        end
-        
+       
         function [isPart]   = isPartPlane(current, next, direction)
             %This function aim at determining whether a candidate from one
             %plane and the another are actually the same candidate on
@@ -733,7 +621,81 @@ classdef MPParticleMovie < Core.MPMovie
      end
      
      methods (Access = private)
-         
+        %method linked to candidate
+        function [run,candidate] = existCandidate(obj,Path,ext)
+            
+            runMethod = obj.info.runMethod;
+            switch runMethod
+                case 'load'
+                    [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+                    %Check if some candidate were already stored
+                    if any(contains({file2Analyze.name},'candidatePos')==true)
+                        candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
+                        candidate = candidate.candidate;
+                        run = false;
+                    else
+                
+                        run = true;
+                        candidate =[];
+                
+                    end
+                case 'run'
+                    run = true;
+                    candidate =[];
+            end
+        end
+        
+        %method linked to fitting
+        function [run,SRLocPos] = existLocPos(obj,Path,ext) 
+            runMethod = obj.info.runMethod;
+            switch runMethod
+                case 'load'
+                    [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+                    %Check if some candidate were already stored
+                    if any(contains({file2Analyze.name},'SRLocPos')==true)
+                        SRLocPos = load([file2Analyze(1).folder filesep 'SRLocPos.mat']);
+                        name = fieldnames(SRLocPos);
+                        SRLocPos = SRLocPos.(name{1});
+                        run = false;
+                    else
+                
+                         run = true;
+                        SRLocPos =[];
+                
+                    end
+                case 'run'
+                     run = true;
+                     SRLocPos =[];
+            end    
+        end
+        
+        %method Linked to particles/planeConsolidation
+        function [run, particle] = existParticles(obj,Path, ext)
+            
+            runMethod = obj.info.runMethod;
+            switch runMethod
+                case 'load'
+                    [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+                    %Check if some candidate were already stored
+                    if any(contains({file2Analyze.name},'particle')==true)
+                        particle = load([file2Analyze(1).folder filesep 'particle.mat']);
+                        particle = particle.particle;
+                        run = false;
+                    else
+                
+                        run = true;
+                        particle = [];
+                
+                    end
+                    
+                case 'run'
+                    
+                     run = true;
+                     particle = [];
+                     
+            end
+        end
+        
         %Methods linked to Candidate
         function [candidate] = detectCandidate(obj,detectParam,frames)
             %Do the actual localization
@@ -766,8 +728,9 @@ classdef MPParticleMovie < Core.MPMovie
                 nameFields = fieldnames(volIm);
                 
                 for j = 1:length(nameFields)
+                    currentIM = double(volIm.(nameFields{j}));
                     %localization occurs here
-                    [ pos, meanFAR, ~ ] = Localization.smDetection( double(volIm.(nameFields{j})),...
+                    [ pos, meanFAR, ~ ] = Localization.smDetection(currentIM,...
                         delta, FWHM_pix, chi2 );
                     if ~isempty(pos)
                         startIdx = find(position.row==0,1,'First');
@@ -811,8 +774,7 @@ classdef MPParticleMovie < Core.MPMovie
             for i = 1:size(frameCandidate,1)
                 
                 plane = frameCandidate.plane(i);
-                planeData = data.(sprintf('plane%d',plane));
-                
+                planeData = double(data.(sprintf('plane%d',plane)));
                 %Get the ROI
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
@@ -835,8 +797,8 @@ classdef MPParticleMovie < Core.MPMovie
                 %LRT focus metric
                 [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
                 
-                rowPos = frameCandidate.row(i) + row;
-                colPos = frameCandidate.col(i) + col;
+                rowPos = round(frameCandidate.row(i)) + row;
+                colPos = round(frameCandidate.col(i)) + col;
 
                 %storing info
                 candMet.row(i) = rowPos;

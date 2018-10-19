@@ -10,19 +10,30 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
+path2File= 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\TL\TL-OD2-200msExposure_1';
+path2Cal  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
+
 
 path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
 path2Cal = 'C:\Users\MIPP\Desktop\200nmFluoBeadsCalPSFE_3';
 
+% path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
+% path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
+% path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
+
+
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 40;
+info.type = 'normal';
 
 %% create a Movie Object
-mov1 = Core.Movie(path2File);
+mov1 = Core.Movie(path2File,info);
+mov1.giveInfo;
 %mov2 = Core.Movie(path2zCal);
+mov1.saveMovie('mp4',60,5,1:200);
 %% showFrame
-mov1.showFrame(22);
+mov1.showFrame(60);
 %mov2.showFrame(51);
 %% Calib
 calib = Core.MPCalibration(path2Cal);
@@ -32,28 +43,33 @@ calib.calc;
 calib.showCal
 
 %% Calibrate
-mpMov = Core.MPMovie(path2File,calib.getCal);
+mpMov = Core.MPMovie(path2File,calib.getCal,info);
+mpMov.giveInfo
 
 mpMov.calibrate;
 
-mpMov.showFrame(15);
+mpMov.showFrame(1,5);
+%% Save Movie
+mpMov.saveMovie('mp4',5,10,1:20)
 
 %% MP Particle Movie
-mpPartMov = Core.MPParticleMovie(path2File,calib.getCal);
+mpPartMov = Core.MPParticleMovie(path2File,calib.getCal,info);
 mpPartMov.giveInfo;
 mpPartMov.calibrate;
 %% getCandidatePos
 
 mpPartMov.findCandidatePos(detectParam);
-candidate = mpPartMov.getCandidatePos(24);
-mpPartMov.showCandidate(24);
+%candidate = mpPartMov.getCandidatePos(24);
+mpPartMov.showCandidate(1);
 
 %% SR Localize
 mpPartMov.SRLocalizeCandidate;
 %% planeConsolidation
 mpPartMov.consolidatePlanes;
+%%
+mpPartMov.showParticles(60)
 %% ZCal
-zCalMov = Core.ZCalMovie(path2zCal,calib.getCal);
+zCalMov = Core.ZCalMovie(path2File,calib.getCal,info);
 %% CandidatePos
 zCalMov.giveInfo;
 zCalMov.findCandidatePos(detectParam);
@@ -63,15 +79,17 @@ zCalMov.consolidatePlanes;
 zCalMov.showParticles(24);
 
 %% ZCalibration
-trackParam.euDistPx = 1; 
-trackParam.ellip = 5;
+trackParam.euDistPx = 4; 
+trackParam.commonPlanes = 2;
 traces =  zCalMov.trackInZ(trackParam);
 
 %% Show traces
 zCalMov.showParticlesTracked(30);%ips
 %% ZCalibrate
-[zData] = zCalMov.zCalibrate;
-
+fitZParam.deg = 3;
+fitZParam.ellipRange = [0.65 1.6];
+calData = zCalMov.getCalData(traces,zCalMov.particles.nTraces);
+syncData = zCalMov.syncZCalData(calData,fitZParam);
 %% Show ZCalibration
 zCalMov.showZCalibration;
 

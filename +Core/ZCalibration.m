@@ -7,6 +7,7 @@ classdef ZCalibration < handle
         path
         zCalMovies
         cal2D
+        info
         calib
         traces3D
         zPosMotor
@@ -16,12 +17,12 @@ classdef ZCalibration < handle
     
     methods
         
-        function obj = ZCalibration(path2zCal,cal2D)
+        function obj = ZCalibration(path2zCal,cal2D,info)
             %zCalibration Construct an instance of this class
             %   Detailed explanation goes here
             obj.path = path2zCal;
             obj.cal2D = cal2D;
-            
+            obj.info = info;
             %We prepare zAccuracy
             obj.zAccuracy.spline = table(0,0,'VariableNames',{'BestFocus','Mean'});
             obj.zAccuracy.poly   = table(0,0,'VariableNames',{'BestFocus','Mean'});
@@ -64,7 +65,7 @@ classdef ZCalibration < handle
                     if ~all(idx==0)
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
-                        tmp = Core.ZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D);
+                        tmp = Core.ZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want
                         %any other movement here.
@@ -249,7 +250,7 @@ classdef ZCalibration < handle
                 
                 [Res] = Core.ZCalibration.findConsecVal(idx2Keep);
  
-                dataCurrPlane = dataCurrPlane(Res(1):Res(2),:);
+                dataCurrPlane = dataCurrPlane(Res,:);
                 [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
                     dataCurrPlane.ellip],length(dataCurrPlane.z)/7);
                 
@@ -276,13 +277,14 @@ classdef ZCalibration < handle
                 fit = fit(and(fit<ellipRange(2),fit>ellipRange(1)));
                 subplot(1,2,1)
                 hold on
+                markerSize = 25;
                 scatter(binnedData(:,1),binnedData(:,2))
                 plot(zVec,fit,'r')
                 title('Binned data fitted with Spline')
                 
                 subplot(1,2,2)
                 hold on
-                scatter(dataCurrPlane.z,dataCurrPlane.ellip)
+                scatter(dataCurrPlane.z,dataCurrPlane.ellip,markerSize,'filled')
                 plot(zVec,fit,'r','LineWidth',2)
                 title('Full data fitted with polynomial')
                 
@@ -337,30 +339,66 @@ classdef ZCalibration < handle
     methods (Static)
          function [Res] = findConsecVal(bool)
             %!!Assume the longuest section is more or less centered!!
-                
-                    idx1 = round(length(bool)/2);
-                    part1 = fliplr(bool(1:idx1)');
-                    part2 = bool(idx1:end);
-                    
-                    idxPart1 = find(part1==0,1,'first');
-                    idxPart2 = find(part2==0,1,'first');
-                    
-                    if and(isempty(idxPart1),isempty(idxPart2))
-                        idxPart1 = 1;
-                        idxPart2 = length(bool);
-                        Res = [idxPart1, idxPart2];
-                    
-                    elseif isempty(idxPart1)
-                         idxPart1 = 1;
-                         Res = [idxPart1, idx1+idxPart2];
-                    elseif isempty(idxPart2)
-                         idxPart2 = length(bool);
-                         Res = [idx1-idxPart1, idxPart2];
-                    else
-                         
-                        Res = [idx1-(idxPart1-1), idx1+(idxPart2-1)];
+                    %Divide the data in 2 part
+                    i = 1;
+                    longestSec = [];
+                    while i<length(bool)
+                        if bool(i) == 1
+                            startIdx = i;
+                            endIdx = i;
                         
+                        run = true;
+                        while run
+                            i = i+1;
+                            if i == length(bool)
+                                break;
+                            end
+                            if bool(i) == 1
+                                endIdx = i;
+                            else
+                                run = false;
+                            end
+                        end
+                        tmpSec = startIdx:endIdx;
+                        
+                        if length(tmpSec)> length(longestSec)
+                            longestSec = tmpSec;
+                            
+                        end
+                        
+                        if endIdx==length(bool)
+                            i = endIdx;
+                        else
+                            i = endIdx+1;
+                        end
+                        else
+                            i = i+1;
+                        end
                     end
+                    Res = longestSec;
+%                     idx1 = round(length(bool)/2);
+%                     part1 = fliplr(bool(1:idx1)');
+%                     part2 = bool(idx1+1:end);
+%                     % find the first 0 in both part
+%                     idxPart1 = find(part1==0,1,'first');
+%                     idxPart2 = find(part2==0,1,'first');
+%                     
+%                     if and(isempty(idxPart1),isempty(idxPart2))
+%                         idxPart1 = 1;
+%                         idxPart2 = length(bool);
+%                         Res = [idxPart1: idxPart2];
+%                     
+%                     elseif isempty(idxPart1)
+%                          idxPart1 = 1;
+%                          Res = [idxPart1: idx1+(idxPart2-1)];
+%                     elseif isempty(idxPart2)
+%                          idxPart2 = length(bool);
+%                          Res = [idx1-(idxPart1-2): idxPart2];
+%                     else
+%                          
+%                         Res = [idx1-(idxPart1-2): idx1+(idxPart2-1)];
+%                         
+%                     end
                     
                     test = bool(Res);
                     if all(test==1)
@@ -388,7 +426,7 @@ classdef ZCalibration < handle
                 
                 [Res] = Core.ZCalibration.findConsecVal(idx2Keep);
  
-                dataCurrPlane = dataCurrPlane(Res(1):Res(2),:);
+                dataCurrPlane = dataCurrPlane(Res,:);
                 [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
                     dataCurrPlane.ellip],length(dataCurrPlane.z)/7);
                 
@@ -430,7 +468,8 @@ classdef ZCalibration < handle
                 for j = 1:npart
                     data = currentTrace(:,:,j);
                     if ~all(data==0)
-                        frameVec = find(data(:,3),1,'first'):find(data(:,3),1,'last');
+                        frameVec = find(data(:,1)~=0);
+                        %frameVec(data(:,1)~=0,:) = [];
                         data = data(data(:,1)~=0,:);
                         bFit = mean(data(:,3)-zStep(1)*1000.*frameVec(:));
                         data2SubZ = zStep(1)*1000*frameVec+bFit;

@@ -29,8 +29,31 @@ classdef Movie < handle
                 case 1 
                     
                      obj.raw = raw;
+                     info.type = 'normal';
+                     info.runMethod = 'load';
                      
                 case 2
+                    
+                    if ~isfield(info,'runMethod')
+                        quest = 'If we find data from previous analysis, do you want to load them or run the analysis again ?';
+                        title = 'Question to User';
+                        btn1  = 'Load';
+                        btn2 = 'run again';
+                        defbtn = 'Load';
+                        answer = questdlg(quest,title,btn1,btn2,defbtn);
+                        
+                        switch answer
+                            case 'Load'
+                                
+                                info.runMethod = 'load';
+                                
+                            case 'run again'
+                                
+                                info.runMethod = 'run';
+                            otherwise
+                                error('WTF');
+                        end
+                    end
                     
                     obj.raw = raw;
                     obj.info = info;
@@ -66,8 +89,9 @@ classdef Movie < handle
                 [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
                 movInfo.indivFrame = movInfo.maxFrame;
                 %Check info for 2 cam
-                assert(length(movInfo.Cam) == 2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
-
+               if length(movInfo.Cam) ~= 2
+                   warning('Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
+               end 
             end
             
             obj.raw.movInfo   = movInfo;
@@ -126,44 +150,70 @@ classdef Movie < handle
             FWHM_pix = FWHMnm/pxSize;
             sigmaPix = sigma_nm/pxSize;
             %store info        
-            inform.pxSize = pxSize;
-            inform.NA = NA;
-            inform.emW = emW;
-            inform.FWHM_px =  FWHM_pix;
-            inform.sigma_px = sigmaPix;
-            inform.comment = comment;
-            
-            obj.info = inform;
-            
+            obj.info.pxSize = pxSize;
+            obj.info.NA = NA;
+            obj.info.emW = emW;
+            obj.info.FWHM_px =  FWHM_pix;
+            obj.info.sigma_px = sigmaPix;
+            obj.info.comment = comment;
+
         end
         
-        function showFrame(obj,idx)
+        function h = showFrame(obj,idx,scaleBar)
+            
             %To display a frame as a figure
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
-            
+            pxSize = obj.info.pxSize/1000;%in µm
+            scaleBarPx = scaleBar/pxSize;
             [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             [frame] = getFrame(obj,idx);            
             assert(isstruct(frame),'Error unknown data format, data should be a struct');
             
-            nImages = numel(fields(frame));
             fNames = fieldnames(frame);
-            nsFig = 2;                
+            idx2Empty = structfun(@isempty, frame);
+            idx2Data = find(idx2Empty==0);
+            nImages = length(find(idx2Empty));
+                        
             h = figure(1);
             h.Name = sprintf('Frame %d',idx);
             
+            ax = gca;
+            outerpos = ax.OuterPosition;
+            ti = ax.TightInset; 
+            left = outerpos(1) + ti(1);
+            bottom = outerpos(2) + ti(2);
+            ax_width = outerpos(3) - ti(1) - ti(3);
+            ax_height = outerpos(4) - ti(2) - ti(4);
+            ax.Position = [left bottom ax_width ax_height];
+            
             for i = 1:nImages
                 
-                subplot(2,nImages/nsFig,i)
-                imagesc(frame.(fNames{i}))
+                currentIM = frame.(fNames{idx2Data(i)});
+                subplot(nImages,1,i)
+                if strcmp(obj.info.type,'transmission')
+                    colormap('gray');
+                    %calculate reflectance (somehow better than absorbance)
+                    %currentIM = imcomplement(currentIM);
+                else
+                    colormap('jet');
+                end
+                
+                imagesc(currentIM)
+                hold on
+                x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
+                y = ones(1,length(x))*size(currentIM,1)-0.05*size(currentIM,2);
+                text(mean(x),mean(y)-0.05*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',14);
+                plot(x,y,'-w','LineWidth',5);
+
                 axis image;
-                grid on;
+                caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
+                
                 a = gca;
                 a.XTickLabel = [];
                 a.YTickLabel = [];
                 a.GridColor = [1 1 1];
                 title({fNames{i}, sprintf('Frame %d',idx)});
-                colormap('jet')
-                
+                hold off
             end
         end
         
@@ -179,6 +229,61 @@ classdef Movie < handle
         
         function playMovie(obj)
             %TODO: Code a good way of playing the movie;
+        end
+        
+        function saveMovie(obj,ext,frameRate,scaleBar,frames)
+            
+            switch nargin
+                case 4
+                    nFrames = obj.raw.movInfo.maxFrame(1);
+                    frames = 1:nFrames;
+                case 5
+                    nFrames = length(frames);
+            end
+            
+            path2File = obj.raw.movInfo.Path;
+            filename=sprintf('%s%sfullMovie.%s', path2File,'\',ext);
+
+            for j = 1:nFrames
+                Fig = obj.showFrame(j,scaleBar);
+                hold on
+                %scale bar
+                ax = gca;
+                
+                set(ax,'visible','off');
+                axis image;
+                drawnow;
+
+                hold off
+                frame = getframe(Fig);
+                switch ext
+                    case 'mp4'
+                mov(j) = frame;
+                    case 'gif'
+
+                    im = frame2im(frame);
+                    [imind,cm] = rgb2ind(im,256);
+
+                    if j == 1
+
+                        imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
+
+                    else
+
+                        imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
+
+                    end
+
+                end
+            end
+            
+            if strcmp(ext,'mp4')
+                v = VideoWriter(filename,'MPEG-4');
+                v.FrameRate = frameRate;
+                open(v)
+                writeVideo(v,mov);
+                close(v)
+            end
         end
         
     end

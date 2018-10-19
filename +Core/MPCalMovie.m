@@ -7,9 +7,9 @@ classdef MPCalMovie < Core.MPParticleMovie
     end
     
     methods
-        function obj = MPCalMovie(raw,cal)
+        function obj = MPCalMovie(raw,cal,info)
             
-            obj  = obj@Core.MPParticleMovie(raw,cal);
+            obj  = obj@Core.MPParticleMovie(raw,cal,info);
         end
         
         function [trace, counter] = trackInZ(obj,trackParam)
@@ -26,7 +26,6 @@ classdef MPCalMovie < Core.MPParticleMovie
             end
             
             [trace,counter] = obj.zTracking(trackParam);
-            
             obj.particles.traces = trace;
             obj.particles.nTraces = counter;
             
@@ -54,7 +53,7 @@ classdef MPCalMovie < Core.MPParticleMovie
             errCount =1;
             while (idx)
                 %loop until there is no particle (pickParticle return false)
-                if errCount>1000
+                if errCount>10000
                     warning('While loop ran for unexpectedly longer time');
                     break;
                     
