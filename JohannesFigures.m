@@ -4,13 +4,13 @@ close all
 clc
 
 %% Load block
-tmp = load('N:\Project Z-stacks\New stacks\5K_0.25mg_30 nm_Sample 2\tif_5K_0.25mg_30 nm_Sample 2\correct stack\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
+tmp = load('N:\Project Z-stacks\New stacks\1K_0.5mg_30 nm_sample 1\Tif_1K_0,5mg_30 nm_sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table05 = tmp.(names{1});
 clear tmp names
 % Load second file
-tmp = load('N:\Project Z-stacks\New stacks\5k_0.5 mg 30 nm_Sample 2\tif_5K_0.5mg_30 nm_Sample 2\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
+tmp = load('N:\Project Z-stacks\New stacks\5k_0.5 mg 30 nm_Sample 1\tif_5k_0.5 mg 30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table075 = tmp.(names{1});
@@ -21,6 +21,7 @@ names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table1 = tmp.(names{1});
 clear tmp names
+
 
 % %% Old Plotting
 % 
@@ -76,7 +77,7 @@ clear tmp names
 % ylim([1e-6 1])
 % xlim([0.1 1e5])
 % legend({'0.25 mg/ml','0.5 mg/ml','1 mg/ml'})
-
+% 
 
 %% New Plotting
 

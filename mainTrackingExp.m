@@ -25,8 +25,8 @@ trackingExp = Core.TrackingExperiment(path2File,calib.getCal,path2SRCal,path2ZCa
 trackingExp.retrieveMovies;
 
 %% get TrackingData
-trackParam.euDistXY = 600;
-trackParam.euDistZ  = 600;
+trackParam.euDistXY = 1000;
+trackParam.euDistZ  = 1300;
 val2Use = 'bestFocus';
 trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);
 

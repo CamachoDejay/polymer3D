@@ -166,9 +166,9 @@ classdef MPTrackingMovie < Core.MPLocMovie
         
         function getTracesMovie(obj,frames,idx2Trace,ROI,frameRate)
             assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting movies');
-            obj.getPartMovie(obj,frames,idx2Trace,ROI,frameRate);
+            obj.getPartMovie(frames,idx2Trace,ROI,frameRate);
             
-            obj.getTrace3DMovie(obj,frames,idx2Trace,frameRate);
+            obj.getTraces3DMovie(frames,idx2Trace,ROI,frameRate);
         end
         
         function getPartMovie(obj,frames,idx2Trace,ROI,frameRate)
@@ -179,11 +179,11 @@ classdef MPTrackingMovie < Core.MPLocMovie
         currentTraces = traces {idx2Trace};
         mainPos = [round(mean(currentTraces.row)/95) round(mean(currentTraces.col(1)/95))];
         nFrames = length(frames);
-        frames = currenTraces.frames(1:nFrames);
+        frames = currentTraces.frame(1:nFrames);
 
-        for i = obj.calbrated.nPlanes
+        for i = 1:  obj.calibrated.nPlanes
 
-            currentPlane = MPTrackMov.getPlane(i);
+            currentPlane = obj.getPlane(i);
             % ROI = currentPlane;
             ROI = currentPlane(mainPos(1)-roiRadius:mainPos(1)+roiRadius,...
             mainPos(2)-roiRadius:mainPos(2)+roiRadius,:);
@@ -205,8 +205,8 @@ classdef MPTrackingMovie < Core.MPLocMovie
                 imagesc(ROI(:,:,frames(j)))
                 hold on
                 %scale bar
-                x = size(ROI,2)-13:size(ROI,2)-3;
-                y = ones(1,length(x))*size(ROI,1)-3;
+                x = size(ROI,2)-7:size(ROI,2)-2;
+                y = ones(1,length(x))*size(ROI,1)-2;
                 plot(x,y,'-w','LineWidth',5);
                 caxis([min(min(min(ROI))) max(max(max(ROI)))]);
                 axis image;
@@ -230,7 +230,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
 
         end
 
-        function getTraces3DMovie(obj,frames,idx2Trace,frameRate)
+        function getTraces3DMovie(obj,frames,idx2Trace,ROI, frameRate)
         assert(~isempty(obj.traces3D),'You need to extract 3D traces before getting traces Movie');
         %             sizeMarker = 5;
         Fig = figure;
@@ -238,17 +238,14 @@ classdef MPTrackingMovie < Core.MPLocMovie
         path2File = obj.raw.movInfo.Path;
         traces = obj.traces3D;
         currentTraces = traces {idx2Trace};
-
+        ROI = ROI*obj.info.pxSize;
         nFrames = length(frames);
         [frames] = obj.checkFrame(frames,size(currentTraces,1));
         frames = currentTraces.frame(1:nFrames);
 
-        xAx = [min(currentTraces.col-mean(currentTraces.col)),...
-            max(currentTraces.col-mean(currentTraces.col))];
-        yAx = [min(currentTraces.row-mean(currentTraces.row)),...
-            max(currentTraces.row-mean(currentTraces.row))];
-        zAx = [min(currentTraces.z-mean(currentTraces.z)),...
-            max(currentTraces.z-mean(currentTraces.z))];
+        xAx = [-ROI,ROI];
+        yAx = xAx;
+        zAx = xAx;
         mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
         gcf;
         hold on
@@ -258,10 +255,10 @@ classdef MPTrackingMovie < Core.MPLocMovie
             rowPlot = currentTraces.row(1:j) - mean(currentTraces.row);
             zPlot = currentTraces.z(1:j) - mean(currentTraces.z);
             %plotting with z coloring:
-            patch([colPlot nan(size(colPlot))],[rowPlot nan(size(colPlot))],...
-                [zPlot nan(size(colPlot))],[zPlot nan(size(colPlot))],...
-                'EdgeColor','interp','FaceColor','none')
-
+%             patch([colPlot nan(size(colPlot))],[rowPlot nan(size(colPlot))],...
+%                 [zPlot nan(size(colPlot))],[zPlot nan(size(colPlot))],...
+%                 'EdgeColor','interp','FaceColor','none')
+            plot3(colPlot,rowPlot,zPlot,'-r')
             xlim(xAx)
             ylim(yAx)
             zlim(zAx)

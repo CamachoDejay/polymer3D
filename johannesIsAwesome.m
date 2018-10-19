@@ -2,9 +2,9 @@ clear
 close all
 clc
 
-load('N:\Project Z-stacks\1K- 0.5 mg per ml\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat')
+load('N:\Project Z-stacks\New stacks\1K_0.5mg_30 nm_sample 1\Tif_1K_0,5mg_30 nm_sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat')
 porescold = allData;
-load('Z:\Leica TCS SP8X\Leica PC\Johannes\2018\27052018\tif\sted\poreProps.mat')
+load('N:\Project Z-stacks\New stacks\5k_0.5 mg 30 nm_Sample 1\tif_5k_0.5 mg 30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat')
 poresheated = allData;
 clear allData;
 %% Plotting
