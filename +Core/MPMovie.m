@@ -229,11 +229,16 @@ classdef MPMovie < Core.Movie
             end  
         end
         
-        function [data] = getPlane(obj,idx)
+        function [data] = getPlane(obj,idx,frame)
             %Allow the user to extract data from a specific plane, behavior
             %depends on the calibration
+            switch nargin 
+                case 1
+                    frame = 1:obj.raw.maxFrame(1);
+                case 2
+            end
             assert(and(idx<9,idx>=1),'plane should be between 1 and 8');
-            frame = 1:obj.raw.maxFrame(1);
+            
             [data] = Load.Movie.tif.getframes(obj.calibrated.filePath.(sprintf('plane%d',idx)),frame);
              
             

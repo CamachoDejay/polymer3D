@@ -3,16 +3,16 @@ clc
 close all
 clear 
 
-path2ZCal = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\ZCal\Good Cal';
-path2SRCal = [];
+path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - NormObjCorr';
+path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - normObjCorrPSFE';
 
-path2File = 'E:\Data\Leuven Data\2018\ZHao\181018 - 400nm GoldBeads Trapping\GoldBeads400nm - Water\GoldBeads400nmTransmission_IntermediateStage_1';
-path2Cal = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\2DCal\200nmFluoBeadsCalPSFE_3';
+path2File = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - NormObjCorr\zStackFluoBeads200_PIC1_270618__3';
+path2Cal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - normObjCorrPSFE\zStackFluoBeads200_S3_270618__2';
 
 detectParam.delta = 6;
-detectParam.chi2 = 40;
-info.runMethod = 'run';
-info.type = 'transmission';
+detectParam.chi2 = 80;
+info.runMethod = 'load';
+info.type = 'normal';
 %%
 calib = Core.MPCalibration(path2Cal);
 
@@ -45,7 +45,7 @@ MPTrackMov.superResolve(val2Use);
 %% plot
 frames = 1:500;
 
-MPTrackMov.showCorrLoc(frames);
+MPTrackMov.showCorrLoc();
 
 %% showFrame
 
@@ -71,11 +71,11 @@ MPTrackMov.evalAccuracy
 [int,SNR] = MPTrackMov.getAvgIntensity;
 
 %% getTraces 3D
-frame =1:100;
-idx2Trace = 1;
+frame = 1:85;
+idx2Trace = 2;
 ROIradius = 12;
-frameRate = 5;
-scaleBar  = 500; %in nm 
+frameRate = 10;
+scaleBar  = 1; %in nm 
 MPTrackMov.getTracesMovie(frame,idx2Trace,ROIradius,frameRate,scaleBar);
 %MPTrackMov.getTraces3DMovie(frame,idx2Trace,ROIradius,frameRate);
 %MPTrackMov.getPartMovie(frame,idx2Trace,ROIradius,frameRate);
