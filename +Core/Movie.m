@@ -231,26 +231,35 @@ classdef Movie < handle
             %TODO: Code a good way of playing the movie;
         end
         
-        function saveMovie(obj,ext,frameRate,scaleBar,frames)
+        function saveMovie(obj,ext,frameRate,scaleBar,frames,plane)
             
             switch nargin
                 case 4
                     nFrames = obj.raw.movInfo.maxFrame(1);
                     frames = 1:nFrames;
+                    plane = [];
                 case 5
-                    nFrames = length(frames);
+                    
+                    plane = [];
+                case 6
+                    
             end
-            
+            nFrames = length(frames);
             path2File = obj.raw.movInfo.Path;
             filename=sprintf('%s%sfullMovie.%s', path2File,'\',ext);
 
             for j = 1:nFrames
-                Fig = obj.showFrame(j,scaleBar);
+                if ~isempty(plane)
+                    Fig = obj.showFrame(j,scaleBar,plane);
+                else
+                    Fig = obj.showFrame(j,scaleBar);
+                end
                 hold on
                 %scale bar
                 ax = gca;
                 
                 set(ax,'visible','off');
+                set(gca,'position',[0 0 1 1],'units','normalized')
                 axis image;
                 drawnow;
 

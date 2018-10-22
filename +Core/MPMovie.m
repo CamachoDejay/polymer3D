@@ -114,7 +114,15 @@ classdef MPMovie < Core.Movie
 
         end
         
-        function h = showFrame(obj,idx,scaleBar)
+        function h = showFrame(obj,idx,scaleBar,idx2Plane)
+            switch nargin
+                case 3
+                    idx2Plane = [];
+                case 4
+                otherwise
+                    error('Not enough input argument');
+            end
+            
             %Adapted method from the Core.Movie one, its behavior changed
             %depending on whether the data has been calibrated or not.
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
@@ -126,10 +134,24 @@ classdef MPMovie < Core.Movie
             
             pxSize = obj.info.pxSize/1000;%in µm
             scaleBarPx = scaleBar/pxSize;
+            planes = fields(frame);
             
+            if ~isempty(idx2Plane)
+                for i = 1 :length(planes)
+                    if i ~=idx2Plane
+                        frame = rmfield(frame,planes{i});
+                    end
+                    
+                end
+                nsFig = 1;
+                
+            else
+                nsFig = 2;
+            end
+                
             nImages = numel(fields(frame));
             fNames = fieldnames(frame);
-            nsFig = 2;
+            
             
             if ~isempty(obj.calibrated)
                 
@@ -156,23 +178,25 @@ classdef MPMovie < Core.Movie
             
             for i = 1:nImages
                 currentIM = frame.(fNames{i});
-                subplot(2,nImages/nsFig,i)
+                subplot(nsFig,nImages/nsFig,i)
                 
                 if strcmp(obj.info.type,'transmission')
                     colormap('gray');
+                    currentIM = imcomplement(currentIM);
                 else
                     colormap('jet')
                 end
                 
                 imagesc(currentIM)
+                caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
                 hold on 
                 x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
                 y = ones(1,length(x))*size(currentIM,1)-0.05*size(currentIM,2);
-                text(mean(x),mean(y)-0.06*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',8);
+                text(mean(x),mean(y)-0.04*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',8);
                 plot(x,y,'-w','LineWidth',2.5);
                 axis image;
-                caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
-                grid on;
+                
+                %grid on;
                 a = gca;
                 a.XTickLabel = [];
                 a.YTickLabel = [];

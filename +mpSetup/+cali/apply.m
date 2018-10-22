@@ -2,7 +2,9 @@ function [data] = apply( cam1, cam2, cal )
 %APPLY rearranges data and corrects for intensity diffecences
 %between channels
 %   Detailed explanation goes here
-
+if or(isempty(cam1),isempty(cam2))
+    error('Calibration expect 2 cameras, update will be performed later');
+else
     h = waitbar(0,'Please wait applying calibration');
     % if need be we flip camera 2, this is generally the case
     if cal.flipCam2
@@ -46,4 +48,5 @@ function [data] = apply( cam1, cam2, cal )
     data = data(:,:,newor,:);
     
     close(h)
+end
 end

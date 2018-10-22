@@ -3,16 +3,16 @@ clc
 close all
 clear 
 
-path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
-path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
+path2ZCal = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\ZCal\Good Cal';
+path2SRCal = [];
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\29\1K - 0_25mgmL\TL-FluoBeads200nm-PIC0_25mgmL-1K_2';
-path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
+path2File = 'E:\Data\Leuven Data\2018\ZHao\181018 - 400nm GoldBeads Trapping\GoldBeads400nm - Water\GoldBeads400nmTransmission_IntermediateStage_1';
+path2Cal = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\2DCal\200nmFluoBeadsCalPSFE_3';
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
-info.runMethod = 'load';
-info.type = 'normal';
+detectParam.chi2 = 40;
+info.runMethod = 'run';
+info.type = 'transmission';
 %%
 calib = Core.MPCalibration(path2Cal);
 
@@ -43,18 +43,18 @@ MPTrackMov.consolidatePlanes
 val2Use = 'bestFocus';
 MPTrackMov.superResolve(val2Use);
 %% plot
-frames = 1:100;
+frames = 1:500;
 
-%MPTrackMov.showCorrLoc();
+MPTrackMov.showCorrLoc(frames);
 
 %% showFrame
 
-%MPTrackMov.showFrame(80);
+%MPTrackMov.showFrame(80,5);
 %MPTrackMov.showParticle;
 
 %% tracking
-trackParam.euDistXY = 1000;
-trackParam.euDistZ  = 1000;
+trackParam.euDistXY = 400;
+trackParam.euDistZ  = 400;
 MPTrackMov.trackParticle(trackParam);
 traces = MPTrackMov.getTraces;
 %% plot

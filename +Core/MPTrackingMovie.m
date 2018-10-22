@@ -9,7 +9,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
     methods
         function obj = MPTrackingMovie(raw, MPCal, info, SRCal, zCal)
             %trackingMovie Construct an instance of this class
-            %   Detailed explanation goes here
+            %Detailed explanation goes here
              obj  = obj@Core.MPLocMovie(raw,MPCal,info,SRCal,zCal);
              
         end
@@ -193,6 +193,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
         pos.col = currentTraces.col/pxSize - mainPos(2) + roiRadius + 1/2;
         framesIm = frames(ismember(frames,currentTraces.frame));
         framesPos = find(ismember(currentTraces.frame,frames));
+        
         for i = 1:obj.calibrated.nPlanes
 
             currentPlane = obj.getPlane(i);
@@ -618,6 +619,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             stdErr  = meanErr;
             Fig = figure;
             allTraces = zeros(length(Motor),length(traces));
+            allData = [];
             for i = 1:length(traces)
                 
                 currentTrace = traces{i};
@@ -652,9 +654,18 @@ classdef MPTrackingMovie < Core.MPLocMovie
                     ylabel([dim,' error compare to motor (nm) '])
                     title(['tracking error']);
                     hold off
+                    allData = [allData; traceErr-mot];
                 end
 
             end
+            
+            figure()
+            histogram(allData)
+            title(fprintf('Histogram of errors in %s',dim))
+            xlabel([dim,' error compare to motor (nm)'])
+            ylabel('Occurence');
+            xlim([-200 200]);
+            
             disp(['mean accuracy ', dim,': ', num2str(mean(meanErr)), ' nm']);
             disp(['abs mean ', dim,': ', num2str(mean(absMeanErr)), ' nm']);
             disp(['std ',dim,': ', num2str(mean(stdErr)), ' nm']);

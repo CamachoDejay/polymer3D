@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File= 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\TL\TL-OD2-200msExposure_1';
-path2Cal  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\181018 - 400nm GoldBeads Trapping\GoldBeads400nm - Water\GoldBeads400nmTransmission_IntermediateStage_1';
+path2Cal  = 'E:\Data\Leuven Data\2018\ZHao\181018 - 400nm GoldBeads Trapping\2DCal\FluoBeads200nm488Excitation_3';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -19,7 +19,7 @@ path2Cal  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\PlaneCalib\BeadsCal
 
 detectParam.delta = 6;
 detectParam.chi2 = 40;
-info.type = 'normal';
+info.type = 'transmission';
 
 %% create a Movie Object
 mov1 = Core.Movie(path2File,info);
@@ -41,10 +41,10 @@ mpMov = Core.MPMovie(path2File,calib.getCal,info);
 mpMov.giveInfo
 
 mpMov.calibrate;
-
+%%
 mpMov.showFrame(1,5);
 %% Save Movie
-mpMov.saveMovie('mp4',5,10,1:20)
+mpMov.saveMovie('gif',30,10,1:100,1)
 
 %% MP Particle Movie
 mpPartMov = Core.MPParticleMovie(path2File,calib.getCal,info);

@@ -203,21 +203,23 @@ classdef ZCalibration < handle
                 subplot(2,1,1)
                 hold on
                 scatter(z1,ellip1)
-                plot(ones(length(yAx),1)*relZ(i),yAx)
+                plot(ones(length(yAx),1)*relZ(i),yAx,'--k')
                 title('Elliptiticy Elongated in Y')
                 xlabel('zPos (nm)')
                 ylabel('Ellipticity (sigY/sigX)')
                 ylim([1 2])
+                xlim([-4000,1000]);
                 hold off
                 
                 subplot(2,1,2)
                 hold on
                 scatter(z2,ellip2)
-                plot(ones(length(yAx))*relZ(i),yAx)
+                plot(ones(length(yAx))*relZ(i),yAx,'--k')
                 title('Elliptiticy Elongated in X')
                 xlabel('zPos (nm)')
                 ylabel('Ellipticity (sigX/sigY)')
                 ylim([1 2])
+                xlim([-4000,1000]);
                 hold off
                 
             end
