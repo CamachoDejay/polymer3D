@@ -160,6 +160,7 @@ classdef MPMovie < Core.Movie
                 
                 if strcmp(obj.info.type,'transmission')
                     colormap('gray');
+                    currentIM = imcomplement(currentIM);
                 else
                     colormap('jet')
                 end
@@ -172,7 +173,7 @@ classdef MPMovie < Core.Movie
                 plot(x,y,'-w','LineWidth',2.5);
                 axis image;
                 caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
-                grid on;
+               
                 a = gca;
                 a.XTickLabel = [];
                 a.YTickLabel = [];
