@@ -1,4 +1,4 @@
-function [cal, movInfo] = calculate(fPath, correctInt, flipCam2)
+function [cal, movInfo] = calculate(fPath,nChan, correctInt, flipCam2)
 %CALCULATE calculates calibration for the multiplane setup. NOTE that if
 %you choose to correct for intensity differences the data changes form
 %uint16 to double because we have to multiply by a correction factor
@@ -6,11 +6,19 @@ function [cal, movInfo] = calculate(fPath, correctInt, flipCam2)
 
 switch nargin
     case 1
-        correctInt = true;
+        
+        nChan = 4;
         flipCam2 = true;
+        
     case 2
         % this is the normal way, I cant see how it would be different
+        correctInt = true;
         flipCam2 = true;
+        
+    case 3
+        
+        flipCam2 = true;
+        
 end
 
 cal.correctInt = false;
@@ -43,8 +51,8 @@ max_im2 = max(movC2,[],3);
 
 waitbar(.1,h,'Finding channels')
 % find channels
-[ chCentCam1, ~, commonW1 ] = mpSetup.cali.findChannels( max_im1 );
-[ chCentCam2, ~, commonW2 ] = mpSetup.cali.findChannels( max_im2 );
+[ chCentCam1, ~, commonW1 ] = mpSetup.cali.findChannels( max_im1, false, nChan );
+[ chCentCam2, ~, commonW2 ] = mpSetup.cali.findChannels( max_im2, false,nChan );
 
 waitbar(.2,h,'getting ROIs')
 % get ROI
@@ -89,14 +97,14 @@ figure()
 subplot(2,1,1)
 imagesc(max_im1)
 axis image
-for i = 1:4
+for i = 1:nChan
     rectangle('Position', cal.ROI(i,:))
 end
 title('Camera 1 with ROIs')
 subplot(2,1,2)
 imagesc(max_im2)
 axis image
-for i = 5:8
+for i = nChan+1:2*nChan
     rectangle('Position', cal.ROI(i,:))
 end
 title('Camera 2 with ROIs')
