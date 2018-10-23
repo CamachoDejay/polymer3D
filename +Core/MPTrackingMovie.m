@@ -239,6 +239,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
 %                   'MarkerFaceColor','blue')
                 caxis([min(min(min(ROI))) max(max(max(ROI)))]);
                 set(gca,'visible','off');
+                set(gcf,'color','w');
                 axis image;
 
                 colormap('hot')
@@ -323,6 +324,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             xlabel('x Position (nm)');
             ylabel('y Position(nm)');
             zlabel('z Position(nm)');
+            set(gcf,'color','w');
             frame = getframe(Fig);
             mov(j) = frame;
             
