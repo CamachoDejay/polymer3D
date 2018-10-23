@@ -11,7 +11,7 @@ addpath(genpath('Ext'));
 
 % path to the callibration
 path2File= 'E:\Data\Leuven Data\2018\ZHao\181018 - 400nm GoldBeads Trapping\GoldBeads400nm - Water\GoldBeads400nmTransmission_IntermediateStage_1';
-path2Cal  = 'C:\Data\Boris\SetupCalibration\October\FluoBeads200nm_1';
+path2Cal  = 'C:\Data\Boris\SetupCalibration\October\FluoBeads200nm_2';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -32,7 +32,7 @@ mov1.showFrame(60);
 %% Calib
 calib = Core.MPCalibration(path2Cal);
 
-calib.calc;
+calib.calc(1);
 %%
 calib.showCal
 

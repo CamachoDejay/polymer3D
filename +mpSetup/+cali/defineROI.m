@@ -1,10 +1,12 @@
 function [ ROI ] = defineROI( chaWin, chC1, chC2, im_size )
 %DEFINEROI define ROIs in the cameras for multiplane experiments
-
+    nChan = size(chC1,1);
     chaWin = round(chaWin);
-    assert(chaWin(1) <= 512,'Problems with channel size, cant be larger than 1/4 of the image chip');
-    chaDel = repmat(chaWin,4,1)./2;
-    ROI = zeros(8,4);
+    if (chaWin(1)>= 512)
+        warning('Channel size is unexpectedly large if you are using 8 planes configuration');
+    end
+    chaDel = repmat(chaWin,nChan,1)./2;
+    ROI = zeros(nChan*2,4);
     
     cornerC1 = round(chC1 - chaDel);
     cornerC2 = round(chC2 - chaDel);

@@ -1,8 +1,8 @@
 function [ imShifts ] = simpleImShift( inFocus, cam1, cam2)
 %SIMPLEIMSHIFT fast im shift calculation at the pixel resolution
 %   spatial cross-correlation algorithm to determine shift of coordinates
-    
-    imShifts = zeros(8,2);
+    nPlanes = length(inFocus);
+    imShifts = zeros(nPlanes,2);
     focus = inFocus(1).frame;
     
     imCh1 = cam1(:,:,1,focus);
@@ -16,15 +16,15 @@ function [ imShifts ] = simpleImShift( inFocus, cam1, cam2)
     se = strel('disk',max_shift,8);
     bw = imdilate(bw,se);
     
-    for chIdx = 2:8
+    for chIdx = 2:nPlanes
     
         focus     = inFocus(chIdx).frame;
-        if chIdx<5
+        if chIdx<nPlanes/2+1
             % I look at first cam
             imChi = cam1(:,:,chIdx,focus);
         else
             % I look at second cam
-            imChi = cam2(:,:,chIdx-4,focus);
+            imChi = cam2(:,:,chIdx-nPlanes/2,focus);
         end
         % cross correlation
         res    = normxcorr2(imCh1,imChi);
