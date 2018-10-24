@@ -172,7 +172,7 @@ classdef Movie < handle
             fNames = fieldnames(frame);
             idx2Empty = structfun(@isempty, frame);
             idx2Data = find(idx2Empty==0);
-            nImages = length(find(idx2Empty));
+            nImages = length(idx2Data);
                         
             h = figure(1);
             h.Name = sprintf('Frame %d',idx);

@@ -14,8 +14,8 @@ else
     waitbar(.2,h,'Gettingg channel data')
     [ chC1, chC2 ] = mpSetup.cali.getChData( cam1, cam2, cal.ROI );
     sTmp = size(chC1);
-    sTmp(3) = sTmp(3) + 4;
-    data = ones(sTmp);
+    sTmp(3) = sTmp(3)*2;
+    data = ones(sTmp,'uint16');
     
     if cal.correctInt
         C = cal.Icorrf;
@@ -27,20 +27,18 @@ else
     if cal.reorder
         newor = [cal.neworder];
     else
-        newor = 1:8;
+        newor = 1:sTmp(3);
     end
-    
-    
-    
+  
     % correct int
     waitbar(.5,h,'Doing some simple math...')
-    for i = 1:4
+    for i = 1:size(chC1,3)
         data(:,:,i,:) = chC1(:,:,i,:).*C(i);
     end
     
     waitbar(.7,h,'Doing some simple math...')
-    for i = 1:4
-        data(:,:,i+4,:) = chC2(:,:,i,:).*C(i+4);
+    for i = 1:size(chC1,3)
+        data(:,:,i+size(chC1,3),:) = chC2(:,:,i,:).*C(i+size(chC1,3));
     end
     
     waitbar(.9,h,'Reordering...')

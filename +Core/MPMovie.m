@@ -16,8 +16,7 @@ classdef MPMovie < Core.Movie
             obj = obj@Core.Movie(raw,info);
 
             obj.cal2D = cal;
-            obj.calibrated = raw;
-
+            
         end
         
         function set.cal2D(obj,cal2D)
@@ -32,16 +31,9 @@ classdef MPMovie < Core.Movie
         
         function set.calibrated(obj,calibrated)
            
-            if ischar(calibrated)
-
-              obj.calibrate;
-
-            else
-
               assert(isstruct(calibrated),'Calibrated is expected to be a struct');
               obj.calibrated = calibrated;
-
-            end
+              
         end
         
         function calibrate(obj)
@@ -66,36 +58,37 @@ classdef MPMovie < Core.Movie
 
                 if (~isempty(file2Analyze))
 
-                    [file] = obj.getFileInPath (fullPath,'.tif');
+                   [file] = obj.getFileInPath (fullPath,'.tif');
 
-                    if length(file) == 8 %only work with 8 Planes now
+                   if ~isempty(file) %only work with 8 Planes now
                         %If data is already calibrated we load it
-                        disp('The dataset is already calibrated, Loading from existing file');
-                        fullpath = [file2Analyze.folder filesep file2Analyze.name];
-                        tmp = load(fullpath);
-                        calibrate = tmp.calib;
-                        
-                        for i = 1: length(fieldnames(calibrate.filePath))
-                            currentPath = calibrate.filePath.(['plane' num2str(i)]);
-                            idx1 = strfind(fullPath,'\calibrated');
-                            idx2 = strfind(currentPath,'\calibrated');
-                            
-                            newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
-                            
-                            calibrate.filePath.(['plane' num2str(i)]) = newPath;
-                            
-                        end
-                        disp('Done');
+                       disp('The dataset is already calibrated, Loading from existing file');
+                       
+                       if length(file) ~= 8
+                           
+                            warning('Did not find 8 planes, if you are not using the prism it is okay, otherwise you might want to recalibrate');
+                       
+                       end
+                   end
+                    
+                   fullpath = [file2Analyze.folder filesep file2Analyze.name];
+                   tmp = load(fullpath);
+                   calibrate = tmp.calib;
 
-                    else
-                    %Otherwise we apply the calibration to the data
-                    disp('Some planes are missing (expect 8), recalibrating...');
-                    [calibrate] = obj.applyCalib;
-                    disp('Data is now correctly calibrated');
+                    for i = 1: length(fieldnames(calibrate.filePath))
+
+                        currentPath = calibrate.filePath.(['plane' num2str(i)]);
+                        idx1 = strfind(fullPath,'\calibrated');
+                        idx2 = strfind(currentPath,'\calibrated');                           
+                        newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
+                        calibrate.filePath.(['plane' num2str(i)]) = newPath;
 
                     end
-
+                    
+                    disp('Done');
+                    
                 else
+                    
                 %If no calibration was found we calibrate again
                 disp('Calibrating the dataset');
                 [calibrate] = obj.applyCalib;
@@ -350,7 +343,7 @@ classdef MPMovie < Core.Movie
             end           
          end
          
-         function [calib,fid] = saveCalibrated(obj,data,maxFrame)
+        function [calib,fid] = saveCalibrated(obj,data,maxFrame)
             cal = obj.cal2D.file;
             calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
             mkdir(calDir);

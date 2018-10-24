@@ -10,24 +10,25 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File= 'E:\Data\Leuven Data\2018\ZHao\181018 - 400nm GoldBeads Trapping\GoldBeads400nm - Water\GoldBeads400nmTransmission_IntermediateStage_1';
-path2Cal  = 'C:\Data\Boris\SetupCalibration\October\FluoBeads200nm_2';
+path2File= 'E:\Data\Leuven Data\2018\10-Oct\23\ZCal\200nmBeads\FluoBeads200nm_10';
+path2Cal  = 'E:\Data\Leuven Data\2018\10-Oct\23\2DCal\FluoBeads200nm_1';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
 % path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
 detectParam.delta = 6;
-detectParam.chi2 = 40;
+detectParam.chi2 = 80;
 info.type = 'normal';
 
 %% create a Movie Object
 mov1 = Core.Movie(path2File,info);
 mov1.giveInfo;
 %mov2 = Core.Movie(path2zCal);
+%%
 mov1.saveMovie('mp4',60,5,1:200);
 %% showFrame
-mov1.showFrame(60);
+mov1.showFrame(10,5);
 %mov2.showFrame(51);
 %% Calib
 calib = Core.MPCalibration(path2Cal);
