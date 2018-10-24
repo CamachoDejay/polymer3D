@@ -9,16 +9,10 @@ classdef ZCalMovie < Core.MPCalMovie
     
     methods
         
-        function obj = ZCalMovie(raw,cal,info,candidatePos)
+        function obj = ZCalMovie(raw,cal,info)
             %UNTITLED6 Construct an instance of this class
             %   Detailed explanation goes here
             obj  = obj@Core.MPCalMovie(raw,cal,info);
-            
-            if nargin == 4
-                
-                obj.candidatePos = candidatePos;
-                
-            end
             
         end
         
@@ -121,23 +115,23 @@ classdef ZCalMovie < Core.MPCalMovie
             assert(and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRange')),...
                 'fitZParam is expected to be a struct with two fields, deg for polynomial fit and ellipRange for ellipticity to consider');
             
-            
+            nPlanes = obj.calibrated.nPlanes;
             deg = fitZParam.deg;
             minEllipt = fitZParam.ellipRange(1);
             maxEllipt = fitZParam.ellipRange(2);
             [zStep,~] = obj.getZPosMotor;
             zStep = zStep(1);
-            zSyncCalData = cell(8,2);
+            zSyncCalData = cell(nPlanes,2);
             
             for i = 1:size(zCalData,1)
                 for j = 1:size(zCalData,2)
                     %Extract data in acceptable ellipticity range
-                    
-                    if ~isempty(zCalData{i,j})
-                        frames = zCalData{i,j}.frame;
+                    currentData = zCalData{i,j};
+                    if ~isempty(currentData)
+                        frames = currentData.frame;
                         zPos = frames*zStep;
-                        fMetric = zCalData{i,j}.fMetric;
-                        ellipt = zCalData{i,j}.ellip;
+                        fMetric = currentData.fMetric;
+                        ellipt = currentData.ellip;
                         zPos = zPos(and(ellipt<maxEllipt, ellipt > minEllipt));
                         fMetric = fMetric(and(ellipt<maxEllipt, ellipt > minEllipt));
                         frames = frames(and(ellipt<maxEllipt, ellipt > minEllipt));
@@ -177,10 +171,10 @@ classdef ZCalMovie < Core.MPCalMovie
                             focus2 = zVec(idx);
                             shift = focus1+focus2;%take into account both synchronization
                             
-                             zToNm = (zCalData{i,j}.frame*zStep - shift)*1000;
-                             ellip2Store = zCalData{i,j}.ellip;
-                             magX2Store = zCalData{i,j}.magX;
-                             magY2Store = zCalData{i,j}.magY;
+                             zToNm = (currentData.frame*zStep - shift)*1000;
+                             ellip2Store = currentData.ellip;
+                             magX2Store = currentData.magX;
+                             magY2Store = currentData.magY;
 % %                             [~,index] = (min(abs(1-ellipt)));
 % %                             [~,index2] = (max(fMetric));
 % %                             err = abs(zToNm(index)- abs(zToNm(index2)));

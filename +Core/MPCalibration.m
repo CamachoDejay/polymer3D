@@ -7,10 +7,10 @@ classdef MPCalibration < Core.Movie
     end
     
     methods
-        function obj = MPCalibration(raw)
+        function obj = MPCalibration(raw,info)
             %In this case raw path is used for both the loading of the
             %movie and the calibration calculation
-            obj = obj@Core.Movie(raw);
+            obj = obj@Core.Movie(raw,info);
           
         end
         

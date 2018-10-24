@@ -4,14 +4,17 @@ clc
 close all;
 %% get path to SRCalibration
 
-path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
-path2Cal  ='E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
+path2SRCal = 'E:\Data\Leuven Data\2018\10-Oct\23\2DCal';
+path2Cal  ='E:\Data\Leuven Data\2018\10-Oct\23\2DCal\FluoBeads200nm_1';
 
 %% Initialize a zCalibration Object
+info.type = 'normal';
+info.runMethod = 'load';
 
 calib = Core.MPCalibration(path2Cal);
+calib.calc
 
-testSRCal = Core.SRCalibration(path2SRCal,calib.getCal);
+testSRCal = Core.SRCalibration(path2SRCal,calib.getCal,info);
 
 %% get zCalibrationMovie
 

@@ -20,9 +20,9 @@ classdef SRCalMovie < Core.MPCalMovie
     
     methods
         %Constructor
-        function obj = SRCalMovie(raw, cal)
+        function obj = SRCalMovie(raw, cal, info)
             
-            obj  = obj@Core.MPCalMovie(raw,cal);
+            obj  = obj@Core.MPCalMovie(raw,cal,info);
             
         end
         

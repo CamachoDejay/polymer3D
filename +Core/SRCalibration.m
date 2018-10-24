@@ -4,6 +4,7 @@ classdef SRCalibration < handle
     
     properties
         path
+        info
         SRCalMovies
         cal2D
         calib
@@ -12,11 +13,12 @@ classdef SRCalibration < handle
     
     methods
         
-        function obj = SRCalibration(path2SRCal,cal2D)
+        function obj = SRCalibration(path2SRCal,cal2D,info)
             %zCalibration Construct an instance of this class
             %   Detailed explanation goes here
             obj.path = path2SRCal;
             obj.cal2D = cal2D;
+            obj.info = info;
         end
         
         function set.path(obj, path)
@@ -57,7 +59,8 @@ classdef SRCalibration < handle
                     if ~all(idx==0)
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
-                        tmp = Core.SRCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D);
+                        tmp = Core.SRCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
+                        tmp.calibrate;
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want
                         %any other movement here.

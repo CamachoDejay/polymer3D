@@ -66,6 +66,7 @@ classdef ZCalibration < handle
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
                         tmp = Core.ZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
+                        tmp.calibrate;
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want
                         %any other movement here.
@@ -93,6 +94,7 @@ classdef ZCalibration < handle
         
         function retrieveZCalData(obj,detectParam, fitZParam, trackParam)
             %Checking user input
+            nPlanes = obj.zCalMovies.(['zCal' num2str(1)]).calibrated.nPlanes;
             assert(nargin==4, 'retrieveZCalData expects 3 inputs, 1)detection Parameters, fit z parameter, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
             assert(and(isstruct(fitZParam),and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRange'))),'fitZParam is expected to be a struct with 2 fields "deg" for the degree of polynomial parameter, "ellipRange" holding the min and max value of accepted ellipticity. ');
@@ -100,7 +102,7 @@ classdef ZCalibration < handle
             obj.calib.fitZParam.ellipRange = fitZParam.ellipRange;
             %Extraction of zData
             nfields = numel(fieldnames(obj.zCalMovies));
-            allData = cell(8,3);
+            allData = cell(nPlanes,3);
             for i = 1: nfields
                 disp(['Retrieving data from zCal file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 if i == 1
@@ -133,9 +135,10 @@ classdef ZCalibration < handle
                 
                 %Get data for every particle every planes together stored
                 %in allData.
-                for j = 1: length(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip)
+                for j = 1: size(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip,1)
                     
-                    allData{j,1} = [allData{j,1} ;obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{j,1} ];
+                    allData{j,1} = [allData{j,1} ;
+                    obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{j,1} ];
                     
                 end
                 
@@ -145,10 +148,11 @@ classdef ZCalibration < handle
             
              %Sort the data
             allData{1,3} = obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{1,3};
-            for j = 1: length(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip)
+            for j = 1: size(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip,1)
+                if ~isempty(allData{j,1})
                 [~,ind] = sort(allData{j,1}.z);
                 allData{j,1} = allData{j,1}(ind,:);
-                
+                end
             end
             %Sort all data together
             [~,ind] = sort(allData{1,2}.z);
@@ -189,7 +193,7 @@ classdef ZCalibration < handle
             zRange = obj.calib.fitZParam.zRange;
             ellipRange = obj.calib.fitZParam.ellipRange;
             figure()
-            for i = 1 : length(obj.calib.data)
+            for i = 1 : size(obj.calib.data,1)
                 
                 z =  obj.calib.data{i}.z+relZ(i);
                 ellip = obj.calib.data{i}.ellip;
@@ -228,7 +232,7 @@ classdef ZCalibration < handle
             figure()
             hold on
           
-            for i = 1 : length(obj.calib.data)
+            for i = 1 : size(obj.calib.data,1)
                 dataCurrPlane = obj.calib.data{i};
                 scatter(dataCurrPlane.z, dataCurrPlane.ellip,25,'filled',...
                     'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4,'DisplayName',['Plane ' num2str(i) ' - ' num2str(relZ(i))])
@@ -244,7 +248,7 @@ classdef ZCalibration < handle
             %Plot #3
             figure()   
             
-            for i = 1 : length(obj.calib.data)
+            for i = 1 : size(obj.calib.data,1)
                 
                 dataCurrPlane = obj.calib.data{i};
                 idx2Keep = and(dataCurrPlane.ellip>ellipRange(1),...
@@ -420,7 +424,7 @@ classdef ZCalibration < handle
             zCalibration = cell(length(zSyncCalData),2);
             deg = zSyncCalData{1,3}(3);
             disp('Starting fitting ...');
-            for i = 1: length(zSyncCalData)
+            for i = 1: size(zSyncCalData,1)
                 disp(['Fitting of plane ' num2str(i)]);
                 dataCurrPlane = zSyncCalData{i};
                 idx2Keep = and(dataCurrPlane.ellip>ellipRange(1),...

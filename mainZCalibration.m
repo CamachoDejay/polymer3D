@@ -4,13 +4,14 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - NormObjCorr';
-path2Cal  = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - normObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
+path2zCal = 'E:\Data\Leuven Data\2018\10-Oct\23\ZCal\200nmBeads';
+path2Cal  = 'E:\Data\Leuven Data\2018\10-Oct\23\2DCal\FluoBeads200nm_1';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
 info.runMethod = 'load';
 calib = Core.MPCalibration(path2Cal);
+calib.calc;
 
 testZCal = Core.ZCalibration(path2zCal,calib.getCal,info);
 
@@ -22,11 +23,11 @@ testZCal.retrieveZCalMov;
 
 detectParam.delta = 6;
 detectParam.chi2 = 60;
-fitZParam.deg = 6;
+fitZParam.deg = 4;
 fitZParam.ellipRange = [0.5 2];
 
 trackParam.euDistPx = 4; 
-trackParam.commonPlanes = 2;
+trackParam.commonPlanes = 1;
 
 testZCal.retrieveZCalData(detectParam, fitZParam,trackParam);
 
