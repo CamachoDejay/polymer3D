@@ -406,12 +406,20 @@ classdef MPParticleMovie < Core.MPMovie
                 [~,idx] = max(focusMetric);
                 currentPlane = candMet.plane(idx);
                 
-                %Check which planes are to be checked (currently 2 planes
-                %above and 2 planes below the given plane
-                planes2Check = currentPlane-2:currentPlane-1;
-                planes2Check = planes2Check(planes2Check>0);
-                planes2Check = [planes2Check currentPlane+1:currentPlane+2];
-                planes2Check = planes2Check(planes2Check<nPlanes+1);
+                switch nPlanes
+                    case 1
+                        planes2Check = [];
+                        
+                    otherwise
+                        
+                        %Check which planes are to be checked (currently 2 planes
+                        %above and 2 planes below the given plane
+                        planes2Check = currentPlane-2:currentPlane-1;
+                        planes2Check = planes2Check(planes2Check>0);
+                        planes2Check = [planes2Check currentPlane+1:currentPlane+2];
+                        planes2Check = planes2Check(planes2Check<nPlanes+1);
+                        
+                end
                 currentCand = candMet(idx,:);
                 direction = -1;%Start by checking above
                 
@@ -498,6 +506,10 @@ classdef MPParticleMovie < Core.MPMovie
                 isPart(isPart==1) = 0;
             end
             
+            if isempty(isPart)
+                isPart = false;
+            end
+            
             isPart = logical(isPart);
             
         end
@@ -544,21 +556,45 @@ classdef MPParticleMovie < Core.MPMovie
             %Here we will check that the consolidation found based on the
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
-            assert(length(planeConfig) <= nPlanes,'There is something wrong with your consolidated index and your candidate plane List');
+            switch nPlanes
+                case 1
+                    nPlanesEdge = 1;
+                    nPlanesFullRange = 1;
+                    nPlanesAlternated = 1;
+                case 2
+                    
+                    nPlanesEdge = 1;
+                    nPlanesFullRange = 1;
+                    nPlanesAlternated = 1;
+                
+                case 4
+                    
+                    nPlanesEdge = 2;
+                    nPlanesFullRange = 2;
+                    nPlanesAlternated = 3;
+                    
+                case 8
+                    
+                    nPlanesEdge = 2;
+                    nPlanesFullRange = 2;
+                    nPlanesAlternated = 3;
+                otherwise
+                    error('Unknown number of planes, only expect 1,2,4,8')
+            end
             %Let us test that we have consolidate the particle in at least
             %3 Planes
             isEdgePlane = or(~isempty(find(planeConfig==1,1)),~isempty(find(planeConfig==8,1)));
             
             if isEdgePlane
                 
-                testPlanes = length(find(~isnan(planeConfig)==true)) >= 2;
+                testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdge;
                 
             else
                 switch camConfig
                     case 'fullRange'
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= 2;
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesFullRange;
                     case 'alternated'
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= 3;
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesAlternated;
                     otherwise
                         error('unknown camera configuration');
                 end

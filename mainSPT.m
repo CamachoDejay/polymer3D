@@ -67,6 +67,7 @@ mpPartMov.showParticles(60)
 zCalMov = Core.ZCalMovie(path2File,calib.getCal,info);
 %% CandidatePos
 zCalMov.giveInfo;
+zCalMov.calibrate;
 zCalMov.findCandidatePos(detectParam);
 zCalMov.SRLocalizeCandidate;
 zCalMov.consolidatePlanes;
@@ -75,7 +76,7 @@ zCalMov.showParticles(24);
 
 %% ZCalibration
 trackParam.euDistPx = 4; 
-trackParam.commonPlanes = 2;
+trackParam.commonPlanes = 1;
 traces =  zCalMov.trackInZ(trackParam);
 
 %% Show traces
@@ -96,7 +97,7 @@ traces = zCalMov.get3DTraces;
 zCalMov.showTraces
 
 %% SuperResCalMovie
-trackParam.euDistPx = 1; 
+trackParam.euDistPx = 2; 
 trackParam.commonPlanes = 2;
 SRCalMov = Core.SRCalMovie(path2Cal,calib.getCal);
 
