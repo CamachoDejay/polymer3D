@@ -7,13 +7,17 @@ function [ imShifts ] = simpleImShift( inFocus, cam1, cam2)
     
     imCh1 = cam1(:,:,1,focus);
     % shift must be small thus
-    max_shift = 100; %[pixels]
+    if nPlanes == 2
+        maxShift = 250;
+    else
+        maxShift = 100;
+    end%[pixels]
     % generating mask, so I only look at a local max around shift 0 to
     % max_shift
     bw = false(size(imCh1).*2 - [1 1]);
     bw_c = round(size(bw)./2);
     bw(bw_c(1),bw_c(2)) = true;
-    se = strel('disk',max_shift,8);
+    se = strel('disk',maxShift,8);
     bw = imdilate(bw,se);
     
     for chIdx = 2:nPlanes

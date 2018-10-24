@@ -86,6 +86,7 @@ classdef SRCalibration < handle
         end
         
         function retrieveSRCalData(obj,detectParam, trackParam)
+            nPlanes = obj.SRCalMovies.(['SRCal' num2str(1)]).calibrated.nPlanes;
             %Checking user input
             assert(nargin==3, 'retrieveSRCalData expects 3 inputs, 1)detection Parameters, fit z parameter, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
@@ -93,8 +94,8 @@ classdef SRCalibration < handle
             
             %Extraction of SRData
             nfields = numel(fieldnames(obj.SRCalMovies));
-            allData = cell(7,1);
-            calPerPlane = cell(8,1);
+            allData = cell(nPlanes-1,1);
+            calPerPlane = cell(nPlanes,1);
             for i = 1: nfields
                 disp(['Retrieving data from SRCal file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 if i == 1

@@ -9,7 +9,7 @@ path2Cal  ='E:\Data\Leuven Data\2018\10-Oct\23\2DCal\FluoBeads200nm_1';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'load';
+info.runMethod = 'run';
 
 calib = Core.MPCalibration(path2Cal);
 calib.calc
@@ -22,9 +22,9 @@ testSRCal.retrieveSRCalMov;
 
 %% extract zData
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 60;
 
-trackParam.commonPlanes = 2; 
+trackParam.commonPlanes = 1; 
 trackParam.euDistPx = 5;
 
 testSRCal.retrieveSRCalData(detectParam,trackParam);
