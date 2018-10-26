@@ -15,11 +15,11 @@ info.runMethod = 'load';
 info.type = 'normal';
 %%
 calib = Core.MPCalibration(path2Cal);
-
+calib.calc
 %%
 
 MPTrackMov = Core.MPTrackingMovie(path2File,calib.getCal,info,path2SRCal,path2ZCal);
-
+MPTrackMov.calibrate;
 %% Detection
 
 MPTrackMov.giveInfo
@@ -71,7 +71,7 @@ MPTrackMov.evalAccuracy
 [int,SNR] = MPTrackMov.getAvgIntensity;
 
 %% getTraces 3D
-frame = 1:85;
+frame = 1:87;
 idx2Trace = 2;
 ROIradius = 12;
 frameRate = 10;

@@ -186,16 +186,17 @@ classdef MPTrackingMovie < Core.MPLocMovie
         roiRadius = ROI;
         pxSize = obj.info.pxSize;
         currentTraces = traces {idx2Trace};
-        mainPos = [round(mean(currentTraces.row)/pxSize) round(mean(currentTraces.col)/pxSize)];
+        mainPos = [round(mean(currentTraces.row)) round(mean(currentTraces.col)) round(mean(currentTraces.z))];
         
         scaleBarPx = scaleBar/(pxSize/1000);%in µm
-        pos.row = currentTraces.row/pxSize - mainPos(1) + roiRadius + 1/2;
-        pos.col = currentTraces.col/pxSize - mainPos(2) + roiRadius + 1/2;
+        pos.row = currentTraces.row - mainPos(1);
+        pos.col = currentTraces.col - mainPos(2);% + roiRadius + 1/2;
+        pos.z   = currentTraces.z - mainPos(3);
         framesIm = frames(ismember(frames,currentTraces.frame));
         framesPos = find(ismember(currentTraces.frame,frames));
         nFrames = length(framesIm);
          mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
-         Fig = figure;
+         Fig = figure('pos',[100 100 1200 375]);
          
          for j = 1:nFrames
            
@@ -212,19 +213,32 @@ classdef MPTrackingMovie < Core.MPLocMovie
             ax.Position = [left bottom ax_width ax_height];
             ext = '.gif';
             filename=sprintf('%s%s8planes-Trace%d%s', path2File,'\',idx2Trace,ext);
-          
+            
+            subplot(2,obj.calibrated.nPlanes/2+2,[1,2,7,8])
+            scatter3(pos.col(1:j),pos.row(1:j),...
+                pos.z(1:j),25,pos.z(1:j),'filled');
+            lim = [-roiRadius*pxSize,roiRadius*pxSize]; 
+            xlim(lim) 
+            ylim(lim)
+            zlim([min(pos.z) max(pos.z)]);
+            view(3)
+            lastIdx = [3:3+obj.calibrated.nPlanes/2-1,9:9+obj.calibrated.nPlanes/2-1];
             for i = 1:obj.calibrated.nPlanes
 
                 currentPlane = obj.getPlane(i,framesIm(j));
                 % ROI = currentPlane;
-                ROI = currentPlane(mainPos(1)-roiRadius:mainPos(1)+roiRadius,...
-                mainPos(2)-roiRadius:mainPos(2)+roiRadius);     
+                row = round(mainPos(1)/pxSize);
+                col = round(mainPos(2)/pxSize);
+                z   = round(mainPos(3)/pxSize);
+                
+                ROI = currentPlane(row-roiRadius:row+roiRadius,...
+                col-roiRadius:col+roiRadius);     
 
                 f0 = framesPos(1);
                 f = framesPos(j);
 
                 gcf;
-                subplot(2,obj.calibrated.nPlanes/2,i)
+                subplot(2,obj.calibrated.nPlanes/2+2,lastIdx(i))
                 imagesc(ROI)
                 hold on
                 %scale bar
