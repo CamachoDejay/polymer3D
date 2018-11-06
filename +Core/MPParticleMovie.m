@@ -159,7 +159,7 @@ classdef MPParticleMovie < Core.MPMovie
             end
         end
         
-        function consolidatePlanes(obj,roiSize,frames)
+        function consolidatePlanes(obj,roiSize,frames,consThresh)
             %Consolidation refers to connect molecules that were localized
             %at similar position in different plane on a single frame.
             assert(~isempty(obj.calibrated),'Data should be calibrated to consolidate');
@@ -178,21 +178,26 @@ classdef MPParticleMovie < Core.MPMovie
                         frames = 1: obj.calibrated.nFrames;
                         roiSize = 6;
                         disp('Running consolidation on every frame with roi of 6 pixel');
-                        
+                        consThresh = 3;
                     case 2
                         
                         frames = 1: obj.calibrated.nFrames;
                         disp('Running consolidation on every frame')
-                        
+                        consThresh = 3;
                     case 3
                         
-                        [frames] = Movie.checkFrame(frames,obj.raw.maxFrame(1));
+                        [frames] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
+                        assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
+                        assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
+                        consThresh = 3;
+                    case 4
+                        [frames] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
                         assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
                         assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
                         
                     otherwise
                         
-                        error('Something wrong with input');
+                        error('Something wrong with number of input');
                         
                 end
                 
@@ -230,7 +235,7 @@ classdef MPParticleMovie < Core.MPMovie
                             %focusMetric((1-corrEllip)>0.3) = NaN;
                             
                             %Plane Consolidation occur here
-                            [part] = obj.planeConsolidation(fCandMet,focusMetric);
+                            [part] = obj.planeConsolidation(fCandMet,focusMetric,consThresh);
 
                             %we delete empty cells from the array
                             idx2Empty = cellfun(@isempty,part);
@@ -385,7 +390,7 @@ classdef MPParticleMovie < Core.MPMovie
             end
         end
         
-        function [candidateList] = planeConsolidation(obj,candMet,focusMetric)
+        function [candidateList] = planeConsolidation(obj,candMet,focusMetric,consThresh)
             %Loop through all candidate of a given frame and match them
             %between frame until none can be match or all are matched.
             nPlanes = obj.calibrated.nPlanes;
@@ -436,7 +441,7 @@ classdef MPParticleMovie < Core.MPMovie
                         direction = +1;%check below (Plane 1 is the uppest plane 8 is lowest)
                     end
                     
-                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction);
+                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction,consThresh);
                     if ~all(isPart ==0)
                         id = cand.plane(isPart)-currentCand.plane;
                         particle(3+id,:) = cand(isPart,:);
@@ -474,7 +479,7 @@ classdef MPParticleMovie < Core.MPMovie
     end
      methods (Static)
        
-        function [isPart]   = isPartPlane(current, next, direction)
+        function [isPart]   = isPartPlane(current, next, direction,consThresh)
             %This function aim at determining whether a candidate from one
             %plane and the another are actually the same candidate on
             %different plane or different candidate. The decision is based
@@ -485,7 +490,7 @@ classdef MPParticleMovie < Core.MPMovie
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
             assert(size(current,2) == size(next,2), 'Dimension mismatch between the tail and partner to track');
             
-            thresh = 3;
+            thresh = consThresh;
             [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row, current.col],...
                 [next.row, next.col],thresh);
             

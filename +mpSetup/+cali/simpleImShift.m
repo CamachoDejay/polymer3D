@@ -8,7 +8,7 @@ function [ imShifts ] = simpleImShift( inFocus, cam1, cam2)
     imCh1 = cam1(:,:,1,focus);
     % shift must be small thus
     if nPlanes == 2
-        maxShift = 250;
+        maxShift = 300;
     else
         maxShift = 100;
     end%[pixels]

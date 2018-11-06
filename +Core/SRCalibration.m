@@ -115,7 +115,8 @@ classdef SRCalibration < handle
                 obj.SRCalMovies.(['SRCal' num2str(i)]).SRLocalizeCandidate;
                 
                 %plane consolidation
-                obj.SRCalMovies.(['SRCal' num2str(i)]).consolidatePlanes;
+                frames = 1:obj.SRCalMovies.(['SRCal' num2str(i)]).calibrated.nFrames;
+                obj.SRCalMovies.(['SRCal' num2str(i)]).consolidatePlanes(6,frames,detectParam.consThresh)
                 
                 %getting Calibration data
                 [SRCalibData,dataPerPlane] = obj.SRCalMovies.(['SRCal' num2str(i)]).getSRCalData(trackParam);
