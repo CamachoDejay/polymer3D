@@ -9,8 +9,8 @@ path2Cal  ='E:\Data\Leuven Data\2018\10-Oct\23\2DCal\FluoBeads200nm_1';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'load';
-
+info.runMethod = 'run';
+info.frame2Load = 1:118;
 calib = Core.MPCalibration(path2Cal);
 calib.calc(1)
 

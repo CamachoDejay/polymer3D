@@ -317,11 +317,24 @@ classdef MPMovie < Core.Movie
             
             frameInfo = obj.raw.frameInfo;
             movInfo   = obj.raw.movInfo;
-            step = 200;         
+            step = 100;
             maxFrame = obj.raw.movInfo.maxFrame(1); 
-            nStep = ceil(maxFrame/step);
-            frame = 1:step/2:maxFrame;
+            frame2Load = obj.info.frame2Load;
+            if ischar(frame2Load)
+                frame2Load = 1:maxFrame;
+            else
+                frame2Load = Core.Movie.checkFrame(frame2Load,maxFrame);
+                if max(frame2Load) > maxFrame
+                   frame2Load = 1:maxFrame;
+                else
+                    endFrame = max(frame2Load);
+                    startFrame = frame2Load(1);
+                end
+            end
             
+            nStep = ceil((endFrame-startFrame)/step);
+            frame = startFrame:step:endFrame;
+            nFrame = endFrame-startFrame;
             for i = 1:nStep
                 
                 if i < nStep
@@ -329,7 +342,7 @@ classdef MPMovie < Core.Movie
                     cFrame = frame(i):frame(i+1)-1;
                 else
 
-                    cFrame = frame(i):maxFrame;                    
+                    cFrame = frame(i):endFrame;                    
                     
                 end
                  % load the raw data 
@@ -339,7 +352,7 @@ classdef MPMovie < Core.Movie
                 [data] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
 
                 %saving data per plane and info to cal
-                [calib] = obj.saveCalibrated(data,maxFrame);
+                [calib] = obj.saveCalibrated(data,endFrame);
             end           
          end
          

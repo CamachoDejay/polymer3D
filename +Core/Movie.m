@@ -31,6 +31,7 @@ classdef Movie < handle
                      obj.raw = raw;
                      info.type = 'normal';
                      info.runMethod = 'load';
+                     info.frame2Load = 'all';
                      
                 case 2
                     
@@ -54,7 +55,7 @@ classdef Movie < handle
                                 error('WTF');
                         end
                     end
-                    
+                       
                     obj.raw = raw;
                     obj.info = info;
                                          
