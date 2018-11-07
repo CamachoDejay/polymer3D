@@ -12,7 +12,7 @@ info.type = 'normal';
 info.runMethod = 'load';
 info.frame2Load = 'all';
 calib = Core.MPCalibration(path2Cal);
-calib.calc;
+calib.calc(1);
 
 testZCal = Core.ZCalibration(path2zCal,calib.getCal,info);
 
