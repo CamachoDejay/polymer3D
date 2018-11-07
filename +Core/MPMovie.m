@@ -2,7 +2,7 @@ classdef MPMovie < Core.Movie
     %From this class we assume that we are dealing with multiplane data.
     %The movie can thus be calibrated if calibration data is provided.
     %Extension will be centered around localization but SOFI movie could
-    %also be a branch of this object
+    %also inherit from this object
     
     properties (SetAccess = 'protected')
         cal2D %calibration data
@@ -325,12 +325,14 @@ classdef MPMovie < Core.Movie
             else
                 frame2Load = Core.Movie.checkFrame(frame2Load,maxFrame);
                 if max(frame2Load) > maxFrame
-                   frame2Load = 1:maxFrame;
-                else
-                    endFrame = max(frame2Load);
-                    startFrame = frame2Load(1);
+                   
+                    frame2Load = 1:maxFrame;
+                                       
                 end
             end
+            
+            endFrame = max(frame2Load);
+            startFrame = frame2Load(1);
             
             nStep = ceil((endFrame-startFrame)/step);
             frame = startFrame:step:endFrame;

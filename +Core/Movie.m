@@ -232,19 +232,23 @@ classdef Movie < handle
             %TODO: Code a good way of playing the movie;
         end
         
-        function saveMovie(obj,ext,frameRate,scaleBar,frames,plane)
+        function saveMovie(obj,ext,frameRate,scaleBar,plane)
             
             switch nargin
+                case 3
+                    scaleBar = 1;%µm
                 case 4
-                    nFrames = obj.raw.movInfo.maxFrame(1);
-                    frames = 1:nFrames;
+                    
                     plane = [];
+                
                 case 5
                     
                     plane = [];
-                case 6
                     
             end
+            maxFrames = obj.raw.movInfo.maxFrame(1);
+            frames = obj.info.frame2Load;
+            [frames] = Core.Movie.checkFrame(frames,maxFrames);
             nFrames = length(frames);
             path2File = obj.raw.movInfo.Path;
             filename=sprintf('%s%sfullMovie.%s', path2File,'\',ext);
