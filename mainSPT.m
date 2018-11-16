@@ -11,7 +11,7 @@ addpath(genpath('Ext'));
 
 % path to the callibration
 path2File= 'E:\Data\Leuven Data\2018\10-Oct\23\ZCal\200nmBeads\FluoBeads200nm_10';
-path2Cal  = 'E:\Data\Leuven Data\2018\10-Oct\23\2DCal\FluoBeads200nm_1';
+path2Cal  = 'E:\Data\Leuven Data\2018\11 - Nov\8 - Setup Alignment\FluoBeads200nm2DCal_1';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -33,7 +33,7 @@ mov1.showFrame(10,5);
 %% Calib
 calib = Core.MPCalibration(path2Cal);
 
-calib.calc(1);
+calib.calc(4);
 %%
 calib.showCal
 

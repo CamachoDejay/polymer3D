@@ -4,11 +4,11 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2018\10-Oct\23\ZCal\200nmBeads';
+path2zCal = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\ZCalibration\PSFE';
 path2Cal  = 'E:\Data\Leuven Data\2018\10-Oct\23\2DCal\FluoBeads200nm_1';
 
 %% Initialize a zCalibration Object
-info.type = 'normal';
+info.type = 'transmission';
 info.runMethod = 'load';
 info.frame2Load = 'all';
 calib = Core.MPCalibration(path2Cal);
@@ -23,9 +23,9 @@ testZCal.retrieveZCalMov;
 %% extract zData
 
 detectParam.delta = 6;
-detectParam.chi2 = 60;
+detectParam.chi2 = 40;
 fitZParam.deg = 4;
-fitZParam.ellipRange = [0.5 2];
+fitZParam.ellipRange = [0.7 1.42];
 
 trackParam.euDistPx = 4; 
 trackParam.commonPlanes = 1;
@@ -42,8 +42,8 @@ method = 'spline';
 testZCal.showZCalibration(method);
 
 %% test Calibration
-%fittingType = 'poly';
-fittingType = 'spline';
+fittingType = 'poly';
+%fittingType = 'spline';
 testZCal.evalAccuracy(fittingType);
 %% Save cal
 
