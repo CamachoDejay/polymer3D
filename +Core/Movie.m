@@ -91,7 +91,7 @@ classdef Movie < handle
                 movInfo.indivFrame = movInfo.maxFrame;
                 %Check info for 2 cam
                if length(movInfo.Cam) ~= 2
-                   warning('Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
+                   warning('Only 1 camera found in the selected file');
                end 
             end
             
@@ -220,12 +220,21 @@ classdef Movie < handle
         
         function [data] = getFrame(obj,idx)
             
-            assert(length(idx)==1,'Requested frame exceed the size of the movie');
-             [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
-            %LoadCam
-            [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
-            data.Cam1 = movC1;
-            data.Cam2 = movC2;
+            switch nargin
+                case 1
+                    idx = 1:obj.raw.maxFrame(1);
+                case 2
+                    
+                    [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
+                otherwise
+                    error('too many input arguments');
+            end
+            
+                %LoadCam
+                [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
+                data.Cam1 = movC1;
+                data.Cam2 = movC2;
+        
         end
         
         function playMovie(obj)
