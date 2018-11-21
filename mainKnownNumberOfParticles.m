@@ -2,12 +2,12 @@ clear
 clc
 close all
 %% User input
-delta = 25;
-nParticles = 2;
+delta = 40;
+nParticles = 4;
 
 %% Create the Movie object
 
-path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 2_1';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 4_1';
 info.type = 'transmission';
 myMov = Core.Movie(path2File,info);
 myMov.giveInfo;
@@ -16,7 +16,7 @@ myMov.giveInfo;
 myMov.cropIm;
 
 %% get the data from the movie
-fullStack = myMov.getFrame(1:100);
+fullStack = myMov.getFrame;
 
 %% inversion of the scale cam1 extraction
 
@@ -78,15 +78,25 @@ for i = 1:nFrames
     fitMov(:,:,i) = F;
     waitbar(i/nFrames,h,'Fitting Data')
 end
+
+filename = [path2File filesep 'LocalizationData.mat'];
+save(filename,'data2Store');
+
 close(h);
 %% display figure
 
-figure
+Fig = figure;
 hold on
 for i = 1 : nParticles
     scatter(data2Store(:,1,i),data2Store(:,2,i),20,'filled')
+    
 end
-
+axis image
+xlabel('X Position (px, 1px = 95nm)')
+ylabel('Y Position (px, 1px = 95nm)')
+title('All localized spot');
+filename = [path2File filesep 'LocalizationDensity.fig'];
+saveas(Fig,filename);
 %% Cropping full stack
 fullStack = fullStack.Cam1(cropPos(1)-delta:cropPos(1)+delta, cropPos(2)-delta:cropPos(2)+delta,:);
 %% MovieMaker
