@@ -3,20 +3,20 @@ clc
 close all
 %% User input
 delta = 25;
-nParticles = 3;
+nParticles = 2;
 
 %% Create the Movie object
 
-path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 3 polarization_3';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 2_1';
 info.type = 'transmission';
 myMov = Core.Movie(path2File,info);
 myMov.giveInfo;
 
 %%
-myMov.showFrame(1,2);
+myMov.cropIm;
 
 %% get the data from the movie
-fullStack = myMov.getFrame;
+fullStack = myMov.getFrame(1:100);
 
 %% inversion of the scale cam1 extraction
 

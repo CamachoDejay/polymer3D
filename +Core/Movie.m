@@ -6,7 +6,7 @@ classdef Movie < handle
     
     properties (SetAccess = 'private')
        raw
-        
+       
     end
     properties 
        info 
@@ -232,13 +232,46 @@ classdef Movie < handle
             
                 %LoadCam
                 [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
-                data.Cam1 = movC1;
-                data.Cam2 = movC2;
+                movC2 = fliplr(movC2);
+                if isfield(obj.info,'ROI')
+                    
+                    ROI = round(obj.info.ROI);
+                    data.Cam1 = movC1(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3),:);
+                    if ~isempty(movC2)
+                        data.Cam2 = movC2(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3),:);
+                    end
+                else
+                    
+                    data.Cam1 = movC1;
+                    data.Cam2 = movC2;
         
+                end
+                
+                
         end
         
         function playMovie(obj)
             %TODO: Code a good way of playing the movie;
+        end
+        function cropIm(obj)
+            data = obj.getFrame(1);
+            
+            figure
+            imagesc(data.Cam1);
+            colormap('gray');
+            axis image
+            
+            disp('Please draw a rectangle on the image to crop it');
+            
+            h2 = imrect(gca);
+            Pos = wait(h2);%store positions of the rectangle
+            delete(h2);%remove the rectangle from the image
+            
+            if Pos(3) ~= Pos(4)
+                Pos(3:4) = min(Pos(3:4));
+            end
+            close(gcf)
+            obj.info.ROI = Pos;
         end
         
         function saveMovie(obj,ext,frameRate,scaleBar,plane)
