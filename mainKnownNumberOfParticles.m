@@ -24,30 +24,10 @@ fullStack = myMov.getFrame;
 
 fullStackIn = imcomplement(fullStack.Cam1);
 %% detection of the center of the beads
-test = double(fullStackIn(:,:,1)); %Conversion to double for detection
 %get the domaine
-x = 1:size(fullStackIn,2);
-y = 1:size(fullStackIn,1);
-[domX,domY] = meshgrid(x,y);
-
-%rough estimate of bkg:
-bkg = median(median(test));
-test = test-bkg; %bkg subtraction
-test(test<0.1*max(max(test))) = 0;
-out = imregionalmax(test);
-
-x0 = domX(out);
-x0 = x0(x0~=0);
-y0 = domY(out);
-y0 = y0(y0~=0);
-bright = test(out);
-bright = bright(bright~=0);
-%find the brightess maxima according to the number of particles specified
-[~,idx] = maxk(bright,nParticles);
-x0 = x0(idx);
-y0 = y0(idx);
+[pos] = simpleRegMaxDetection (fullStackIn(:,:,1),nParticles);
 %[ pos, ~, ~] = Localization.smDetection(firstFrame, delta, FWHM_pix, chi2 );
-pos = round(mean([y0,x0]));
+pos = round(mean(pos));
 
 %% Cropping Movie
 
@@ -61,28 +41,19 @@ dom(:,:,1) = domX;
 dom(:,:,2) = domY;
 
 data2Store = table(zeros(nFrames,1),zeros(nFrames,1),zeros(nFrames,1),zeros(nFrames,1),zeros(nFrames,1),...
-    'VariableNames',{'Amp','x1','y1','x2','y2'});
+    zeros(nFrames,1),zeros(nFrames,1),zeros(nFrames,1),zeros(nFrames,1),...
+    zeros(nFrames,1),zeros(nFrames,1),zeros(nFrames,1),zeros(nFrames,1),...
+    'VariableNames',{'Amp','x1','y1','x2','y2','x3','y3','x4','y4','x5','y5','x6','y6'});
 fitMov = zeros(size(fullStackIn));
 h = waitbar(0,'Fitting Data');
+
 for i = 1:nFrames
     currentFrame = double(fullStackIn(:,:,i));
     
     %initial detection
-    test = currentFrame;
-    test  = test-bkg; %bkg subtraction
-    test(test<0.1*max(max(test))) = 0;
-    out = imregionalmax(test);
-    x0 = domX(out);
-    x0 = x0(x0~=0);
-    y0 = domY(out);
-    y0 = y0(y0~=0);
-    bright = test(out);
-    bright = bright(bright~=0);
-   
-    %find the brightess maxima according to the number of particles specified
-    [~,idx] = maxk(bright,nParticles);
-    x0 = x0(idx);
-    y0 = y0(idx);
+    [pos] = simpleRegMaxDetection (currentFrame,nParticles);
+    x0 = pos(:,2);
+    y0 = pos(:,1);
     
     [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame,x0,y0,dom,nParticles); 
     F = Localization.Gauss.MultipleGauss(gPar, dom,nParticles);
