@@ -8,6 +8,9 @@ function [pos] = simpleRegMaxDetection (data,nMax)
     bkg = median(median(data));
     data = data-bkg; %bkg subtraction
     data(data<0.1*max(max(data))) = 0;
+    %gaussian filtering
+    data = imgaussfilt(data);
+    
     out = imregionalmax(data);
 
     x0 = domX(out);
