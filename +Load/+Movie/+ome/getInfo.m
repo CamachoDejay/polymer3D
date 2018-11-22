@@ -39,7 +39,9 @@ for imIdx = 1:nImFiles
     for i = 1:nFrames
         str1 = frameHead(k1(i):k2(i)-1);
         str2 = frameHead(k3(i):k4(i));
-        [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD, frameInfo(i).P, frameInfo(i).File, frameInfo(i).Pos ] = getInfoFromString( str1, str2 );
+        [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD,...
+            frameInfo(i).P, frameInfo(i).File, frameInfo(i).Pos,...
+            frameInfo(i).expT ] = getInfoFromString( str1, str2 );
     end
     
     frameCell{imIdx} = frameInfo;
@@ -50,7 +52,7 @@ end
 %and zStack into movieInfo
 movieInfo.isZStack = size(unique({frameInfo.T}),2)==1;
 movieInfo.Cam      = str2double(unique({frameInfo.C}));
-
+movieInfo.expT = frameInfo(1).expT;
 switch movieInfo.isZStack
     case 0
         for i = 1: size(movieInfo.Cam,2)
@@ -113,4 +115,5 @@ function out = initFrameInfoStruc(nFrames)
     out(nFrames).P = [];
     out(nFrames).File = [];
     out(nFrames).Pos = [];
+    out(nFrames).expT = [];
 end
