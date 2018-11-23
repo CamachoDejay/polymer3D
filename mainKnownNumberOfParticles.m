@@ -3,11 +3,11 @@ clc
 close all
 %% User input
 delta = 40;
-nParticles = 4;
-
+nParticles = 6;
+minDist = 4; %in pixels
 %% Create the Movie object
 
-path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 4_1';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise 6 - polarization_1';
 info.type = 'transmission';
 myMov = Core.Movie(path2File,info);
 myMov.giveInfo;
@@ -23,8 +23,15 @@ fullStack = myMov.getFrame;
 fullStackIn = imcomplement(fullStack.Cam1);
 %% detection of the center of the beads
 %get the domaine
-[pos] = goldProj.simpleRegMaxDetection (fullStackIn(:,:,1),nParticles);
+%[pos] = goldProj.simpleRegMaxDetection (fullStackIn(:,:,1),nParticles,minDist);
+[pos] = Localization.smDetection(double(fullStackIn(:,:,1)),minDist,4,24);
+
 cropPos = round(mean(pos));
+
+figure
+imagesc(fullStackIn(:,:,2))
+hold on
+plot(pos(:,2),pos(:,1),'r+')
 
 %% Cropping Movie
 
@@ -46,9 +53,15 @@ for i = 1:nFrames
     currentFrame = double(fullStackIn(:,:,i));
     
     %initial detection
-    [pos] = goldProj.simpleRegMaxDetection (currentFrame,nParticles);
+    %[pos] = goldProj.simpleRegMaxDetection (currentFrame,nParticles,minDist);
+    [pos] = Localization.smDetection(double(currentFrame),minDist,4,24);
     x0 = pos(:,2);
     y0 = pos(:,1);
+%     figure(1)
+%     imagesc(currentFrame);
+%     hold on
+%     plot(x0,y0)
+%     hold off
     
     [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame,x0,y0,dom,nParticles); 
     F = Localization.Gauss.MultipleGauss(gPar, dom,nParticles);
