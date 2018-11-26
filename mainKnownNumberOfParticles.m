@@ -119,4 +119,9 @@ filename = [path2File filesep 'TrackMovie.gif'];
 
 goldProj.makeTraceMovie(data2Store,fullStack,filename,frameRate);
 
+%% Calculate correlation
+
+%xcorr??
+
+RXY = corrcoef(x,y);
 
