@@ -2,34 +2,64 @@ clear
 clc
 close all
 %% User input
-delta = 40;
-nParticles = 6;
+delta = 25;
+nParticles = 2;
+pxSize = 95;
 minDist = 4; %in pixels
+scaleBar = 2; %in um
+ext = '.omeTif';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 2 polarization_1';
 %% Create the Movie object
+switch ext
+    case '.mp4'
+        [file2Analyze] = Core.Movie.getFileInPath(path2File, ext);
+        p2file = [file2Analyze.folder filesep file2Analyze.name];
+        v = VideoReader(p2file);
+        nFrames = floor(v.Duration*v.FrameRate);
+        
+        tic
+        fullStackIn = zeros(v.Height,v.Width,nFrames);
+        for i = 1:nFrames
+            frame = readFrame(v);
+            
+            fullStackIn(:,:,i) = rgb2gray(frame);
+        end
+        toc
+         
+    otherwise
+        info.type = 'transmission';
+        myMov = Core.Movie(path2File,info,'.mp4');
+        myMov.giveInfo;
+        
+        myMov.cropIm;
 
-path2File= 'E:\Data\Leuven Data\2018\ZHao\181018 - 400nm GoldBeads Trapping\GoldBeads400nm - GLy025\GoldBeads400nmTransmission_Formation_1';
-info.type = 'transmission';
-myMov = Core.Movie(path2File,info);
-myMov.giveInfo;
+        fullStack = myMov.getFrame;
 
-%%
-myMov.cropIm;
+        fullStackIn = imcomplement(fullStack.Cam1);
 
-%% get the data from the movie
-fullStack = myMov.getFrame;
+end
 
-%% inversion of the scale cam1 extraction
-
-fullStackIn = imcomplement(fullStack.Cam1);
 %% detection of the center of the beads
+frame =1;
 %get the domaine
 %[pos] = goldProj.simpleRegMaxDetection (fullStackIn(:,:,1),nParticles,minDist);
-[pos] = Localization.smDetection(double(fullStackIn(:,:,1)),minDist,4,24);
+[pos] = Localization.smDetection(double(fullStackIn(:,:,frame)),minDist,2,12);
+pos = round(pos);
+im = double(fullStackIn(:,:,1));
+[idx] = sub2ind(size(fullStackIn(:,:,1)),pos(:,1),pos(:,2));
+bright = im(idx);
 
+[~,idx2] = maxk(bright,nParticles);
+[row,col] = ind2sub(size(fullStackIn(:,:,1)),idx(idx2));
+
+x0 = col;
+y0 = row;
+
+pos = [y0 x0];
 cropPos = round(mean(pos));
 
 figure
-imagesc(fullStackIn(:,:,2))
+imagesc(fullStackIn(:,:,frame))
 hold on
 plot(pos(:,2),pos(:,1),'r+')
 
@@ -44,7 +74,6 @@ y = 1:size(fullStackIn,1);
 dom(:,:,1) = domX;
 dom(:,:,2) = domY;
 
-
 data2Store = zeros(nFrames,2,nParticles);
 fitMov = zeros(size(fullStackIn));
 h = waitbar(0,'Fitting Data');
@@ -53,20 +82,25 @@ for i = 1:nFrames
     currentFrame = double(fullStackIn(:,:,i));
     
     %initial detection
-    %[pos] = goldProj.simpleRegMaxDetection (currentFrame,nParticles,minDist);
+%    [pos] = goldProj.simpleRegMaxDetection (currentFrame,nParticles,minDist);
     [pos] = Localization.smDetection(double(currentFrame),minDist,4,24);
-    x0 = pos(:,2);
-    y0 = pos(:,1);
-%     figure(1)
-%     imagesc(currentFrame);
-%     hold on
-%     plot(x0,y0)
-%     hold off
+    pos = round(pos);
+    im = double(fullStackIn(:,:,1));
+    [idx] = sub2ind(size(fullStackIn(:,:,1)),pos(:,1),pos(:,2));
+    bright = im(idx);
+
+    [~,idx2] = maxk(bright,nParticles);
+    [row,col] = ind2sub(size(fullStackIn(:,:,1)),idx(idx2));
+
+    x0 = col;
+    y0 = row;
+% 
+%     x0 = pos(:,2);
+%     y0 = pos(:,1);
     
     [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame,x0,y0,dom,nParticles); 
     F = Localization.Gauss.MultipleGauss(gPar, dom,nParticles);
     
-    %let us check if particle order somehow flip
     if i>1
         
         newOrder = goldProj.simpleTracking(gPar(5:end),prevPos);
@@ -97,11 +131,12 @@ save(filename,'data2Store');
 
 close(h);
 %% display figure
-
+data2plot = data2Store *pxSize;
+cm = [mean(mean(data2plot(:,1,:))) mean(mean(data2plot(:,2,:)))];
 Fig = figure;
 hold on
 for i = 1 : nParticles
-    scatter(data2Store(:,1,i),data2Store(:,2,i),20,'filled')
+    scatter(data2plot(:,1,i)-cm(1),data2plot(:,2,i)-cm(2),20,'filled')
     
 end
 axis image
@@ -111,13 +146,18 @@ title('All localized spot');
 filename = [path2File filesep 'LocalizationDensity.fig'];
 saveas(Fig,filename);
 %% Cropping full stack
-fullStack = fullStack.Cam1(cropPos(1)-delta:cropPos(1)+delta, cropPos(2)-delta:cropPos(2)+delta,:);
+switch ext
+    case '.mp4'
+        fullStack = fullStackIn;
+    otherwise
+        fullStack = fullStack.Cam1(cropPos(1)-delta:cropPos(1)+delta, cropPos(2)-delta:cropPos(2)+delta,:);
+end
 %% MovieMaker
 
 frameRate = 30;
 filename = [path2File filesep 'TrackMovie.gif'];
 
-goldProj.makeTraceMovie(data2Store,fullStack,filename,frameRate);
+goldProj.makeTraceMovie(data2Store,fullStack,filename,frameRate,scaleBar);
 
 %% Calculate correlation
 
@@ -125,3 +165,4 @@ goldProj.makeTraceMovie(data2Store,fullStack,filename,frameRate);
 
 RXY = corrcoef(x,y);
 
+%process MP4;

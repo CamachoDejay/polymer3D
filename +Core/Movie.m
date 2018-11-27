@@ -6,6 +6,7 @@ classdef Movie < handle
     
     properties (SetAccess = 'private')
        raw
+       ext
        
     end
     properties 
@@ -14,7 +15,7 @@ classdef Movie < handle
     
     methods
         %Constructor
-        function obj = Movie(raw, info)
+        function obj = Movie(raw, info,ext)
             %MOVIE Construct an instance of this class
             %   We allow the user to create this object with various number
             %   of input allowing therefore to restart the analysis at any
@@ -27,7 +28,7 @@ classdef Movie < handle
                     error('A path to the folder where the movie is is needed to create a movie object.')
                 
                 case 1 
-                    
+                     obj.ext = '.ome.tif';
                      obj.raw = raw;
                      info.type = 'normal';
                      info.runMethod = 'load';
@@ -55,7 +56,11 @@ classdef Movie < handle
                                 error('WTF');
                         end
                     end
-                       
+                    obj.ext = '.ome.tif';   
+                    obj.raw = raw;
+                    obj.info = info;
+                case 3
+                    obj.ext = ext;   
                     obj.raw = raw;
                     obj.info = info;
                                          
@@ -70,14 +75,15 @@ classdef Movie < handle
             %This function will be adapted later to be able to take any
             %type of Movie (not only OME-TIFF).
             assert(isfolder(raw), 'The given path is not a folder');
+
             %Check Given path
             [file2Analyze] = Core.Movie.getOMETIF(raw);
-      
+
             if length(file2Analyze)>1
                 fprintf('More than one Tiff, loading only:\n %s', file2Analyze(1).name);
                 fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
                 [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
-                
+
                 if iscell(frameInfo)
                     disp('Those tiff are multi-Images, we combine the info...')
                     [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo,false);
@@ -85,7 +91,7 @@ classdef Movie < handle
                     movInfo.maxFrame = totFrame;
                 end
             else
-            
+
                 fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
                 [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
                 movInfo.indivFrame = movInfo.maxFrame;
@@ -93,8 +99,8 @@ classdef Movie < handle
                if length(movInfo.Cam) ~= 2
                    warning('Only 1 camera found in the selected file');
                end 
-            end
-            
+            end                    
+         
             obj.raw.movInfo   = movInfo;
             obj.raw.frameInfo = frameInfo;
             obj.raw.fullPath  = fullPath;
