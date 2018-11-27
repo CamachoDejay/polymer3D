@@ -7,7 +7,7 @@ nParticles = 6;
 minDist = 4; %in pixels
 %% Create the Movie object
 
-path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise 6 - polarization_1';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\181018 - 400nm GoldBeads Trapping\GoldBeads400nm - GLy025\GoldBeads400nmTransmission_Formation_1';
 info.type = 'transmission';
 myMov = Core.Movie(path2File,info);
 myMov.giveInfo;
