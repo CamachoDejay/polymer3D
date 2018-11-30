@@ -2,13 +2,14 @@ clear
 clc
 close all
 %% User input
-delta = 30;
-nParticles = 4;
+delta = 50;
+nParticles = 5;
 pxSize = 95;
-minDist = 4; %in pixels
+minDist = 5; %in pixels
 scaleBar = 2; %in um
+tail = 20;
 ext = '.omeTif';
-path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 4_1';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 5_1';
 %% Create the Movie object
 switch ext
     case '.mp4'
@@ -39,21 +40,29 @@ switch ext
 
 end
 
+%% test algo
+frame = 5;
+[pos] = goldProj.nMaxDetection (fullStackIn(:,:,frame),nParticles,minDist);
+
+
+
 %% detection of the center of the beads
-frame =1;
+frame =5;
 %get the domaine
 %[pos] = goldProj.simpleRegMaxDetection (fullStackIn(:,:,1),nParticles,minDist);
-[pos] = Localization.smDetection(double(fullStackIn(:,:,frame)),minDist,2,12);
-pos = round(pos);
-im = double(fullStackIn(:,:,1));
-[idx] = sub2ind(size(fullStackIn(:,:,1)),pos(:,1),pos(:,2));
-bright = im(idx);
 
-[~,idx2] = maxk(bright,nParticles);
-[row,col] = ind2sub(size(fullStackIn(:,:,1)),idx(idx2));
+[pos] = goldProj.nMaxDetection (fullStackIn(:,:,frame),nParticles,minDist);
+% [pos] = Localization.smDetection(double(fullStackIn(:,:,frame)),minDist,4,40);
+% pos = round(pos);
+% im = double(fullStackIn(:,:,1));
+% [idx] = sub2ind(size(fullStackIn(:,:,1)),pos(:,1),pos(:,2));
+% bright = im(idx);
+% 
+% [~,idx2] = maxk(bright,nParticles);
+% [row,col] = ind2sub(size(fullStackIn(:,:,1)),idx(idx2));
 
-x0 = col;
-y0 = row;
+x0 = pos(:,2);
+y0 = pos(:,1);
 
 pos = [y0 x0];
 cropPos = round(mean(pos));
@@ -83,18 +92,18 @@ for i = 1:nFrames
     
     %initial detection
 %    [pos] = goldProj.simpleRegMaxDetection (currentFrame,nParticles,minDist);
-    [pos] = Localization.smDetection(double(currentFrame),minDist,4,24);
-    pos = round(pos);
-    im = double(fullStackIn(:,:,1));
-    [idx] = sub2ind(size(fullStackIn(:,:,1)),pos(:,1),pos(:,2));
-    bright = im(idx);
-
-    [~,idx2] = maxk(bright,nParticles);
-    [row,col] = ind2sub(size(fullStackIn(:,:,1)),idx(idx2));
-
+%     [pos] = Localization.smDetection(double(currentFrame),minDist,4,24);
+%     pos = round(pos);
+%     im = double(fullStackIn(:,:,1));
+%     [idx] = sub2ind(size(fullStackIn(:,:,1)),pos(:,1),pos(:,2));
+%     bright = im(idx);
+% 
+%     [~,idx2] = maxk(bright,nParticles);
+%     [row,col] = ind2sub(size(fullStackIn(:,:,1)),idx(idx2));
+[pos] = goldProj.nMaxDetection (currentFrame,nParticles,minDist);
    
-    x0 = col;
-    y0 = row;
+    x0 = pos(:,2);
+    y0 = pos(:,1);
 % %     x0 = pos(:,2);
 %     y0 = pos(:,1);
     
@@ -148,21 +157,27 @@ saveas(Fig,filename);
 %% Cropping full stack
 switch ext
     case '.mp4'
-        fullStack = fullStackIn;
+        fullStackNorm = fullStackIn;
     otherwise
-        fullStack = fullStack.Cam1(cropPos(1)-delta:cropPos(1)+delta, cropPos(2)-delta:cropPos(2)+delta,:);
+        fullStackNorm = fullStack.Cam1(cropPos(1)-delta:cropPos(1)+delta, cropPos(2)-delta:cropPos(2)+delta,:);
 end
 %% MovieMaker
 
 frameRate = 30;
 filename = [path2File filesep 'TrackMovie.gif'];
 
-goldProj.makeTraceMovie(data2Store,fullStack,filename,frameRate,scaleBar);
+goldProj.makeTraceMovie(data2Store,fullStack,filename,frameRate,scaleBar,tail);
 
 %% Calculate correlation
 
 %xcorr??
+euclDistX = sqrt((data2Store(:,1,1)- data2Store(:,1,2)).^2);
+avgMotX1 = data2Store(:,1,1) - mean(data2Store(:,1,1));
+avgMotX2 = data2Store(:,1,2) - mean(data2Store(:,1,2));
+avgMotX3 = data2Store(:,1,3) - mean(data2Store(:,1,3));
+avgMotX4 = data2Store(:,1,4) - mean(data2Store(:,1,4));
 
-RXY = corrcoef(x,y);
+
+%RXY = corrcoef(x,y);
 
 %process MP4;
