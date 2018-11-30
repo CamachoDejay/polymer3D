@@ -2,13 +2,13 @@ clear
 clc
 close all
 %% User input
-delta = 25;
-nParticles = 2;
+delta = 30;
+nParticles = 4;
 pxSize = 95;
 minDist = 4; %in pixels
 scaleBar = 2; %in um
 ext = '.omeTif';
-path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 2 polarization_1';
+path2File= 'E:\Data\Leuven Data\2018\ZHao\TestCode\400 nm AuNPs 1064 nm laser stepwise - 4_1';
 %% Create the Movie object
 switch ext
     case '.mp4'
@@ -92,10 +92,10 @@ for i = 1:nFrames
     [~,idx2] = maxk(bright,nParticles);
     [row,col] = ind2sub(size(fullStackIn(:,:,1)),idx(idx2));
 
+   
     x0 = col;
     y0 = row;
-% 
-%     x0 = pos(:,2);
+% %     x0 = pos(:,2);
 %     y0 = pos(:,1);
     
     [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame,x0,y0,dom,nParticles); 
