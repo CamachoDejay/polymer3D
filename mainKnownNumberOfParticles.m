@@ -159,14 +159,14 @@ switch ext
     case '.mp4'
         fullStackNorm = fullStackIn;
     otherwise
-        fullStackNorm = fullStack.Cam1(cropPos(1)-delta:cropPos(1)+delta, cropPos(2)-delta:cropPos(2)+delta,:);
+        fullStackNorm = imcomplement(fullStackIn);
 end
 %% MovieMaker
 
 frameRate = 30;
 filename = [path2File filesep 'TrackMovie.gif'];
 
-goldProj.makeTraceMovie(data2Store,fullStack,filename,frameRate,scaleBar,tail);
+goldProj.makeTraceMovie(data2Store,fullStackNorm,filename,frameRate,scaleBar,tail);
 
 %% Calculate correlation
 
