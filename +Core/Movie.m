@@ -32,7 +32,8 @@ classdef Movie < handle
                      obj.raw = raw;
                      info.type = 'normal';
                      info.runMethod = 'load';
-                     info.frame2Load = 'all';
+                     info.frame2Load = 1:obj.raw.maxFrame(1);
+                     obj.info = info;
                      
                 case 2
                     
@@ -56,12 +57,21 @@ classdef Movie < handle
                                 error('WTF');
                         end
                     end
+
                     obj.ext = '.ome.tif';   
                     obj.raw = raw;
+                    if ~isfield(info,'frame2Load')
+                        info.frame2Load = 1:obj.raw.maxFrame(1);
+                    end
                     obj.info = info;
                 case 3
                     obj.ext = ext;   
                     obj.raw = raw;
+                    
+                    if ~isfield(info,'frame2Load')
+                        info.frame2Load = 1:obj.raw.maxFrame(1);
+                    end
+                    
                     obj.info = info;
                                          
                 otherwise 
@@ -116,6 +126,7 @@ classdef Movie < handle
               obj.info.(names{i}) = inform.(names{i});
 
             end
+                        
         end
         
         function [raw] = getRaw(obj)
@@ -259,6 +270,7 @@ classdef Movie < handle
         function playMovie(obj)
             %TODO: Code a good way of playing the movie;
         end
+        
         function cropIm(obj)
             data = obj.getFrame(1);
             
