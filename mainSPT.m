@@ -20,13 +20,17 @@ path2Cal  = 'E:\Data\Leuven Data\2018\11 - Nov\8 - Setup Alignment\FluoBeads200n
 detectParam.delta = 6;
 detectParam.chi2 = 80;
 info.type = 'normal';
-
+%info.frame2Load = 1:200; % if want to analyze only part of the movie(full
+%is default)
+info.runMethod = 'Load'; %will avoid the question to user to pop by giving
+%the answer before
 %% create a Movie Object
 mov1 = Core.Movie(path2File,info);
 mov1.giveInfo;
 %mov2 = Core.Movie(path2zCal);
 %%
-mov1.saveMovie('mp4',60,5,1:200);
+
+mov1.saveMovie('mp4',60,5);
 %% showFrame
 mov1.showFrame(10,5);
 %mov2.showFrame(51);
