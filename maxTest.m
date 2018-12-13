@@ -3,8 +3,16 @@ clear
 close all
 %% User input
 path2File = 'D:\Documents\Unif\PhD\2018-Data\03 - March\MaxData\ECM remodeling\OnlyIntensity\testMax.tif';
-threshold = 0.20;
-exF = 20;
+thresh1 = 0.12;
+thresh2 = 0.25;
+exF = 19;
+
+%
+%
+%  A = surfaceArea(shp)
+%
+%
+
 %% Loading
 
 info = Load.Movie.tif.getinfo(path2File);
@@ -12,191 +20,56 @@ frame = 1:info.Frame_n;
 
 IM = Load.Movie.tif.getframes(path2File,frame);
 
-figure(1)
-title('Detecting cell countour')
-subplot(2,4,1)
-imagesc(IM(:,:,exF))
-title('Raw Data')
-colormap('hot')
-axis image
 %% test segmenting cell
-    threshold = 0.15;
-    BW(:,:,20) = imbinarize(IM(:,:,20),threshold);
-    cBW = BW(:,:,20);
-    cBWL = bwlabel(cBW);
-
-    %Get the largest area
-    cBWarea = regionprops(cBW,'Area');
-    [~,idx2BiggestArea] = max(cell2mat({cBWarea.Area}));
-    if isempty(idx2BiggestArea)
-    else
-    %kill all the other area found
-        cBW(cBWL~=idx2BiggestArea) = 0;
-    end
-    figure 
-    imagesc(cBW)
-    colormap('hot');
-    % Clean up boundary
-    se = strel('disk',10);
-    cBW = imclose(cBW,se);
-    
-    cContour = bwboundaries(cBW);
-    
-    %find largest contour
-    contourSize = cellfun(@size,cContour,'UniformOutput',false);
-    [tmp] = cellfun(@max,contourSize,'UniformOutput',false);
-    [~,idx2OuterContour] = max(cell2mat(tmp));
-    %only keep largest countour
-    if isempty(idx2OuterContour)
-        cContour = [];
-    else
-        cContour = cContour{idx2OuterContour};
-    end
-    
-    mask = poly2mask(cContour(:,2),cContour(:,1),size(IM,1),size(IM,2));
-    
-    nIM = double(IM(:,:,20)).*mask;
-    %%
-    figure 
-    imagesc(nIM)
-    nIM(nIM==0) = min(nIM(nIM~=0));
-    
-    figure
-    imagesc(nIM)
-    
-  %  [gBW,aBW] = imSegmentation.segmentStack(nIM,'Threshold',0.0001);
-    Thresh = adaptthresh(nIM,0.1);
-%%
-threshold = 0.2;
-%gBW = imbinarize(nIM,0.9);
-gBW = nIM;
-
-gBW(gBW<threshold*max(max(gBW))) = 0;
-gBW(gBW>=threshold*max(max(gBW))) =1;
-figure 
-imagesc(gBW);
-    
- %% cleaning
-nBW = gBW;
-se = strel('disk',3);
-nBW = imclose(nBW,se);
-figure 
-imagesc(nBW)
-nBW = ~nBW;
-nBWL = bwlabel(nBW);
-nBWarea = regionprops(nBW,'Area');
-[val,idx2BiggestArea] = maxk(cell2mat({nBWarea.Area}),2);
-if isempty(idx2BiggestArea)
-else
-%kill all the other area found
-    [~,idx] = min(val);
-    nBW(nBWL~=idx2BiggestArea(idx))= 0;
-end
- 
-figure
-imagesc(nBW)
-% Clean up boundary
-se = strel('disk',10);
-nBW = imclose(nBW,se);
-figure
-imagesc(nBW)
-cContour = bwboundaries(nBW);
-%find largest contour
-contourSize = cellfun(@size,cContour,'UniformOutput',false);
-[tmp] = cellfun(@max,contourSize,'UniformOutput',false);
-[~,idx2OuterContour] = max(cell2mat(tmp));
-%only keep largest countour
-if isempty(idx2OuterContour)
-    cContour = [];
-else
-    cContour = cContour{idx2OuterContour};
-end
-
-figure
-imagesc(IM(:,:,20))
-hold on
-plot(cContour(:,2),cContour(:,1),'w','LineWidth',3)
-
+   
+   doplot = true; 
+   [contour] = maxProj.getCellCountour(IM(:,:,exF),thresh1,thresh2,doplot);
 %% Segmenting cell
 
-% % size of gauss filter
-% S = 1;
-% % size of pixel in z vs x/y
-% pixZ  = 4;
-% zFactor = 2;
-% sigma = [S,S,S*zFactor/pixZ];
-% IMs = imgaussfilt3(IM, sigma);
-% disp('DONE with filtering ------------')
-IMs = IM;
+% size of gauss filter
+S = 1;
+% size of pixel in z vs x/y
+pixZ  = 4;
+zFactor = 2;
+sigma = [S,S,S*zFactor/pixZ];
+IMs = imgaussfilt3(IM, sigma);
+disp('DONE with filtering ------------')
 
-BW1 = imbinarize(IM,threshold);
-
-figure(1)
-subplot(2,4,2)
-imagesc(BW1(:,:,exF))
-title('Binary image')
-colormap('hot')
-axis image
-contour = cell(size(IM,3),1);
-BW = BW1;%copy for testing
+Contour = cell(size(IM,3),1);
+outContour = cell(size(IM,3),1);
 for i = 1 : size(IM,3)
-    BW(:,:,i) = imbinarize(IM(:,:,i),threshold);
-    cBW = BW(:,:,i);
-    cBWL = bwlabel(cBW);
-
-    %Get the largest area
-    cBWarea = regionprops(cBW,'Area');
-    [~,idx2BiggestArea] = max(cell2mat({cBWarea.Area}));
-    if isempty(idx2BiggestArea)
-    else
-    %kill all the other area found
-        cBW(cBWL~=idx2BiggestArea) = 0;
-    end
-    % Clean up boundary
-    se = strel('disk',10);
-    cBW = imclose(cBW,se);
     
-    cContour = bwboundaries(cBW);
-    
-    %find largest contour
-    contourSize = cellfun(@size,cContour,'UniformOutput',false);
-    [tmp] = cellfun(@max,contourSize,'UniformOutput',false);
-    [~,idx2OuterContour] = max(cell2mat(tmp));
-    [~,idx2InnerContour] = min(cell2mat(tmp));
-    %only keep largest countour
-    if isempty(idx2OuterContour)
-        cContour = [];
-    else
-        cContour = cContour{idx2OuterContour};
-    end
-    contour{i} = cContour;
+       cIM = IM(:,:,i);
+       doplot = false; 
+      [contour,outCont] = maxProj.getCellCountour(cIM,thresh1,thresh2,doplot);
+      Contour{i} = contour;
+      outContour{i} = outCont;
+     
 end
-
-%plotting
-figure(1)
-subplot(2,4,3)
-imagesc(BW(:,:,exF))
-hold on
-colormap('hot')
-axis image
-title('Cleaned binary image')
-
-figure(1)
-subplot(2,4,4)
-imagesc(IM(:,:,exF))
-hold on
-plot(contour{exF}(:,2),contour{exF}(:,1),'w','LineWidth',3)
-colormap('hot')
-axis image
-title('Cell Countour')
 
 figure(2)
 hold on
 for i=1:size(IMs,3)
-    if ~isempty(contour{i})
-        plot3(contour{i}(:,2),contour{i}(:,1),repmat(i,1,length(contour{i}(:,1))),'k')
+    if ~isempty(Contour{i})
+        plot3(Contour{i}(:,2),Contour{i}(:,1),repmat(i,1,length(Contour{i}(:,1))),'k')
     end
 end
+%% inpsect contour
+figure(4)
+
+for i=1:size(IMs,3)
+    hold on
+    imagesc(IMs(:,:,i))
+    if ~isempty(Contour{i})
+        plot(outContour{i}(:,2),outContour{i}(:,1),'r')
+        plot(Contour{i}(:,2),Contour{i}(:,1),'w')
+    end
+    axis image
+    i
+    waitforbuttonpress
+end
+%% cleaning Contour
+
 
 %% Segmenting the rest of the image 
 
