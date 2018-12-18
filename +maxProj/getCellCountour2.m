@@ -1,6 +1,6 @@
-function [contour,pContour] = getCellCountour(BW,IM,thresh1,thresh2,doplot)
+function [contour,pContour] = getCellCountour2(BW,IM,thresh1,doplot)
 %% get contour of polymer around the cell
-
+BW = ~BW;
 %plot raw image
     if doplot
         figure(1)
@@ -9,21 +9,24 @@ function [contour,pContour] = getCellCountour(BW,IM,thresh1,thresh2,doplot)
         colormap('hot')
         axis image
     end
-        
+   
+    
     BWL = bwlabel(BW);
-
+    
     %Get the largest area
     cBWarea = regionprops(BW,'Area');
-    [~,idx2BiggestArea] = max(cell2mat({cBWarea.Area}));
+    [val,idx2BiggestArea] = max(cell2mat({cBWarea.Area}));
+   % [~,id] = min(val);
     if isempty(idx2BiggestArea)
     else
     %kill all the other area found
         BW(BWL~=idx2BiggestArea) = 0;
     end
     
-    % Clean up boundary
+     % Clean up boundary
     se = strel('disk',10);
     BW = imclose(BW,se);
+   
     
     %get outside contour
     [pContour] = bwboundaries(BW);
@@ -51,30 +54,35 @@ function [contour,pContour] = getCellCountour(BW,IM,thresh1,thresh2,doplot)
 %% get inner countour of the polymer around the cell == contour of the cell
 
     %make cropbased on contour
-    nIM = IM(min(pContour(:,1)):max(pContour(:,1)),min(pContour(:,2)):max(pContour(:,2)));
-    thresh = adaptthresh(nIM,0.8);
-%     thresh = multithresh(nIM,4);
-%     gBW = imquantize(nIM,thresh);
-    %
-    gBW = imbinarize(nIM,thresh);
-    se = strel('disk',3);
+    %nIM = IM(min(pContour(:,1)):max(pContour(:,1)),min(pContour(:,2)):max(pContour(:,2)));
+    mask  = poly2mask(pContour(:,2),pContour(:,1),size(IM,1),size(IM,2));
+    nIM = double(IM).*mask;
+    %gBW = imbinarize(nIM,thresh1);
+    gBW = nIM;
+    gBW(gBW<thresh1*max(max(gBW)))  = 0;
+    gBW(gBW>=thresh1*max(max(gBW))) = 1;
+    
+    se = strel('disk',4);
     gBW = imclose(gBW,se);
-    gBW = ~gBW;  
-
- 
+    gBW = ~gBW;
+    gBW = imclearborder(gBW);
+    
+    se = strel('disk',8);
+    gBW = imclose(gBW,se);    
     
    %%
     %get label
     gBWL = bwlabel(gBW);
+    
     %get area
     gBWarea = regionprops(gBW,'Area');
     %keep 2nd biggest area
-    [val,idx2BiggestArea] = maxk(cell2mat({gBWarea.Area}),2);
+    [val,idx2BiggestArea] = max(cell2mat({gBWarea.Area}));
     if isempty(idx2BiggestArea)
     else
     %kill all the other area found
-        [~,idx] = min(val);
-        gBW(gBWL~=idx2BiggestArea(idx))= 0;
+        
+        gBW(gBWL~=idx2BiggestArea)= 0;
     end
 
     % Clean up boundary
@@ -98,9 +106,7 @@ function [contour,pContour] = getCellCountour(BW,IM,thresh1,thresh2,doplot)
     if isempty(idx2OuterContour)
     contour = [];
     else
-        contour = contour{idx2OuterContour};
-        contour(:,1) = contour(:,1) + min(pContour(:,1)); 
-        contour(:,2) = contour(:,2) + min(pContour(:,2)); 
+        contour = contour{idx2OuterContour}; 
     end
       
      if doplot
