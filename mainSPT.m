@@ -10,7 +10,7 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File= 'E:\Data\Leuven Data\2018\10-Oct\23\ZCal\200nmBeads\FluoBeads200nm_10';
+path2File= 'C:\Users\Boris\Desktop\100 Au + 10 PS_4';
 path2Cal  = 'E:\Data\Leuven Data\2018\11 - Nov\8 - Setup Alignment\FluoBeads200nm2DCal_1';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
@@ -19,8 +19,8 @@ path2Cal  = 'E:\Data\Leuven Data\2018\11 - Nov\8 - Setup Alignment\FluoBeads200n
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;
-info.type = 'normal';
-%info.frame2Load = 1:200; % if want to analyze only part of the movie(full
+info.type = 'transmission';
+info.frame2Load = 1:200; % if want to analyze only part of the movie(full
 %is default)
 info.runMethod = 'Load'; %will avoid the question to user to pop by giving
 %the answer before

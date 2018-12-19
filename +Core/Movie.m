@@ -28,12 +28,12 @@ classdef Movie < handle
                     error('A path to the folder where the movie is is needed to create a movie object.')
                 
                 case 1 
-                     obj.ext = '.ome.tif';
-                     obj.raw = raw;
-                     info.type = 'normal';
-                     info.runMethod = 'load';
-                     info.frame2Load = 1:obj.raw.maxFrame(1);
-                     obj.info = info;
+                    obj.ext = '.ome.tif';
+                    obj.raw = raw;
+                    info.type = 'normal';
+                    info.runMethod = 'load';
+                    info.frame2Load = 1:obj.raw.maxFrame(1);
+                    obj.info = info;
                      
                 case 2
                     
@@ -191,23 +191,15 @@ classdef Movie < handle
             idx2Empty = structfun(@isempty, frame);
             idx2Data = find(idx2Empty==0);
             nImages = length(idx2Data);
-                        
-            h = figure(1);
+            h = figure(1);            
+            h.Position = [512 150 512 460 ];
             h.Name = sprintf('Frame %d',idx);
-            
-            ax = gca;
-            outerpos = ax.OuterPosition;
-            ti = ax.TightInset; 
-            left = outerpos(1) + ti(1);
-            bottom = outerpos(2) + ti(2);
-            ax_width = outerpos(3) - ti(1) - ti(3);
-            ax_height = outerpos(4) - ti(2) - ti(4);
-            ax.Position = [left bottom ax_width ax_height];
             
             for i = 1:nImages
                 
                 currentIM = frame.(fNames{idx2Data(i)});
                 subplot(nImages,1,i)
+                hold on
                 if strcmp(obj.info.type,'transmission')
                     colormap('gray');
                     %calculate reflectance (somehow better than absorbance)
@@ -217,22 +209,27 @@ classdef Movie < handle
                 end
                 
                 imagesc(currentIM)
-                hold on
+                %scalebar
                 x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
-                y = ones(1,length(x))*size(currentIM,1)-0.05*size(currentIM,2);
+                y = ones(1,length(x))*0.05*size(currentIM,2);
                 text(mean(x),mean(y)-0.05*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',14);
                 plot(x,y,'-w','LineWidth',5);
 
-                axis image;
                 caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
-                
+                %removing tick and add title
                 a = gca;
                 a.XTickLabel = [];
                 a.YTickLabel = [];
-                a.GridColor = [1 1 1];
+                %a.GridColor = [1 1 1];
+                
+                set(a,'position',[0 0.5-0.5*(double(i==2)) 1 0.4],'units','normalized')
+                axis image;
                 title({fNames{i}, sprintf('Frame %d',idx)});
+
                 hold off
+               
             end
+            
         end
         
         function [data] = getFrame(obj,idx)
@@ -319,16 +316,7 @@ classdef Movie < handle
                 else
                     Fig = obj.showFrame(j,scaleBar);
                 end
-                hold on
-                %scale bar
-                ax = gca;
-                
-                set(ax,'visible','off');
-                set(gca,'position',[0 0 1 1],'units','normalized')
-                axis image;
-                drawnow;
 
-                hold off
                 frame = getframe(Fig);
                 switch ext
                     case 'mp4'
