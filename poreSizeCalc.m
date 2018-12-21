@@ -61,8 +61,8 @@ end
 allDataAdapt = struct('filename', [], 'Data', []);
 allDataAuto = struct('filename', [], 'Data', []);
 
-allDataAdapt(length(idx2Stack)/2).filename = [];
-allDataAuto(length(idx2Stack)/2).filename = [];
+allDataAdapt(round(length(idx2Stack)/2)).filename = [];
+allDataAuto(round(length(idx2Stack)/2)).filename = [];
 nAdapt = 1;
 nAuto  = 1;
 for j = 1:length(idx2Stack)
@@ -143,8 +143,11 @@ for j = 1:length(idx2Stack)
         %allDataAdapt = [allDataAdapt; tifStackData];
         allDataAdapt(nAdapt).filename = file2Analyze(j).name;
         allDataAdapt(nAdapt).Data = tifStackData;
-        allDataAdapt(nAdapt).Data.filledVolume(1) = filledVolume;%stillPX
+        allDataAdapt(nAdapt).Data.poreVolume(1) = filledVolume;%stillPX
+        allDataAdapt(nAdapt).Data.polVolume(1)  = totVol-filledVolume;
         allDataAdapt(nAdapt).Data.totVolume(1)    = totVol;%stillPX
+        allDataAdapt(nAdapt).Data.ratioPol(1) = (totVol-filledVolume)/totVol;
+        allDataAdapt(nAdapt).Data.ratioPores(1) = (filledVolume)/totVol;
         nAdapt = nAdapt+1;
     else
         allDataAuto(nAuto).filename = file2Analyze(j).name;
