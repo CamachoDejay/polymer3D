@@ -1,6 +1,10 @@
 clear;
 clc;
 close all;
+% Calculate the pore size and other properties of pores based on a
+% pre-segmented image. 
+%The code assumes that the segmentation is performed in a way that the pore
+%are bright (=1) and the strtucture of interest is black.
 %% User Input
 prompt = {'Enter the pixel size: ','Enter number of frame to analyze: ',...
     'number of frame to ignore beginning:', 'number of frame to ignore end:','Stack to ignore:'};
@@ -89,7 +93,7 @@ for j = 1:length(idx2Stack)
    % waitbar(j/nImStacks,h,hMessage);
     disp('Loading Data');
     totVol = 0;
-    filledVolume = 0;
+    polVolume = 0;
     parfor i=startIdx:endIdx %% PARFOR CAN BE PLACED HERE
         
         % Loading image number i
@@ -127,7 +131,7 @@ for j = 1:length(idx2Stack)
         % store
         tifStackData = [tifStackData; regData];
         totVol = totVol + numel(IM);
-        filledVolume  = filledVolume + sum(sum(~IM));
+        polVolume  = polVolume + sum(sum(~IM));
        
     end
     
@@ -143,11 +147,11 @@ for j = 1:length(idx2Stack)
         %allDataAdapt = [allDataAdapt; tifStackData];
         allDataAdapt(nAdapt).filename = file2Analyze(j).name;
         allDataAdapt(nAdapt).Data = tifStackData;
-        allDataAdapt(nAdapt).Data.poreVolume(1) = filledVolume;%stillPX
-        allDataAdapt(nAdapt).Data.polVolume(1)  = totVol-filledVolume;
+        allDataAdapt(nAdapt).Data.polVolume(1) = polVolume;%stillPX
+        allDataAdapt(nAdapt).Data.poreVolume(1)  = totVol-polVolume;
         allDataAdapt(nAdapt).Data.totVolume(1)    = totVol;%stillPX
-        allDataAdapt(nAdapt).Data.ratioPol(1) = (totVol-filledVolume)/totVol;
-        allDataAdapt(nAdapt).Data.ratioPores(1) = (filledVolume)/totVol;
+        allDataAdapt(nAdapt).Data.ratioPol(1) = (polVolume)/totVol;
+        allDataAdapt(nAdapt).Data.ratioPores(1) = (totVol-polVolume)/totVol;
         nAdapt = nAdapt+1;
     else
         allDataAuto(nAuto).filename = file2Analyze(j).name;
