@@ -1,4 +1,4 @@
-classdef ZCalMovie < Core.MPCalMovie
+classdef MPZCalMovie < Core.MPCalMovie
     %zCal will hold the information related to zCalibration movies as well as all
     %the method linked to the zzCalibrationration.
     
@@ -9,7 +9,7 @@ classdef ZCalMovie < Core.MPCalMovie
     
     methods
         
-        function obj = ZCalMovie(raw,cal,info)
+        function obj = MPZCalMovie(raw,cal,info)
             %UNTITLED6 Construct an instance of this class
             %   Detailed explanation goes here
             obj  = obj@Core.MPCalMovie(raw,cal,info);
@@ -175,25 +175,16 @@ classdef ZCalMovie < Core.MPCalMovie
                              ellip2Store = currentData.ellip;
                              magX2Store = currentData.magX;
                              magY2Store = currentData.magY;
-% %                             [~,index] = (min(abs(1-ellipt)));
-% %                             [~,index2] = (max(fMetric));
-% %                             err = abs(zToNm(index)- abs(zToNm(index2)));
-%                              testEllipt = and(ellipt>0.9,ellipt<1.1);
-%                              err = abs(mean(zToNm(testEllipt)));
-%                              if err > 50
-%                                  disp('Something wrong with the focus');
-%                              end
+                            data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
+                            data2Store.magX = magX2Store;
+                            data2Store.magY = magY2Store;
+                            data2Store.fMetric = zCalData{i,j}.fMetric;
+                            data2Store.gFitMet =  zCalData{i,j}.gFitMet;
 
-                                data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
-                                data2Store.magX = magX2Store;
-                                data2Store.magY = magY2Store;
-                                data2Store.fMetric = zCalData{i,j}.fMetric;
-                                data2Store.gFitMet =  zCalData{i,j}.gFitMet;
-                                
-                                %tmp Store
-                                zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
-                                zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
-                                
+                            %tmp Store
+                            zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
+                            zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
+
                         end
                     end
                 end
