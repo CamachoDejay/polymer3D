@@ -175,15 +175,15 @@ classdef MPZCalMovie < Core.MPCalMovie
                              ellip2Store = currentData.ellip;
                              magX2Store = currentData.magX;
                              magY2Store = currentData.magY;
-                            data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
-                            data2Store.magX = magX2Store;
-                            data2Store.magY = magY2Store;
-                            data2Store.fMetric = zCalData{i,j}.fMetric;
-                            data2Store.gFitMet =  zCalData{i,j}.gFitMet;
+                                data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
+                                data2Store.magX = magX2Store;
+                                data2Store.magY = magY2Store;
+                                data2Store.fMetric = zCalData{i,j}.fMetric;
+                                data2Store.gFitMet =  zCalData{i,j}.gFitMet;
 
-                            %tmp Store
-                            zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
-                            zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
+                                %tmp Store
+                                zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
+                                zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
 
                         end
                     end
