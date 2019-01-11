@@ -65,7 +65,7 @@ classdef ZCalibration < handle
                     if ~all(idx==0)
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
-                        tmp = Core.ZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
+                        tmp = Core.MPZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
                         tmp.calibrate;
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want

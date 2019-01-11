@@ -30,12 +30,12 @@ mov1.giveInfo;
 %mov2 = Core.Movie(path2zCal);
 %%
 
-mov1.saveMovie('mp4',60,5);
+mov1.saveMovie('mp4',10,5);
 %% showFrame
 mov1.showFrame(10,5);
 %mov2.showFrame(51);
 %% Calib
-calib = Core.MPCalibration(path2Cal);
+calib = Core.MPCalibration(path2Cal,info);
 
 calib.calc(4);
 %%

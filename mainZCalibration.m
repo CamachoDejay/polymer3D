@@ -4,15 +4,15 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\ZCalibration\PSFE';
-path2Cal  = 'E:\Data\Leuven Data\2018\10-Oct\23\2DCal\FluoBeads200nm_1';
+path2zCal = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\zCal200nm';
+path2Cal  = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\planeCal200nm\FluoBeads200nm_488Exc_planecal_2';
 
 %% Initialize a zCalibration Object
-info.type = 'transmission';
+info.type = 'normal';
 info.runMethod = 'load';
 info.frame2Load = 'all';
-calib = Core.MPCalibration(path2Cal);
-calib.calc(1);
+calib = Core.MPCalibration(path2Cal,info);
+calib.calc(4);
 
 testZCal = Core.ZCalibration(path2zCal,calib.getCal,info);
 
@@ -23,9 +23,9 @@ testZCal.retrieveZCalMov;
 %% extract zData
 
 detectParam.delta = 6;
-detectParam.chi2 = 40;
-fitZParam.deg = 4;
-fitZParam.ellipRange = [0.7 1.42];
+detectParam.chi2 = 80;
+fitZParam.deg = 6;
+fitZParam.ellipRange = [0.5 2];
 
 trackParam.euDistPx = 4; 
 trackParam.commonPlanes = 1;
