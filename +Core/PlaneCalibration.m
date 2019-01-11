@@ -8,8 +8,7 @@ classdef PlaneCalibration < handle
         MPCalibrations
         info
         allCal
-        cal
-        
+        cal        
     end
     
     methods
@@ -50,22 +49,8 @@ classdef PlaneCalibration < handle
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
                         tmp = Core.MPCalibration([folder2Mov(i).folder filesep folder2Mov(i).name], obj.info);
-                        tmp.calibrate;
-                        [zStep, ~] = tmp.getZPosMotor;
-                        %TODO: Check other motor position (we do not want
-                        %any other movement here.
-                        
-                        if zStep ~= 0
-                            %if it is we store
-                            obj.MPCalibrations.(['MPCal' num2str(i-2)]) = tmp;
-                        
-                        else
-                            %if it is not we throw a warning message as it
-                            %might be that many movie are in the main
-                            %folder
-                            warning(['In ' folder2Mov(i).folder filesep folder2Mov(i).name ' no movement of the Z motor was found, the file is therefore ignored']);
-                        
-                        end
+                        obj.MPCalibrations.(['MPCal' num2str(i-2)]) = tmp;
+ 
                     else
                         
                         warning([folder2Mov(i).folder filesep folder2Mov(i).name ' did not contain any ome.Tif and is therefore ignored']);
@@ -100,6 +85,26 @@ classdef PlaneCalibration < handle
         
         function calcCombinedCal(obj)
             allData = obj.allCal;
+            nFiles = length(allData);
+            allROI = zeros([size(allData(1).file.ROI) nFiles]);
+            allFocusMet =  zeros([size(allData(1).file.focusMet) nFiles]);
+            allFit = allFocusMet;
+            allNewOrder =  zeros([size(allData(1).file.neworder) nFiles]);
+            allICorrF   =  zeros([size(allData(1).file.neworder) nFiles]);
+            inFocus = allData(1).file.inFocus;
+            
+            for i = 1:nFiles
+                
+                allROI(:,:,i) = allData(i).file.ROI;
+                allFocusMet(:,:,i) = allData(i).file.focusMet;
+                allFit(:,:,i) = allData(i).file.fit;
+                allNewOrder(:,:,i) = allData(i).file.neworder; 
+                allICorrF(:,:,i)  = allData(i).file.Icorrf;           
+
+            end
+            
+            ROI = round(mean(allROI,3));
+            
             
             
             
