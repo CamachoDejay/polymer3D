@@ -1,4 +1,4 @@
-classdef SRCalMovie < Core.MPCalMovie
+classdef MPSRCalMovie < Core.MPCalMovie
     %SuperResCal will hold information about the operation that needs to be
     %performed on the coordinates to match them to the plane of reference.
     
@@ -20,7 +20,7 @@ classdef SRCalMovie < Core.MPCalMovie
     
     methods
         %Constructor
-        function obj = SRCalMovie(raw, cal, info)
+        function obj = MPSRCalMovie(raw, cal, info)
             
             obj  = obj@Core.MPCalMovie(raw,cal,info);
             
@@ -536,7 +536,7 @@ classdef SRCalMovie < Core.MPCalMovie
                     del = false;
                     for j = 1: length(test)
                         data2Test2 = data2Test(data2Test.plane==j,:);
-                        if or(isempty(data2Test2(data2Test2.ellip<1,:)),isempty(data2Test2(data2Test2.ellip>1,:)))
+                        if or(isempty(data2Test2(data2Test2.ellip<0.9,:)),isempty(data2Test2(data2Test2.ellip>1.1,:)))
                             del = true;
                         end
                     end

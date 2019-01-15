@@ -234,7 +234,7 @@ classdef ZCalibration < handle
           
             for i = 1 : size(obj.calib.data,1)
                 dataCurrPlane = obj.calib.data{i};
-                scatter(dataCurrPlane.z, dataCurrPlane.ellip,25,'filled',...
+                scatter(dataCurrPlane.z, dataCurrPlane.ellip,15,'filled',...
                     'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4,'DisplayName',['Plane ' num2str(i) ' - ' num2str(relZ(i))])
                
             %scatter(obj.calib.data{1,2}(:,1),obj.calib.data{1,2}(:,2));
@@ -260,7 +260,7 @@ classdef ZCalibration < handle
                 [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
                     dataCurrPlane.ellip],length(dataCurrPlane.z)/7);
                 
-                zVec = zRange{1}(1):zRange{1}(2);
+                zVec = zRange{i}(1):zRange{i}(2);
                
                 switch method
                     case 'poly'
@@ -283,7 +283,7 @@ classdef ZCalibration < handle
                 fit = fit(and(fit<ellipRange(2),fit>ellipRange(1)));
                 subplot(1,2,1)
                 hold on
-                markerSize = 25;
+                markerSize = 10;
                 scatter(binnedData(:,1),binnedData(:,2))
                 plot(zVec,fit,'r')
                 title('Binned data fitted with Spline')

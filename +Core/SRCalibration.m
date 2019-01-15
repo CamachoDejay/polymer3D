@@ -59,7 +59,7 @@ classdef SRCalibration < handle
                     if ~all(idx==0)
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
-                        tmp = Core.SRCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
+                        tmp = Core.MPSRCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
                         tmp.calibrate;
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want
@@ -147,14 +147,14 @@ classdef SRCalibration < handle
             SRCalibData = obj.calib.data;
             data2Corr = obj.calib.dataPerPlane;
             %Calculate the translation
-            [transMat] = Core.SRCalMovie.getTrans(SRCalibData);
+            [transMat] = Core.MPSRCalMovie.getTrans(SRCalibData);
             
             %Correct the data
               %Correct the data for rotation
               corrData = cell(size(data2Corr));
             for i = 1:length(data2Corr)
                 currentData = data2Corr{i};
-                [cData] = Core.SRCalMovie.applyTrans(currentData,transMat,refPlane);
+                [cData] = Core.MPSRCalMovie.applyTrans(currentData,transMat,refPlane);
                 corrData{i} = cData;
             end
             
@@ -174,13 +174,13 @@ classdef SRCalibration < handle
             SRCalibData = obj.calib.data;
             data2Corr = obj.calib.dataPerPlane;
            %Calculate the rotation
-            [rotMat] = Core.SRCalMovie.getRot(SRCalibData);
+            [rotMat] = Core.MPSRCalMovie.getRot(SRCalibData);
             
             corrData = cell(length(data2Corr),1);
              %Correct the data for rotation
             for i = 1:length(data2Corr)
                 currentData = data2Corr{i};
-                [cData] = Core.SRCalMovie.applyRot(currentData,rotMat,refPlane);
+                [cData] = Core.MPSRCalMovie.applyRot(currentData,rotMat,refPlane);
                 corrData{i} = cData;
             end
 

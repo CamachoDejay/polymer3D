@@ -86,12 +86,15 @@ classdef PlaneCalibration < handle
         function calcCombinedCal(obj)
             allData = obj.allCal;
             nFiles = length(allData);
+            nPlanes = length(allData(1).file.neworder);
             allROI = zeros([size(allData(1).file.ROI) nFiles]);
             allFocusMet =  zeros([size(allData(1).file.focusMet) nFiles]);
             allFit = allFocusMet;
             allNewOrder =  zeros([size(allData(1).file.neworder) nFiles]);
             allICorrF   =  zeros([size(allData(1).file.neworder) nFiles]);
             inFocus = allData(1).file.inFocus;
+            inFocus = rmfield(inFocus,{'frame', 'zpos'});
+            allRelZpos = zeros(nPlanes-1,nFiles);
             
             for i = 1:nFiles
                 
@@ -99,15 +102,17 @@ classdef PlaneCalibration < handle
                 allFocusMet(:,:,i) = allData(i).file.focusMet;
                 allFit(:,:,i) = allData(i).file.fit;
                 allNewOrder(:,:,i) = allData(i).file.neworder; 
-                allICorrF(:,:,i)  = allData(i).file.Icorrf;           
+                allICorrF(:,:,i)  = allData(i).file.Icorrf;
+                
+                tmp = cell2mat({allData(i).file.inFocus.zpos});
+                allRelZPos(:,i) = diff(tmp);
 
             end
             
+            
             ROI = round(mean(allROI,3));
-            
-            
-            
-            
+            RelZPos = mean(allRelZPos,2);
+
         end
         
         

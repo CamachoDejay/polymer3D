@@ -4,8 +4,8 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\zCal200nm';
-path2Cal  = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\planeCal200nm\FluoBeads200nm_488Exc_planecal_2';
+path2zCal = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\zCal40nm';
+path2Cal  = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\planeCal40nm\FluoBeads40nm_488Exc_planecal_2';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
@@ -42,8 +42,8 @@ method = 'spline';
 testZCal.showZCalibration(method);
 
 %% test Calibration
-fittingType = 'poly';
-%fittingType = 'spline';
+%fittingType = 'poly';
+fittingType = 'spline';
 testZCal.evalAccuracy(fittingType);
 %% Save cal
 
