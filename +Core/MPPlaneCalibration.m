@@ -1,4 +1,4 @@
-classdef PlaneCalibration < handle
+classdef MPPlaneCalibration < handle
     %PlaneCalibration is a class that will hold the information of several
     %MPCalMovie and be able to process these information to create a
     %calibration file from the data of all the movies
@@ -13,7 +13,7 @@ classdef PlaneCalibration < handle
     
     methods
         
-        function obj = PlaneCalibration(path2MPCal,info)
+        function obj = MPPlaneCalibration(path2MPCal,info)
             %zCalibration Construct an instance of this class
             %   Detailed explanation goes here
             obj.path = path2MPCal;            
@@ -105,14 +105,19 @@ classdef PlaneCalibration < handle
                 allICorrF(:,:,i)  = allData(i).file.Icorrf;
                 
                 tmp = cell2mat({allData(i).file.inFocus.zpos});
-                allRelZPos(:,i) = diff(tmp);
+                allRelZPos(:,i) = tmp-tmp(1);
 
             end
             
             
             ROI = round(mean(allROI,3));
             RelZPos = mean(allRelZPos,2);
-
+            inFocus(1:8).relZPos = mat2cell(RelZPos,8,1 );
+            obj.cal.file = obj.allCal(1).file;
+            obj.cal.file = rmfield(obj.cal.file,{'focusMet','fit','ZPos'});
+            obj.cal.ROI = ROI;
+            obj.cal.inFocus = inFocus;
+            
         end
         
         

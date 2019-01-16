@@ -11,7 +11,7 @@ info.nChan = 4;
 info.runMethod = 'load';
 info.frame2Load = 'all';
 
-MPCal = Core.PlaneCalibration(path2MPCal,info);
+MPCal = Core.MPPlaneCalibration(path2MPCal,info);
 
 %% retrieve Cal Movie
 

@@ -4,8 +4,8 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\zCal40nm';
-path2Cal  = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\planeCal40nm\FluoBeads40nm_488Exc_planecal_2';
+path2zCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
+path2Cal  = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE\zStackFluoBeads200_S3_270618__2';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
@@ -25,7 +25,7 @@ testZCal.retrieveZCalMov;
 detectParam.delta = 6;
 detectParam.chi2 = 80;
 fitZParam.deg = 6;
-fitZParam.ellipRange = [0.5 2];
+fitZParam.ellipRange = [0.5 1.5];
 
 trackParam.euDistPx = 4; 
 trackParam.commonPlanes = 1;
