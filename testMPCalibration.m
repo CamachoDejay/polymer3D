@@ -27,3 +27,6 @@ MPCal.calcCombinedCal;
 %% test
 
 cal = MPCal.getCal;
+
+%% show cal
+MPCal.showCal(1);

@@ -127,5 +127,40 @@ classdef MPPlaneCalibration < handle
             obj.cal.file.inFocus = inFocus;
             disp('================>DONE<====================');
         end
+        
+        function showCal(obj,idx)
+            fields = fieldnames(obj.MPCalibrations);
+            mov2Use = obj.MPCalibrations.(fields{idx});
+            focusMet = mov2Use.cal.file.focusMet;
+            fit = mov2Use.cal.file.fit;
+            ZPos = mov2Use.cal.file.Zpos;
+            color = rand(8,3);
+            
+            FocusZ = {mov2Use.cal.file.inFocus.zpos};
+            figure()
+            hold on
+            leg = cell(1,size(focusMet,2));
+            height =  max(max(focusMet));
+            y = 1:height;
+            for i = 1 : size(focusMet,2)
+                [~,idx] = max(fit(:,i));
+                scatter(ZPos(:)-mean(ZPos),focusMet(:,i),[],color(i,:),'filled')
+                plot(ZPos(:)-mean(ZPos),fit(:,i),'Color', color(i,:),'LineWidth',2.5,'HandleVisibility','off')
+               
+                x = ones(1,length(y))*(FocusZ{i}-mean(ZPos));
+                plot(x(:),y(:),'k--','HandleVisibility','off');
+                
+                leg{i} = ['Cam' num2str(obj.cal.file.inFocus(i).cam) ' - Plane' num2str(obj.cal.file.inFocus(i).ch)];
+                
+            end
+            ylim([min(min(focusMet)), max(max(focusMet))]);
+            xlim([round(min(ZPos-mean(ZPos))), round(max(ZPos-mean(ZPos)))]);
+            title('Setup Plane Calibration');
+            ylabel('Intensity (a.u.)')
+            xlabel('z position (um)')
+            legend(leg)
+            hold off
+    
+        end
      end
 end
