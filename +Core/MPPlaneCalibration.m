@@ -100,7 +100,8 @@ classdef MPPlaneCalibration < handle
             allICorrF   =  zeros([size(allData(1).file.neworder) nFiles]);
             inFocus = allData(1).file.inFocus;
             inFocus = rmfield(inFocus,{'frame', 'zpos'});
-            allRelZpos = zeros(nPlanes-1,nFiles);
+            allRelZpos = zeros(nPlanes,nFiles);
+            allZpos = zeros(nPlanes,nFiles);
             
             for i = 1:nFiles
                 
@@ -108,22 +109,25 @@ classdef MPPlaneCalibration < handle
                 allFocusMet(:,:,i) = allData(i).file.focusMet;
                 allFit(:,:,i) = allData(i).file.fit;
                 allNewOrder(:,:,i) = allData(i).file.neworder; 
-                allICorrF(:,:,i)  = allData(i).file.Icorrf;
-                
+                allICorrF(:,:,i)  = allData(i).file.Icorrf;   
                 tmp = cell2mat({allData(i).file.inFocus.zpos});
-                allRelZPos(:,i) = tmp-tmp(1);
+                allRelZpos(:,i) = tmp-tmp(1);
+                allZpos(:,i) = tmp;
  
             end
 
             ROI = round(mean(allROI,3));
-            RelZPos = mean(allRelZPos,2);
-            test = num2cell(RelZPos');
-            [inFocus(1,:).relZPos] = test{:};
+            RelZPos = mean(allRelZpos,2);
+            tmp = num2cell(RelZPos');
+            [inFocus(1,:).relZPos] = tmp{:};
+            tmp = num2cell(mean(allZpos,2)');
+            [inFocus(1,:).zPos] = tmp{:};
             obj.cal.nFiles = nFiles;
             obj.cal.fullPath = obj.path;
             obj.cal.file = obj.allCal(1).file;
             obj.cal.file = rmfield(obj.cal.file,{'focusMet','fit','Zpos'});
             obj.cal.file.ROI = ROI;
+            
             obj.cal.file.inFocus = inFocus;
             disp('================>DONE<====================');
         end
@@ -161,6 +165,25 @@ classdef MPPlaneCalibration < handle
             legend(leg)
             hold off
     
+        end
+        
+        function [camConfig] = determineCAMConfig(obj)
+        relZPos = cell2mat({obj.cal.file.inFocus.relZPos});
+        planeDist = abs(mean(diff(relZPos)))*1000;
+        if planeDist > 350
+            camConfig = 'fullRange';
+        elseif and(planeDist < 350, planeDist>200)
+            camConfig = 'alternated';
+        else
+            error('Something is wrong with your distance between planes')
+        end
+
+        end
+        
+        function offTarget(obj)
+            zPos = cell2mat({obj.cal.file.inFocus.zPos});
+            
+            
         end
      end
 end

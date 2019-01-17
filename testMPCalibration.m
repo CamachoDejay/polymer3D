@@ -30,3 +30,11 @@ cal = MPCal.getCal;
 
 %% show cal
 MPCal.showCal(1);
+
+%%
+camConfig = MPCal.determineCAMConfig;
+
+
+%% 
+
+MPCal.offTarget;
