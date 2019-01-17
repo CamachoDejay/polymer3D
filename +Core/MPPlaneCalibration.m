@@ -3,7 +3,7 @@ classdef MPPlaneCalibration < handle
     %MPCalMovie and be able to process these information to create a
     %calibration file from the data of all the movies
     
-    properties
+    properties (SetAccess = 'private')
         path
         MPCalibrations
         info
@@ -21,6 +21,10 @@ classdef MPPlaneCalibration < handle
       
         end
         
+        function [cal] = getCal(obj)
+            cal = obj.cal;
+        end
+        
         function set.path(obj, path)
             assert(ischar(path), 'Path should be given as a string');
             assert(isfolder(path), 'The path given is not a folder, ZCalibration expect a folder. In the folder it is expected to find separate folder for each zCalMovie.')
@@ -36,7 +40,8 @@ classdef MPPlaneCalibration < handle
             
         end
         
-        function retrieveMPCalibration(obj)
+        function retrieveMovies(obj)
+            disp('Retrieving movies from indicated folder...')
             %we get the MPCalibration directory
             folder2Mov = dir(obj.path);
             folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
@@ -84,6 +89,7 @@ classdef MPPlaneCalibration < handle
         end
         
         function calcCombinedCal(obj)
+            disp('Combining data from different calibration...');
             allData = obj.allCal;
             nFiles = length(allData);
             nPlanes = length(allData(1).file.neworder);
@@ -113,11 +119,13 @@ classdef MPPlaneCalibration < handle
             RelZPos = mean(allRelZPos,2);
             test = num2cell(RelZPos');
             [inFocus(1,:).relZPos] = test{:};
+            obj.cal.nFiles = nFiles;
+            obj.cal.fullPath = obj.path;
             obj.cal.file = obj.allCal(1).file;
-            obj.cal.file = rmfield(obj.cal.file,{'focusMet','fit','ZPos'});
-            obj.cal.ROI = ROI;
-            obj.cal.inFocus = inFocus;
-            
+            obj.cal.file = rmfield(obj.cal.file,{'focusMet','fit','Zpos'});
+            obj.cal.file.ROI = ROI;
+            obj.cal.file.inFocus = inFocus;
+            disp('================>DONE<====================');
         end
      end
 end

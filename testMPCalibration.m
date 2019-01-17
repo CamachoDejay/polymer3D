@@ -15,7 +15,7 @@ MPCal = Core.MPPlaneCalibration(path2MPCal,info);
 
 %% retrieve Cal Movie
 
-MPCal.retrieveMPCalibration;
+MPCal.retrieveMovies;
 
 %% calculate Cal
 MPCal.calcIndivCal;
@@ -23,3 +23,7 @@ MPCal.calcIndivCal;
 %% Combine Calibrations into 1
  
 MPCal.calcCombinedCal;
+
+%% test
+
+cal = MPCal.getCal;

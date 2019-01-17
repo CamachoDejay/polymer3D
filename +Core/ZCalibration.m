@@ -53,7 +53,7 @@ classdef ZCalibration < handle
             
         end
         
-        function retrieveZCalMov(obj)
+        function retrieveMovies(obj)
             %we get the zCalibration directory
             folder2Mov = dir(obj.path);
             folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
