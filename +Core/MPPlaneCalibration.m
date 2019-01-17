@@ -106,20 +106,18 @@ classdef MPPlaneCalibration < handle
                 
                 tmp = cell2mat({allData(i).file.inFocus.zpos});
                 allRelZPos(:,i) = tmp-tmp(1);
-
+ 
             end
-            
-            
+
             ROI = round(mean(allROI,3));
             RelZPos = mean(allRelZPos,2);
-            inFocus(1:8).relZPos = mat2cell(RelZPos,8,1 );
+            test = num2cell(RelZPos');
+            [inFocus(1,:).relZPos] = test{:};
             obj.cal.file = obj.allCal(1).file;
             obj.cal.file = rmfield(obj.cal.file,{'focusMet','fit','ZPos'});
             obj.cal.ROI = ROI;
             obj.cal.inFocus = inFocus;
             
         end
-        
-        
-    end
+     end
 end
