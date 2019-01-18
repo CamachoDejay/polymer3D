@@ -4,20 +4,24 @@ close all
 clc
 
 %% Load block
-tmp = load('N:\Project Z-stacks\New stacks\5K_0.25 mg_30 nm_Sample 1\tif_5K_0.25 mg_30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
+tmp = load('N:\Project Z-stacks\New stacks\1K_0.25mg_30 nm_sample 1\tif_1K_0.25 mg-30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table05 = tmp.(names{1});
 clear tmp names
 % Load second file
-tmp = load('N:\Project Z-stacks\New stacks\5k_0.5 mg 30 nm_Sample 1\tif_5k_0.5 mg 30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
+tmp = load('N:\Project Z-stacks\New stacks\1K_0.5mg_30 nm_sample 1\Tif_1K_0,5mg_30 nm_sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
 names = fieldnames(tmp);
 assert(length(names)==1,'Unexpected, WTF')
 Table075 = tmp.(names{1});
 clear tmp names
 % Loqd third file
-tmp = load('N:\Project Z-stacks\New stacks\5K_1 mg_30nm_Sample 1\tif_5K_1 mg 30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
+tmp = load('N:\Project Z-stacks\New stacks\1K_1 mg_30 nm_sample 1\TIF_1K_1 mg_0_30 nm_Sample1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps');
 names = fieldnames(tmp);%% New Plotting
+
+assert(length(names)==1,'Unexpected, WTF')
+Table1 = tmp.(names{1});
+clear tmp names
 
 % plotting all
 table05 = [];
@@ -61,9 +65,6 @@ totalV = totalV(:);
 % store CCDF into p05
 p1_CCDF = CCDF;
 clear CDF CCDF totalV
-assert(length(names)==1,'Unexpected, WTF')
-Table1 = tmp.(names{1});
-clear tmp names
 
 
 
@@ -85,7 +86,7 @@ hold off
 a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
-title({'CCDF-plot for area of pores','5K PIC hydrogel for different concentrations (adaptive) S1'})
+title({'CCDF-plot for area of pores','1K PIC hydrogel for different concentrations (adaptive) S1'})
 xlabel('Pore size (micrometer^2)')
 ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;
@@ -113,7 +114,7 @@ end
 a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
-title({'CCDF-plot for area of pores','5K PIC hydrogel 0.25 mg/ml adaptive sample 1'})
+title({'CCDF-plot for area of pores','1K PIC hydrogel 0.25 mg/ml adaptive sample 1'})
 xlabel('Pore size (micrometer^2)')
 ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;
@@ -141,7 +142,7 @@ end
 a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
-title({'CCDF-plot for area of pores','5K PIC hydrogel 0.5 mg/ml adaptive sample 1'})
+title({'CCDF-plot for area of pores','1K PIC hydrogel 0.5 mg/ml adaptive sample 1'})
 xlabel('Pore size (micrometer^2)')
 ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;
@@ -169,7 +170,7 @@ end
 a = gca;
 a.XScale = 'log';
 a.YScale = 'log';
-title({'CCDF-plot for area of pores','5K PIC hydrogel 1 mg/ml adaptive sample 1'})
+title({'CCDF-plot for area of pores','1K PIC hydrogel 1 mg/ml adaptive sample 1'})
 xlabel('Pore size (micrometer^2)')
 ylabel('CCDF - prob [0-1]')
 a.FontSize = 14;

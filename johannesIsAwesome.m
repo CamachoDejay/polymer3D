@@ -3,9 +3,9 @@ close all
 clc
 
 load('N:\Project Z-stacks\New stacks\1K_0.5mg_30 nm_sample 1\Tif_1K_0,5mg_30 nm_sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat')
-porescold = allData;
+porescold = allDataAdapt;
 load('N:\Project Z-stacks\New stacks\5k_0.5 mg 30 nm_Sample 1\tif_5k_0.5 mg 30 nm_Sample 1\SegmentedStacks\PoreSize-ResultsAdaptive-poreProps.mat')
-poresheated = allData;
+poresheated = allDataAdapt;
 clear allData;
 %% Plotting
 figure(1)

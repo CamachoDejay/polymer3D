@@ -10,7 +10,7 @@ prompt = {'Enter the pixel size: ','Enter number of frame to analyze: ',...
     'number of frame to ignore beginning:', 'number of frame to ignore end:','Stack to ignore:'};
 dlgTitle = 'User input for Pore size calculation';
 numLines = 1;
-defaultVal = {'100','244','0','0','0'};
+defaultVal = {'181','76','5','0','0'};
 answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
 
 %% Checking user input
