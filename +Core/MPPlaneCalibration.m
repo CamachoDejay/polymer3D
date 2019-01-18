@@ -177,13 +177,37 @@ classdef MPPlaneCalibration < handle
         else
             error('Something is wrong with your distance between planes')
         end
+        
+        obj.cal.camConfig = camConfig;
 
         end
         
         function offTarget(obj)
-            zPos = cell2mat({obj.cal.file.inFocus.zPos});
+            zPos = abs(cell2mat({obj.cal.file.inFocus.zPos}));     
             
-            
+            switch obj.cal.camConfig
+                case 'fullRange'
+                    distBetweenCamPlanes = abs(mean(diff(zPos(1:end/2))) + mean(diff(zPos(end/2+1:end))))/2;
+                    target    = distBetweenCamPlanes;
+                    distBetweenPlane = diff(zPos);
+                    offTarget1 = distBetweenPlane - target;
+                    offTarget = mean(abs(offTarget1));
+
+                    fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
+
+                    
+                case 'alternated'
+                    distBetweenCamPlanes = abs(mean(diff(zPos(1:2:end))) + mean(diff(zPos(2:2:end))))/2;
+                    target    = distBetweenCamPlanes/2;
+                    distBetweenPlane = diff(zPos);
+                    offTarget1 = distBetweenPlane - target;
+                    offTarget = mean(abs(offTarget1));
+
+                    fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
+
+            end
+           
+
         end
      end
 end
