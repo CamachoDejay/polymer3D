@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File= 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr\zStackFluoBeads200_PIC1_270618__4';
-path2Cal  = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - normObjCorrPSFE\zStackFluoBeads200_S3_270618__3';
+path2File= 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\zCal200nm\FluoBeads200nm_488Exc_zStack_1';
+path2Cal  = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\planeCal200nm';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -35,15 +35,22 @@ mov1.saveMovie('mp4',10,5);
 mov1.showFrame(10,5);
 %mov2.showFrame(51);
 %% Calib
-calib = Core.MPCalibration(path2Cal,info);
+% calib = Core.MPCalibration(path2Cal,info);
+% 
+% calib.calc(4);
 
-calib.calc(4);
-%%
-calib.showCal
+calib = Core.MPPlaneCalibration(path2Cal,info);
+
+calib.retrieveMovies;
+calib.calcIndivCal; 
+calib.calcCombinedCal;
+
+%calib.showCal
 
 %% Calibrate
+info.runMethod = 'run';
 mpMov = Core.MPMovie(path2File,calib.getCal,info);
-mpMov.giveInfo
+mpMov.giveInfo;
 
 mpMov.calibrate;
 %%
