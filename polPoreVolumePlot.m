@@ -46,14 +46,17 @@ end
 polRat = [mean(polRat025),mean(polRat050),mean(polRat100)];
 poreRat = [mean(poreRat025),mean(poreRat050),mean(poreRat100)];
 
+medpolRat = [median(polRat025),median(polRat050),median(polRat100)];
+medporeRat = [median(poreRat025),median(poreRat050),median(poreRat100)];
+
 errPol = [3*std(polRat025),3*std(polRat050),3*std(polRat100)];
 errPore = [3*std(poreRat025),3*std(poreRat050),3*std(poreRat100)];
 
 figure()
 hold on
 
-errorbar(Concentrations,polRat,errPol,'bo');
-errorbar(Concentrations,poreRat,errPol,'ro');
+errorbar(Concentrations,medpolRat,errPol,'bo');
+errorbar(Concentrations,medporeRat,errPol,'ro');
 
 xlim([0 1]);
 ylim([0 1]);
@@ -101,14 +104,18 @@ end
 polRat = [mean(polRat025),mean(polRat050),mean(polRat100)];
 poreRat = [mean(poreRat025),mean(poreRat050),mean(poreRat100)];
 
+medpolRat = [median(polRat025),median(polRat050),median(polRat100)];
+medporeRat = [median(poreRat025),median(poreRat050),median(poreRat100)];
+
+
 errPol = [3*std(polRat025),3*std(polRat050),3*std(polRat100)];
 errPore = [3*std(poreRat025),3*std(poreRat050),3*std(poreRat100)];
 
 figure()
 hold on
 
-errorbar(Concentrations,polRat,errPol,'bo');
-errorbar(Concentrations,poreRat,errPol,'ro');
+errorbar(Concentrations,medpolRat,errPol,'bo');
+errorbar(Concentrations,medporeRat,errPol,'ro');
 
 xlim([0 1]);
 ylim([0 1]);
