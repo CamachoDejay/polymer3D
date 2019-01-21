@@ -25,11 +25,13 @@ test = isosurface(myVol,1/2);
 
 test2 = rendering3D.smoothpatch(test,0,100,1);
 %%
-
+color = test2.vertices;
+color(:,1) = color(:,3);
+color(:,2) = color(:,3);
 figure
-p = patch(test2);
+p = patch(test2.vertices(:,1),test2.vertices(:,2),test2.vertices(:,3),test2.vertices(:,3));
 
-p.FaceColor = [0 0 1];
+%p.FaceColor = color;
 p.EdgeColor = 'none';
 daspect([2 2 1])
 view(3); 
