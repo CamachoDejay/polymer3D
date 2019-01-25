@@ -36,7 +36,7 @@ disp('DONE with segmenting ------------')
 %% test segmenting cell
   
    doplot = true; 
-   [contour] = maxProj.getCellCountour2(gBW(:,:,exF),IM(:,:,exF),thresh1,doplot);
+   [contour] = maxProj.getCellContour(gBW(:,:,exF),IM(:,:,exF),thresh1,doplot);
 %% Segmenting cell
 Contour = cell(size(IM,3),1);
 outContour = cell(size(IM,3),1);
@@ -45,7 +45,7 @@ for i = 1 : size(IM,3)
        cIM = IM(:,:,i);
        cBW = gBW(:,:,i);
        doplot = false; 
-      [contour,outCont] = maxProj.getCellCountour2(cBW,cIM,thresh1,doplot);
+      [contour,outCont] = maxProj.getCellContour(cBW,cIM,thresh1,doplot);
       Contour{i} = contour;
       outContour{i} = outCont;
      

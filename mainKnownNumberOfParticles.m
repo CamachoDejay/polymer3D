@@ -3,14 +3,14 @@ clc
 close all
 %% User input
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
-nParticles = 2;%number of particles expected in the movie has to be exact
+nParticles = 4;%number of particles expected in the movie has to be exact
 pxSize = 95;%in nm
 minDist = 6; %in pixels (min distant expected between particles
 scaleBar = 2; %in um
 tail = 20;%Length of the tail in frames, for plotting the traces on top of the movie
 info.type = 'transmission';%Transmission or normal movie
 frameRate = 30; %for saving the movie
-toAnalyze = '.mp4';%accepted: .mp4, .ome.tif, folder. (folder that contain folders of .ome.tif.
+toAnalyze = '.ome.tif';%accepted: .mp4, .ome.tif, folder. (folder that contain folders of .ome.tif.
 outputFolder = 'Results';%name of the folder to output the results
 %% Loading
 switch toAnalyze %switch depending on what user want to analyze
@@ -108,7 +108,7 @@ for i =1: size(folder2Mov,2)
     dom(:,:,2) = domY;
     %preallocate memory
     data2Store = zeros(nFrames,2,nParticles);
-    fitMov = zeros(size(fullStackIn));
+    fitMov = zeros(100,100,size(fullStackIn,3));
     h = waitbar(0,'Fitting Data');%create waiting bar
 
     for j = 1:nFrames
@@ -122,7 +122,12 @@ for i =1: size(folder2Mov,2)
         [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame,x0,y0,dom,nParticles); 
         %Generate an image of the Fit to be able to plot in case we want to
         %check
-        F = Localization.Gauss.MultipleGauss(gPar, dom,nParticles);
+        xHRes = linspace(1,size(fullStackIn,2),100);
+        yHRes = linspace(1,size(fullStackIn,1),100);
+        [domHResX,domHResY] = meshgrid(xHRes,yHRes);
+        domHRes(:,:,1) = domHResX;
+        domHRes(:,:,2) = domHResY;
+        F = Localization.Gauss.MultipleGauss(gPar, domHRes,nParticles);
 
         if j>1
             %Tracking based on MSD minimization 
