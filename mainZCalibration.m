@@ -4,49 +4,51 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
-path2Cal  = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE\zStackFluoBeads200_S3_270618__2';
+path2zCal = 'D:\Documents\Unif\PhD\2019-Data\29\zCal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\29\PlaneCal';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
 info.runMethod = 'load';
 info.frame2Load = 'all';
-calib = Core.MPCalibration(path2Cal,info);
-calib.calc(4);
-
-testZCal = Core.ZCalibration(path2zCal,calib.getCal,info);
+calib = Core.MPPlaneCalibration(path2Cal,info);
+calib.retrieveMovies;
+calib.calcIndivCal;
+calib.calcCombinedCal;
+calib.showCal(1);
+zCal = Core.ZCalibration(path2zCal,calib.getCal,info);
 
 %% get zCalibrationMovie
 
-testZCal.retrieveZCalMov;
+zCal.retrieveMovies;
 
 %% extract zData
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 60;
 fitZParam.deg = 6;
-fitZParam.ellipRange = [0.5 1.5];
+fitZParam.ellipRange = [0.5 2];
 
 trackParam.euDistPx = 4; 
 trackParam.commonPlanes = 1;
 
-testZCal.retrieveZCalData(detectParam, fitZParam,trackParam);
+zCal.retrieveZCalData(detectParam, fitZParam,trackParam);
 
 %% ZCalibration
 
-testZCal.zCalibrate;
+zCal.zCalibrate;
 
 
 %% show calib
 method = 'spline';
-testZCal.showZCalibration(method);
+zCal.showZCalibration(method);
 
 %% test Calibration
 %fittingType = 'poly';
 fittingType = 'spline';
-testZCal.evalAccuracy(fittingType);
+zCal.evalAccuracy(fittingType);
 %% Save cal
 
-testZCal.save;
+zCal.save;
 
 

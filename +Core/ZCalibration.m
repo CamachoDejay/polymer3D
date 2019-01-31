@@ -47,7 +47,6 @@ classdef ZCalibration < handle
             assert(isstruct(cal2D),'2D Calibration is expected to be received as a structure');
             assert(isfield(cal2D,'fullPath'),'Missing field "fullPath" in cal2D structure');
             assert(isfield(cal2D,'file'),'Missing field "file" in cal2D structure');
-            assert(isfield(cal2D,'info'),'Missing field "info" in cal2D structure');
             
             obj.cal2D = cal2D;
             

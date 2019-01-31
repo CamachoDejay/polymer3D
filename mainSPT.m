@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File= 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\zCal200nm\FluoBeads200nm_488Exc_zStack_1';
-path2Cal  = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\planeCal200nm';
+path2File= 'D:\Documents\Unif\PhD\2019-Data\3DzStack\FluoBeads200nm_488Exc_3DPICstack_2';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\2D zStack';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -32,7 +32,7 @@ mov1.giveInfo;
 
 mov1.saveMovie('mp4',10,5);
 %% showFrame
-mov1.showFrame(10,5);
+mov1.showFrame(25,5);
 %mov2.showFrame(51);
 %% Calib
 % calib = Core.MPCalibration(path2Cal,info);
@@ -45,7 +45,7 @@ calib.retrieveMovies;
 calib.calcIndivCal; 
 calib.calcCombinedCal;
 
-%calib.showCal
+calib.showCal(1)
 
 %% Calibrate
 info.runMethod = 'run';
@@ -66,7 +66,7 @@ mpPartMov.calibrate;
 
 mpPartMov.findCandidatePos(detectParam);
 %candidate = mpPartMov.getCandidatePos(24);
-mpPartMov.showCandidate(1);
+mpPartMov.showCandidate(20);
 
 %% SR Localize
 mpPartMov.SRLocalizeCandidate;
