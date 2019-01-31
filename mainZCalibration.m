@@ -27,8 +27,8 @@ zCal.retrieveMovies;
 detectParam.delta = 6;
 detectParam.chi2 = 60;
 fitZParam.deg = 6;
-fitZParam.ellipRange = [0.5 2];
-
+fitZParam.ellipRangeCal = [0.5 2]; %for calibration
+fitZParam.ellipRange = [0.625 1.6];%To be used for data (we do not want to use too large values==> edge planes)
 trackParam.euDistPx = 4; 
 trackParam.commonPlanes = 1;
 
@@ -41,6 +41,7 @@ zCal.zCalibrate;
 
 %% show calib
 method = 'spline';
+
 zCal.showZCalibration(method);
 
 %% test Calibration
