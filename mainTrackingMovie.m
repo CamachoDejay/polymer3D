@@ -7,7 +7,7 @@ path2ZCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
 path2SRCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
 path2Cal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\PlaneCal';
 
-path2File = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\XYZCal\FluoBeads200nm_488Exc_X_2';
+path2File = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\XYZCAL\FluoBeads200nm_488Exc_XY_3';
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;
@@ -56,12 +56,12 @@ MPTrackMov.showCorrLoc();
 %MPTrackMov.showParticle;
 
 %% tracking
-trackParam.euDistXY = 400;
+trackParam.euDistXY = 800;
 trackParam.euDistZ  = 400;
 MPTrackMov.trackParticle(trackParam);
 traces = MPTrackMov.getTraces;
 %% plot
-%MPTrackMov.showTraces;
+MPTrackMov.showTraces;
 
 %% eval accuracy
 MPTrackMov.evalAccuracy
