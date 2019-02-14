@@ -96,7 +96,7 @@ classdef Movie < handle
 
                 if iscell(frameInfo)
                     disp('Those tiff are multi-Images, we combine the info...')
-                    [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo,false);
+                    [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo,true);
                     movInfo.indivFrame = movInfo.maxFrame;
                     movInfo.maxFrame = totFrame;
                 end

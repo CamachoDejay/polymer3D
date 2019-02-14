@@ -4,8 +4,8 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'D:\Documents\Unif\PhD\2019-Data\29\zCal';
-path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\29\PlaneCal';
+path2zCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\PlaneCal';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';

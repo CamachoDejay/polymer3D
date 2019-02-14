@@ -1,21 +1,24 @@
 %%
-clc 
-close all
-clear 
+clc;
+close all;
+clear;
 
-path2ZCal = 'E:\Data\Leuven Data\2018\10-Oct\23\ZCal\40nm Beads';
-path2SRCal = 'E:\Data\Leuven Data\2018\10-Oct\23\2DCal';
+path2ZCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
+path2SRCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
+path2Cal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\PlaneCal';
 
-path2File = 'E:\Data\Leuven Data\2018\10-Oct\23\PIC - 0_5mg-mL40nmBeads\TL40nmBeadsPIC0_5mgmL_6';
-path2Cal = 'E:\Data\Leuven Data\2018\10-Oct\23\2DCal\FluoBeads200nm_1';
+path2File = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\XYZCal\FluoBeads200nm_488Exc_X_2';
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;
 info.runMethod = 'load';
 info.type = 'normal';
 %%
-calib = Core.MPCalibration(path2Cal);
-calib.calc
+calib = Core.MPPlaneCalibration(path2Cal,info);
+calib.retrieveMovies;
+calib.calcIndivCal;
+calib.calcCombinedCal;
+calib.showCal(1);
 %%
 
 MPTrackMov = Core.MPTrackingMovie(path2File,calib.getCal,info,path2SRCal,path2ZCal);

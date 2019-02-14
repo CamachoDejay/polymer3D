@@ -119,11 +119,11 @@ classdef MPLocMovie < Core.MPParticleMovie
 
                         if rot
                             corrMat = obj.SRCal.rot;
-                            [corrData] = Core.SRCalMovie.applyRot(data2Corr, corrMat,refPlane);
+                            [corrData] = Core.MPSRCalMovie.applyRot(data2Corr, corrMat,refPlane);
 
                         else
                             corrMat = obj.SRCal.trans;
-                             [corrData] = Core.SRCalMovie.applyTrans(data2Corr,corrMat,refPlane);                    
+                             [corrData] = Core.MPSRCalMovie.applyTrans(data2Corr,corrMat,refPlane);                    
                         end
 
                         %we store the corrected data

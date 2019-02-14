@@ -35,6 +35,9 @@ for iCam = 1:size(cam,2)
         frame = frames(fi);
         F = num2str(frame-1);
         tmp = and(strcmp(Cinfo,{C}),strcmp(Finfo,{F}));
+        if all(tmp==0)
+            disp('error');
+        end
         idx(fi,iCam) = find(tmp);
     end
 end

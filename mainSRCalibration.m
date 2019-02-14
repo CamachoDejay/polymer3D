@@ -4,16 +4,19 @@ clc
 close all;
 %% get path to SRCalibration
 
-path2SRCal = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\zCal200nm';
-path2Cal  = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\planeCal200nm\FluoBeads200nm_488Exc_planecal_2';
+path2SRCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\PlaneCal';
 
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
 info.runMethod = 'load';
 info.frame2Load = 'all';
-calib = Core.MPCalibration(path2Cal,info);
-calib.calc(1)
+calib = Core.MPPlaneCalibration(path2Cal,info);
+calib.retrieveMovies;
+calib.calcIndivCal;
+calib.calcCombinedCal;
+calib.showCal(1);
 
 testSRCal = Core.SRCalibration(path2SRCal,calib.getCal,info);
 
