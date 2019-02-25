@@ -3,7 +3,7 @@ clear
 close all
 %% FilePath
 %folder where folder of file are contained
-path2MPCal = 'E:\Data\Leuven Data\2019\01 - Jan\8-01-zcalibration\planeCal200nm';
+path2MPCal = 'C:\Users\MIPP\Desktop\2DCal\28-01-2019';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
