@@ -47,7 +47,6 @@ classdef ZCalibration < handle
             assert(isstruct(cal2D),'2D Calibration is expected to be received as a structure');
             assert(isfield(cal2D,'fullPath'),'Missing field "fullPath" in cal2D structure');
             assert(isfield(cal2D,'file'),'Missing field "file" in cal2D structure');
-            assert(isfield(cal2D,'info'),'Missing field "info" in cal2D structure');
             
             obj.cal2D = cal2D;
             
@@ -97,9 +96,9 @@ classdef ZCalibration < handle
             nPlanes = obj.zCalMovies.(['zCal' num2str(1)]).calibrated.nPlanes;
             assert(nargin==4, 'retrieveZCalData expects 3 inputs, 1)detection Parameters, fit z parameter, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
-            assert(and(isstruct(fitZParam),and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRange'))),'fitZParam is expected to be a struct with 2 fields "deg" for the degree of polynomial parameter, "ellipRange" holding the min and max value of accepted ellipticity. ');
+            assert(and(isstruct(fitZParam),and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRangeCal'))),'fitZParam is expected to be a struct with 2 fields "deg" for the degree of polynomial parameter, "ellipRange" holding the min and max value of accepted ellipticity. ');
             assert(and(isstruct(trackParam),and(isfield(trackParam,'euDistPx'),isfield(trackParam,'commonPlanes'))),'trackParam is expected to be a struct with 2 fields "euDistPx", the tolerated euclidian distance between consecutive frames, "commonPlanes" nplane consistent to be considered as frame consistent ([1 4])');
-            obj.calib.fitZParam.ellipRange = fitZParam.ellipRange;
+            obj.calib.fitZParam.ellipRangeCal = fitZParam.ellipRangeCal;
             %Extraction of zData
             nfields = numel(fieldnames(obj.zCalMovies));
             allData = cell(nPlanes,3);
@@ -191,7 +190,7 @@ classdef ZCalibration < handle
             %Plot #1
             relZ = obj.zCalMovies.('zCal1').calibrated.oRelZPos*1000;%in nm
             zRange = obj.calib.fitZParam.zRange;
-            ellipRange = obj.calib.fitZParam.ellipRange;
+            ellipRange = obj.calib.fitZParam.ellipRangeCal;
             figure()
             for i = 1 : size(obj.calib.data,1)
                 
@@ -397,7 +396,7 @@ classdef ZCalibration < handle
             %function that take the synchronized z-ellip Data and fit, for
             %each planes with a polynomial. It stores the coeff of the
             %polynomials
-            ellipRange = obj.calib.fitZParam.ellipRange;
+            ellipRange = obj.calib.fitZParam.ellipRangeCal;
             zCalibration = cell(length(zSyncCalData),2);
             deg = zSyncCalData{1,3}(3);
             disp('Starting fitting ...');

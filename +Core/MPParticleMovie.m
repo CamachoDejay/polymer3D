@@ -574,13 +574,13 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 case 4
                     
-                    nPlanesEdge = 2;
+                    nPlanesEdge = 1;
                     nPlanesFullRange = 2;
                     nPlanesAlternated = 3;
                     
                 case 8
                     
-                    nPlanesEdge = 2;
+                    nPlanesEdge = 1;
                     nPlanesFullRange = 2;
                     nPlanesAlternated = 3;
                 otherwise

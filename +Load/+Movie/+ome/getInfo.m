@@ -102,7 +102,7 @@ function [k1, k2, k3, k4, nFrames] = indexFrameHeader(frameHeader)
     k4 = strfind(frameHeader, '"/>');
     k4(k4<min(k3)) = [];
     nFrames = size(k1,2);
-    assert(all([length(k2), length(k3), length(k4)]==nFrames),'Plane and tif information do not match');
+   assert(all([length(k2), length(k3), length(k4)]==nFrames),'Plane and tif information do not match');
 
 end
 

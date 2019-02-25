@@ -93,7 +93,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             for i = 1: length(traces)
                 currentTrace = traces{i};
                 data = table2array(currentTrace(:,{'row','col','z'}));
-                plot3(data(:,1), data(:,2), data(:,3))
+                plot3(data(:,2), data(:,1), data(:,3))
                 
             end
             hold off
@@ -102,7 +102,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             hold on 
             for i = 1: length(traces)
                 currentTrace = traces{i};
-                plot3(currentTrace.row, currentTrace.col, currentTrace.z)
+                plot3(currentTrace.col, currentTrace.row, currentTrace.z)
                 
             end
             hold off

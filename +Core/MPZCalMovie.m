@@ -112,13 +112,13 @@ classdef MPZCalMovie < Core.MPCalMovie
             %is done by polynomial to increase accuracy (if e = 1.05 then
             %this point will be locate not exactly at 0 but will be shifted
             assert(isstruct(fitZParam), 'fitZParam is expected to be a struct with two fields, deg for polynomial fit and ellipRange for ellipticity to consider');
-            assert(and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRange')),...
+            assert(and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRangeCal')),...
                 'fitZParam is expected to be a struct with two fields, deg for polynomial fit and ellipRange for ellipticity to consider');
             
             nPlanes = obj.calibrated.nPlanes;
             deg = fitZParam.deg;
-            minEllipt = fitZParam.ellipRange(1);
-            maxEllipt = fitZParam.ellipRange(2);
+            minEllipt = fitZParam.ellipRangeCal(1);
+            maxEllipt = fitZParam.ellipRangeCal(2);
             [zStep,~] = obj.getZPosMotor;
             zStep = zStep(1);
             zSyncCalData = cell(nPlanes,2);
