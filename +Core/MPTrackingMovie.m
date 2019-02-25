@@ -9,7 +9,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
     methods
         function obj = MPTrackingMovie(raw, MPCal, info, SRCal, zCal)
             %trackingMovie Construct an instance of this class
-            %   Detailed explanation goes here
+            %Detailed explanation goes here
              obj  = obj@Core.MPLocMovie(raw,MPCal,info,SRCal,zCal);
              
         end
@@ -93,7 +93,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             for i = 1: length(traces)
                 currentTrace = traces{i};
                 data = table2array(currentTrace(:,{'row','col','z'}));
-                plot3(data(:,1), data(:,2), data(:,3))
+                plot3(data(:,2), data(:,1), data(:,3))
                 
             end
             hold off
@@ -102,7 +102,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             hold on 
             for i = 1: length(traces)
                 currentTrace = traces{i};
-                plot3(currentTrace.row, currentTrace.col, currentTrace.z)
+                plot3(currentTrace.col, currentTrace.row, currentTrace.z)
                 
             end
             hold off
@@ -169,7 +169,8 @@ classdef MPTrackingMovie < Core.MPLocMovie
 
             obj.getPartMovie(frames,idx2Trace,ROI,frameRate,scaleBar);
             
-            obj.getTrace3DMovie(frames,idx2Trace,ROI,frameRate);
+
+            obj.getTraces3DMovie(frames,idx2Trace,ROI,frameRate);
 
         end
         
@@ -188,22 +189,22 @@ classdef MPTrackingMovie < Core.MPLocMovie
         roiRadius = ROI;
         pxSize = obj.info.pxSize;
         currentTraces = traces {idx2Trace};
-        mainPos = [round(mean(currentTraces.row)/pxSize) round(mean(currentTraces.col)/pxSize)];
-        nFrames = length(frames);
+
+        mainPos = [round(mean(currentTraces.row)) round(mean(currentTraces.col)) round(mean(currentTraces.z))];
        
         scaleBarPx = scaleBar/(pxSize/1000);%in µm
-        pos.row = currentTraces.row/pxSize - mainPos(1) + roiRadius + 1/2;
-        pos.col = currentTraces.col/pxSize - mainPos(2) + roiRadius + 1/2;
+        pos.row = currentTraces.row - mainPos(1);
+        pos.col = currentTraces.col - mainPos(2);% + roiRadius + 1/2;
+        pos.z   = currentTraces.z - mainPos(3);
         framesIm = frames(ismember(frames,currentTraces.frame));
         framesPos = find(ismember(currentTraces.frame,frames));
-        for i = 1:obj.calibrated.nPlanes
-
-            currentPlane = obj.getPlane(i);
-            % ROI = currentPlane;
-            ROI = currentPlane(mainPos(1)-roiRadius:mainPos(1)+roiRadius,...
-            mainPos(2)-roiRadius:mainPos(2)+roiRadius,:);
-            mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
-            Fig = figure;
+        nFrames = length(framesIm);
+         mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
+         Fig = figure('pos',[100 100 1200 375]);
+         
+         for j = 1:nFrames
+           
+            
             %to get as less white border as possible
             ax = gca;
             
@@ -215,32 +216,57 @@ classdef MPTrackingMovie < Core.MPLocMovie
             ax_height = outerpos(4) - ti(2) - ti(4);
             ax.Position = [left bottom ax_width ax_height];
             ext = '.gif';
-            filename=sprintf('%s%splane%d-Trace%d%s', path2File,'\',i,idx2Trace,ext);
-            for j = 1:nFrames
-            f0 = framesPos(1);
-            f = framesPos(j);
+            filename=sprintf('%s%s8planes-Trace%d%s', path2File,'\',idx2Trace,ext);
             
-            gcf;
-           
-            imagesc(ROI(:,:,framesIm(j)))
-            hold on
-            %scale bar
-            x = size(ROI,2)-scaleBarPx-(0.05*size(ROI,2)):size(ROI,2)-0.05*size(ROI,2);
-            y = ones(1,length(x))*size(ROI,1)-0.05*size(ROI,2);
-            text(mean(x),mean(y)-0.05*size(currentIM,1),[num2str(scaleBar) ' µm'],...
-                'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',14);
-            plot(x,y,'-w','LineWidth',5);
-            plot(pos.col(f0:f),pos.row(f0:f),'-b')
-            scatter(pos.col(f0:f),pos.row(f0:f),10,'filled','MarkerEdgeColor','blue',...
-              'MarkerFaceColor','blue')
-            caxis([min(min(min(ROI))) max(max(max(ROI)))]);
-            set(ax,'visible','off');
-            axis image;
-            
-            colormap('hot')
-            drawnow;
-            
+            subplot(2,obj.calibrated.nPlanes/2+2,[1,2,7,8])
+            scatter3(pos.col(1:j),pos.row(1:j),...
+                pos.z(1:j),25,pos.z(1:j),'filled');
+            lim = [-roiRadius*pxSize,roiRadius*pxSize]; 
+            xlim(lim) 
+            ylim(lim)
+            zlim([min(pos.z) max(pos.z)]);
+            view(3)
+            lastIdx = [3:3+obj.calibrated.nPlanes/2-1,9:9+obj.calibrated.nPlanes/2-1];
+            for i = 1:obj.calibrated.nPlanes
+
+                currentPlane = obj.getPlane(i,framesIm(j));
+                % ROI = currentPlane;
+                row = round(mainPos(1)/pxSize);
+                col = round(mainPos(2)/pxSize);
+                z   = round(mainPos(3)/pxSize);
+                
+                ROI = currentPlane(row-roiRadius:row+roiRadius,...
+                col-roiRadius:col+roiRadius);     
+
+                f0 = framesPos(1);
+                f = framesPos(j);
+
+                gcf;
+                subplot(2,obj.calibrated.nPlanes/2+2,lastIdx(i))
+                imagesc(ROI)
+                hold on
+                %scale bar
+                x = size(ROI,2)-scaleBarPx-(0.05*size(ROI,2)):size(ROI,2)-0.05*size(ROI,2);
+                y = ones(1,length(x))*size(ROI,1)-0.05*size(ROI,2);
+                text(mean(x),mean(y)-3,[num2str(scaleBar) ' µm'],...
+                    'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',12);
+                plot(x,y,'-w','LineWidth',3);
+%                  TODO MAKE THIS WORK !!!
+%                 plot(pos.col(f0:f),pos.row(f0:f),'-b')
+%                 scatter(pos.col(f0:f),pos.row(f0:f),10,'filled','MarkerEdgeColor','blue',...
+%                   'MarkerFaceColor','blue')
+                caxis([min(min(min(ROI))) max(max(max(ROI)))]);
+                set(gca,'visible','off');
+                set(gcf,'color','w');
+                axis image;
+
+                colormap('hot')
+                drawnow;
+
+               
+            end
             hold off
+            
             frame = getframe(Fig);
             mov(j) = frame;
             
@@ -257,8 +283,8 @@ classdef MPTrackingMovie < Core.MPLocMovie
            
             end
 
+         end
 
-            end
             ext='.mp4';
             filename=sprintf('%s%splane%d-Trace%d%s', path2File,'\',i,idx2Trace,ext);
             v = VideoWriter(filename,'MPEG-4');
@@ -266,8 +292,6 @@ classdef MPTrackingMovie < Core.MPLocMovie
             open(v)
             writeVideo(v,mov);
             close(v)
-
-        end
 
         end
 
@@ -329,6 +353,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             xlabel('x Position (nm)');
             ylabel('y Position(nm)');
             zlabel('z Position(nm)');
+            set(gcf,'color','w');
             frame = getframe(Fig);
             mov(j) = frame;
             
@@ -635,6 +660,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             stdErr  = meanErr;
             Fig = figure;
             allTraces = zeros(length(Motor),length(traces));
+            allData = [];
             for i = 1:length(traces)
                 
                 currentTrace = traces{i};
@@ -669,9 +695,18 @@ classdef MPTrackingMovie < Core.MPLocMovie
                     ylabel([dim,' error compare to motor (nm) '])
                     title(['tracking error']);
                     hold off
+                    allData = [allData; traceErr-mot];
                 end
 
             end
+            
+            figure()
+            histogram(allData)
+            title(fprintf('Histogram of errors in %s',dim))
+            xlabel([dim,' error compare to motor (nm)'])
+            ylabel('Occurence');
+            xlim([-200 200]);
+            
             disp(['mean accuracy ', dim,': ', num2str(mean(meanErr)), ' nm']);
             disp(['abs mean ', dim,': ', num2str(mean(absMeanErr)), ' nm']);
             disp(['std ',dim,': ', num2str(mean(stdErr)), ' nm']);

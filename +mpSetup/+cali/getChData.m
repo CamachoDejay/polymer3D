@@ -26,9 +26,9 @@ function [ chData1c, chData2c ] = getChData( data1c, data2c, ROI )
         end
         assert(r_win<=im_size1(1), 'Problems with ROI vs size of data')
         
-        
-        chData1c = uint16(zeros(r_win,c_win,4,N));
-        for i=1:4
+        nChan = 1:size(ROI,1);
+        chData1c = uint16(zeros(r_win,c_win,size(ROI,1)/2,N));
+        for i=1:nChan(length(nChan)/2)
             col1 = ROI(i,1); 
             col2 = ROI(i,1) + ROI(i,3) - 1;
             row1 = ROI(i,2);
@@ -53,13 +53,13 @@ function [ chData1c, chData2c ] = getChData( data1c, data2c, ROI )
         end
         assert(r_win<=im_size2(1), 'Problems with ROI vs size of data')
         
-        chData2c = uint16(zeros(r_win,c_win,4,N));
-        for i=5:8
+        chData2c = uint16(zeros(r_win,c_win,size(ROI,1)/2,N));
+        for i=nChan(length(nChan)/2)+1:nChan(end)
             col1 = ROI(i,1); 
             col2 = ROI(i,1) + ROI(i,3) - 1;
             row1 = ROI(i,2);
             row2 = ROI(i,2) + ROI(i,4) - 1;
-            chData2c(:,:,i-4,:) = data2c(row1:row2,col1:col2,:);
+            chData2c(:,:,i-size(ROI,1)/2,:) = data2c(row1:row2,col1:col2,:);
         end
     end
     

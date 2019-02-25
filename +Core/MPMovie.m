@@ -2,7 +2,7 @@ classdef MPMovie < Core.Movie
     %From this class we assume that we are dealing with multiplane data.
     %The movie can thus be calibrated if calibration data is provided.
     %Extension will be centered around localization but SOFI movie could
-    %also be a branch of this object
+    %also inherit from this object
     
     properties (SetAccess = 'protected')
         cal2D %calibration data
@@ -16,8 +16,7 @@ classdef MPMovie < Core.Movie
             obj = obj@Core.Movie(raw,info);
 
             obj.cal2D = cal;
-            obj.calibrated = raw;
-
+            
         end
         
         function set.cal2D(obj,cal2D)
@@ -32,16 +31,9 @@ classdef MPMovie < Core.Movie
         
         function set.calibrated(obj,calibrated)
            
-            if ischar(calibrated)
-
-              obj.calibrate;
-
-            else
-
               assert(isstruct(calibrated),'Calibrated is expected to be a struct');
               obj.calibrated = calibrated;
-
-            end
+              
         end
         
         function calibrate(obj)
@@ -66,36 +58,37 @@ classdef MPMovie < Core.Movie
 
                 if (~isempty(file2Analyze))
 
-                    [file] = obj.getFileInPath (fullPath,'.tif');
+                   [file] = obj.getFileInPath (fullPath,'.tif');
 
-                    if length(file) == 8 %only work with 8 Planes now
+                   if ~isempty(file) %only work with 8 Planes now
                         %If data is already calibrated we load it
-                        disp('The dataset is already calibrated, Loading from existing file');
-                        fullpath = [file2Analyze.folder filesep file2Analyze.name];
-                        tmp = load(fullpath);
-                        calibrate = tmp.calib;
-                        
-                        for i = 1: length(fieldnames(calibrate.filePath))
-                            currentPath = calibrate.filePath.(['plane' num2str(i)]);
-                            idx1 = strfind(fullPath,'\calibrated');
-                            idx2 = strfind(currentPath,'\calibrated');
-                            
-                            newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
-                            
-                            calibrate.filePath.(['plane' num2str(i)]) = newPath;
-                            
-                        end
-                        disp('Done');
+                       disp('The dataset is already calibrated, Loading from existing file');
+                       
+                       if length(file) ~= 8
+                           
+                            warning('Did not find 8 planes, if you are not using the prism it is okay, otherwise you might want to recalibrate');
+                       
+                       end
+                   end
+                    
+                   fullpath = [file2Analyze.folder filesep file2Analyze.name];
+                   tmp = load(fullpath);
+                   calibrate = tmp.calib;
 
-                    else
-                    %Otherwise we apply the calibration to the data
-                    disp('Some planes are missing (expect 8), recalibrating...');
-                    [calibrate] = obj.applyCalib;
-                    disp('Data is now correctly calibrated');
+                    for i = 1: length(fieldnames(calibrate.filePath))
+
+                        currentPath = calibrate.filePath.(['plane' num2str(i)]);
+                        idx1 = strfind(fullPath,'\calibrated');
+                        idx2 = strfind(currentPath,'\calibrated');                           
+                        newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
+                        calibrate.filePath.(['plane' num2str(i)]) = newPath;
 
                     end
-
+                    
+                    disp('Done');
+                    
                 else
+                    
                 %If no calibration was found we calibrate again
                 disp('Calibrating the dataset');
                 [calibrate] = obj.applyCalib;
@@ -114,7 +107,15 @@ classdef MPMovie < Core.Movie
 
         end
         
-        function h = showFrame(obj,idx,scaleBar)
+        function h = showFrame(obj,idx,scaleBar,idx2Plane)
+            switch nargin
+                case 3
+                    idx2Plane = [];
+                case 4
+                otherwise
+                    error('Not enough input argument');
+            end
+            
             %Adapted method from the Core.Movie one, its behavior changed
             %depending on whether the data has been calibrated or not.
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
@@ -126,10 +127,24 @@ classdef MPMovie < Core.Movie
             
             pxSize = obj.info.pxSize/1000;%in µm
             scaleBarPx = scaleBar/pxSize;
+            planes = fields(frame);
             
+            if ~isempty(idx2Plane)
+                for i = 1 :length(planes)
+                    if i ~=idx2Plane
+                        frame = rmfield(frame,planes{i});
+                    end
+                    
+                end
+                nsFig = 1;
+                
+            else
+                nsFig = 2;
+            end
+                
             nImages = numel(fields(frame));
             fNames = fieldnames(frame);
-            nsFig = 2;
+            
             
             if ~isempty(obj.calibrated)
                 
@@ -156,7 +171,7 @@ classdef MPMovie < Core.Movie
             
             for i = 1:nImages
                 currentIM = frame.(fNames{i});
-                subplot(2,nImages/nsFig,i)
+                subplot(nsFig,nImages/nsFig,i)
                 
                 if strcmp(obj.info.type,'transmission')
                     colormap('gray');
@@ -166,14 +181,14 @@ classdef MPMovie < Core.Movie
                 end
                 
                 imagesc(currentIM)
+                caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
                 hold on 
                 x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
                 y = ones(1,length(x))*size(currentIM,1)-0.05*size(currentIM,2);
-                text(mean(x),mean(y)-0.06*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',8);
+                text(mean(x),mean(y)-0.04*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',8);
                 plot(x,y,'-w','LineWidth',2.5);
                 axis image;
-                caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
-               
+
                 a = gca;
                 a.XTickLabel = [];
                 a.YTickLabel = [];
@@ -206,11 +221,16 @@ classdef MPMovie < Core.Movie
             end  
         end
         
-        function [data] = getPlane(obj,idx)
+        function [data] = getPlane(obj,idx,frame)
             %Allow the user to extract data from a specific plane, behavior
             %depends on the calibration
+            switch nargin 
+                case 1
+                    frame = 1:obj.raw.maxFrame(1);
+                case 2
+            end
             assert(and(idx<9,idx>=1),'plane should be between 1 and 8');
-            frame = 1:obj.raw.maxFrame(1);
+            
             [data] = Load.Movie.tif.getframes(obj.calibrated.filePath.(sprintf('plane%d',idx)),frame);
              
             
@@ -296,11 +316,27 @@ classdef MPMovie < Core.Movie
             
             frameInfo = obj.raw.frameInfo;
             movInfo   = obj.raw.movInfo;
-            step = 100;         
+
+            step = 100;
             maxFrame = obj.raw.movInfo.maxFrame(1); 
-            nStep = ceil(maxFrame/step);
-            frame = 1:step:maxFrame;
+            frame2Load = obj.info.frame2Load;
+            if ischar(frame2Load)
+                frame2Load = 1:maxFrame;
+            else
+                frame2Load = Core.Movie.checkFrame(frame2Load,maxFrame);
+                if max(frame2Load) > maxFrame
+                   
+                    frame2Load = 1:maxFrame;
+                                       
+                end
+            end
+
+            endFrame = max(frame2Load);
+            startFrame = frame2Load(1);
             
+            nStep = ceil((endFrame-startFrame)/step);
+            frame = startFrame:step:endFrame;
+            nFrame = endFrame-startFrame;
             for i = 1:nStep
                 
                 if i < nStep
@@ -308,7 +344,7 @@ classdef MPMovie < Core.Movie
                     cFrame = frame(i):frame(i+1)-1;
                 else
 
-                    cFrame = frame(i):maxFrame;                    
+                    cFrame = frame(i):endFrame;                    
                     
                 end
 
@@ -319,11 +355,11 @@ classdef MPMovie < Core.Movie
                 [data] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
 
                 %saving data per plane and info to cal
-                [calib] = obj.saveCalibrated(data,maxFrame);
+                [calib] = obj.saveCalibrated(data,endFrame);
             end           
          end
          
-         function [calib,fid] = saveCalibrated(obj,data,maxFrame)
+        function [calib,fid] = saveCalibrated(obj,data,maxFrame)
             cal = obj.cal2D.file;
             calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
             mkdir(calDir);
@@ -359,10 +395,9 @@ classdef MPMovie < Core.Movie
                 cal.ROI(cal.neworder(i),1),...
                 cal.ROI(cal.neworder(i),1)+...
                 cal.ROI(cal.neworder(i),3),...
-                cal.inFocus(cal.neworder(i)).zpos-...
-                cal.inFocus(cal.neworder(1)).zpos);
-                calib.oRelZPos(i) =  cal.inFocus(cal.neworder(i)).zpos-...
-                cal.inFocus(cal.neworder(1)).zpos;
+                cal.inFocus(cal.neworder(i)).relZPos);
+            
+                calib.oRelZPos(i) =  cal.inFocus(cal.neworder(i)).relZPos;
              
             end
             fclose(fid);

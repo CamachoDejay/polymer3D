@@ -47,13 +47,12 @@ classdef ZCalibration < handle
             assert(isstruct(cal2D),'2D Calibration is expected to be received as a structure');
             assert(isfield(cal2D,'fullPath'),'Missing field "fullPath" in cal2D structure');
             assert(isfield(cal2D,'file'),'Missing field "file" in cal2D structure');
-            assert(isfield(cal2D,'info'),'Missing field "info" in cal2D structure');
             
             obj.cal2D = cal2D;
             
         end
         
-        function retrieveZCalMov(obj)
+        function retrieveMovies(obj)
             %we get the zCalibration directory
             folder2Mov = dir(obj.path);
             folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
@@ -65,7 +64,8 @@ classdef ZCalibration < handle
                     if ~all(idx==0)
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
-                        tmp = Core.ZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
+                        tmp = Core.MPZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
+                        tmp.calibrate;
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want
                         %any other movement here.
@@ -93,14 +93,15 @@ classdef ZCalibration < handle
         
         function retrieveZCalData(obj,detectParam, fitZParam, trackParam)
             %Checking user input
+            nPlanes = obj.zCalMovies.(['zCal' num2str(1)]).calibrated.nPlanes;
             assert(nargin==4, 'retrieveZCalData expects 3 inputs, 1)detection Parameters, fit z parameter, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
-            assert(and(isstruct(fitZParam),and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRange'))),'fitZParam is expected to be a struct with 2 fields "deg" for the degree of polynomial parameter, "ellipRange" holding the min and max value of accepted ellipticity. ');
+            assert(and(isstruct(fitZParam),and(isfield(fitZParam,'deg'),isfield(fitZParam,'ellipRangeCal'))),'fitZParam is expected to be a struct with 2 fields "deg" for the degree of polynomial parameter, "ellipRange" holding the min and max value of accepted ellipticity. ');
             assert(and(isstruct(trackParam),and(isfield(trackParam,'euDistPx'),isfield(trackParam,'commonPlanes'))),'trackParam is expected to be a struct with 2 fields "euDistPx", the tolerated euclidian distance between consecutive frames, "commonPlanes" nplane consistent to be considered as frame consistent ([1 4])');
-            obj.calib.fitZParam.ellipRange = fitZParam.ellipRange;
+            obj.calib.fitZParam.ellipRangeCal = fitZParam.ellipRangeCal;
             %Extraction of zData
             nfields = numel(fieldnames(obj.zCalMovies));
-            allData = cell(8,3);
+            allData = cell(nPlanes,3);
             for i = 1: nfields
                 disp(['Retrieving data from zCal file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 if i == 1
@@ -133,9 +134,10 @@ classdef ZCalibration < handle
                 
                 %Get data for every particle every planes together stored
                 %in allData.
-                for j = 1: length(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip)
+                for j = 1: size(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip,1)
                     
-                    allData{j,1} = [allData{j,1} ;obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{j,1} ];
+                    allData{j,1} = [allData{j,1} ;
+                    obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{j,1} ];
                     
                 end
                 
@@ -145,10 +147,11 @@ classdef ZCalibration < handle
             
              %Sort the data
             allData{1,3} = obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip{1,3};
-            for j = 1: length(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip)
+            for j = 1: size(obj.zCalMovies.(['zCal' num2str(i)]).zData.syncEllip,1)
+                if ~isempty(allData{j,1})
                 [~,ind] = sort(allData{j,1}.z);
                 allData{j,1} = allData{j,1}(ind,:);
-                
+                end
             end
             %Sort all data together
             [~,ind] = sort(allData{1,2}.z);
@@ -187,9 +190,9 @@ classdef ZCalibration < handle
             %Plot #1
             relZ = obj.zCalMovies.('zCal1').calibrated.oRelZPos*1000;%in nm
             zRange = obj.calib.fitZParam.zRange;
-            ellipRange = obj.calib.fitZParam.ellipRange;
+            ellipRange = obj.calib.fitZParam.ellipRangeCal;
             figure()
-            for i = 1 : length(obj.calib.data)
+            for i = 1 : size(obj.calib.data,1)
                 
                 z =  obj.calib.data{i}.z+relZ(i);
                 ellip = obj.calib.data{i}.ellip;
@@ -203,21 +206,23 @@ classdef ZCalibration < handle
                 subplot(2,1,1)
                 hold on
                 scatter(z1,ellip1)
-                plot(ones(length(yAx),1)*relZ(i),yAx)
+                plot(ones(length(yAx),1)*relZ(i),yAx,'--k')
                 title('Elliptiticy Elongated in Y')
                 xlabel('zPos (nm)')
                 ylabel('Ellipticity (sigY/sigX)')
                 ylim([1 2])
+                xlim([-4000,1000]);
                 hold off
                 
                 subplot(2,1,2)
                 hold on
                 scatter(z2,ellip2)
-                plot(ones(length(yAx))*relZ(i),yAx)
+                plot(ones(length(yAx))*relZ(i),yAx,'--k')
                 title('Elliptiticy Elongated in X')
                 xlabel('zPos (nm)')
                 ylabel('Ellipticity (sigX/sigY)')
                 ylim([1 2])
+                xlim([-4000,1000]);
                 hold off
                 
             end
@@ -226,9 +231,9 @@ classdef ZCalibration < handle
             figure()
             hold on
           
-            for i = 1 : length(obj.calib.data)
+            for i = 1 : size(obj.calib.data,1)
                 dataCurrPlane = obj.calib.data{i};
-                scatter(dataCurrPlane.z, dataCurrPlane.ellip,25,'filled',...
+                scatter(dataCurrPlane.z, dataCurrPlane.ellip,15,'filled',...
                     'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4,'DisplayName',['Plane ' num2str(i) ' - ' num2str(relZ(i))])
                
             %scatter(obj.calib.data{1,2}(:,1),obj.calib.data{1,2}(:,2));
@@ -242,7 +247,7 @@ classdef ZCalibration < handle
             %Plot #3
             figure()   
             
-            for i = 1 : length(obj.calib.data)
+            for i = 1 : size(obj.calib.data,1)
                 
                 dataCurrPlane = obj.calib.data{i};
                 idx2Keep = and(dataCurrPlane.ellip>ellipRange(1),...
@@ -254,7 +259,7 @@ classdef ZCalibration < handle
                 [binnedData] = Plotting.qBinning([dataCurrPlane.z,...
                     dataCurrPlane.ellip],length(dataCurrPlane.z)/7);
                 
-                zVec = zRange{1}(1):zRange{1}(2);
+                zVec = zRange{i}(1):zRange{i}(2);
                
                 switch method
                     case 'poly'
@@ -277,7 +282,7 @@ classdef ZCalibration < handle
                 fit = fit(and(fit<ellipRange(2),fit>ellipRange(1)));
                 subplot(1,2,1)
                 hold on
-                markerSize = 25;
+                markerSize = 10;
                 scatter(binnedData(:,1),binnedData(:,2))
                 plot(zVec,fit,'r')
                 title('Binned data fitted with Spline')
@@ -289,19 +294,17 @@ classdef ZCalibration < handle
                 title('Full data fitted with polynomial')
                 
             end
-            
-            
         end
         
         function evalAccuracy(obj,fittingType)
             obj.calib.fitZParam.fittingType = fittingType;
             nfields = numel(fieldnames(obj.zCalMovies));
+            %Allocate memory
             zMotor = cell(nfields,1);
             trace3D  = cell(nfields,1);
-            
-            
+            %Loop through the movies
             for i = 1: nfields
-                
+                %info to user
                 disp(['Retrieving 3D traces ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 [~,zMotor{i}] = obj.zCalMovies.(['zCal' num2str(i)]).getZPosMotor;
                 trace3D{i} = obj.zCalMovies.(['zCal' num2str(i)]).get3DTraces (obj.calib.file,obj.calib.fitZParam,fittingType);
@@ -338,6 +341,9 @@ classdef ZCalibration < handle
     end
     methods (Static)
          function [Res] = findConsecVal(bool)
+            %determine the longuest section of consecutive true values
+            %In this case, bool is mostly generated by using the conditions
+            %on ellipticity range but it could be used in other cases.
             %!!Assume the longuest section is more or less centered!!
                     %Divide the data in 2 part
                     i = 1;
@@ -375,31 +381,7 @@ classdef ZCalibration < handle
                             i = i+1;
                         end
                     end
-                    Res = longestSec;
-%                     idx1 = round(length(bool)/2);
-%                     part1 = fliplr(bool(1:idx1)');
-%                     part2 = bool(idx1+1:end);
-%                     % find the first 0 in both part
-%                     idxPart1 = find(part1==0,1,'first');
-%                     idxPart2 = find(part2==0,1,'first');
-%                     
-%                     if and(isempty(idxPart1),isempty(idxPart2))
-%                         idxPart1 = 1;
-%                         idxPart2 = length(bool);
-%                         Res = [idxPart1: idxPart2];
-%                     
-%                     elseif isempty(idxPart1)
-%                          idxPart1 = 1;
-%                          Res = [idxPart1: idx1+(idxPart2-1)];
-%                     elseif isempty(idxPart2)
-%                          idxPart2 = length(bool);
-%                          Res = [idx1-(idxPart1-2): idxPart2];
-%                     else
-%                          
-%                         Res = [idx1-(idxPart1-2): idx1+(idxPart2-1)];
-%                         
-%                     end
-                    
+                    Res = longestSec;                    
                     test = bool(Res);
                     if all(test==1)
                     else
@@ -414,11 +396,11 @@ classdef ZCalibration < handle
             %function that take the synchronized z-ellip Data and fit, for
             %each planes with a polynomial. It stores the coeff of the
             %polynomials
-            ellipRange = obj.calib.fitZParam.ellipRange;
+            ellipRange = obj.calib.fitZParam.ellipRangeCal;
             zCalibration = cell(length(zSyncCalData),2);
             deg = zSyncCalData{1,3}(3);
             disp('Starting fitting ...');
-            for i = 1: length(zSyncCalData)
+            for i = 1: size(zSyncCalData,1)
                 disp(['Fitting of plane ' num2str(i)]);
                 dataCurrPlane = zSyncCalData{i};
                 idx2Keep = and(dataCurrPlane.ellip>ellipRange(1),...

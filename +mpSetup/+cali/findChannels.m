@@ -1,4 +1,4 @@
-function [ chC, bgC, common_w ] = findChannels( im, doFigure )
+function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
 %FINDCHANNELS finds where the channels are in the calibration files for
 %multiplane setup. We take as input an time -average or -max image of a
 %camera and then use simple integration to find the areas of fluorescence
@@ -20,7 +20,7 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure )
     % integration over the cols, here we expect to find 4 channels
     s1 = sum(im,1);
     % find change points between fluorescence and bg
-    chP = findCp(s1,'bottom',4);
+    chP = findCp(s1,'bottom',nChan);
     % now we want to find the size of the window and its center, also that
     % of the bg
     x1 = chP(:,1);
@@ -28,7 +28,7 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure )
     % channels x width
     chXw = x2-x1 +1;
     % channels center point
-    chC = zeros(4,2);
+    chC = zeros(size(chP,1),2);
     chC(:,1) = x1 + chXw./2;
     % width and center of the bg
     bgW  = x1(2:end)-x2(1:end-1);
@@ -39,8 +39,8 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure )
     % now we look at the different channels in the rows. We know that there
     % are small vertical shift that we whish to compensate in a rowgh way.
     chLims = [1; bgC; size(im,2)];
-    chYw = zeros(4,1);
-    for i = 1:4
+    chYw = zeros(size(chP,1),1);
+    for i = 1:size(chP,1)
         chIm = im(:,chLims(i):chLims(i+1));
         % integration
         s2 =  sum(chIm,2);
@@ -62,7 +62,7 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure )
         figure()
         imagesc(im)
         axis image
-        for i = 1:4
+        for i = 1:size(chP,1)
             rectangle('Position', [corner(i,1) corner(i,2) chXw(i), chYw(i)])
         end
     end

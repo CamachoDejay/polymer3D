@@ -1,4 +1,4 @@
-function [ C, T, Z, IDF, P, F, pos ] = getInfoFromString( tifStr, planeStr )
+function [ C, T, Z, IDF, P, F, pos, expT ] = getInfoFromString( tifStr, planeStr )
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -24,6 +24,9 @@ idx15 = strfind(planeStr,'PositionYUnit=');
 idx16 = strfind(planeStr,'PositionZ=');
 idx17 = strfind(planeStr,'PositionZUnit=');
 
+idx18 = strfind(planeStr,'ExposureTime=');
+idx19 = strfind(planeStr,'ExposureTimeUnit=');
+
 C   = tifStr(idx1+3:idx2-8);
 C2  = planeStr(idx9+6:idx10-3);
 assert(strcmp(C,C2),'Unexpected C')
@@ -45,5 +48,7 @@ Ypos   = str2double(planeStr(idx14+11:idx15-3));
 Zpos   = str2double(planeStr(idx16+11:idx17-3));
 
 pos = [Xpos, Ypos, Zpos];
+
+expT   = str2double(planeStr(idx18+14:idx19-3));
 end
 

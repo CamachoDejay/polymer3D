@@ -4,47 +4,52 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\ZCal\Good Cal';
-path2Cal  = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\2DCal\200nmFluoBeadsCalPSFE_3';
+path2zCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\PlaneCal';
 
 %% Initialize a zCalibration Object
-info.type = 'transmission';
+info.type = 'normal';
 info.runMethod = 'load';
-calib = Core.MPCalibration(path2Cal);
-
-testZCal = Core.ZCalibration(path2zCal,calib.getCal,info);
+info.frame2Load = 'all';
+calib = Core.MPPlaneCalibration(path2Cal,info);
+calib.retrieveMovies;
+calib.calcIndivCal;
+calib.calcCombinedCal;
+calib.showCal(1);
+zCal = Core.ZCalibration(path2zCal,calib.getCal,info);
 
 %% get zCalibrationMovie
 
-testZCal.retrieveZCalMov;
+zCal.retrieveMovies;
 
 %% extract zData
 
 detectParam.delta = 6;
 detectParam.chi2 = 60;
-fitZParam.deg = 3;
-fitZParam.ellipRange = [0.7 1.6];
-
+fitZParam.deg = 6;
+fitZParam.ellipRangeCal = [0.5 2]; %for calibration
+fitZParam.ellipRange = [0.625 1.6];%To be used for data (we do not want to use too large values==> edge planes)
 trackParam.euDistPx = 4; 
-trackParam.commonPlanes = 2;
+trackParam.commonPlanes = 1;
 
-testZCal.retrieveZCalData(detectParam, fitZParam,trackParam);
+zCal.retrieveZCalData(detectParam, fitZParam,trackParam);
 
 %% ZCalibration
 
-testZCal.zCalibrate;
+zCal.zCalibrate;
 
 
 %% show calib
 method = 'spline';
-testZCal.showZCalibration(method);
+
+zCal.showZCalibration(method);
 
 %% test Calibration
 %fittingType = 'poly';
 fittingType = 'spline';
-testZCal.evalAccuracy(fittingType);
+zCal.evalAccuracy(fittingType);
 %% Save cal
 
-testZCal.save;
+zCal.save;
 
 

@@ -40,6 +40,8 @@ narginchk(1,inf)
 %Calculate size and dimensions of the image stack
 imSize = size(imStack);
 dim = length(imSize);
+imSize(3) = size(imStack,3);
+
 assert(ismember(dim,[2 3]),'imStack is expected to be a 2D or 3D matrix');
 
 params = inputParser;
@@ -104,8 +106,13 @@ function [BW] = globThresh(imStack,connectivity,diskDim)
 end
 
 function [BW] = adaptiveThresh(imStack,connectivity,threshold,diskDim,neigh)
-               
-        th = adaptthresh(imStack,threshold,'neigh',neigh,'Fore','bright');
+
+        if size(imStack,3) ==1
+            th = adaptthresh(imStack,threshold,'Fore','bright');
+        else
+            th = adaptthresh(imStack,threshold,'neigh',neigh,'Fore','bright');
+        end
+        
         BW = imbinarize(imStack,th);
         BW = ~BW;
         BW = bwareaopen(BW,connectivity);

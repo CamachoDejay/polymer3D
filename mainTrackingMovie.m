@@ -1,25 +1,28 @@
 %%
-clc 
-close all
-clear 
+clc;
+close all;
+clear;
 
-path2File = 'M:\Data\Leuven Data\2018\06-June\29\1K - 0_25mgmL\TL-FluoBeads200nm-PIC0_25mgmL-1K_2';
-path2Cal = 'M:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE\zStackFluoBeads200_S3_270618__1';
+path2ZCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
+path2SRCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
+path2Cal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\PlaneCal';
 
-path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
-path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
+path2File = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\XYZCAL\FluoBeads200nm_488Exc_XY_3';
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;
 info.runMethod = 'load';
 info.type = 'normal';
 %%
-calib = Core.MPCalibration(path2Cal);
-
+calib = Core.MPPlaneCalibration(path2Cal,info);
+calib.retrieveMovies;
+calib.calcIndivCal;
+calib.calcCombinedCal;
+calib.showCal(1);
 %%
 
 MPTrackMov = Core.MPTrackingMovie(path2File,calib.getCal,info,path2SRCal,path2ZCal);
-
+MPTrackMov.calibrate;
 %% Detection
 
 MPTrackMov.giveInfo
@@ -43,26 +46,23 @@ MPTrackMov.consolidatePlanes
 val2Use = 'bestFocus';
 MPTrackMov.superResolve(val2Use);
 %% plot
-frames = 1:100;
+frames = 1:500;
 
-%MPTrackMov.showCorrLoc();
+MPTrackMov.showCorrLoc();
 
 %% showFrame
 
-%MPTrackMov.showFrame(80);
+%MPTrackMov.showFrame(80,5);
 %MPTrackMov.showParticle;
 
 %% tracking
-trackParam.euDistXY = 1000;
-<<<<<<< HEAD
-trackParam.euDistZ  = 1300;
-=======
-trackParam.euDistZ  = 1000;
->>>>>>> origin
+trackParam.euDistXY = 800;
+trackParam.euDistZ  = 400;
+
 MPTrackMov.trackParticle(trackParam);
 traces = MPTrackMov.getTraces;
 %% plot
-%MPTrackMov.showTraces;
+MPTrackMov.showTraces;
 
 %% eval accuracy
 MPTrackMov.evalAccuracy
@@ -75,22 +75,14 @@ MPTrackMov.evalAccuracy
 [int,SNR] = MPTrackMov.getAvgIntensity;
 
 %% getTraces 3D
-<<<<<<< HEAD
-frame = 1:500;
-idx2Trace = 1;
-ROIradius = 15;
-frameRate = 5;
 
-%MPTrackMov.getTracesMovie(frame,idx2Trace,ROIradius,frameRate);
-MPTrackMov.getTraces3DMovie(frame,idx2Trace,ROIradius,frameRate);
-%MPTrackMov.getPartMovie
-=======
-frame =1:100;
-idx2Trace = 1;
+frame = 1:87;
+idx2Trace = 2;
+
 ROIradius = 12;
-frameRate = 5;
-scaleBar  = 500; %in nm 
+frameRate = 10;
+scaleBar  = 1; %in nm 
 MPTrackMov.getTracesMovie(frame,idx2Trace,ROIradius,frameRate,scaleBar);
 %MPTrackMov.getTraces3DMovie(frame,idx2Trace,ROIradius,frameRate);
 %MPTrackMov.getPartMovie(frame,idx2Trace,ROIradius,frameRate);
->>>>>>> origin
+

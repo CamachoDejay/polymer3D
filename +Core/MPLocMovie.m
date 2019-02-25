@@ -20,11 +20,19 @@ classdef MPLocMovie < Core.MPParticleMovie
                 
                 
                 case 4
-                    obj.SRCal = SRCal;
+                    if ~isempty(SRCal)
+                        obj.SRCal = SRCal;
+                    end
                     obj.ZCal = [];
                 case 5
-                    obj.SRCal = SRCal;
-                    obj.ZCal = zCal;
+                    
+                    if ~isempty(SRCal)
+                        obj.SRCal = SRCal;
+                    end
+                    
+                    if ~isempty(zCal)
+                        obj.ZCal = zCal;
+                    end
                
                 otherwise
                     error('Too many input arguments');
@@ -111,20 +119,22 @@ classdef MPLocMovie < Core.MPParticleMovie
 
                         if rot
                             corrMat = obj.SRCal.rot;
-                            [corrData] = Core.SRCalMovie.applyRot(data2Corr, corrMat,refPlane);
+                            [corrData] = Core.MPSRCalMovie.applyRot(data2Corr, corrMat,refPlane);
 
                         else
                             corrMat = obj.SRCal.trans;
-                             [corrData] = Core.SRCalMovie.applyTrans(data2Corr,corrMat,refPlane);                    
+                             [corrData] = Core.MPSRCalMovie.applyTrans(data2Corr,corrMat,refPlane);                    
                         end
 
                         %we store the corrected data
                         obj.corrLocPos{i}(currData.plane==currentPlane,{'row','col','plane'}) = corrData;
-
+                        
+                       
                     end
 
                 end
-           
+                obj.corrected.XY = true;
+                disp('========> DONE ! <=========');
             else
                 obj.corrected.XY = false;
                 disp('========> DONE ! <=========');
@@ -239,7 +249,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                         currentPart = currentFrame{j};
                         data = table2array(currentPart(1,{'row','col','z'}));
                         sizeMarker = 5;
-                        scatter3(data(1),data(2),data(3),sizeMarker,data(3),'filled');
+                        scatter3(data(2),data(1),data(3),sizeMarker,data(3),'filled');
                        
                         
                     end

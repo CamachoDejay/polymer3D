@@ -4,6 +4,7 @@ classdef SRCalibration < handle
     
     properties
         path
+        info
         SRCalMovies
         cal2D
         calib
@@ -12,11 +13,12 @@ classdef SRCalibration < handle
     
     methods
         
-        function obj = SRCalibration(path2SRCal,cal2D)
+        function obj = SRCalibration(path2SRCal,cal2D,info)
             %zCalibration Construct an instance of this class
             %   Detailed explanation goes here
             obj.path = path2SRCal;
             obj.cal2D = cal2D;
+            obj.info = info;
         end
         
         function set.path(obj, path)
@@ -37,7 +39,6 @@ classdef SRCalibration < handle
             assert(isstruct(cal2D),'2D Calibration is expected to be received as a structure');
             assert(isfield(cal2D,'fullPath'),'Missing field "fullPath" in cal2D structure');
             assert(isfield(cal2D,'file'),'Missing field "file" in cal2D structure');
-            assert(isfield(cal2D,'info'),'Missing field "info" in cal2D structure');
             
             obj.cal2D = cal2D;
             
@@ -57,7 +58,8 @@ classdef SRCalibration < handle
                     if ~all(idx==0)
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
-                        tmp = Core.SRCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D);
+                        tmp = Core.MPSRCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
+                        tmp.calibrate;
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want
                         %any other movement here.
@@ -83,6 +85,7 @@ classdef SRCalibration < handle
         end
         
         function retrieveSRCalData(obj,detectParam, trackParam)
+            nPlanes = obj.SRCalMovies.(['SRCal' num2str(1)]).calibrated.nPlanes;
             %Checking user input
             assert(nargin==3, 'retrieveSRCalData expects 3 inputs, 1)detection Parameters, fit z parameter, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
@@ -90,8 +93,8 @@ classdef SRCalibration < handle
             
             %Extraction of SRData
             nfields = numel(fieldnames(obj.SRCalMovies));
-            allData = cell(7,1);
-            calPerPlane = cell(8,1);
+            allData = cell(nPlanes-1,1);
+            calPerPlane = cell(nPlanes,1);
             for i = 1: nfields
                 disp(['Retrieving data from SRCal file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 if i == 1
@@ -111,7 +114,8 @@ classdef SRCalibration < handle
                 obj.SRCalMovies.(['SRCal' num2str(i)]).SRLocalizeCandidate;
                 
                 %plane consolidation
-                obj.SRCalMovies.(['SRCal' num2str(i)]).consolidatePlanes;
+                frames = 1:obj.SRCalMovies.(['SRCal' num2str(i)]).calibrated.nFrames;
+                obj.SRCalMovies.(['SRCal' num2str(i)]).consolidatePlanes(6,frames,detectParam.consThresh)
                 
                 %getting Calibration data
                 [SRCalibData,dataPerPlane] = obj.SRCalMovies.(['SRCal' num2str(i)]).getSRCalData(trackParam);
@@ -142,14 +146,14 @@ classdef SRCalibration < handle
             SRCalibData = obj.calib.data;
             data2Corr = obj.calib.dataPerPlane;
             %Calculate the translation
-            [transMat] = Core.SRCalMovie.getTrans(SRCalibData);
+            [transMat] = Core.MPSRCalMovie.getTrans(SRCalibData);
             
             %Correct the data
               %Correct the data for rotation
               corrData = cell(size(data2Corr));
             for i = 1:length(data2Corr)
                 currentData = data2Corr{i};
-                [cData] = Core.SRCalMovie.applyTrans(currentData,transMat,refPlane);
+                [cData] = Core.MPSRCalMovie.applyTrans(currentData,transMat,refPlane);
                 corrData{i} = cData;
             end
             
@@ -169,13 +173,13 @@ classdef SRCalibration < handle
             SRCalibData = obj.calib.data;
             data2Corr = obj.calib.dataPerPlane;
            %Calculate the rotation
-            [rotMat] = Core.SRCalMovie.getRot(SRCalibData);
+            [rotMat] = Core.MPSRCalMovie.getRot(SRCalibData);
             
             corrData = cell(length(data2Corr),1);
              %Correct the data for rotation
             for i = 1:length(data2Corr)
                 currentData = data2Corr{i};
-                [cData] = Core.SRCalMovie.applyRot(currentData,rotMat,refPlane);
+                [cData] = Core.MPSRCalMovie.applyRot(currentData,rotMat,refPlane);
                 corrData{i} = cData;
             end
 

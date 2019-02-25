@@ -4,7 +4,7 @@ function [ neworder, inFocus ] = getNewOrder( inFocus )
 
     ordZpos = sort([inFocus.zpos],'descend');%Descending order because the 
     %first plane to get into focus is the plane that is the highest in Z.
-    for i = 1:8
+    for i = 1:length(inFocus)
         inFocus([inFocus.zpos] == ordZpos(i)).globalch = i;        
     end
     

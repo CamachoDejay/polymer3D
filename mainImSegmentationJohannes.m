@@ -71,8 +71,8 @@ for i = 1 : nFiles
     % size of gauss filter
     S = 1;
     % size of pixel in z vs x/y
-    pixZ  = 5;
-    zFactor = 3;
+    pixZ  = 4;
+    zFactor = 2;
     sigma = [S,S,S*zFactor/pixZ];
     IMs = imgaussfilt3(IM, sigma);
     toc

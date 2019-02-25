@@ -34,6 +34,13 @@ mov1.giveInfo;
 mov1.saveMovie('mp4',50,5,1:400);%mp4 gif %framerate %scalebar (um) frames
 %% showFrame
 mov1.showFrame(60,5);
+=======
+%%
+
+mov1.saveMovie('mp4',10,5);
+%% showFrame
+mov1.showFrame(25,5);
+>>>>>>> master
 %mov2.showFrame(51);
 %% Calib
 % calib = Core.MPCalibration(path2Cal,info);

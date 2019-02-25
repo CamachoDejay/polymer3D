@@ -7,11 +7,10 @@ classdef MPCalibration < Core.Movie
     end
     
     methods
-        function obj = MPCalibration(raw)
+        function obj = MPCalibration(raw,info)
             %In this case raw path is used for both the loading of the
             %movie and the calibration calculation
-            obj = obj@Core.Movie(raw);
-            obj.calc;
+            obj = obj@Core.Movie(raw,info);
           
         end
         
@@ -21,7 +20,16 @@ classdef MPCalibration < Core.Movie
                 
         end
         
-        function calc(obj)
+        function calc(obj, nChan)
+            
+            switch nargin
+                case 1
+                    nChan = 4;
+                case 2
+                otherwise
+                    error('too many input arguments')
+            end
+            
             assert(~isempty(obj.raw),'Please provide a path');
             %Calculate from the raw path stored in the movie
             path = obj.raw.movInfo.Path;
@@ -41,7 +49,7 @@ classdef MPCalibration < Core.Movie
                 assert(length(movInfo.Cam)==2,'Only 1 camera found in the selected file, code only works with 2 cameras, will be updated later.');
                 assert(length(unique(cellfun(@str2num,{frameInfo.Z})))>2,'Z position is not changing across the selected calibration file, this is strange.');
 
-                [calib, inform] = mpSetup.cali.calculate(path);
+                [calib, inform] = mpSetup.cali.calculate(path,nChan);
 
                 calibration.info = inform;
                 calibration.file = calib;
