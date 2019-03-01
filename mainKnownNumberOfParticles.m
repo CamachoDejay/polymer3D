@@ -3,13 +3,13 @@ clc
 close all
 %% User input
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
-nParticles = 4;%number of particles expected in the movie has to be exact
+nParticles = 1;%number of particles expected in the movie has to be exact
 pxSize = 95;%in nm
 minDist = 6; %in pixels (min distant expected between particles
 scaleBar = 2; %in um
 tail = 20;%Length of the tail in frames, for plotting the traces on top of the movie
-info.type = 'transmission';%Transmission or normal movie
 frameRate = 30; %for saving the movie
+info.type = 'normal';%Transmission or normal movie
 toAnalyze = '.ome.tif';%accepted: .mp4, .ome.tif, folder. (folder that contain folders of .ome.tif.
 outputFolder = 'Results';%name of the folder to output the results
 %% Loading
@@ -73,7 +73,11 @@ for i =1: size(folder2Mov,2)
             %load full stack
             fullStack = myMov.getFrame;
             %revert the intensity scale
-            fullStackIn = imcomplement(fullStack.Cam1);
+            if strcmpi(info.type,'transmission')
+                fullStackIn = imcomplement(fullStack.Cam1);
+            else
+                fullStackIn = fullStack.Cam1;
+            end
     end
     
     frame = 5;
@@ -177,24 +181,17 @@ for i =1: size(folder2Mov,2)
 
     end
     axis image
-    xlabel('X Position (px, 1px = 95nm)')
-    ylabel('Y Position (px, 1px = 95nm)')
+    xlabel('X Position (nm)')
+    ylabel('Y Position (nm)')
     title('All localized spot');
     %save the figure in the current folder path
     filename = [currentPath filesep 'LocalizationDensity.fig'];
     saveas(Fig,filename);
     
-    % Cropping full stack
-switch toAnalyze
-    case '.mp4'
-        fullStackNorm = fullStackIn;
-    otherwise
-        fullStackNorm = imcomplement(fullStackIn);
-end
 %% MovieMaker
 %save a movie where the traces is displayed on top of the image
 filename = [currentPath filesep 'TrackMovie.gif'];
-goldProj.makeTraceMovie(data2Store,fullStackNorm,filename,frameRate,scaleBar,tail);
+goldProj.makeTraceMovie(data2Store,fullStackIn,filename,frameRate,scaleBar,tail);
 
 end
 %save all Data in the master folder

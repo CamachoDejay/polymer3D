@@ -15,8 +15,8 @@ fInfo = Load.Movie.tif.getinfo(path2Use);
 myVolume = Load.Movie.tif.getframes(path2Use,1:fInfo.Frame_n);
 
 % cropping
-myVol = myVolume(400:650,400:650,:);
-
+myVol = myVolume(400:565,400:565,:);
+myVol = imcomplement(myVol);
 %%  
 
 test = isosurface(myVol,1/2);
@@ -25,13 +25,15 @@ test = isosurface(myVol,1/2);
 
 test2 = rendering3D.smoothpatch(test,0,100,1);
 %%
-color = test2.vertices;
-color(:,1) = color(:,3);
-color(:,2) = color(:,3);
-figure
-p = patch(test2.vertices(:,1),test2.vertices(:,2),test2.vertices(:,3),test2.vertices(:,3));
+color = test2.vertices(:,3)/max(test2.vertices(:,3));
+uniColor = [0.5137,0.6941,0.9882];
 
-%p.FaceColor = color;
+figure
+p = patch('Faces',test2.faces,'Vertices',test2.vertices,'FaceVertexCData',color,'FaceColor','interp');
+colormap('jet')
+%p = patch(test2.vertices(:,1),test2.vertices(:,2),test2.vertices(:,3),uniColor);
+
+%p.FaceColor = uniColor;
 p.EdgeColor = 'none';
 daspect([2 2 1])
 view(3); 
