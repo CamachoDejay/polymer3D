@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File= 'D:\Documents\Unif\PhD\2019-Data\3DzStack\FluoBeads200nm_488Exc_3DPICstack_2';
-path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\2D zStack';
+path2File= 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\Tracking\Waterobjective_99_1_1W_PSFE_FASTTIMELAPSE_5';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\2DCal\Crop';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -20,9 +20,10 @@ path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\2D zStack';
 detectParam.delta = 6;
 detectParam.chi2 = 80;
 info.type = 'normal';
-info.frame2Load = 1:50; % if want to analyze only part of the movie(full
+%info.frame2Load = 1:50; % if want to analyze only part of the movie(full
 %is default)
 info.runMethod = 'Load'; %will avoid the question to user to pop by giving
+info.nChan = 4;
 %the answer before
 %% create a Movie Object
 mov1 = Core.Movie(path2File,info);

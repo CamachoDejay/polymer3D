@@ -3,11 +3,23 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
 %multiplane setup. We take as input an time -average or -max image of a
 %camera and then use simple integration to find the areas of fluorescence
 %and background
-
-    sig = im(20:end-20,:);
-    sig = sig(:);
-    bg = im([1:20 end-20:end],:);
-    bg = bg(:);
+    %test find 2Distribution
+    [N,edges] = histcounts(im);
+    maxList = findpeaks(N);
+    [Val,~] = maxk(maxList,2);
+    idx1 = edges(N==Val(1));
+    idx2 = edges(N==Val(2));
+%     sigM = edges(idx1);
+%     bgM  = edges(idx2);
+    M = (idx1+idx2)/2;
+    M1 = (idx1+M)/2;
+    M2 = (idx2+M)/2;
+    bg = im(im<M1);
+    sig = im(im>=M2);
+%     sig = im(20:end-20,:);
+%     sig = sig(:);
+%     bg = im([1:20 end-20:end],:);
+%     bg = bg(:);
     tHold = Misc.tholdSigBg(bg,sig);
     im = im>tHold;
     
@@ -45,10 +57,10 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
         % integration
         s2 =  sum(chIm,2);
         % change points
-        chP = findCp(s2,'bottom',1);
+        chP2 = findCp(s2,'bottom',1);
         % windown size
-        chYw(i) =  chP(2) - chP(1) + 1;
-        chC(i,2) = chP(1) + chYw(i)/2;
+        chYw(i) =  chP2(2) - chP2(1) + 1;
+        chC(i,2) = chP2(1) + chYw(i)/2;
     end
     
     
@@ -101,7 +113,8 @@ function ch_p = findCp(trace_in,sCase,nCP)
         % threshold value
         thVal = thVal+dTh;
         if or(thVal<=0, thVal>=1)
-            error('could not find the channels')
+            warning('could not find the channels');
+            break;
         end
         
         % binarized trace
@@ -142,5 +155,8 @@ function ch_p = findCp(trace_in,sCase,nCP)
     end
     
     ch_p = [upCP+1, doCP+1];
+    if isempty(ch_p)
+        ch_p = [1 length(trace_in)];
+    end
 end
 
