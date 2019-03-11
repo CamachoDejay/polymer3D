@@ -3,7 +3,7 @@ clc
 close all
 %% User input
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
-nParticles = 2;%number of particles expected in the movie has to be exact
+nParticles = 1;%number of particles expected in the movie has to be exact
 pxSize = 95;%in nm
 minDist = 4; %in pixels (min distant expected between particles
 scaleBar = 2; %in um
