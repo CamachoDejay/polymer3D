@@ -1,14 +1,14 @@
 clear 
-clc
+clc 
 close all
 %% User input
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
 nParticles = 1;%number of particles expected in the movie has to be exact
 pxSize = 95;%in nm
-minDist = 6; %in pixels (min distant expected between particles
+minDist = 4; %in pixels (min distant expected between particles
 scaleBar = 2; %in um
-tail = 20;%Length of the tail in frames, for plotting the traces on top of the movie
-frameRate = 30; %for saving the movie
+tail = 5; %Length of the tail in frames, for plotting the traces on top of the movie
+frameRate = 50; %for saving the movie
 info.type = 'normal';%Transmission or normal movie
 toAnalyze = '.ome.tif';%accepted: .mp4, .ome.tif, folder. (folder that contain folders of .ome.tif.
 outputFolder = 'Results';%name of the folder to output the results
