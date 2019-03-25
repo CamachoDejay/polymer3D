@@ -14,9 +14,16 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
     M = (idx1+idx2)/2;
     M1 = (idx1+M)/2;
     M2 = (idx2+M)/2;
-    bg = im(im<M1);
-    sig = im(im>=M2);
-%     sig = im(20:end-20,:);
+    if idx1 >idx2
+       
+        bg = im(im<M1);
+        sig = im(im>=M2);
+    
+    elseif idx2>idx1
+        bg  = im(im<M2);
+        sig = im(im>=M1);
+    end
+    %     sig = im(20:end-20,:);
 %     sig = sig(:);
 %     bg = im([1:20 end-20:end],:);
 %     bg = bg(:);
