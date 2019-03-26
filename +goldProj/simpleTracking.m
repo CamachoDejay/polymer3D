@@ -1,8 +1,6 @@
 function [newOrder] = simpleTracking(newPos,prevPos)
 
 nPart = length(newPos)/2;
-newOrder = zeros(nPart,1);
-minVal = zeros(nPart,1);
 sqDist = zeros(nPart);
 
 for i = 1 : nPart
@@ -10,25 +8,11 @@ for i = 1 : nPart
     newX = newPos(2*i-1);
     prevY = prevPos(2:2:end);
     prevX = prevPos(1:2:end);
-    
     sqDist(i,:) = (newX-prevX).^2 +(newY-prevY).^2;
-    
-%     [ minVal(i),newOrder(i)] = min(euclDist(i,:));
+  
 end
 
 [newOrder,~] = goldProj.munkres(sqDist');
-% u=unique(newOrder);         % the unique values
-% [n,bin]=histc(newOrder,u);  % count how many of each and where
-% ix1 = find(n>1,1); 
-% 
-% if ~isempty(ix1)
-% disp('test')
-% newOrder = zeros(nPart,1);
-% 
-% 
-% 
-% 
-% end
-% 
+
 
 end

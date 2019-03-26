@@ -3,13 +3,13 @@ clc
 close all
 %% User input
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
-nParticles = 1;%number of particles expected in the movie has to be exact
+nParticles = 4;%number of particles expected in the movie has to be exact
 pxSize = 95;%in nm
 minDist = 6; %in pixels (min distant expected between particles
 scaleBar = 2; %in um
 tail = 20;%Length of the tail in frames, for plotting the traces on top of the movie
 frameRate = 30; %for saving the movie
-info.type = 'normal';%Transmission or normal movie
+info.type = 'Transmission';%Transmission or normal movie
 toAnalyze = '.ome.tif';%accepted: .mp4, .ome.tif, folder. (folder that contain folders of .ome.tif.
 outputFolder = 'Results';%name of the folder to output the results
 %% Loading
@@ -114,16 +114,20 @@ for i =1: size(folder2Mov,2)
     data2Store = zeros(nFrames,2,nParticles);
     fitMov = zeros(100,100,size(fullStackIn,3));
     h = waitbar(0,'Fitting Data');%create waiting bar
-
+    unSortedData =[];
     for j = 1:nFrames
         currentFrame = double(fullStackIn(:,:,j));
         %inital detection of particles on currentFrame
         [pos] = goldProj.nMaxDetection (currentFrame,nParticles,minDist);
-
+ 
         x0 = pos(:,2);
         y0 = pos(:,1);
         %Multiple gaussian fitting occurs here
         [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame,x0,y0,dom,nParticles); 
+        g = reshape(gPar(5:end),[2,nParticles]);
+        g = g';
+        unSortedData = [unSortedData; g zeros(size(g,1),1) ones(size(g,1),1)*j  ];
+        
         %Generate an image of the Fit to be able to plot in case we want to
         %check
         xHRes = linspace(1,size(fullStackIn,2),100);
@@ -132,7 +136,7 @@ for i =1: size(folder2Mov,2)
         domHRes(:,:,1) = domHResX;
         domHRes(:,:,2) = domHResY;
         F = Localization.Gauss.MultipleGauss(gPar, domHRes,nParticles);
-
+        
         if j>1
             %Tracking based on MSD minimization 
             newOrder = goldProj.simpleTracking(gPar(5:end),prevPos);

@@ -10,8 +10,8 @@ if isempty(tail)
 end
 Fig = figure;
 
-for i = 1:nFrames
-    
+for i = 1:nFrames %loop over frames
+    %plot original image
     cFrame = fullStack(:,:,i);
 
     imagesc(cFrame)
@@ -19,13 +19,16 @@ for i = 1:nFrames
     colormap('gray')
     axis image;
     
-    for j = 1 : size(data2Store,3)
+    %loop over particles and plot a trace with "tail" number of data point that precede the current point
+    for j = 1 : size(data2Store,3) 
         startIdx = i - tail;
         startIdx(startIdx<1) = 1;
         plot(data2Store(startIdx:i,1,j),data2Store(startIdx:i,2,j),'Color',color{j})
         plot(data2Store(i,1,j),data2Store(i,2,j),'+', 'MarkerEdgeColor',color{j});
        
     end
+    
+    %add scale  bar
     scaleBarPx = scaleBar/95*1000;
     x = size(cFrame,2)-scaleBarPx-(0.05*size(cFrame,2)):size(cFrame,2)-0.05*size(cFrame,2);
     y = ones(1,length(x))*size(cFrame,1)-0.05*size(cFrame,2);
@@ -35,6 +38,7 @@ for i = 1:nFrames
     set(gca,'visible','off');
     set(gcf,'color','w');
     drawnow;
+
     
     frame = getframe(Fig);
     im = frame2im(frame);

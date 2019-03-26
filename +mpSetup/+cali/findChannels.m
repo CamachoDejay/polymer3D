@@ -3,47 +3,38 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
 %multiplane setup. We take as input an time -average or -max image of a
 %camera and then use simple integration to find the areas of fluorescence
 %and background
-    %test find 2Distribution
-    [N,edges] = histcounts(im);
-    edges = edges(1:end-1);
-    %smooth N to avoid double local max
-    N = movavg(N,'Linear',20);
-    pch = pchip(edges,N);
-    out = ppval(pch,edges);
+    %From Rafa:
+    sig = im(20:end-20,:);
+    sig = sig(:);
+    bg = im([1:20 end-20:end],:);
+    bg = bg(:);
     
-    N = movavg(N(:),'linear',20);   
-    maxList = findpeaks(N);
-    [Val,~] = maxk(maxList,2);
-    idx1 = edges(N==Val(1));
-    idx2 = edges(N==Val(2));
-    
-    if abs(idx1-idx2)<10
-        counter = 1;
-        disp('Your data is too noisy, smoothing until detection can be achieved');
-        while abs(idx1-idx2)<10
-            if 20-2*counter <2
-                error('Separation of background and signal was not possible');
-            end
-            N = movavg(N(:),'linear',20-2*counter);
-            %search peaks again
-            maxList = findpeaks(N);
-            [Val,~] = maxk(maxList,2);
-            idx1 = edges(N==Val(1));
-            idx2 = edges(N==Val(2));
+    %check that signal and background are somewhat separated
+    if abs(mean(bg)-mean(sig))<15
+        
+        binEdges = 1:max(max(im));
+        [N,edges] = histcounts(im,binEdges);
+        N = movavg(N(:),'Linear',20);
+        pch = pchip(edges,N);
+        out = ppval(pch,edges);
+        maxList = findpeaks(out);
+        [Val,~] = maxk(maxList,2);
+        idx1 = edges(N==Val(1));
+        idx2 = edges(N==Val(2));
+        
+        M = (idx1+idx2)/2;
+        M1 = (idx1+M)/2;
+        M2 = (idx2+M)/2;
+
+        if idx1 >idx4
+
+            bg = im(im<M1);
+            sig = im(im>=M2);
+
+        elseif idx2>idx1
+            bg  = im(im<M2);
+            sig = im(im>=M1);
         end
-    end
-    M = (idx1+idx2)/2;
-    M1 = (idx1+M)/2;
-    M2 = (idx2+M)/2;
-    
-    if idx1 >idx2
-       
-        bg = im(im<M1);
-        sig = im(im>=M2);
-    
-    elseif idx2>idx1
-        bg  = im(im<M2);
-        sig = im(im>=M1);
     end
 
     tHold = Misc.tholdSigBg(bg,sig);

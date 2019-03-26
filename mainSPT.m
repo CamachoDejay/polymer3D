@@ -11,7 +11,7 @@ addpath(genpath('Ext'));
 
 % path to the callibration
 path2File= 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\Tracking\Waterobjective_99_1_1W_PSFE_FASTTIMELAPSE_5';
-path2Cal  = 'C:\Data\Boris\SetupCalibration';
+path2Cal  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\PlaneCalib';
 
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
