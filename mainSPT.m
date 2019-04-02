@@ -11,7 +11,7 @@ addpath(genpath('Ext'));
 
 % path to the callibration
 path2File= 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\Tracking\Waterobjective_99_1_1W_PSFE_FASTTIMELAPSE_5';
-path2Cal  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\FixCal';
+path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\2';
 
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
@@ -48,7 +48,7 @@ calib.calcIndivCal;
 calib.calcCombinedCal;
 
 calib.showCal(1)
-
+calib.offTarget;
 %% Calibrate
 info.runMethod = 'run';
 mpMov = Core.MPMovie(path2File,calib.getCal,info);

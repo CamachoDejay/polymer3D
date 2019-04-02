@@ -539,10 +539,10 @@ classdef ZCalibration < handle
             meanEllip = zeros(1,length(minBin));
             stdEllip   = zeros(1,length(minBin));
 
-            for i=1:length(minBin)
+            for i=1:length(minBin)-1
 
-            meanEllip(i) = 0;
-            stdEllip(i) = mean(abs(zPlot(and(zPlot(:,1)>=minBin(i),zPlot(:,1)>=minBin(i)),2)));
+                
+                stdEllip(i) = nanmean(abs(zPlot(and(zPlot(:,1)>=minBin(i),zPlot(:,1)<=minBin(i+1)),2)));
             end
 
 

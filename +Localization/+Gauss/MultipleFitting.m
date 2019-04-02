@@ -2,7 +2,7 @@
 function [gpar,resnorm,res] = MultipleFitting(A,X0,Y0,domain,NbG)
 maxNFit = 8;
 if NbG > maxNFit
-    error('too many PSF are asked, maximum is 6 for fitting')
+    error('too many PSF are asked, maximum is 8 for fitting')
 end
 if length(X0) < maxNFit
     X0(length(X0)+1:maxNFit) = 0;

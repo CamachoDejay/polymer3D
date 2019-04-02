@@ -100,7 +100,7 @@ classdef trackingMethod < handle
                     
                     nextPart = next{i};
                     %check focus is not more than one plane away
-                    roughcheck1 = squeeze(abs(current.plane(3)-nextPart.plane(3))<=1);
+                    roughcheck1 = squeeze(abs(current.plane(3)-nextPart.plane(3))<=2);
 
                     if roughcheck1 ==0
                         %disp('Something is wrong your focus changed more than one plane between 2 frames');

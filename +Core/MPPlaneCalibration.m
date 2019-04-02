@@ -129,6 +129,7 @@ classdef MPPlaneCalibration < handle
             obj.cal.file.ROI = ROI;
             
             obj.cal.file.inFocus = inFocus;
+            [~] = obj.determineCAMConfig;
             disp('================>DONE<====================');
         end
         
@@ -173,7 +174,7 @@ classdef MPPlaneCalibration < handle
         if planeDist > 350
             camConfig = 'fullRange';
         elseif and(planeDist < 350, planeDist>200)
-            camConfig = 'alternated';
+            camConfig = 'interleaved';
         else
             error('Something is wrong with your distance between planes')
         end
@@ -183,8 +184,9 @@ classdef MPPlaneCalibration < handle
         end
         
         function offTarget(obj)
-            zPos = abs(cell2mat({obj.cal.file.inFocus.zPos}));     
-            
+            newOrder = obj.cal.file.neworder;
+            zPos = abs([obj.cal.file.inFocus.zPos]);
+            zPos = zPos(newOrder);
             switch obj.cal.camConfig
                 case 'fullRange'
                     distBetweenCamPlanes = abs(mean(diff(zPos(1:end/2))) + mean(diff(zPos(end/2+1:end))))/2;
@@ -196,7 +198,7 @@ classdef MPPlaneCalibration < handle
                     fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
 
                     
-                case 'alternated'
+                case 'interleaved'
                     distBetweenCamPlanes = abs(mean(diff(zPos(1:2:end))) + mean(diff(zPos(2:2:end))))/2;
                     target    = distBetweenCamPlanes/2;
                     distBetweenPlane = diff(zPos);

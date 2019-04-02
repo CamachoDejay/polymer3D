@@ -820,8 +820,39 @@ classdef MPParticleMovie < Core.MPMovie
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
                 ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
-                %Phasor fitting to get x,y,e
-                [row,col,e,magX,magY] = Localization.phasor(ROI);
+                
+                if strcmpi(obj.info.fitMethod,'phasor')
+                    %Phasor fitting to get x,y,e
+                    [row,col,e,magX,magY] = Localization.phasor(ROI);
+                    rowPos = round(frameCandidate.row(i)) + row;
+                    colPos = round(frameCandidate.col(i)) + col;
+                    
+                elseif strcmpi(obj.info.fitMethod,'Gauss')
+                    [X,Y] = meshgrid(frameCandidate.col(i)-delta:frameCandidate.col(i)+...
+                        delta,frameCandidate.row(i)-delta:frameCandidate.row(i)+delta);
+                    domain(:,:,1) = X;
+                    domain(:,:,2) = Y;
+        
+                    %Gauss (slower)
+                    [gPar] = Localization.Gauss.MultipleFitting(ROI,frameCandidate.col(i),...
+                        frameCandidate.row(i),domain,1);%data,x0,y0,domain,nbOfFit
+                    colPos = gPar(5); %Should be directly the position of the particle as we
+                        %gave above the domain of the ROI in the space of the image
+                    rowPos = gPar(6);
+                    
+                    row = rowPos - round(frameCandidate.row(i));
+                    col = colPos - round(frameCandidate.col(i));
+
+                    e = gPar(3)/gPar(2);
+                    
+                    magX = 0;
+                    magY = 0;
+                else
+                    %Phasor fitting to get x,y,e
+                    [row,col,e,magX,magY] = Localization.phasor(ROI);
+                    rowPos = round(frameCandidate.row(i)) + row;
+                    colPos = round(frameCandidate.col(i)) + col;
+                end
                 
                  %LRT focus metric
                 [fMetric,~] = Localization.likelihoodRatioTest(ROI,sigSetup,[row col]);
@@ -838,8 +869,7 @@ classdef MPParticleMovie < Core.MPMovie
                 %LRT focus metric
                 [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
                 
-                rowPos = round(frameCandidate.row(i)) + row;
-                colPos = round(frameCandidate.col(i)) + col;
+                
 
                 %storing info
                 candMet.row(i) = rowPos;
