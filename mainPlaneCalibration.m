@@ -6,7 +6,7 @@ clear
 close all
 clc
 
-path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\2';
+path2Cal  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\2DCal';
 info.type = 'normal';
 info.runMethod = 'Load'; %will avoid the question to user to pop by giving
 info.nChan = 4;
