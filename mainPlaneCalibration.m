@@ -7,8 +7,7 @@ close all
 clc
 
 path2Cal  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\2DCal';
-info.type = 'normal';
-info.runMethod = 'Load'; %will avoid the question to user to pop by giving
+info.runMethod = 'load';
 info.nChan = 4;
 %% 
 calib = Core.MPPlaneCalibration(path2Cal,info);

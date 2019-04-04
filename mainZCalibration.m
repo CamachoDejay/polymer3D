@@ -4,8 +4,8 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2019\03 - March\28\ZCal';
-path2Cal  = 'E:\Data\Leuven Data\2019\03 - March\28\2DCal';
+path2zCal = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\ZCal';
+path2Cal  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\2DCal';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';

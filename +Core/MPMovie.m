@@ -22,7 +22,6 @@ classdef MPMovie < Core.Movie
         function set.cal2D(obj,cal2D)
             
             assert(isstruct(cal2D), 'Calibration is expected to be a struct');
-            assert(numel(fieldnames(cal2D))==3, 'Calibration is expected to have 3 Fields');
             assert(isfield(cal2D,'file'),'One of the field should be "file" ');
             
             obj.cal2D = cal2D;
