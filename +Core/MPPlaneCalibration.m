@@ -191,9 +191,9 @@ classdef MPPlaneCalibration < handle
                 case 'fullRange'
                     distBetweenCamPlanes = abs(mean(diff(zPos(1:end/2))) + mean(diff(zPos(end/2+1:end))))/2;
                     target    = distBetweenCamPlanes;
-                    distBetweenPlane = diff(zPos);
-                    offTarget1 = distBetweenPlane - target;
-                    offTarget = mean(abs(offTarget1));
+                    distBetweenCam = abs(zPos(5)-zPos(4));
+                    offTarget = distBetweenCam - target;
+                    %offTarget = mean(abs(offTarget1));
 
                     fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
 
