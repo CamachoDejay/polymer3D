@@ -68,7 +68,9 @@ classdef MPPlaneCalibration < handle
         
         function calcIndivCal(obj)
             
-            nfields = numel(fieldnames(obj.MPCalibrations));
+            fieldN = fieldnames(obj.MPCalibrations);
+            nfields = numel(fieldN);
+            
             allData = [];
             for i = 1: nfields
                 
@@ -80,8 +82,8 @@ classdef MPPlaneCalibration < handle
                 
                 disp(['Retrieving data from MPCalibration file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 
-                obj.MPCalibrations.(['MPCal' num2str(i)]).calc(nChan);
-                currentCal = obj.MPCalibrations.(['MPCal' num2str(i)]).getCal;
+                obj.MPCalibrations.(fieldN{i}).calc(nChan);
+                currentCal = obj.MPCalibrations.(fieldN{i}).getCal;
                 
                 obj.allCal(i).file = currentCal.file;
                 
