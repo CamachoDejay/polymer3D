@@ -455,6 +455,7 @@ classdef MPParticleMovie < Core.MPMovie
                 planeConfig = particle.plane;
                 
                 [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes,camConfig);
+                
                 %Store
                 if checkRes
                     
@@ -565,24 +566,24 @@ classdef MPParticleMovie < Core.MPMovie
                 case 1
                     nPlanesEdge = 1;
                     nPlanesFullRange = 1;
-                    nPlanesAlternated = 1;
+                    nPlanesInterleaved = 1;
                 case 2
                     
                     nPlanesEdge = 1;
                     nPlanesFullRange = 1;
-                    nPlanesAlternated = 1;
+                    nPlanesInterleaved = 1;
                 
                 case 4
                     
                     nPlanesEdge = 1;
                     nPlanesFullRange = 2;
-                    nPlanesAlternated = 3;
+                    nPlanesInterleaved = 2;
                     
                 case 8
                     
                     nPlanesEdge = 1;
                     nPlanesFullRange = 2;
-                    nPlanesAlternated = 3;
+                    nPlanesInterleaved = 3;
                 otherwise
                     error('Unknown number of planes, only expect 1,2,4,8')
             end
@@ -598,8 +599,8 @@ classdef MPParticleMovie < Core.MPMovie
                 switch camConfig
                     case 'fullRange'
                         testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesFullRange;
-                    case 'alternated'
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesAlternated;
+                    case 'interleaved'
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesInterleaved;
                     otherwise
                         error('unknown camera configuration');
                 end
@@ -617,6 +618,9 @@ classdef MPParticleMovie < Core.MPMovie
                 checkRes = false;
                 
             end
+            
+      
+
         end
         
         function [int,SNR] = getIntensity(ROI,sig)
@@ -775,6 +779,9 @@ classdef MPParticleMovie < Core.MPMovie
                         delta, FWHM_pix, chi2 );
                     if ~isempty(pos)
                         startIdx = find(position.row==0,1,'First');
+                        if isempty(startIdx)
+                            startIdx = length(position.row)+1;
+                        end
                         pos(:,3) = meanFAR;
                         pos(:,4) = j;
                         position(startIdx:startIdx+size(pos,1)-1,:) = array2table(pos);

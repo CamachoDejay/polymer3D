@@ -101,8 +101,7 @@ classdef MPMovie < Core.Movie
             end
 
             obj.calibrated = calibrate;
-            [camConfig] = obj.determineCAMConfig;
-            obj.calibrated.camConfig = camConfig;
+            obj.calibrated.camConfig = obj.cal2D.camConfig;
 
         end
         
@@ -297,7 +296,7 @@ classdef MPMovie < Core.Movie
              if planeDist > 350
                  camConfig = 'fullRange';
              elseif and(planeDist < 350, planeDist>200)
-                 camConfig = 'alternated';
+                 camConfig = 'interleaved';
              else
                  error('Something is wrong with your distance between planes')
              end

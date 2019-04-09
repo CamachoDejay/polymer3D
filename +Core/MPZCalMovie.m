@@ -376,7 +376,7 @@ classdef MPZCalMovie < Core.MPCalMovie
                             avg = true;
                         end
                            
-                    case 'alternated'
+                    case 'interleaved'
                         avg = true;
                     otherwise
                         error('unknown camera config');
