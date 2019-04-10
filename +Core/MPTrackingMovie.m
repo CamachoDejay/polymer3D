@@ -417,7 +417,13 @@ classdef MPTrackingMovie < Core.MPLocMovie
                 end
                 part2Track = List{currentIdx(1)}{currentIdx(2)};
                 [checkRes] = Core.trackingMethod.checkListBool(listBool,currentIdx(1)+1);
-                
+                if all(checkRes==0)
+                    [checkRes] = Core.trackingMethod.checkListBool(listBool,currentIdx(1)+2);
+                    if ~all(checkRes==0)
+                        counter = counter+1;
+                        currentIdx(1) = currentIdx(1)+1;
+                    end
+                end
                 
                 if ~all(checkRes==0)
                     %We use reshape to input the different particles of the next

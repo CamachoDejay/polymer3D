@@ -109,7 +109,7 @@ classdef TrackingExperiment < handle
                 if ~all(idx==0)
                     %we extract z motor position to check if the movie
                     %is indeed a zCalibration (expect zStack)
-                    tmp = Core.MPTrackingMovie(currDir(idx).folder , obj.cal2D,obj.info, obj.SRCal.path, obj.ZCal.path);
+                    tmp = Core.MPTrackingMovie(currDir(1).folder , obj.cal2D,obj.info, obj.SRCal.path, obj.ZCal.path);
                     tmp.calibrate;
                     obj.trackMovies.(['mov' num2str(i-2)]) = tmp;
                     
@@ -170,7 +170,7 @@ classdef TrackingExperiment < handle
                 %tracking occurs here
                 currentTrackMov.trackParticle(trackParam);
                 
-                currentTrackMov.getTraces;
+                [traces] = currentTrackMov.getTraces;
                 
                 allTraces = [allTraces traces];
                 
@@ -179,7 +179,7 @@ classdef TrackingExperiment < handle
             obj.traces3D = allTraces;
             
             filename = [obj.path filesep 'traces3D.mat'];
-            save(filename,allTraces);
+            save(filename,'allTraces');
             
             
             disp('=================> DONE <===================');
