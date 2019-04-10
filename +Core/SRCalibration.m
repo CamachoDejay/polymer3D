@@ -85,7 +85,8 @@ classdef SRCalibration < handle
         end
         
         function retrieveSRCalData(obj,detectParam, trackParam)
-            nPlanes = obj.SRCalMovies.(['SRCal' num2str(1)]).calibrated.nPlanes;
+            fieldsN = fieldnames(obj.SRCalMovies);
+            nPlanes = obj.SRCalMovies.(fieldsN{1}).calibrated.nPlanes;
             %Checking user input
             assert(nargin==3, 'retrieveSRCalData expects 3 inputs, 1)detection Parameters, fit z parameter, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
@@ -99,26 +100,28 @@ classdef SRCalibration < handle
                 disp(['Retrieving data from SRCal file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 if i == 1
                     %Ask user for info about the setup for detection
-                    obj.SRCalMovies.(['SRCal' num2str(i)]).giveInfo;
+                    obj.SRCalMovies.(fieldsN{i}).giveInfo;
                     
                 else
                     %get the info about the setup stored into the first
                     %object
-                    obj.SRCalMovies.(['SRCal' num2str(i)]).info = obj.SRCalMovies.(['SRCal' num2str(1)]).getInfo;
+                    
+                    obj.SRCalMovies.(fieldsN{i}).info = obj.SRCalMovies.(fieldsN{1}).getInfo;
                     
                 end
+                currMov = obj.SRCalMovies.(fieldsN{i});
                 %Molecule detection
-                obj.SRCalMovies.(['SRCal' num2str(i)]).findCandidatePos(detectParam);
+                currMov.findCandidatePos(detectParam);
                 
                  %SR fitting
-                obj.SRCalMovies.(['SRCal' num2str(i)]).SRLocalizeCandidate;
+                currMov.SRLocalizeCandidate;
                 
                 %plane consolidation
-                frames = 1:obj.SRCalMovies.(['SRCal' num2str(i)]).calibrated.nFrames;
-                obj.SRCalMovies.(['SRCal' num2str(i)]).consolidatePlanes(6,frames,detectParam.consThresh)
+                frames = 1:currMov.calibrated.nFrames;
+                currMov.consolidatePlanes(6,frames,detectParam.consThresh)
                 
                 %getting Calibration data
-                [SRCalibData,dataPerPlane] = obj.SRCalMovies.(['SRCal' num2str(i)]).getSRCalData(trackParam);
+                [SRCalibData,dataPerPlane] = currMov.getSRCalData(trackParam);
                 
                 %Get data for every particle every planes together stored
                 %in allData.

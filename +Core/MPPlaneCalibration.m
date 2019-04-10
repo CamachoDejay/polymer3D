@@ -133,6 +133,18 @@ classdef MPPlaneCalibration < handle
             obj.cal.file.inFocus = inFocus;
             [~] = obj.determineCAMConfig;
             disp('================>DONE<====================');
+            
+            
+            
+        end
+        
+        function save(obj)
+            
+            cal = obj.cal;
+            fileName = sprintf('%s%s2DCalibration.mat',obj.path,'\');
+            save(fileName,'cal');
+            disp('The calibration was succesfully saved');
+
         end
         
         function showCal(obj,idx)

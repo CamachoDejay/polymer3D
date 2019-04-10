@@ -6,7 +6,7 @@ clear
 close all
 clc
 
-path2Cal  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\2DCal';
+path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 info.runMethod = 'load';
 info.nChan = 4;
 %% 
@@ -18,7 +18,7 @@ calib.calcCombinedCal;
 
 calib.showCal(1)
 calib.offTarget;
-
+calib.save;
 %% PREV VERSION
 fPath = 'E:\Data\Leuven Data\2018\08-Aug\29\PlaneCalibration_25';
 fName = 'PlaneCalibration_25_MMStack_Pos0.ome.tif';
