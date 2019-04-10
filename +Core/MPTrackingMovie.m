@@ -126,12 +126,14 @@ classdef MPTrackingMovie < Core.MPLocMovie
                     switch dim
                         case 'x'
                             dim = 'col';
-                            obj.getAccuracy(xMotor,dim{2});
+                            obj.getAccuracy(xMotor,dim);
                         case 'y'
                             dim = 'row';
-                            obj.getAccuracy(yMotor,dim{1});
+                            obj.getAccuracy(yMotor,dim);
                         case 'z'
-                            obj.getAccuracy(zMotor,dim{3});
+                            obj.getAccuracy(zMotor,dim);
+                        otherwise
+                            error('Unknown dimension please mention x,y or z');
                     end
                     
                 otherwise
@@ -655,38 +657,40 @@ classdef MPTrackingMovie < Core.MPLocMovie
             for i = 1:length(traces)
                 
                 currentTrace = traces{i};
-                motorPos = Motor(currentTrace.frame(1:end))*1000;
-                                                
-                mot = motorPos - mean(motorPos);
-                %reflect y axis because of inverted directions
-                if or(strcmp(dim,'col'),strcmp(dim,'row'))
-                   mot = motorPos - 2*(motorPos.*(mean(motorPos)/max(motorPos)))*mean(motorPos)/max(motorPos);
-                   mot = mot - mean(mot);
-                end
-                
-                traceErr = currentTrace.(dim) - mean(currentTrace.(dim));
-                meanErr(i)    = mean(traceErr - mot);
-                absMeanErr(i) = mean(abs(traceErr - mot));
-                stdErr(i)     = std(traceErr - mot);
-                allTraces(currentTrace.frame(1:end),i) = traceErr;
-                if size(currentTrace,1) > length(Motor)/2
-                    subplot(1,2,1)
-                    hold on
-                    scatter(currentTrace.frame,traceErr)
-                    plot(currentTrace.frame,mot,'-r','Linewidth',2)
-                    xlabel('frame')
-                    ylabel([dim,' pos (nm) '])
-                    title([dim ' localization compared with motor']);
-                    
-                    subplot(1,2,2)
-                    hold on
-                    plot(traceErr-mot);
-                    
-                    xlabel('frame')
-                    ylabel([dim,' error compare to motor (nm) '])
-                    title(['tracking error']);
-                    hold off
-                    allData = [allData; traceErr-mot];
+                if size(currentTrace,1)>0.8*length(Motor)
+                    motorPos = Motor(currentTrace.frame(1:end))*1000;
+
+                    mot = motorPos - mean(motorPos);
+                    %reflect y axis because of inverted directions
+                    if or(strcmp(dim,'col'),strcmp(dim,'row'))
+                       mot = motorPos - 2*(motorPos.*(mean(motorPos)/max(motorPos)))*mean(motorPos)/max(motorPos);
+                       mot = mot - mean(mot);
+                    end
+
+                    traceErr = currentTrace.(dim) - mean(currentTrace.(dim));
+                    meanErr(i)    = mean(traceErr - mot);
+                    absMeanErr(i) = mean(abs(traceErr - mot));
+                    stdErr(i)     = std(traceErr - mot);
+                    allTraces(currentTrace.frame(1:end),i) = traceErr;
+                    if size(currentTrace,1) > length(Motor)/2
+                        subplot(1,2,1)
+                        hold on
+                        scatter(currentTrace.frame,traceErr)
+                        plot(currentTrace.frame,mot,'-r','Linewidth',2)
+                        xlabel('frame')
+                        ylabel([dim,' pos (nm) '])
+                        title([dim ' localization compared with motor']);
+
+                        subplot(1,2,2)
+                        hold on
+                        plot(traceErr-mot);
+
+                        xlabel('frame')
+                        ylabel([dim,' error compare to motor (nm) '])
+                        title(['tracking error']);
+                        hold off
+                        allData = [allData; traceErr-mot];
+                    end
                 end
 
             end

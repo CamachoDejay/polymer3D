@@ -65,7 +65,7 @@ traces = MPTrackMov.getTraces;
 MPTrackMov.showTraces;
 
 %% eval accuracy
-MPTrackMov.evalAccuracy
+MPTrackMov.evalAccuracy('x');
 
 %% get RMSD
 
