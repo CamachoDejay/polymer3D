@@ -152,48 +152,36 @@ classdef MPZCalMovie < Core.MPCalMovie
                             %Do the fit and extract the exact z position of the focus
                             p = polyfit(zPos,ellipt,deg);
                             zVec = min(zPos):0.001:max(zPos);%1nm step
-                            %this extraction has a 1nm accuracy
-                            
-%                             if or(min(zPos)>-0.1, max(zPos) <0.1)
-%                                 zVec = -1:0.001:1;
-%                             end
-                            
+                            %Fitting occurs here
                             fit = polyval(p,zVec);
-                            %Here we extract the portion of the fit that is
-                            %relevant to ellipticity range (avoid getting
-                            %multiple path through ellip =1. We can do so
-                            %because we only consider the data that has
-                            %data above and below the ellipticity thus
-                            %insuring that we pass through ellip ==1
-                            %%%%%% NEEED IMPROVEMENT !!!!!!!!!!!!!!
-                           % fit2 = fit(and(fit>=min(ellipt),fit<=max(ellipt)));
+    
                             [~,idx] = min(abs(fit-1));
                             focus2 = zVec(idx);
                             shift = focus1+focus2;%take into account both synchronization
                             
-                             zToNm = (currentData.frame*zStep - shift)*1000;
-                             ellip2Store = currentData.ellip;
-                             magX2Store = currentData.magX;
-                             magY2Store = currentData.magY;
-                                data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
-                                data2Store.magX = magX2Store;
-                                data2Store.magY = magY2Store;
-                                data2Store.fMetric = zCalData{i,j}.fMetric;
-                                data2Store.gFitMet =  zCalData{i,j}.gFitMet;
+                            zToNm = (currentData.frame*zStep - shift)*1000;
+                            ellip2Store = currentData.ellip;
+                            magX2Store = currentData.magX;
+                            magY2Store = currentData.magY;
+                            data2Store = table(zToNm,ellip2Store,'VariableNames',{'z','ellip'});
+                            data2Store.magX = magX2Store;
+                            data2Store.magY = magY2Store;
+                            data2Store.fMetric = zCalData{i,j}.fMetric;
+                            data2Store.gFitMet =  zCalData{i,j}.gFitMet;
 
-                                %tmp Store
-                                zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
-                                zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
+                            %tmp Store
+                            zSyncCalData{i,1} = [zSyncCalData{i,1}; data2Store];
+                            zSyncCalData{1,2} = [zSyncCalData{1,2}; data2Store];
 
                         end
                     end
                 end
              end
-                %tmp Store
-                if ~isempty (zSyncCalData{i,1})
-                    [~,ind] = sort(zSyncCalData{i,1}.z);
-                    zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
-                end
+            %tmp Store
+            if ~isempty (zSyncCalData{i,1})
+                [~,ind] = sort(zSyncCalData{i,1}.z);
+                zSyncCalData{i,1} = zSyncCalData{i,1}(ind,:);
+            end
                 
             
             %final storing and output
@@ -254,6 +242,8 @@ classdef MPZCalMovie < Core.MPCalMovie
                             %find indices to data in correct ellipticity range
                             id = and(currentPart.ellip>=elliptRange(1),...
                                 currentPart.ellip<=elliptRange(end));
+                            id2 = currentPart.fMetric > 75;
+                            id = logical(id.*id2);
                             if all(id==0)
                                 if i>3
                                     if and(traces(i-3,1,tracesIdx{i}{j})~=0,traces(i-2,1,tracesIdx{i}{j})~=0)

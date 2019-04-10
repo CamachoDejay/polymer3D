@@ -581,7 +581,7 @@ classdef MPParticleMovie < Core.MPMovie
                     
                 case 8
                     
-                    nPlanesEdge = 1;
+                    nPlanesEdge = 2;
                     nPlanesFullRange = 2;
                     nPlanesInterleaved = 3;
                 otherwise
