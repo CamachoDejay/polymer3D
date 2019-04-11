@@ -7,6 +7,7 @@ classdef TrackingExperiment < handle
         path
         trackMovies
         cal2D
+        info
         ZCal
         SRCal
         traces3D
@@ -15,13 +16,15 @@ classdef TrackingExperiment < handle
     end
     
     methods
-        function obj = TrackingExperiment(folder2Data,cal2D,SRCalPath,zCalPath)
+        function obj = TrackingExperiment(folder2Data,cal2D,info,SRCalPath,zCalPath)
             %TrackingExperiment Construct an instance of this class
             %   Detailed explanation goes here
             obj.path = folder2Data;
             obj.cal2D = cal2D;
+            obj.info = info;
             obj.ZCal = zCalPath;
             obj.SRCal = SRCalPath;
+            
         end
         
         function set.path(obj, path)
@@ -43,7 +46,7 @@ classdef TrackingExperiment < handle
             assert(isstruct(cal2D),'2D Calibration is expected to be received as a structure');
             assert(isfield(cal2D,'fullPath'),'Missing field "fullPath" in cal2D structure');
             assert(isfield(cal2D,'file'),'Missing field "file" in cal2D structure');
-            assert(isfield(cal2D,'info'),'Missing field "info" in cal2D structure');
+           % assert(isfield(cal2D,'info'),'Missing field "info" in cal2D structure');
             
             obj.cal2D = cal2D;
             
@@ -106,7 +109,8 @@ classdef TrackingExperiment < handle
                 if ~all(idx==0)
                     %we extract z motor position to check if the movie
                     %is indeed a zCalibration (expect zStack)
-                    tmp = Core.MPTrackingMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D, obj.SRCal.path, obj.ZCal.path);
+                    tmp = Core.MPTrackingMovie(currDir(1).folder , obj.cal2D,obj.info, obj.SRCal.path, obj.ZCal.path);
+                    tmp.calibrate;
                     obj.trackMovies.(['mov' num2str(i-2)]) = tmp;
                     
                 else
@@ -149,23 +153,24 @@ classdef TrackingExperiment < handle
                 
                 %SR fitting
                 currentTrackMov.SRLocalizeCandidate;
-                
+                refPlane = round(currentTrackMov.calibrated.nPlanes/2);
+                rot = true;
                 %apply SRCal
-                ocurrentTrackMov.applySRCal;
+                currentTrackMov.applySRCal(rot,refPlane);
                 
                 %apply ZCal
-                ocurrentTrackMov.applyZCal;
+                currentTrackMov.applyZCal;
                 
                 %Plane consolidation
                 currentTrackMov.consolidatePlanes;
                 
                 %superResolve
-                ocurrentTrackMov.superResolve(val2Use);
+                currentTrackMov.superResolve(val2Use);
                 
                 %tracking occurs here
                 currentTrackMov.trackParticle(trackParam);
                 
-                currentTrackMov.getTraces;
+                [traces] = currentTrackMov.getTraces;
                 
                 allTraces = [allTraces traces];
                 
@@ -174,7 +179,7 @@ classdef TrackingExperiment < handle
             obj.traces3D = allTraces;
             
             filename = [obj.path filesep 'traces3D.mat'];
-            save(filename,allTraces);
+            save(filename,'allTraces');
             
             
             disp('=================> DONE <===================');

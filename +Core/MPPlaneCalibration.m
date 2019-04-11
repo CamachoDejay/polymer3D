@@ -68,7 +68,9 @@ classdef MPPlaneCalibration < handle
         
         function calcIndivCal(obj)
             
-            nfields = numel(fieldnames(obj.MPCalibrations));
+            fieldN = fieldnames(obj.MPCalibrations);
+            nfields = numel(fieldN);
+            
             allData = [];
             for i = 1: nfields
                 
@@ -80,8 +82,8 @@ classdef MPPlaneCalibration < handle
                 
                 disp(['Retrieving data from MPCalibration file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 
-                obj.MPCalibrations.(['MPCal' num2str(i)]).calc(nChan);
-                currentCal = obj.MPCalibrations.(['MPCal' num2str(i)]).getCal;
+                obj.MPCalibrations.(fieldN{i}).calc(nChan);
+                currentCal = obj.MPCalibrations.(fieldN{i}).getCal;
                 
                 obj.allCal(i).file = currentCal.file;
                 
@@ -129,7 +131,20 @@ classdef MPPlaneCalibration < handle
             obj.cal.file.ROI = ROI;
             
             obj.cal.file.inFocus = inFocus;
+            [~] = obj.determineCAMConfig;
             disp('================>DONE<====================');
+            
+            
+            
+        end
+        
+        function save(obj)
+            
+            cal = obj.cal;
+            fileName = sprintf('%s%s2DCalibration.mat',obj.path,'\');
+            save(fileName,'cal');
+            disp('The calibration was succesfully saved');
+
         end
         
         function showCal(obj,idx)
@@ -173,7 +188,7 @@ classdef MPPlaneCalibration < handle
         if planeDist > 350
             camConfig = 'fullRange';
         elseif and(planeDist < 350, planeDist>200)
-            camConfig = 'alternated';
+            camConfig = 'interleaved';
         else
             error('Something is wrong with your distance between planes')
         end
@@ -183,20 +198,21 @@ classdef MPPlaneCalibration < handle
         end
         
         function offTarget(obj)
-            zPos = abs(cell2mat({obj.cal.file.inFocus.zPos}));     
-            
+            newOrder = obj.cal.file.neworder;
+            zPos = abs([obj.cal.file.inFocus.zPos]);
+            zPos = zPos(newOrder);
             switch obj.cal.camConfig
                 case 'fullRange'
                     distBetweenCamPlanes = abs(mean(diff(zPos(1:end/2))) + mean(diff(zPos(end/2+1:end))))/2;
                     target    = distBetweenCamPlanes;
-                    distBetweenPlane = diff(zPos);
-                    offTarget1 = distBetweenPlane - target;
-                    offTarget = mean(abs(offTarget1));
+                    distBetweenCam = abs(zPos(5)-zPos(4));
+                    offTarget = distBetweenCam - target;
+                    %offTarget = mean(abs(offTarget1));
 
                     fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
 
                     
-                case 'alternated'
+                case 'interleaved'
                     distBetweenCamPlanes = abs(mean(diff(zPos(1:2:end))) + mean(diff(zPos(2:2:end))))/2;
                     target    = distBetweenCamPlanes/2;
                     distBetweenPlane = diff(zPos);

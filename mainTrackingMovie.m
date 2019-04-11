@@ -3,11 +3,12 @@ clc;
 close all;
 clear;
 
-path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
-path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
-path2Cal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
+path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - CS';
+path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\29\1K - 0_25mgmL\TL-FluoBeads200nm-PIC0_25mgmL-1K_4';
+path2File = 'E:\Data\Leuven Data\2019\04 - April\3\test\X\XTrackInterleaved200nmStep_2';
+path2Cal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;
@@ -34,7 +35,7 @@ MPTrackMov.SRLocalizeCandidate;
 
 %% Data correction
 rot = true;
-refPlane = 3;
+refPlane = 4;
 MPTrackMov.applySRCal(rot,refPlane);
 %% e-Z transformation
 MPTrackMov.applyZCal;
@@ -56,15 +57,15 @@ MPTrackMov.showCorrLoc();
 %MPTrackMov.showParticle;
 
 %% tracking
-trackParam.euDistXY = 800;
-trackParam.euDistZ  = 400;
+trackParam.euDistXY = 400;
+trackParam.euDistZ  = 300;
 MPTrackMov.trackParticle(trackParam);
 traces = MPTrackMov.getTraces;
 %% plot
 MPTrackMov.showTraces;
 
 %% eval accuracy
-MPTrackMov.evalAccuracy
+MPTrackMov.evalAccuracy('x');
 
 %% get RMSD
 

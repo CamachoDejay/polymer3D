@@ -3,27 +3,38 @@ clear
 close all;
 
 
-path2ZCal = 'E:\Data\Leuven Data\2018\06-June\27\ZCal - maxObjCorr';
-path2SRCal = 'E:\Data\Leuven Data\2018\06-June\27\2DCal - maxObjCorrPSFE';
+path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - CS';
+path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
-path2File = 'E:\Data\Leuven Data\2018\06-June\29\5K - 0_25mgmL\';
-path2Cal = 'E:\Data\Leuven Data\2018\06-June\29\2DCal\zStackFLuoBeads_2D3DS3__1';
+path2File = 'E:\Data\Leuven Data\2019\04 - April\3\test\X';
+path2Cal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
 detectParam.delta = 6;
 detectParam.chi2 = 60;
 
 %% MP Cal
-
-calib = Core.MPCalibration(path2Cal);
+info.type = 'normal';
+info.runMethod = 'load';
+info.frame2Load = 'all';
+info.fitMethod  = 'Phasor';
+calib = Core.MPPlaneCalibration(path2Cal,info);
+calib.retrieveMovies;
+calib.calcIndivCal;
+calib.calcCombinedCal;
+calib.showCal(1);
 
 %% create experiments
 
-trackingExp = Core.TrackingExperiment(path2File,calib.getCal,path2SRCal,path2ZCal);
+trackingExp = Core.TrackingExperiment(path2File,calib.getCal,info,path2SRCal,path2ZCal);
 
 %% get Movies
 
 trackingExp.retrieveMovies;
 
 %% get TrackingData
-
-trackingExp.retriveTrackData;
+detectParam.delta = 6;
+detectParam.chi2 = 60;
+trackParam.euDistXY = 800;
+trackParam.euDistZ  = 400;
+val2Use = 'bestFocus';
+trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);

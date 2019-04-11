@@ -441,7 +441,7 @@ classdef ZCalibration < handle
             zPlot =[];
             figure()
             for i = 1: nfields
-                zStep = diff(motor{i});
+                zStepMot = diff(motor{i});
                 currentTrace = trace{i};
                 currentMotor = motor{i};
                 currentMotor = (currentMotor - currentMotor(1))*1000;
@@ -451,48 +451,51 @@ classdef ZCalibration < handle
                     data = currentTrace(:,:,j);
                     if ~all(data==0)
                         frameVec = find(data(:,1)~=0);
-                        %frameVec(data(:,1)~=0,:) = [];
+                        zStep = zStepMot(data(:,1)~=0);
                         data = data(data(:,1)~=0,:);
-                        bFit = mean(data(:,3)-zStep(1)*1000.*frameVec(:));
-                        data2SubZ = zStep(1)*1000*frameVec+bFit;
+                        zExp = diff(data(:,3));
+                        accuracyF2plot = zStep(1:end-1)*1000-zExp;
+                        %bFit = mean(data(:,3)-zStepMot(1)*1000.*frameVec(:));
+                        %data2SubZ = zStepMot(1)*1000*frameVec+bFit;
                         
-                        accuracyF2plot = (data(:,3)- data2SubZ(:));
+                        %accuracyF2plot = (data(:,3)- data2SubZ(:));
                         accuracyX2plot = data(:,1) - mean(data(:,1));
                         accuracyY2plot = data(:,2) - mean(data(:,2));
                         
-                        zPlot = [zPlot; data(:,3), accuracyF2plot];
+                        zPlot = [zPlot; data(1:end-1,3), accuracyF2plot];
                         
-                        bFit = mean(data(:,6)-zStep(1)*1000.*frameVec(:));
-                        data2SubZavg = zStep(1)*1000*frameVec+bFit;
-                        accuracyM2plot  = (data(:,6)-data2SubZavg(:));
+                        %bFit = mean(data(:,6)-zStepMot(1)*1000.*frameVec(:));
+                        %data2SubZavg = zStepMot(1)*1000*frameVec+bFit;
+                        zExp = diff(data(:,6));
+                        accuracyM2plot = zStep(1:end-1)*1000-zExp;
+                        %accuracyM2plot  = (data(:,6)-data2SubZavg(:));
                         
                         accuracyZMean = [accuracyZMean mean(abs(accuracyM2plot))];
                         accuracyZFocus = [accuracyZFocus mean(abs(accuracyF2plot))];
-                        
-                       
+                                               
                         accuracyXFocus = [accuracyXFocus mean(abs(accuracyX2plot))];
                         accuracyYFocus = [accuracyXFocus mean(abs(accuracyY2plot))];
                         
-                        subplot(2,2,1)
-                        hold on
-                        scatter(1:size(data(:,3),1),data(:,3) );
-                        plot(data2SubZ,'-b');
+%                         subplot(2,2,1)
+%                         hold on
+%                         scatter(1:size(data(:,3),1),data(:,3) );
+%                         plot(data2SubZ,'-b');
+% 
+%                         title('Z position for different particle in best focus')
+%                         xlabel('Frame')
+%                         ylabel('Position(nm)')
+%                         hold off
+% 
+%                         subplot(2,2,2)
+%                         hold on
+%                         scatter(1:size(data,1),data(:,6));
+%                         plot(data2SubZavg,'-b');
+%                         xlabel('Frame')
+%                         ylabel('Position(nm)')
+%                         title('Z position for different particle mean')
+%                         hold off
 
-                        title('Z position for different particle in best focus')
-                        xlabel('Frame')
-                        ylabel('Position(nm)')
-                        hold off
-
-                        subplot(2,2,2)
-                        hold on
-                        scatter(1:size(data,1),data(:,6));
-                        plot(data2SubZavg,'-b');
-                        xlabel('Frame')
-                        ylabel('Position(nm)')
-                        title('Z position for different particle mean')
-                        hold off
-
-                        subplot(2,2,3)
+                        subplot(1,2,1)
                         hold on
                         plot(accuracyF2plot)
                         xlabel('Frame')
@@ -500,7 +503,7 @@ classdef ZCalibration < handle
                         title(' Z position for different particle in best focus')
                         hold off
 
-                        subplot(2,2,4)
+                        subplot(1,2,2)
                         hold on
                         plot(accuracyM2plot)
                         xlabel('Frame')
@@ -511,18 +514,18 @@ classdef ZCalibration < handle
                 end
             end
             
-            disp(['Accuracy in Z for best focus is ' num2str(nanmean(accuracyZFocus))]);
-            disp(['Accuracy in X for best focus is ' num2str(nanmean(accuracyXFocus))]);
-            disp(['Accuracy in Y for best focus is ' num2str(nanmean(accuracyYFocus))]);
-            disp(['Accuracy in Z for mean  ' num2str(nanmean(accuracyZMean))]);
+            disp(['Accuracy in Z for best focus is ' num2str(nanmedian(accuracyZFocus))]);
+            disp(['Accuracy in X for best focus is ' num2str(nanmedian(accuracyXFocus))]);
+            disp(['Accuracy in Y for best focus is ' num2str(nanmedian(accuracyYFocus))]);
+            disp(['Accuracy in Z for mean  ' num2str(nanmedian(accuracyZMean))]);
             
             switch obj.calib.fitZParam.fittingType
                 case 'poly'
-                    obj.zAccuracy.poly.('BestFocus') = mean(accuracyZFocus);
-                    obj.zAccuracy.poly.Mean      = mean(accuracyZMean);
+                    obj.zAccuracy.poly.('BestFocus') = nanmean(accuracyZFocus);
+                    obj.zAccuracy.poly.Mean      = nanmean(accuracyZMean);
                 case 'spline'
-                    obj.zAccuracy.spline.BestFocus = mean(accuracyZFocus);
-                    obj.zAccuracy.spline.Mean      = mean(accuracyZMean);
+                    obj.zAccuracy.spline.BestFocus = nanmean(accuracyZFocus);
+                    obj.zAccuracy.spline.Mean      = nanmean(accuracyZMean);
                 otherwise
                     error('Unknown fitting type used, only currently known are "poly" and "spline"');
             end
@@ -539,10 +542,10 @@ classdef ZCalibration < handle
             meanEllip = zeros(1,length(minBin));
             stdEllip   = zeros(1,length(minBin));
 
-            for i=1:length(minBin)
+            for i=1:length(minBin)-1
 
-            meanEllip(i) = 0;
-            stdEllip(i) = mean(abs(zPlot(and(zPlot(:,1)>=minBin(i),zPlot(:,1)>=minBin(i)),2)));
+                
+                stdEllip(i) = nanmedian(abs(zPlot(and(zPlot(:,1)>=minBin(i),zPlot(:,1)<=minBin(i+1)),2)));
             end
 
 

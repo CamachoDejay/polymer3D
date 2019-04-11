@@ -4,13 +4,14 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\ZCal';
-path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\01-Jan\29\PlaneCal';
+path2zCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - CS';
+path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
 info.runMethod = 'load';
 info.frame2Load = 'all';
+info.fitMethod  = 'Phasor';
 calib = Core.MPPlaneCalibration(path2Cal,info);
 calib.retrieveMovies;
 calib.calcIndivCal;
@@ -28,9 +29,9 @@ detectParam.delta = 6;
 detectParam.chi2 = 60;
 fitZParam.deg = 6;
 fitZParam.ellipRangeCal = [0.5 2]; %for calibration
-fitZParam.ellipRange = [0.625 1.6];%To be used for data (we do not want to use too large values==> edge planes)
-trackParam.euDistPx = 4; 
-trackParam.commonPlanes = 1;
+fitZParam.ellipRange = [0.7 1.42];%To be used for data (we do not want to use too large values==> edge planes)
+trackParam.euDistPx = 3; 
+trackParam.commonPlanes = 2;
 
 zCal.retrieveZCalData(detectParam, fitZParam,trackParam);
 

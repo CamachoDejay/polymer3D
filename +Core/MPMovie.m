@@ -22,7 +22,6 @@ classdef MPMovie < Core.Movie
         function set.cal2D(obj,cal2D)
             
             assert(isstruct(cal2D), 'Calibration is expected to be a struct');
-            assert(numel(fieldnames(cal2D))==3, 'Calibration is expected to have 3 Fields');
             assert(isfield(cal2D,'file'),'One of the field should be "file" ');
             
             obj.cal2D = cal2D;
@@ -102,8 +101,7 @@ classdef MPMovie < Core.Movie
             end
 
             obj.calibrated = calibrate;
-            [camConfig] = obj.determineCAMConfig;
-            obj.calibrated.camConfig = camConfig;
+            obj.calibrated.camConfig = obj.cal2D.camConfig;
 
         end
         
@@ -298,7 +296,7 @@ classdef MPMovie < Core.Movie
              if planeDist > 350
                  camConfig = 'fullRange';
              elseif and(planeDist < 350, planeDist>200)
-                 camConfig = 'alternated';
+                 camConfig = 'interleaved';
              else
                  error('Something is wrong with your distance between planes')
              end

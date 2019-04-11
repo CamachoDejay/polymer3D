@@ -23,7 +23,7 @@ detectParam.chi2 = 80;
 info.type = 'normal';
 %info.frame2Load = 1:50; % if want to analyze only part of the movie(full
 %is default)
-info.runMethod = 'Load'; %will avoid the question to user to pop by giving
+info.runMethod = 'run'; %will avoid the question to user to pop by giving
 info.nChan = 4;
 %the answer before
 %% create a Movie Object
@@ -48,7 +48,7 @@ calib.calcIndivCal;
 calib.calcCombinedCal;
 
 calib.showCal(1)
-
+calib.offTarget;
 %% Calibrate
 info.runMethod = 'run';
 mpMov = Core.MPMovie(path2File,calib.getCal,info);
@@ -56,7 +56,7 @@ mpMov.giveInfo;
 
 mpMov.calibrate;
 %%
-mpMov.showFrame(20,10);
+mpMov.showFrame(25,5);
 %% Save Movie
 mpMov.saveMovie('gif',30,10,1:100,1)
 
@@ -77,7 +77,9 @@ mpPartMov.consolidatePlanes;
 %%
 mpPartMov.showParticles(60)
 %% ZCal
-zCalMov = Core.ZCalMovie(path2File,calib.getCal,info);
+info.fitMethod  = 'Phasor';
+
+zCalMov = Core.MPZCalMovie(path2File,calib.getCal,info);
 %% CandidatePos
 zCalMov.giveInfo;
 zCalMov.calibrate;
@@ -85,7 +87,7 @@ zCalMov.findCandidatePos(detectParam);
 zCalMov.SRLocalizeCandidate;
 zCalMov.consolidatePlanes;
 %% showParticles
-zCalMov.showParticles(24);
+zCalMov.showParticles(25);
 
 %% ZCalibration
 trackParam.euDistPx = 4; 

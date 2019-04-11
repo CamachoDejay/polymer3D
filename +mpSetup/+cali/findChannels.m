@@ -14,6 +14,7 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
         
         binEdges = 1:max(max(im));
         [N,edges] = histcounts(im,binEdges);
+        edges = double(edges(1:end-1));
         N = movavg(N(:),'Linear',20);
         pch = pchip(edges,N);
         out = ppval(pch,edges);
@@ -26,7 +27,7 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
         M1 = (idx1+M)/2;
         M2 = (idx2+M)/2;
 
-        if idx1 >idx4
+        if idx1 >idx2
 
             bg = im(im<M1);
             sig = im(im>=M2);

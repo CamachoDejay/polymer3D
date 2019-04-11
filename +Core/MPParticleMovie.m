@@ -455,6 +455,7 @@ classdef MPParticleMovie < Core.MPMovie
                 planeConfig = particle.plane;
                 
                 [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes,camConfig);
+                
                 %Store
                 if checkRes
                     
@@ -565,24 +566,24 @@ classdef MPParticleMovie < Core.MPMovie
                 case 1
                     nPlanesEdge = 1;
                     nPlanesFullRange = 1;
-                    nPlanesAlternated = 1;
+                    nPlanesInterleaved = 1;
                 case 2
                     
                     nPlanesEdge = 1;
                     nPlanesFullRange = 1;
-                    nPlanesAlternated = 1;
+                    nPlanesInterleaved = 1;
                 
                 case 4
                     
                     nPlanesEdge = 1;
                     nPlanesFullRange = 2;
-                    nPlanesAlternated = 3;
+                    nPlanesInterleaved = 2;
                     
                 case 8
                     
-                    nPlanesEdge = 1;
+                    nPlanesEdge = 2;
                     nPlanesFullRange = 2;
-                    nPlanesAlternated = 3;
+                    nPlanesInterleaved = 3;
                 otherwise
                     error('Unknown number of planes, only expect 1,2,4,8')
             end
@@ -598,8 +599,8 @@ classdef MPParticleMovie < Core.MPMovie
                 switch camConfig
                     case 'fullRange'
                         testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesFullRange;
-                    case 'alternated'
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesAlternated;
+                    case 'interleaved'
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesInterleaved;
                     otherwise
                         error('unknown camera configuration');
                 end
@@ -617,6 +618,9 @@ classdef MPParticleMovie < Core.MPMovie
                 checkRes = false;
                 
             end
+            
+      
+
         end
         
         function [int,SNR] = getIntensity(ROI,sig)
@@ -775,6 +779,9 @@ classdef MPParticleMovie < Core.MPMovie
                         delta, FWHM_pix, chi2 );
                     if ~isempty(pos)
                         startIdx = find(position.row==0,1,'First');
+                        if isempty(startIdx)
+                            startIdx = length(position.row)+1;
+                        end
                         pos(:,3) = meanFAR;
                         pos(:,4) = j;
                         position(startIdx:startIdx+size(pos,1)-1,:) = array2table(pos);
@@ -820,8 +827,39 @@ classdef MPParticleMovie < Core.MPMovie
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
                 ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
-                %Phasor fitting to get x,y,e
-                [row,col,e,magX,magY] = Localization.phasor(ROI);
+                
+                if strcmpi(obj.info.fitMethod,'phasor')
+                    %Phasor fitting to get x,y,e
+                    [row,col,e,magX,magY] = Localization.phasor(ROI);
+                    rowPos = round(frameCandidate.row(i)) + row;
+                    colPos = round(frameCandidate.col(i)) + col;
+                    
+                elseif strcmpi(obj.info.fitMethod,'Gauss')
+                    [X,Y] = meshgrid(frameCandidate.col(i)-delta:frameCandidate.col(i)+...
+                        delta,frameCandidate.row(i)-delta:frameCandidate.row(i)+delta);
+                    domain(:,:,1) = X;
+                    domain(:,:,2) = Y;
+        
+                    %Gauss (slower)
+                    [gPar] = Localization.Gauss.MultipleFitting(ROI,frameCandidate.col(i),...
+                        frameCandidate.row(i),domain,1);%data,x0,y0,domain,nbOfFit
+                    colPos = gPar(5); %Should be directly the position of the particle as we
+                        %gave above the domain of the ROI in the space of the image
+                    rowPos = gPar(6);
+                    
+                    row = rowPos - round(frameCandidate.row(i));
+                    col = colPos - round(frameCandidate.col(i));
+
+                    e = gPar(3)/gPar(2);
+                    
+                    magX = 0;
+                    magY = 0;
+                else
+                    %Phasor fitting to get x,y,e
+                    [row,col,e,magX,magY] = Localization.phasor(ROI);
+                    rowPos = round(frameCandidate.row(i)) + row;
+                    colPos = round(frameCandidate.col(i)) + col;
+                end
                 
                  %LRT focus metric
                 [fMetric,~] = Localization.likelihoodRatioTest(ROI,sigSetup,[row col]);
@@ -838,8 +876,7 @@ classdef MPParticleMovie < Core.MPMovie
                 %LRT focus metric
                 [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
                 
-                rowPos = round(frameCandidate.row(i)) + row;
-                colPos = round(frameCandidate.col(i)) + col;
+                
 
                 %storing info
                 candMet.row(i) = rowPos;
