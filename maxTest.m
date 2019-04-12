@@ -254,14 +254,14 @@ end
 %%
 figure(3)
 
-% subplot(1,2,1)
-% plot(step,polDensity);
-% title('Mak');
-% xlabel('Distance from cell - Pixel')
-% ylabel('Proportion of black/white pixel')
-y = ones(size(step))*median(median(median(double(IMs))));
-y2 = ones(size(step))*mean(mean(mean(double(IMs))));
-% subplot(1,2,2)
+%  subplot(1,2,1)
+%  plot(step,polDensity);
+%  title('Mak');
+%  xlabel('Distance from cell - Pixel')
+%  ylabel('Proportion of black/white pixel')
+% y = ones(size(step))*median(median(median(double(IMs))));
+% y2 = ones(size(step))*mean(mean(mean(double(IMs))));
+subplot(1,2,2)
 plot(step,polIntensity);
 xlabel('Distance from cell - Pixel');
 ylabel('Average intensity per pixel');
