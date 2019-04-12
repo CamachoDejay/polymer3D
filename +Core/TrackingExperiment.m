@@ -1,6 +1,7 @@
 classdef TrackingExperiment < handle
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
+    %This object purpose is to serve as a small app to analyze many
+    %tracking data acquired in same conditions, combine results and make
+    %some statistics out of the data.
     
     properties
         
@@ -11,7 +12,7 @@ classdef TrackingExperiment < handle
         ZCal
         SRCal
         traces3D
-        RMSD
+        MSD
         
     end
     
@@ -27,6 +28,7 @@ classdef TrackingExperiment < handle
             
         end
         
+        %Set function
         function set.path(obj, path)
             assert(ischar(path), 'Path should be given as a string');
             assert(isfolder(path), 'The path given is not a folder, ZCalibration expect a folder. In the folder it is expected to find separate folder for each zCalMovie.')
@@ -97,6 +99,14 @@ classdef TrackingExperiment < handle
             end
         end
         
+        %get 3D traces
+        
+        function [traces3D] = getTraces3D(obj)
+            traces3D = obj.traces3D;
+        end
+        
+        %Extract movie from path
+        
         function retrieveMovies(obj)
             %we get the zCalibration directory
             folder2Mov = dir(obj.path);
@@ -123,20 +133,22 @@ classdef TrackingExperiment < handle
             disp('=======> DONE ! <========')
         end
         
+        %Calculate tracking traces
+        
         function retrieveTrackData(obj,detectParam, trackParam,val2Use)
             %Checking user input
             assert(nargin==4, 'retrieveZCalData expects 2 inputs, 1)detection Parameters, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
             assert(and(isfield(trackParam,'euDistXY'),isfield(trackParam,'euDistZ')),...
                 'Tracking parameter is expected to be a struct with two field "euDistPXY" and "euDistZ"')
-            
+            fieldsN = fieldnames(obj.trackMovies);
             %Extraction of Data
-            nfields = numel(fieldnames(obj.trackMovies));
+            nfields = numel(fieldsN);
             allTraces = [];
             for i = 1: nfields
                 
                 disp(['Retrieving data from tracking file ' num2str(i) ' / ' num2str(nfields) ' ...']);
-                currentTrackMov = obj.trackMovies.(['mov' num2str(i)]);
+                currentTrackMov = obj.trackMovies.(fieldsN{i});
                 if i == 1
                     %Ask user for info about the setup for detection
                     currentTrackMov.giveInfo;
@@ -144,7 +156,7 @@ classdef TrackingExperiment < handle
                 else
                     %get the info about the setup stored into the first
                     %object
-                    currentTrackMov.info = obj.trackMovies.(['mov' num2str(1)]).getInfo;
+                    currentTrackMov.info = obj.trackMovies.(fieldsN{i}).getInfo;
                     
                 end
                 
@@ -172,7 +184,7 @@ classdef TrackingExperiment < handle
                 
                 [traces] = currentTrackMov.getTraces;
                 
-                allTraces = [allTraces traces];
+                allTraces = [allTraces; traces];
                 
             end
             
@@ -183,6 +195,59 @@ classdef TrackingExperiment < handle
             
             
             disp('=================> DONE <===================');
+        end
+        
+        %Plotting for individual movies
+         
+        function showLoc(obj,idx)
+             fieldsN = fieldnames(obj.trackMovies);
+             maxIdx = length(fieldsN);
+             assert(idx <= maxIdx,['Requested index to Movie is too large, only ' num2str(maxIdx) ' movies']);
+             
+             currentMov = obj.trackMovies.(fieldsN{idx});
+             
+             currentMov.showCorrLoc;
+        end
+        
+        function showTraces(obj,idx)
+             fieldsN = fieldnames(obj.trackMovies);
+             maxIdx = length(fieldsN);
+             assert(idx <= maxIdx,['Requested index to Movie is too large, only ' num2str(maxIdx) ' movies']);
+             
+             currentMov = obj.trackMovies.(fieldsN{idx});
+             
+             currentMov.showTraces;
+        end
+        
+        function evalAccuracy(obj,dim,idx)
+            
+            fieldsN = fieldnames(obj.trackMovies);
+            maxIdx = length(fieldsN);
+            assert(idx <= maxIdx,['Requested index to Movie is too large, only ' num2str(maxIdx) ' movies']);
+            
+            currentMov = obj.trackMovies.(fieldsN{idx});
+            
+            currentMov.evalAccuracy(dim);
+            
+        end
+        
+        function [int,SNR] = getAvgIntensity(obj)
+            assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting average intensity');
+            traces = obj.traces3D;
+            nTraces = length(traces);
+            int = zeros(nTraces,1);
+            SNR = zeros(nTraces,1);
+            for i = 1: length(traces)
+                currentTrace = traces{i};
+                int(i) = mean(currentTrace.intensity);
+                SNR(i) = mean(currentTrace.SNR);
+                
+            end
+            
+            int = mean(int);
+            SNR = mean(SNR);
+           
+            
         end
         
         function [MSD,traces] = getRMSD(obj,dimension)
@@ -217,15 +282,40 @@ classdef TrackingExperiment < handle
                 MSDmat(1:length(MSD),i) = MSD(:);
                 
             end 
-            obj.RMSD = MSD;
+            obj.MSD = MSD;
             obj.traces3D = traces;
                      
-            filename = [obj.path filesep 'traces3D.mat'];
-            save(filename,'traces');
             
-            filename = [obj.path filesep 'RMSD-all.mat'];
-            save(filename,'MSDmat');
             
+            
+        end
+        
+        function saveData(obj)
+            
+            trackRes = struct; 
+            disp('Saving Data');
+            
+            if ~isempty(obj.traces3D)
+                
+                trackData = obj.traces3D;
+                MSDs = obj.MSD;
+                    
+                if ~isempty(MSDs)
+                    trackRes.MSD = MSDs;
+                end
+                
+                trackRes.traces = trackData; 
+                trackRes.info = obj.info;
+                trackRes.path = obj.path;
+                filename = [obj.path filesep 'trackResults.mat'];
+                save(filename,'trackRes');
+                disp('Data were succesfully saved');
+    
+            else
+                
+                warning('No Data was saved because no traces or MSD could be found, please make sure you ran the analysis first');
+            
+            end   
         end
         
         function showRMSD(obj)

@@ -34,7 +34,20 @@ trackingExp.retrieveMovies;
 %% get TrackingData
 detectParam.delta = 6;
 detectParam.chi2 = 60;
-trackParam.euDistXY = 800;
+trackParam.euDistXY = 400;
 trackParam.euDistZ  = 400;
 val2Use = 'bestFocus';
 trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);
+
+traces = trackingExp.getTraces3D;
+
+
+%% Get Intensity
+
+[int,SNR] = trackingExp.getAvgIntensity;
+
+%% save Data
+
+trackingExp.saveData;
+
+

@@ -638,29 +638,30 @@ classdef MPParticleMovie < Core.MPMovie
             %Pixel to integrate for signal
             px2SumInt = ROI(rowIdx,colIdx);
             
+             %get background pixels
+            bkg = ROI;
+            bkg(rowIdx,colIdx) = 0;
+            px2SumBkg = bkg(bkg~=0);
+            bkg = mean(px2SumBkg);
+            
             %calculate signal
-            Signal = sum(sum(px2SumInt));
+            int = px2SumInt - bkg;
             
-            %get number of pixel integrated to use the same for bkg
-            nPixel = size(px2SumInt,1)*size(px2SumInt,2);
-            
-            %get background pixels
-            bkgBackground = ROI;
-            bkgBackground(rowIdx,colIdx) = 0;
-            px2SumBkg = bkgBackground(bkgBackground~=0);
-            
-            %Sample background or scale it
-            if length(px2SumBkg(:))>= nPixel
-                px2SumBkg = datasample(px2SumBkg(:),nPixel);
-            	bkg = sum(px2SumBkg);
-            else
-                disp('padding bkg to integrate')
-                bkg = sum(px2SumBkg)*nPixel/length(px2SumBkg(:));
-            end
-            %calculate the intensity and the SNR
-            int = Signal-bkg;
-            SNR = int/std(double(px2SumBkg));
-
+%             %get number of pixel integrated to use the same for bkg
+%             nPixel = size(px2SumInt,1)*size(px2SumInt,2);    
+%             %Sample background or scale it
+% %             if length(px2SumBkg(:))>= nPixel
+% %                 px2SumBkg = datasample(px2SumBkg(:),nPixel);
+% %             	bkg = sum(px2SumBkg);
+% %             else
+% %                 disp('padding bkg to integrate')
+% %                 bkg = sum(px2SumBkg)*nPixel/length(px2SumBkg(:));
+% %             end
+%             %calculate the intensity and the SNR
+%             int = Signal-bkg;
+            %SNR = int/std(double(px2SumBkg));
+            Signal = sum(sum(int));
+            SNR = sqrt(Signal);
         end
        
      end
