@@ -124,7 +124,7 @@ function ch_p = findCp(trace_in,sCase,nCP)
         otherwise
             error('dont know what to dom8, either top or bottom')
     end
-    
+    full = false;
     go = true;
     % iterative thresholding up to the point that we get the right results
     while go
@@ -132,6 +132,7 @@ function ch_p = findCp(trace_in,sCase,nCP)
         thVal = thVal+dTh;
         if or(thVal<=0, thVal>=1)
             warning('could not find the channels');
+            full = true;
             break;
         end
         
@@ -173,7 +174,7 @@ function ch_p = findCp(trace_in,sCase,nCP)
     end
     
     ch_p = [upCP+1, doCP+1];
-    if isempty(ch_p)
+    if full
         ch_p = [1 length(trace_in)];
     end
 end
