@@ -10,9 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File= 'E:\Data\Leuven Data\2019\04 - April\3\test\ZCal\MPCalInterleaved_1';
-path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\3\test\2DCal';
-
+path2File= 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\Tracking\Waterobjective_99_1_1W_PSFE_FASTTIMELAPSE_5';
+path2Cal  = 'C:\Data\Boris\SetupCalibration';
 
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
