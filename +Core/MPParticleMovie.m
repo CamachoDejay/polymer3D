@@ -581,7 +581,8 @@ classdef MPParticleMovie < Core.MPMovie
                     
                 case 8
                     
-                    nPlanesEdge = 2;
+                    nPlanesEdgeFrange = 1;
+                    nPlanesEdgeInterleaved = 2;
                     nPlanesFullRange = 2;
                     nPlanesInterleaved = 3;
                 otherwise
@@ -591,19 +592,26 @@ classdef MPParticleMovie < Core.MPMovie
             %3 Planes
             isEdgePlane = or(~isempty(find(planeConfig==1,1)),~isempty(find(planeConfig==8,1)));
             
-            if isEdgePlane
-                
-                testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdge;
-                
-            else
-                switch camConfig
-                    case 'fullRange'
+
+            switch camConfig
+                case 'fullRange'
+                    if isEdgePlane
+
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdgeFrange;
+
+                    else
                         testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesFullRange;
-                    case 'interleaved'
+                    end
+
+                case 'interleaved'
+                    if isEdgePlane
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdgeInterleaved;
+                    else
+
                         testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesInterleaved;
-                    otherwise
-                        error('unknown camera configuration');
-                end
+                    end
+                otherwise
+                    error('unknown camera configuration');
             end
             
             
@@ -660,8 +668,8 @@ classdef MPParticleMovie < Core.MPMovie
 %             %calculate the intensity and the SNR
 %             int = Signal-bkg;
             %SNR = int/std(double(px2SumBkg));
-            Signal = sum(sum(int));
-            SNR = sqrt(Signal);
+            int = sum(sum(int));
+            SNR = sqrt(int);
         end
        
      end

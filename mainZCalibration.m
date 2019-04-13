@@ -4,12 +4,20 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - CS';
-path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2zCal = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\ZCal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
+
+detectParam.delta = 6;
+detectParam.chi2 = 60;
+fitZParam.deg = 6;
+fitZParam.ellipRangeCal = [0.5 2]; %for calibration
+fitZParam.ellipRange = [0.7 1.42];%To be used for data (we do not want to use too large values==> edge planes)
+trackParam.euDistPx = 3; 
+trackParam.commonPlanes = 1; %1 for extended, 2 for interleaved
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 calib = Core.MPPlaneCalibration(path2Cal,info);
@@ -24,15 +32,6 @@ zCal = Core.ZCalibration(path2zCal,calib.getCal,info);
 zCal.retrieveMovies;
 
 %% extract zData
-
-detectParam.delta = 6;
-detectParam.chi2 = 60;
-fitZParam.deg = 6;
-fitZParam.ellipRangeCal = [0.5 2]; %for calibration
-fitZParam.ellipRange = [0.7 1.42];%To be used for data (we do not want to use too large values==> edge planes)
-trackParam.euDistPx = 3; 
-trackParam.commonPlanes = 2;
-
 zCal.retrieveZCalData(detectParam, fitZParam,trackParam);
 
 %% ZCalibration
