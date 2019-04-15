@@ -156,7 +156,7 @@ classdef TrackingExperiment < handle
                 else
                     %get the info about the setup stored into the first
                     %object
-                    currentTrackMov.info = obj.trackMovies.(fieldsN{i}).getInfo;
+                    currentTrackMov.info = obj.trackMovies.(fieldsN{1}).getInfo;
                     
                 end
                 

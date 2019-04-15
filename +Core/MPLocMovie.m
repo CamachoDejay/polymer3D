@@ -112,24 +112,26 @@ classdef MPLocMovie < Core.MPParticleMovie
                 disp(['Applying SR calibration...']);
                 for i = 1 : length(data)
                     currData = data{i};
-                    currPlanes = unique(currData.plane);
-                    for j = 1 : length(currPlanes)
-                        currentPlane = currPlanes(j);
-                        data2Corr = currData(currData.plane==currentPlane,{'row','col','plane'});
+                    if ~isempty(currData)
+                        currPlanes = unique(currData.plane);
+                        for j = 1 : length(currPlanes)
+                            currentPlane = currPlanes(j);
+                            data2Corr = currData(currData.plane==currentPlane,{'row','col','plane'});
 
-                        if rot
-                            corrMat = obj.SRCal.rot;
-                            [corrData] = Core.MPSRCalMovie.applyRot(data2Corr, corrMat,refPlane);
+                            if rot
+                                corrMat = obj.SRCal.rot;
+                                [corrData] = Core.MPSRCalMovie.applyRot(data2Corr, corrMat,refPlane);
 
-                        else
-                            corrMat = obj.SRCal.trans;
-                             [corrData] = Core.MPSRCalMovie.applyTrans(data2Corr,corrMat,refPlane);                    
+                            else
+                                corrMat = obj.SRCal.trans;
+                                 [corrData] = Core.MPSRCalMovie.applyTrans(data2Corr,corrMat,refPlane);                    
+                            end
+
+                            %we store the corrected data
+                            obj.corrLocPos{i}(currData.plane==currentPlane,{'row','col','plane'}) = corrData;
+
+
                         end
-
-                        %we store the corrected data
-                        obj.corrLocPos{i}(currData.plane==currentPlane,{'row','col','plane'}) = corrData;
-                        
-                       
                     end
 
                 end
