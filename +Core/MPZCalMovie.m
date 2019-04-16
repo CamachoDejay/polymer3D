@@ -149,11 +149,15 @@ classdef MPZCalMovie < Core.MPCalMovie
                             %we only process the data if there are point above
                             %and below focus.
                         elseif and(~isempty(ellipt(ellipt<1)),~isempty(ellipt(ellipt>1)))
-                            %Do the fit and extract the exact z position of the focus
-                            p = polyfit(zPos,ellipt,deg);
+                            
+                            p = spline(zPos,ellipt);
                             zVec = min(zPos):0.001:max(zPos);%1nm step
+                            fit = ppval(p,zVec);
+                            %p = polyfit(zPos,ellipt,deg);
+                            
                             %Fitting occurs here
-                            fit = polyval(p,zVec);
+                           % fit = polyval(p,zVec);
+     
     
                             [~,idx] = min(abs(fit-1));
                             focus2 = zVec(idx);
