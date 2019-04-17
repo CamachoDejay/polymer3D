@@ -57,33 +57,47 @@ classdef MPMovie < Core.Movie
 
                 if (~isempty(file2Analyze))
 
-                   [file] = obj.getFileInPath (fullPath,'.tif');
+                    [file] = obj.getFileInPath (fullPath,'.tif');
 
-                   if ~isempty(file) %only work with 8 Planes now
+                    if ~isempty(file) %only work with 8 Planes now
                         %If data is already calibrated we load it
                        disp('The dataset is already calibrated, Loading from existing file');
                        
-                       if length(file) ~= 8
+                        if length(file) ~= 8
                            
                             warning('Did not find 8 planes, if you are not using the prism it is okay, otherwise you might want to recalibrate');
                        
-                       end
-                   end
+                        end
+                    end
                     
-                   fullpath = [file2Analyze.folder filesep file2Analyze.name];
-                   tmp = load(fullpath);
-                   calibrate = tmp.calib;
+                    fullpath = [file2Analyze.folder filesep file2Analyze.name];
+                    tmp = load(fullpath);
+                    calibrate = tmp.calib;
+                    fieldN = fieldnames(calibrate.filePath);
+                    for i = 1: length(fieldN)
 
-                    for i = 1: length(fieldnames(calibrate.filePath))
-
-                        currentPath = calibrate.filePath.(['plane' num2str(i)]);
+                        currentPath = calibrate.filePath.(fieldN{i});
                         idx1 = strfind(fullPath,'\calibrated');
                         idx2 = strfind(currentPath,'\calibrated');                           
                         newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
-                        calibrate.filePath.(['plane' num2str(i)]) = newPath;
+                        calibrate.filePath.(fieldN{i}) = newPath;
 
                     end
                     
+                    if isfield(calibrate,'transPath')
+                        fieldN = fieldnames(calibrate.transPath);
+                        
+                        for i = 1: length(fieldN)
+
+                            currentPath = calibrate.transPath.(fieldN{i});
+                            idx1 = strfind(fullPath,'\calibrated');
+                            idx2 = strfind(currentPath,'\calibrated');                           
+                            newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
+                            calibrate.transPath.(fieldN{i}) = newPath;
+                            
+                        end
+                    end
+                        
                     disp('Done');
                     
                 else
@@ -210,11 +224,11 @@ classdef MPMovie < Core.Movie
                [data] = getFrame@Core.Movie(obj,idx);
                 
             elseif isstruct(obj.calibrated)
-                
-                for i = 1:numel(fields(obj.calibrated.filePath))
+                fieldsN = fieldnames(obj.calibrated.filePath);
+                for i = 1:numel(fieldsN)
                     %Load plane
-                    [mov] = Load.Movie.tif.getframes(obj.calibrated.filePath.(sprintf('plane%d',i)),idx);
-                    data.(sprintf('plane%d',i)) = mov;
+                    [mov] = Load.Movie.tif.getframes(obj.calibrated.filePath.(fieldsN{i}),idx);
+                    data.(fieldsN{i}) = mov;
                     
                 end
             end  

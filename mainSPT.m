@@ -25,6 +25,7 @@ info.type = 'normal';
 %is default)
 info.runMethod = 'run'; %will avoid the question to user to pop by giving
 info.nChan = 4;
+info.fitMethod  = 'Phasor';
 %the answer before
 %% create a Movie Object
 mov1 = Core.Movie(path2File,info);
@@ -77,7 +78,6 @@ mpPartMov.consolidatePlanes;
 %%
 mpPartMov.showParticles(60)
 %% ZCal
-info.fitMethod  = 'Phasor';
 
 zCalMov = Core.MPZCalMovie(path2File,calib.getCal,info);
 %% CandidatePos
