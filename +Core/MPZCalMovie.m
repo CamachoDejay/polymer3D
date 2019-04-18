@@ -189,8 +189,10 @@ classdef MPZCalMovie < Core.MPCalMovie
                 
             
             %final storing and output
-            [~,ind] = sort(zSyncCalData{1,2}.z);
-            zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
+            if ~isempty(zSyncCalData{1,2})
+                [~,ind] = sort(zSyncCalData{1,2}.z);
+                zSyncCalData{1,2} = zSyncCalData{1,2}(ind,:);
+            end
             zSyncCalData{1,3} = [minEllipt, maxEllipt, deg];
             obj.zData.syncEllip = zSyncCalData;
         end
@@ -372,6 +374,14 @@ classdef MPZCalMovie < Core.MPCalMovie
                            
                     case 'interleaved'
                         avg = true;
+                        
+                    case 'equal'
+                        if and(particle.ellip(3)>0.9,particle.ellip(3)>1.11)
+                            avg = false;
+                        else
+                            avg = true;
+                        end
+                        
                     otherwise
                         error('unknown camera config');
                 end

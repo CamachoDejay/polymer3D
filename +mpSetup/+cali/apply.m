@@ -23,7 +23,7 @@ else
             
         end
     else 
-        isTransmission = false;
+        isTransmission = zeros(size(cal.ROI,1),1);
     end
     
     h = waitbar(0,'Please wait applying calibration');

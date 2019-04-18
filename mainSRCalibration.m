@@ -4,8 +4,8 @@ clc
 close all;
 %% get path to SRCalibration
 
-path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
-path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2SRCal = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\3D Cal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\2DCal\Crop';
 
 
 %% Initialize a zCalibration Object
