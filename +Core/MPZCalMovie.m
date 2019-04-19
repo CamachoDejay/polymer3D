@@ -137,6 +137,15 @@ classdef MPZCalMovie < Core.MPCalMovie
                         frames = frames(and(ellipt<maxEllipt, ellipt > minEllipt));
                         ellipt = ellipt(and(ellipt<maxEllipt, ellipt > minEllipt));
                         
+                         %Let us filter bad data out:
+                        lfMet = mean(fMetric)-std(fMetric);
+                        ufMet = mean(fMetric)+std(fMetric);
+                        
+                        fMetric = fMetric(and(fMetric<ufMet,fMetric>lfMet));
+                        frames = frames(and(fMetric<ufMet,fMetric>lfMet));
+                        ellipt = ellipt(and(fMetric<ufMet,fMetric>lfMet));
+                        zPos = zPos(and(fMetric<ufMet,fMetric>lfMet));
+                        
                         %Now we shift in z the value closest to ellipt =1 for
                         %the fit == rough synchronization
                         [~,idx] = min(abs(ellipt-1));
@@ -157,7 +166,7 @@ classdef MPZCalMovie < Core.MPCalMovie
                             
                             %Fitting occurs here
                            % fit = polyval(p,zVec);
-     
+                            
     
                             [~,idx] = min(abs(fit-1));
                             focus2 = zVec(idx);
