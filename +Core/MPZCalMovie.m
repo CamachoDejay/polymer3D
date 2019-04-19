@@ -139,12 +139,11 @@ classdef MPZCalMovie < Core.MPCalMovie
                         
                          %Let us filter bad data out:
                         lfMet = mean(fMetric)-std(fMetric);
-                        ufMet = mean(fMetric)+std(fMetric);
-                        
-                        fMetric = fMetric(and(fMetric<ufMet,fMetric>lfMet));
-                        frames = frames(and(fMetric<ufMet,fMetric>lfMet));
-                        ellipt = ellipt(and(fMetric<ufMet,fMetric>lfMet));
-                        zPos = zPos(and(fMetric<ufMet,fMetric>lfMet));
+                      
+                        fMetric = fMetric(fMetric>lfMet);
+                        frames = frames(fMetric>lfMet);
+                        ellipt = ellipt(fMetric>lfMet);
+                        zPos = zPos(fMetric>lfMet);
                         
                         %Now we shift in z the value closest to ellipt =1 for
                         %the fit == rough synchronization
