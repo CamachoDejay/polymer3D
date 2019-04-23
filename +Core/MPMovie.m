@@ -57,33 +57,47 @@ classdef MPMovie < Core.Movie
 
                 if (~isempty(file2Analyze))
 
-                   [file] = obj.getFileInPath (fullPath,'.tif');
+                    [file] = obj.getFileInPath (fullPath,'.tif');
 
-                   if ~isempty(file) %only work with 8 Planes now
+                    if ~isempty(file) %only work with 8 Planes now
                         %If data is already calibrated we load it
                        disp('The dataset is already calibrated, Loading from existing file');
                        
-                       if length(file) ~= 8
+                        if length(file) ~= 8
                            
                             warning('Did not find 8 planes, if you are not using the prism it is okay, otherwise you might want to recalibrate');
                        
-                       end
-                   end
+                        end
+                    end
                     
-                   fullpath = [file2Analyze.folder filesep file2Analyze.name];
-                   tmp = load(fullpath);
-                   calibrate = tmp.calib;
+                    fullpath = [file2Analyze.folder filesep file2Analyze.name];
+                    tmp = load(fullpath);
+                    calibrate = tmp.calib;
+                    fieldN = fieldnames(calibrate.filePath);
+                    for i = 1: length(fieldN)
 
-                    for i = 1: length(fieldnames(calibrate.filePath))
-
-                        currentPath = calibrate.filePath.(['plane' num2str(i)]);
+                        currentPath = calibrate.filePath.(fieldN{i});
                         idx1 = strfind(fullPath,'\calibrated');
                         idx2 = strfind(currentPath,'\calibrated');                           
                         newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
-                        calibrate.filePath.(['plane' num2str(i)]) = newPath;
+                        calibrate.filePath.(fieldN{i}) = newPath;
 
                     end
                     
+                    if isfield(calibrate,'transPath')
+                        fieldN = fieldnames(calibrate.transPath);
+                        
+                        for i = 1: length(fieldN)
+
+                            currentPath = calibrate.transPath.(fieldN{i});
+                            idx1 = strfind(fullPath,'\calibrated');
+                            idx2 = strfind(currentPath,'\calibrated');                           
+                            newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
+                            calibrate.transPath.(fieldN{i}) = newPath;
+                            
+                        end
+                    end
+                        
                     disp('Done');
                     
                 else
@@ -210,11 +224,11 @@ classdef MPMovie < Core.Movie
                [data] = getFrame@Core.Movie(obj,idx);
                 
             elseif isstruct(obj.calibrated)
-                
-                for i = 1:numel(fields(obj.calibrated.filePath))
+                fieldsN = fieldnames(obj.calibrated.filePath);
+                for i = 1:numel(fieldsN)
                     %Load plane
-                    [mov] = Load.Movie.tif.getframes(obj.calibrated.filePath.(sprintf('plane%d',i)),idx);
-                    data.(sprintf('plane%d',i)) = mov;
+                    [mov] = Load.Movie.tif.getframes(obj.calibrated.filePath.(fieldsN{i}),idx);
+                    data.(fieldsN{i}) = mov;
                     
                 end
             end  
@@ -289,19 +303,6 @@ classdef MPMovie < Core.Movie
             zStep = diff(zPosMotor);
             
         end 
-        
-        function [camConfig] = determineCAMConfig(obj)
-            
-             planeDist = abs(mean(diff(obj.calibrated.oRelZPos)))*1000;
-             if planeDist > 350
-                 camConfig = 'fullRange';
-             elseif and(planeDist < 350, planeDist>200)
-                 camConfig = 'interleaved';
-             else
-                 error('Something is wrong with your distance between planes')
-             end
-             
-         end
                 
     end
     
@@ -349,40 +350,47 @@ classdef MPMovie < Core.Movie
                 [ movC1, movC2] = Load.Movie.ome.load( frameInfo, movInfo, cFrame );
 
                 %applying the calibration
-                [data] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
+                [data,isTransmission] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
 
                 %saving data per plane and info to cal
-                [calib] = obj.saveCalibrated(data,endFrame);
+                [calib] = obj.saveCalibrated(data,endFrame,isTransmission);
             end           
          end
          
-        function [calib,fid] = saveCalibrated(obj,data,maxFrame)
+        function [calib,fid] = saveCalibrated(obj,data,maxFrame,isTransmission)
             cal = obj.cal2D.file;
             calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
+            calTransDir = [calDir filesep 'Transmission'];
             mkdir(calDir);
+            mkdir(calTransDir);
             %Save the resulting planes in separated TIF and save a txt info
             %file
             fid = fopen([calDir filesep 'CalibratedInfo.txt'],'w');
             fprintf(fid,'The information in this file are intended to the user. They are generated automatically so please do not edit them\n');
             calib.mainPath = calDir;
-            calib.nPlanes   = size(data,3);
-            
+            calib.nPlanes   = sum(~isTransmission);
+            idx2Plane = 1;
             for i = 1:size(data,3)
                 data2Store = squeeze(data(:,:,i,:));
+                isTrans = isTransmission(i);
                 if strcmpi(obj.info.type,'transmission')
                     data2Store = imcomplement(data2Store);
                 end
-                
-                fName = sprintf('calibratedPlane%d.tif',i);
-                fPathTiff = [calDir filesep fName];
                 fieldN = sprintf('plane%d',i);
-                calib.filePath.(fieldN) = fPathTiff;
+                fName = sprintf('calibratedPlane%d.tif',i);
+                if isTrans
+                    fPathTiff = [calTransDir filesep fName];
+                    calib.transPath.(fieldN) = fPathTiff;
+                else
+                    fPathTiff = [calDir filesep fName];
+                    calib.filePath.(fieldN) = fPathTiff;
+                end
+
                 calib.nFrames = maxFrame;
                 t = Tiff(fPathTiff, 'a');
-
                 t = dataStorage.writeTiff(t,data2Store,16);
-
                 t.close;
+                
                 %We also write a few info about the calibrated data in a
                 %text file
                 fprintf(fid,...
@@ -393,8 +401,12 @@ classdef MPMovie < Core.Movie
                 cal.ROI(cal.neworder(i),1)+...
                 cal.ROI(cal.neworder(i),3),...
                 cal.inFocus(cal.neworder(i)).relZPos);
-            
-                calib.oRelZPos(i) =  cal.inFocus(cal.neworder(i)).relZPos;
+                
+                if isTrans
+                else
+                    calib.oRelZPos(idx2Plane) =  cal.inFocus(cal.neworder(i)).relZPos;
+                    idx2Plane = idx2Plane+1;
+                end
              
             end
             fclose(fid);

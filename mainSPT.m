@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\ZCal\ZCalExtendedConfCS_1';
-path2Cal  =  'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
+path2File = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\Tracking\Waterobjective_99_1_1W_PSFE_FASTTIMELAPSE_3';
+path2Cal  =  'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\2DCal\Crop';
 
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
@@ -25,6 +25,7 @@ info.type = 'normal';
 %is default)
 info.runMethod = 'run'; %will avoid the question to user to pop by giving
 info.nChan = 4;
+info.fitMethod  = 'Phasor';
 %the answer before
 %% create a Movie Object
 mov1 = Core.Movie(path2File,info);
@@ -77,7 +78,6 @@ mpPartMov.consolidatePlanes;
 %%
 mpPartMov.showParticles(60)
 %% ZCal
-info.fitMethod  = 'Phasor';
 
 zCalMov = Core.MPZCalMovie(path2File,calib.getCal,info);
 %% CandidatePos

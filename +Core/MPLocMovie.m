@@ -108,7 +108,12 @@ classdef MPLocMovie < Core.MPParticleMovie
                 end
 
                 data = obj.unCorrLocPos;
-
+                
+                nPlanesCal = size(obj.SRCal.trans,1)+1;
+                nPlanesFile = obj.calibrated.nPlanes;
+                assert(nPlanesCal == nPlanesFile,'Mismatch between number of planes in SR calibration and file');
+            
+                
                 disp(['Applying SR calibration...']);
                 for i = 1 : length(data)
                     currData = data{i};
@@ -163,6 +168,10 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             %Here we translate ellipticity into z position based on
             %calibration
+            nPlanesCal = size(zCal.calib,1);
+            nPlanesFile = obj.calibrated.nPlanes;
+            assert(nPlanesCal == nPlanesFile,'Mismatch between number of planes in Z calibration and file');
+            
             disp('Applying Z Calibration');
             for i = 1 : length(data)
                 currData = data{i};

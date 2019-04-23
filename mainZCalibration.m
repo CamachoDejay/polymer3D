@@ -4,8 +4,8 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\ZCal';
-path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
+path2zCal = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\3D Cal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\2DCal\Crop';
 
 detectParam.delta = 6;
 detectParam.chi2 = 60;
@@ -17,7 +17,7 @@ trackParam.commonPlanes = 1; %1 for extended, 2 for interleaved
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 calib = Core.MPPlaneCalibration(path2Cal,info);

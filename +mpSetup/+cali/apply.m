@@ -1,10 +1,31 @@
-function [data] = apply( cam1, cam2, cal )
+function [data,isTransmission] = apply( cam1, cam2, cal )
 %APPLY rearranges data and corrects for intensity diffecences
 %between channels
 %   Detailed explanation goes here
+
 if or(isempty(cam1),isempty(cam2))
     error('Calibration expect 2 cameras, update will be performed later');
 else
+    %test if some of the data is transmission
+    S1 = mean(mean(mean(cam1)));
+    S2 = mean(mean(mean(cam2)));
+    
+    if abs(S1-S2) > 5*min([S1,S2])
+        warning('One cam is much brighter than the other, assuming Transmission data');
+        nChan = size(cal.ROI,1)/2;
+        if S1< S2
+            
+            isTransmission = [zeros(nChan,1);ones(nChan,1)];
+        
+        else
+            
+            isTransmission = [ones(nChan,1);zeros(nChan,1)];
+            
+        end
+    else 
+        isTransmission = zeros(size(cal.ROI,1),1);
+    end
+    
     h = waitbar(0,'Please wait applying calibration');
     % if need be we flip camera 2, this is generally the case
     if cal.flipCam2
@@ -26,6 +47,7 @@ else
     
     if cal.reorder
         newor = [cal.neworder];
+        
     else
         newor = 1:sTmp(3);
     end
@@ -44,7 +66,7 @@ else
     waitbar(.9,h,'Reordering...')
     % reorder planes
     data = data(:,:,newor,:);
-    
+    isTransmission = isTransmission(newor);
     close(h)
 end
 end

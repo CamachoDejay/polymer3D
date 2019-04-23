@@ -575,7 +575,7 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 case 4
                     
-                    nPlanesEdge = 1;
+                    nPlanesEdgeFrange = 1;
                     nPlanesFullRange = 2;
                     nPlanesInterleaved = 2;
                     
@@ -610,6 +610,15 @@ classdef MPParticleMovie < Core.MPMovie
 
                         testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesInterleaved;
                     end
+                case 'equal'
+                    if isEdgePlane
+
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdgeFrange;
+
+                    else
+                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesFullRange;
+                    end
+
                 otherwise
                     error('unknown camera configuration');
             end
@@ -828,10 +837,11 @@ classdef MPParticleMovie < Core.MPMovie
                     zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
                     'VariableNames',varNames);
                 sigSetup = [obj.info.sigma_px obj.info.sigma_px];
+                fieldN = fieldnames(data);
             for i = 1:size(frameCandidate,1)
                 
                 plane = frameCandidate.plane(i);
-                planeData = double(data.(sprintf('plane%d',plane)));
+                planeData = double(data.(fieldN{plane}));
                 %Get the ROI
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
