@@ -4,8 +4,8 @@ clc
 close all;
 %% get path to SRCalibration
 
-path2SRCal = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\3D Cal';
-path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\2DCal\Crop';
+path2SRCal = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
 
 
 %% Initialize a zCalibration Object
@@ -30,7 +30,7 @@ detectParam.delta = 6;
 detectParam.chi2 = 60;
 detectParam.consThresh = 3;
 
-trackParam.commonPlanes = 2; 
+trackParam.commonPlanes = 1; 
 trackParam.euDistPx = 3;
 
 testSRCal.retrieveSRCalData(detectParam,trackParam);
