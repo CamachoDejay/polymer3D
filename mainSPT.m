@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\Tracking\Waterobjective_99_1_1W_PSFE_FASTTIMELAPSE_3';
-path2Cal  =  'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\2DCal\Crop';
+path2File = 'E:\Data\Leuven Data\2019\04 - April\4\SPiral\XYZTrackExtendedConfCS_1';
+path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
@@ -59,7 +59,7 @@ mpMov.calibrate;
 %%
 mpMov.showFrame(25,5);
 %% Save Movie
-mpMov.saveMovie('gif',30,10,1:100,1)
+mpMov.saveMovie('gif',30,10,1)
 
 %% MP Particle Movie
 mpPartMov = Core.MPParticleMovie(path2File,calib.getCal,info);

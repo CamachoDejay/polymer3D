@@ -6,7 +6,7 @@ clear;
 path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - CS';
 path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
-path2File = 'E:\Data\Leuven Data\2019\04 - April\3\test\X\XTrackInterleaved200nmStep_2';
+path2File = 'E:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\X\XTrackExtendedConfCS_1';
 path2Cal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
 

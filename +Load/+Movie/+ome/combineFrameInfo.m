@@ -3,12 +3,36 @@ function [frameInfo,totFrame] = combineFrameInfo(frameInfo,fullCombine)
     assert(isstruct(frameInfo{1}),'frameInfo cells are expected to contained struct');
     totFrame = [0 0];
     tmp = [];
+    %pilling up data from different files on top of each other, counting
+    %total number of frame
     for i = 1 : size(frameInfo,1)
         cFrameInfo = frameInfo{i};
-        tmp = [tmp, cFrameInfo];
-        
         fCam1 = {cFrameInfo(:,contains({cFrameInfo.C},'0')).T};
         fCam2 = {cFrameInfo(:,contains({cFrameInfo.C},'1')).T};
+        %fix if there is only one frame in the frame
+        if and(length(unique([cFrameInfo.T])) == 1,length(unique([cFrameInfo.Z])) == 1)
+            
+            if i>1
+                %Change data depending on previous
+                nFrames = str2double(prevFInfo(1).T)+1;
+                cFrameInfo(1).T = num2str(nFrames);
+                cFrameInfo(2).T = num2str(nFrames);
+                
+                nFrames = str2double(prevFInfo(1).Z)+1;
+                cFrameInfo(1).Z = num2str(nFrames);
+                cFrameInfo(2).Z = num2str(nFrames);
+                
+                %nFrames = str2double(prevFInfo(2).IFD)+1;
+                %cFrameInfo(1).IFD = num2str(nFrames);
+                %cFrameInfo(2).IFD = num2str(nFrames+1);
+               
+            end
+            prevFInfo = cFrameInfo;
+            %need to modify cFrameInfo so correct data is saved.
+        end
+        tmp = [tmp, cFrameInfo];
+        
+        
         totFrame = [totFrame(1) + str2double(fCam1{end})+1,totFrame(2) + str2double(fCam2{end})+1];
     end
     
@@ -16,7 +40,7 @@ function [frameInfo,totFrame] = combineFrameInfo(frameInfo,fullCombine)
     
     if fullCombine
         
-        maxFr = max(cellfun(@str2double,fCam1));
+        maxFr = totFrame(1)-1;
         bothCam = (maxFr+1)*2;
         nIt = size(frameInfo,2)/bothCam;
         

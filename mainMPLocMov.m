@@ -3,11 +3,11 @@ clc
 close all
 clear 
 
-path2ZCal = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\ZCal\Good Cal';
-path2SRCal = [];
+path2ZCal = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\ZCal';
+path2SRCal = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
 
-path2File = 'E:\Data\Leuven Data\2018\ZHao\181016 - Dry objective trapping\200nmGoldBeadsTrappingFoucsingLayer1_Initial_7';
-path2Cal = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\2DCal\200nmFluoBeadsCalPSFE_3';
+path2File = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\XTrack';
+path2Cal = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
 info.type = 'transmission';
 info.runMethod = 'load';
 detectParam.delta = 6;
