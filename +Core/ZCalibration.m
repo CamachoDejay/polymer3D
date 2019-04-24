@@ -462,7 +462,7 @@ classdef ZCalibration < handle
                         accuracyX2plot = data(:,1) - mean(data(:,1));
                         accuracyY2plot = data(:,2) - mean(data(:,2));
                         
-                        zPlot = [zPlot; data(1:end-1,3), accuracyF2plot];
+                        
                         
                         %bFit = mean(data(:,6)-zStepMot(1)*1000.*frameVec(:));
                         %data2SubZavg = zStepMot(1)*1000*frameVec+bFit;
@@ -476,25 +476,8 @@ classdef ZCalibration < handle
                         accuracyXFocus = [accuracyXFocus mean(abs(accuracyX2plot))];
                         accuracyYFocus = [accuracyXFocus mean(abs(accuracyY2plot))];
                         
-%                         subplot(2,2,1)
-%                         hold on
-%                         scatter(1:size(data(:,3),1),data(:,3) );
-%                         plot(data2SubZ,'-b');
-% 
-%                         title('Z position for different particle in best focus')
-%                         xlabel('Frame')
-%                         ylabel('Position(nm)')
-%                         hold off
-% 
-%                         subplot(2,2,2)
-%                         hold on
-%                         scatter(1:size(data,1),data(:,6));
-%                         plot(data2SubZavg,'-b');
-%                         xlabel('Frame')
-%                         ylabel('Position(nm)')
-%                         title('Z position for different particle mean')
-%                         hold off
-
+                        zPlot = [zPlot; data(1:end-1,3), accuracyF2plot, data(1:end-1,6), accuracyM2plot];
+                        
                         subplot(1,2,1)
                         hold on
                         plot(accuracyF2plot)
@@ -521,11 +504,11 @@ classdef ZCalibration < handle
             
             switch obj.calib.fitZParam.fittingType
                 case 'poly'
-                    obj.zAccuracy.poly.('BestFocus') = nanmean(accuracyZFocus);
-                    obj.zAccuracy.poly.Mean      = nanmean(accuracyZMean);
+                    obj.zAccuracy.poly.('BestFocus') = nanmedian(accuracyZFocus);
+                    obj.zAccuracy.poly.Mean      = nanmedian(accuracyZMean);
                 case 'spline'
-                    obj.zAccuracy.spline.BestFocus = nanmean(accuracyZFocus);
-                    obj.zAccuracy.spline.Mean      = nanmean(accuracyZMean);
+                    obj.zAccuracy.spline.BestFocus = nanmedian(accuracyZFocus);
+                    obj.zAccuracy.spline.Mean      = nanmedian(accuracyZMean);
                 otherwise
                     error('Unknown fitting type used, only currently known are "poly" and "spline"');
             end
@@ -541,20 +524,27 @@ classdef ZCalibration < handle
 
             meanEllip = zeros(1,length(minBin));
             stdEllip   = zeros(1,length(minBin));
-
+            stdEllipM   = zeros(1,length(minBin));
             for i=1:length(minBin)-1
 
-                
                 stdEllip(i) = nanmedian(abs(zPlot(and(zPlot(:,1)>=minBin(i),zPlot(:,1)<=minBin(i+1)),2)));
+                stdEllipM(i) = nanmedian(abs(zPlot(and(zPlot(:,3)>=minBin(i),zPlot(:,3)<=minBin(i+1)),4)));
+            
             end
 
 
             figure
+            subplot(1,2,1)
             Plotting.shadedErrorBar(midBin, meanEllip, stdEllip,'lineprops','-r','transparent',1)
             
-            xlabel('Z position (nm)')
-            ylabel('Mean error')
+            xlabel('Z position (nm)');
+            ylabel('Mean error');
             
+            subplot(1,2,2)
+            Plotting.shadedErrorBar(midBin, meanEllip, stdEllipM,'lineprops','-r','transparent',1)
+            
+            xlabel('Z position (nm)');
+            ylabel('Mean error');
             
             
         end
