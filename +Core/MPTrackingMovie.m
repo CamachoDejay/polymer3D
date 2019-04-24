@@ -174,197 +174,198 @@ classdef MPTrackingMovie < Core.MPLocMovie
         end
         
         function getPartMovie(obj,frames,idx2Trace,ROI,frameRate,scaleBar)
-        assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting particle trace movie');
-        if nargin < 6
-            scaleBar = 500;
-        elseif nargin <5
-            error('not enough input arguments');
-        elseif nargin ==6
-        else
-            error('too many input arguments');
-        end
-        path2File = obj.raw.movInfo.Path;
-        traces = obj.traces3D;
-        roiRadius = ROI;
-        pxSize = obj.info.pxSize;
-        currentTraces = traces {idx2Trace};
-        mainPos = [round(mean(currentTraces.row)) round(mean(currentTraces.col)) round(mean(currentTraces.z))];
-        
-        scaleBarPx = scaleBar/(pxSize/1000);%in µm
-        pos.row = currentTraces.row - mainPos(1);
-        pos.col = currentTraces.col - mainPos(2);% + roiRadius + 1/2;
-        pos.z   = currentTraces.z - mainPos(3);
-        framesIm = frames(ismember(frames,currentTraces.frame));
-        framesPos = find(ismember(currentTraces.frame,frames));
-        nFrames = length(framesIm);
-         mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
-         Fig = figure('pos',[100 100 1200 375]);
-         
-         for j = 1:nFrames
-           
-            
-            %to get as less white border as possible
-            ax = gca;
-            
-            outerpos = ax.OuterPosition;
-            ti = ax.TightInset; 
-            left = outerpos(1) + ti(1);
-            bottom = outerpos(2) + ti(2);
-            ax_width = outerpos(3) - ti(1) - ti(3);
-            ax_height = outerpos(4) - ti(2) - ti(4);
-            ax.Position = [left bottom ax_width ax_height];
-            ext = '.gif';
-            filename=sprintf('%s%s8planes-Trace%d%s', path2File,'\',idx2Trace,ext);
-            
-            subplot(2,obj.calibrated.nPlanes/2+2,[1,2,7,8])
-            scatter3(pos.col(1:j),pos.row(1:j),...
-                pos.z(1:j),25,pos.z(1:j),'filled');
-            lim = [-roiRadius*pxSize,roiRadius*pxSize]; 
-            xlim(lim) 
-            ylim(lim)
-            zlim([min(pos.z) max(pos.z)]);
-            view(3)
-            lastIdx = [3:3+obj.calibrated.nPlanes/2-1,9:9+obj.calibrated.nPlanes/2-1];
-            for i = 1:obj.calibrated.nPlanes
-
-                currentPlane = obj.getPlane(i,framesIm(j));
-                % ROI = currentPlane;
-                row = round(mainPos(1)/pxSize);
-                col = round(mainPos(2)/pxSize);
-                z   = round(mainPos(3)/pxSize);
-                
-                ROI = currentPlane(row-roiRadius:row+roiRadius,...
-                col-roiRadius:col+roiRadius);     
-
-                f0 = framesPos(1);
-                f = framesPos(j);
-
-                gcf;
-                subplot(2,obj.calibrated.nPlanes/2+2,lastIdx(i))
-                imagesc(ROI)
-                hold on
-                %scale bar
-                x = size(ROI,2)-scaleBarPx-(0.05*size(ROI,2)):size(ROI,2)-0.05*size(ROI,2);
-                y = ones(1,length(x))*size(ROI,1)-0.05*size(ROI,2);
-                text(mean(x),mean(y)-3,[num2str(scaleBar) ' µm'],...
-                    'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',12);
-                plot(x,y,'-w','LineWidth',3);
-%                  TODO MAKE THIS WORK !!!
-%                 plot(pos.col(f0:f),pos.row(f0:f),'-b')
-%                 scatter(pos.col(f0:f),pos.row(f0:f),10,'filled','MarkerEdgeColor','blue',...
-%                   'MarkerFaceColor','blue')
-                caxis([min(min(min(ROI))) max(max(max(ROI)))]);
-                set(gca,'visible','off');
-                set(gcf,'color','w');
-                axis image;
-
-                colormap('hot')
-                drawnow;
-
-               
-            end
-            hold off
-            
-            frame = getframe(Fig);
-            mov(j) = frame;
-            
-            im = frame2im(frame);
-            [imind,cm] = rgb2ind(im,256);
-           
-            if j == 1
-                
-                imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
-                
+            assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting particle trace movie');
+            if nargin < 6
+                scaleBar = 500;
+            elseif nargin <5
+                error('not enough input arguments');
+            elseif nargin ==6
             else
-                
-                imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
-           
+                error('too many input arguments');
+            end
+            path2File = obj.raw.movInfo.Path;
+            traces = obj.traces3D;
+            roiRadius = ROI;
+            pxSize = obj.info.pxSize;
+            currentTraces = traces {idx2Trace};
+            mainPos = [round(mean(currentTraces.row)) round(mean(currentTraces.col)) round(mean(currentTraces.z))];
+
+            scaleBarPx = scaleBar/(pxSize/1000);%in µm
+            pos.row = currentTraces.row - mainPos(1);
+            pos.col = currentTraces.col - mainPos(2);% + roiRadius + 1/2;
+            pos.z   = currentTraces.z;
+            framesIm = frames(ismember(frames,currentTraces.frame));
+            framesPos = find(ismember(currentTraces.frame,frames));
+            nFrames = length(framesIm);
+             mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
+             Fig = figure('pos',[100 100 1200 375]);
+
+             for j = 1:nFrames
+
+                %to get as less white border as possible
+                ax = gca;
+
+                outerpos = ax.OuterPosition;
+                ti = ax.TightInset; 
+                left = outerpos(1) + ti(1);
+                bottom = outerpos(2) + ti(2);
+                ax_width = outerpos(3) - ti(1) - ti(3);
+                ax_height = outerpos(4) - ti(2) - ti(4);
+                ax.Position = [left bottom ax_width ax_height];
+                ext = '.gif';
+                filename=sprintf('%s%s8planes-Trace%d%s', path2File,'\',idx2Trace,ext);
+
+                subplot(2,obj.calibrated.nPlanes/2+2,[1,2,7,8])
+                scatter3(pos.col(1:j),pos.row(1:j),...
+                    pos.z(1:j),25,pos.z(1:j),'filled');
+                lim = [-roiRadius*pxSize,roiRadius*pxSize]; 
+                xlim(lim) 
+                ylim(lim)
+                zlim([min(pos.z) max(pos.z)]);
+                view(3)
+                lastIdx = [3:3+obj.calibrated.nPlanes/2-1,9:9+obj.calibrated.nPlanes/2-1];
+                for i = 1:obj.calibrated.nPlanes
+
+                    currentPlane = obj.getPlane(i,framesIm(j));
+                    % transfering the mean coordinate into pixel for the image
+                    row = round(mainPos(1)/pxSize);
+                    col = round(mainPos(2)/pxSize);
+                    z   = round(mainPos(3)/pxSize);
+                    %cropping the area around the molecules
+                    ROI = currentPlane(row-roiRadius:row+roiRadius,...
+                    col-roiRadius:col+roiRadius);     
+
+                    f0 = framesPos(1);
+                    f = framesPos(j);
+
+                    %Transferring pos into the ROI coordinate system
+                    colPos = pos.col(f0:f)/pxSize +roiRadius+1/2;
+                    rowPos = pos.row(f0:f)/pxSize +roiRadius+1/2;
+
+                    gcf;
+                    subplot(2,obj.calibrated.nPlanes/2+2,lastIdx(i))
+                    imagesc(ROI)
+                    hold on
+                    %scale bar
+                    x = size(ROI,2)-scaleBarPx-(0.05*size(ROI,2)):size(ROI,2)-0.05*size(ROI,2);
+                    y = ones(1,length(x))*size(ROI,1)-0.05*size(ROI,2);
+                    text(mean(x),mean(y)-3,[num2str(scaleBar) ' µm'],...
+                        'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',12);
+                    plot(x,y,'-w','LineWidth',3);
+        %                  TODO MAKE THIS WORK !!!
+                     plot(colPos,rowPos,'-b')
+                     scatter(colPos,rowPos,10,'filled','MarkerEdgeColor','blue',...
+                       'MarkerFaceColor','blue')
+                    caxis([min(min(min(ROI))) max(max(max(ROI)))]);
+                    set(gca,'visible','off');
+                    set(gcf,'color','w');
+                    axis image;
+
+                    colormap('hot')
+                    drawnow;
+
+
+                end
+                hold off
+
+                frame = getframe(Fig);
+                mov(j) = frame;
+
+                im = frame2im(frame);
+                [imind,cm] = rgb2ind(im,256);
+
+                if j == 1
+
+                    imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
+
+                else
+
+                    imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
+
+                end
+
+                clf
+             end
+                ext='.mp4';
+                filename=sprintf('%s%s8plane-Trace%d%s', path2File,'\',idx2Trace,ext);
+                v = VideoWriter(filename,'MPEG-4');
+                v.FrameRate = frameRate;
+                open(v)
+                writeVideo(v,mov);
+                close(v)
+
             end
 
-            clf
-           
+        function getTraces3DMovie(obj,frames,idx2Trace,ROI,frameRate)
+            assert(~isempty(obj.traces3D),'You need to extract 3D traces before getting traces Movie');
+            %             sizeMarker = 5;
+            Fig = figure;
 
-         end
+            path2File = obj.raw.movInfo.Path;
+            traces = obj.traces3D;
+            currentTraces = traces {idx2Trace};
+            pxSize = obj.info.pxSize;
+
+            [frames] = obj.checkFrame(frames,currentTraces.frame(end));
+            frames = find(ismember(frames,currentTraces.frame));
+            nFrames = length(frames);
+            ROInm = ROI*pxSize;
+            xAx = [-ROInm ROInm];
+            yAx = xAx;
+            zAx = xAx;
+            mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
+            gcf;
+            hold on
+            ext ='.gif';
+            filename = sprintf('%s%sTracking-Trace%d%s', path2File,'\',idx2Trace,ext);
+            for j = 1:nFrames
+                if j==1
+                else
+                f0 = frames(j-1);
+                f1 = frames(j);
+                colPlot = currentTraces.col(f0:f1) - mean(currentTraces.col);
+                rowPlot = currentTraces.row(f0:f1) - mean(currentTraces.row);
+                zPlot = currentTraces.z(f0:f1) - mean(currentTraces.z);
+                %plotting with z coloring:
+                patch([colPlot nan(size(colPlot))],[rowPlot nan(size(colPlot))],...
+                    [zPlot nan(size(colPlot))],[[f0;f1] nan(size(colPlot))],...
+                    'EdgeColor','interp','FaceColor','none')
+
+                end
+
+                xlim(xAx)
+                ylim(yAx)
+                zlim(zAx)
+                view(3);
+
+                xlabel('x Position (nm)');
+                ylabel('y Position(nm)');
+                zlabel('z Position(nm)');
+                set(gcf,'color','w');
+                frame = getframe(Fig);
+                mov(j) = frame;
+
+                im = frame2im(frame);
+                [imind,cm] = rgb2ind(im,256);
+
+                if j == 1
+
+                    imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
+
+                else
+
+                    imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
+
+                end
+            end
+
             ext='.mp4';
-            filename=sprintf('%s%splane%d-Trace%d%s', path2File,'\',i,idx2Trace,ext);
+            filename=sprintf('%s%sTracking-TraceMP4%d%s', path2File,'\',idx2Trace,ext);
             v = VideoWriter(filename,'MPEG-4');
             v.FrameRate = frameRate;
             open(v)
             writeVideo(v,mov);
             close(v)
-
-        end
-
-        function getTraces3DMovie(obj,frames,idx2Trace,ROI,frameRate)
-        assert(~isempty(obj.traces3D),'You need to extract 3D traces before getting traces Movie');
-        %             sizeMarker = 5;
-        Fig = figure;
-
-        path2File = obj.raw.movInfo.Path;
-        traces = obj.traces3D;
-        currentTraces = traces {idx2Trace};
-        pxSize = obj.info.pxSize;
-        
-        [frames] = obj.checkFrame(frames,size(currentTraces,1));
-        frames = find(ismember(frames,currentTraces.frame));
-        nFrames = length(frames);
-        ROInm = ROI*pxSize;
-        xAx = [-ROInm ROInm];
-        yAx = xAx;
-        zAx = xAx;
-        mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
-        gcf;
-        hold on
-        ext ='.gif';
-        filename = sprintf('%s%sTracking-Trace%d%s', path2File,'\',idx2Trace,ext);
-        for j = 1:nFrames
-            if j==1
-            else
-            f0 = frames(j-1);
-            f1 = frames(j);
-            colPlot = currentTraces.col(f0:f1) - mean(currentTraces.col);
-            rowPlot = currentTraces.row(f0:f1) - mean(currentTraces.row);
-            zPlot = currentTraces.z(f0:f1) - mean(currentTraces.z);
-            %plotting with z coloring:
-            patch([colPlot nan(size(colPlot))],[rowPlot nan(size(colPlot))],...
-                [zPlot nan(size(colPlot))],[[f0;f1] nan(size(colPlot))],...
-                'EdgeColor','interp','FaceColor','none')
-
-            end
-            
-            xlim(xAx)
-            ylim(yAx)
-            zlim(zAx)
-            view(3);
-            
-            xlabel('x Position (nm)');
-            ylabel('y Position(nm)');
-            zlabel('z Position(nm)');
-            set(gcf,'color','w');
-            frame = getframe(Fig);
-            mov(j) = frame;
-            
-            im = frame2im(frame);
-            [imind,cm] = rgb2ind(im,256);
-           
-            if j == 1
-                
-                imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
-                
-            else
-                
-                imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
-           
-            end
-        end
-
-        ext='.mp4';
-        filename=sprintf('%s%sTracking-TraceMP4%d%s', path2File,'\',idx2Trace,ext);
-        v = VideoWriter(filename,'MPEG-4');
-        v.FrameRate = frameRate;
-        open(v)
-        writeVideo(v,mov);
-        close(v)
         end
         
         function [RMSD,traces] = getRMSD(obj,dimension)
