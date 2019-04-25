@@ -139,9 +139,10 @@ classdef MPPlaneCalibration < handle
         end
         
        function save(obj)
+            cal2D = obj.getCal;
             filePath = obj.path;
             fileName = [filePath filesep '2DCal.mat'];
-            cal2D = obj;
+            
             save(fileName,'cal2D')
             disp('The calibration was succesfully saved');
         end

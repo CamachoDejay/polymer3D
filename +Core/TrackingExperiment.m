@@ -45,12 +45,23 @@ classdef TrackingExperiment < handle
         end
         
         function set.cal2D(obj,cal2D)
-            assert(isstruct(cal2D),'2D Calibration is expected to be received as a structure');
-            assert(isfield(cal2D,'fullPath'),'Missing field "fullPath" in cal2D structure');
-            assert(isfield(cal2D,'file'),'Missing field "file" in cal2D structure');
-           % assert(isfield(cal2D,'info'),'Missing field "info" in cal2D structure');
+            assert(ischar(cal2D), 'Path should be given as a string');
+            assert(isfolder(cal2D), 'The path given is not a folder, ZCalibration expect a folder. In the folder it is expected to find separate folder for each zCalMovie.')
             
-            obj.cal2D = cal2D;
+            [file2Analyze] = Core.Movie.getFileInPath(cal2D,'2DCal.mat');
+            
+            if isempty(file2Analyze)
+                error('No 2D calibration file found in the given folder');
+            else
+                fileName = [file2Analyze.folder filesep file2Analyze.name];
+                cal = load(fileName);
+                field = fieldnames(cal);
+                cal = cal.(field{1});
+                assert(and(isstruct(cal), and(isfield(cal,'camConfig'),isfield(cal,'file'))),...
+                    '2D calibration is supposed to be a struct with 4 fields');
+                obj.cal2D = cal.file;
+                
+            end
             
         end
         
