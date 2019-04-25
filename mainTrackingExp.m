@@ -6,7 +6,7 @@ close all;
 path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - CS';
 path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
-path2File = 'D:\Documents\Unif\PhD\2019-Data\Roger\02-Feb\26\Tracking';
+path2File = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS\X';
 path2Cal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
 detectParam.delta = 6;
@@ -34,8 +34,8 @@ trackingExp.retrieveMovies;
 %% get TrackingData
 detectParam.delta = 6;
 detectParam.chi2 = 60;
-trackParam.euDistXY = 400;
-trackParam.euDistZ  = 400;
+trackParam.euDistXY = 300;
+trackParam.euDistZ  = 200;
 val2Use = 'bestFocus';
 trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);
 

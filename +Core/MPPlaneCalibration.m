@@ -138,13 +138,12 @@ classdef MPPlaneCalibration < handle
             
         end
         
-        function save(obj)
-            
-            cal = obj.cal;
-            fileName = sprintf('%s%s2DCalibration.mat',obj.path,'\');
-            save(fileName,'cal');
+       function save(obj)
+            filePath = obj.path;
+            fileName = [filePath filesep '2DCal.mat'];
+            cal2D = obj;
+            save(fileName,'cal2D')
             disp('The calibration was succesfully saved');
-
         end
         
         function showCal(obj,idx)
@@ -233,6 +232,8 @@ classdef MPPlaneCalibration < handle
            
 
         end
+        
+        
         
      end
 end
