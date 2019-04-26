@@ -7,7 +7,7 @@
 filePath = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS\X';
 dim = 'x';
 period = 19;
-stepSize = 200;
+
 %% LOADING
 
 fileName = [filePath filesep 'trackResults.mat'];
@@ -19,6 +19,8 @@ trackData = trackData.(name{1});
 %% Process Data
 
 traces = trackData.traces(:,1);
+[step,mot] = getMotor(trackData,dim);
+
 nTraces = length(traces);
 lenTraces = cellfun(@height,traces);
 
@@ -29,19 +31,23 @@ idx2Mot = [0 period-1:period:maxLen];
 accPerTrace = zeros(nTraces,1);
 precPerTrace = zeros(nTraces,1);
 counter = 0;
-
+accPerStep =[];
+precPerStep =[];
 figure
 hold on
 for i =1:nTraces
     
     currTrace = traces{i};
+    currMot   = mot{i};
+    currStep  = step{i};
+    stepSize = max(currStep)*1000;
     lenCTrace = height(currTrace);
     
     if lenCTrace == maxLen
         
        CM = mean([currTrace.row,currTrace.col,currTrace.z],1);
        
-       data2Plot = getData2Plot(currTrace,CM,dim);
+       data2Plot = getData2Plot(currTrace,dim);
        acc = zeros(length(idx2Mot)-1,1);
        prec = acc;
        
@@ -53,6 +59,8 @@ for i =1:nTraces
            
        end
        plot(data2Plot)
+       precPerStep = [precPerStep; abs(diff(prec))-stepSize];
+       accPerStep  = [accPerStep; acc];
        precPerTrace(i) = mean(abs(diff(prec)));
        accPerTrace(i)  = mean(acc);
        counter = counter+1;
@@ -74,20 +82,41 @@ fprintf('The average precision is %d nm  based on %d traces \n',round(precision)
 
 %% function
 
-function [data2Plot] = getData2Plot(currTrace,CM,dim)
+function [data2Plot] = getData2Plot(currTrace,dim)
 
     switch(dim)
         
         case 'x'
-            data2Plot = currTrace.col-CM(2);
+            data2Plot = currTrace.col-mean(currTrace.col);
             
         case 'y'
-            data2Plot = currTrace.row-CM(1);
+            data2Plot = currTrace.row-mean(currTrace.row);
         
         case 'z'
             
-            data2Plot = currTrace.z-CM(3);
+            data2Plot = currTrace.z-mean(currTrace.z);
     end
 
 end
+
+function [step,mot] = getMotor(trackData,dim)
     
+    switch(dim)
+        case 'x'
+           
+            mot  = trackData.traces(:,4);
+            step = trackData.traces(:,3);
+        
+        case 'y'
+        
+            mot  = trackData.traces(:,6);
+            step = trackData.traces(:,5);
+        
+        case 'z'
+        
+            mot  = trackData.traces(:,8) ;
+            step = trackData.traces(:,7);
+    
+    end
+
+end

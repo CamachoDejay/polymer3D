@@ -58,7 +58,7 @@ classdef ZCalibration < handle
                 cal = cal.(field{1});
                 assert(and(isstruct(cal), and(isfield(cal,'camConfig'),isfield(cal,'file'))),...
                     '2D calibration is supposed to be a struct with 4 fields');
-                obj.cal2D = cal.file;
+                obj.cal2D = cal2D;
                 
             end
             

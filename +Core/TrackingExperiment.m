@@ -199,7 +199,7 @@ classdef TrackingExperiment < handle
                 
                 [xStep,xMotor] = currentTrackMov.getXPosMotor;
                 [yStep,yMotor] = currentTrackMov.getYPosMotor;
-                [zSt,zMotor] = currentTrackMov.getZPosMotor;
+                [zSt,zMotor]   = currentTrackMov.getZPosMotor;
                 
                 colMot = cell(length(traces),1);
                 colMot(:,1) = {xMotor};

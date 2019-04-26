@@ -4,8 +4,8 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - 100';
-path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2zCal = 'E:\Data\Leuven Data\2018\ZHao\181015 - Calibration\ZCal\Good Cal';
+path2Cal  = 'E:\Data\Leuven Data\2018\ZHao\181010 - calibration\2DCal';
 
 detectParam.delta = 6;
 detectParam.chi2 = 60;
@@ -13,7 +13,7 @@ fitZParam.deg = 6;
 fitZParam.ellipRangeCal = [0.5 2]; %for calibration
 fitZParam.ellipRange = [0.7 1.42];%To be used for data (we do not want to use too large values==> edge planes)
 trackParam.euDistPx = 3; 
-trackParam.commonPlanes = 2; %1 for extended, 2 for interleaved
+trackParam.commonPlanes = 1; %1 for extended, 2 for interleaved
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
@@ -25,7 +25,8 @@ calib.retrieveMovies;
 calib.calcIndivCal;
 calib.calcCombinedCal;
 calib.showCal(1);
-zCal = Core.ZCalibration(path2zCal,calib.getCal,info);
+calib.save;
+zCal = Core.ZCalibration(path2zCal,path2Cal,info);
 
 %% get zCalibrationMovie
 
