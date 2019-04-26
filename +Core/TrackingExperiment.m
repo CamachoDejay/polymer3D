@@ -59,7 +59,7 @@ classdef TrackingExperiment < handle
                 cal = cal.(field{1});
                 assert(and(isstruct(cal), and(isfield(cal,'camConfig'),isfield(cal,'file'))),...
                     '2D calibration is supposed to be a struct with 4 fields');
-                obj.cal2D = cal.file;
+                obj.cal2D = cal;
                 
             end
             
@@ -194,15 +194,36 @@ classdef TrackingExperiment < handle
                 currentTrackMov.trackParticle(trackParam);
                 
                 [traces] = currentTrackMov.getTraces;
+                fileN = cell(length(traces),1);
+                fileN(:,1) = {i};
                 
-                allTraces = [allTraces; traces];
+                [xStep,xMotor] = currentTrackMov.getXPosMotor;
+                [yStep,yMotor] = currentTrackMov.getYPosMotor;
+                [zSt,zMotor] = currentTrackMov.getZPosMotor;
+                
+                colMot = cell(length(traces),1);
+                colMot(:,1) = {xMotor};
+                colStep = cell(length(traces),1);
+                colStep(:,1) = {xStep};
+                
+                rowMot = cell(length(traces),1);
+                rowMot(:,1) = {yMotor};
+                rowStep = cell(length(traces),1);
+                rowStep(:,1) = {yStep};
+                
+                zMot = cell(length(traces),1);
+                zMot(:,1) = {zMotor};
+                zStep = cell(length(traces),1);
+                zStep(:,1) = {zSt};
+                
+                allTraces = [allTraces; traces, fileN,colStep,colMot,rowStep,rowMot,zStep,zMot ];
                 
             end
             
             obj.traces3D = allTraces;
             
-            filename = [obj.path filesep 'traces3D.mat'];
-            save(filename,'allTraces');
+%             filename = [obj.path filesep 'traces3D.mat'];
+%             save(filename,'allTraces');
             
             
             disp('=================> DONE <===================');
