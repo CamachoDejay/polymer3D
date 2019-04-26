@@ -101,8 +101,74 @@ function [k1, k2, k3, k4, nFrames] = indexFrameHeader(frameHeader)
     k3 = strfind(frameHeader, '<Plane');
     k4 = strfind(frameHeader, '"/>');
     k4(k4<min(k3)) = [];
-    nFrames = size(k1,2);
-   assert(all([length(k2), length(k3), length(k4)]==nFrames),'Plane and tif information do not match');
+    nFrames = size(k3,2);
+
+    if(~all([length(k2), length(k3), length(k4)]==nFrames))
+        warning('Trying to find error and correct file (exposure time was likely too low or area imaged too large');
+        if length(k1)>length(k3)
+            idx = strfind(frameHeader,'IFD=');
+            idx1 = strfind(frameHeader, 'FirstT=');
+            idx2 = strfind(frameHeader, 'FirstC=');
+            idx3 = strfind(frameHeader,'PlaneCount=');
+            idx4 = strfind(frameHeader,'FirstZ=');
+           
+            IFD = zeros(size(idx1));
+            C   = IFD;
+            T   = IFD;
+            
+            for i = 1:size(idx1,2)
+                IFD(i) = str2double(frameHeader(idx(i)+5:idx3(i)-3));
+                C(i)   = str2double(frameHeader(idx2(i)+8:idx1(i)-3));
+                T(i)   = str2double(frameHeader(idx1(i)+8:idx4(i)-3));
+            end
+       
+            %find which frame is duplicated
+            val = unique(T); % which will give you the unique elements of A in array B
+            Ncount = histc(T, val);
+            
+            duplicate = val(Ncount>2);
+            nWrong = length(duplicate);
+            disp([num2str(nWrong) ' wrong lines found']);
+            if nWrong > 0.01*nFrames
+                error('More than 1% of the data has mistakes, cannot pursue')
+            end
+            %correct the errors
+            for i = 1:nWrong
+                currErr = duplicate(i);
+                cIFDs = IFD(T==currErr);
+                cCs   = C(T==currErr);
+                
+                testCam = sum(cCs);
+                %determine which camera is wrong
+                if testCam > 1
+                    cIFDs = cIFDs(cCs==1);  
+                else
+                    cIFDs = cIFDs(cCs==0);
+                end
+                
+                %determine which of these IFD value is duplicated
+                counter = zeros(size(cIFDs));
+                for j = 1:length(cIFDs)
+                    counter(j) = sum(IFD==cIFDs(j));
+                     
+                end
+                
+                [~,idx] = max(counter);
+                
+                val2Delete = cIFDs(idx);
+                
+                idx2Delete = find(and(IFD==val2Delete,T==duplicate(i)));
+                
+                k1(idx2Delete) = [];
+                k2(idx2Delete)  = [];
+                
+            end
+            
+            
+            
+        end
+        
+    end
 
 end
 

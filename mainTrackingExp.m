@@ -25,7 +25,7 @@ calib.showCal(1);
 
 %% create experiments
 
-trackingExp = Core.TrackingExperiment(path2File,calib.getCal,info,path2SRCal,path2ZCal);
+trackingExp = Core.TrackingExperiment(path2File,path2Cal,info,path2SRCal,path2ZCal);
 
 %% get Movies
 
@@ -34,7 +34,7 @@ trackingExp.retrieveMovies;
 %% get TrackingData
 detectParam.delta = 6;
 detectParam.chi2 = 60;
-trackParam.euDistXY = 300;
+trackParam.euDistXY = 400;
 trackParam.euDistZ  = 200;
 val2Use = 'bestFocus';
 trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);

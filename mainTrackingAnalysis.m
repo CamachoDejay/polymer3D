@@ -18,7 +18,7 @@ trackData = trackData.(name{1});
 
 %% Process Data
 
-traces = trackData.traces;
+traces = trackData.traces(:,1);
 nTraces = length(traces);
 lenTraces = cellfun(@height,traces);
 
@@ -28,7 +28,10 @@ idx2Mot = [0 period-1:period:maxLen];
 
 accPerTrace = zeros(nTraces,1);
 precPerTrace = zeros(nTraces,1);
+counter = 0;
 
+figure
+hold on
 for i =1:nTraces
     
     currTrace = traces{i};
@@ -49,10 +52,10 @@ for i =1:nTraces
            prec(j)  = mean(data2Plot(idx));          
            
        end
-       
+       plot(data2Plot)
        precPerTrace(i) = mean(abs(diff(prec)));
        accPerTrace(i)  = mean(acc);
-       
+       counter = counter+1;
     
     end
 end
@@ -62,8 +65,14 @@ accPerTrace(accPerTrace==0)   = [];
 precision = mean(abs(precPerTrace-stepSize));
 accuracy  = mean(accPerTrace);
 
-fprintf('The average tracking accuracy is %d nm \n',round(accuracy));
-fprintf('The average precision is %d nm \n',round(precision));
+fprintf('The average tracking accuracy is %d nm based on %d traces\n',round(accuracy),counter);
+fprintf('The average precision is %d nm  based on %d traces \n',round(precision),counter);
+
+%% Plotting
+
+
+
+%% function
 
 function [data2Plot] = getData2Plot(currTrace,CM,dim)
 
