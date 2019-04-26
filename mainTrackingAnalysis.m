@@ -7,7 +7,7 @@
 filePath = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS\X';
 dim = 'x';
 period = 19;
-
+idx2Plot = 1;
 %% LOADING
 
 fileName = [filePath filesep 'trackResults.mat'];
@@ -20,7 +20,7 @@ trackData = trackData.(name{1});
 
 traces = trackData.traces(:,1);
 [step,mot] = getMotor(trackData,dim);
-
+fileRef = trackData.traces(:,2);
 nTraces = length(traces);
 lenTraces = cellfun(@height,traces);
 
@@ -33,12 +33,13 @@ precPerTrace = zeros(nTraces,1);
 counter = 0;
 accPerStep =[];
 precPerStep =[];
+motPlot = zeros(maxLen,1);
 figure
 hold on
 for i =1:nTraces
     
     currTrace = traces{i};
-    currMot   = mot{i};
+    currMot   = mot{i}(2:end);
     currStep  = step{i};
     stepSize = max(currStep)*1000;
     lenCTrace = height(currTrace);
@@ -55,7 +56,8 @@ for i =1:nTraces
            
            idx = idx2Mot(j)+1:idx2Mot(j+1);
            acc(j) = std(data2Plot(idx));
-           prec(j)  = mean(data2Plot(idx));          
+           prec(j)  = mean(data2Plot(idx));
+           
            
        end
        plot(data2Plot)
@@ -76,10 +78,40 @@ accuracy  = mean(accPerTrace);
 fprintf('The average tracking accuracy is %d nm based on %d traces\n',round(accuracy),counter);
 fprintf('The average precision is %d nm  based on %d traces \n',round(precision),counter);
 
+
+
+figure
+subplot(1,2,1)
+histogram(accPerStep)
+title('Accuracy');
+subplot(1,2,2)
+histogram(precPerStep)
+title('Precision')
+
+
+
+
 %% Plotting
+figure 
+hold on
+%select the traces to plot
+idx = cell2mat(fileRef)==idx2Plot;
+tracePlot = traces(idx);
+lenTraces = lenTraces(idx);
+idx2 =lenTraces==max(lenTraces);
+tracePlot = tracePlot(idx2);
 
-
-
+for i = 1:length(tracePlot)
+    currTrace = tracePlot{i};
+    currMot = mot{i};
+    data2Plot = getData2Plot(currTrace,dim);
+    scatter(1:length(data2Plot),data2Plot,'filled')
+    
+end
+motPlot = abs(mot{i})*1000;
+motPlot = motPlot(currTrace.frame);
+motPlot = motPlot - mean(motPlot);
+plot(motPlot,'-r','LineWidth',2);
 %% function
 
 function [data2Plot] = getData2Plot(currTrace,dim)
