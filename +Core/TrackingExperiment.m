@@ -188,7 +188,7 @@ classdef TrackingExperiment < handle
                 currentTrackMov.consolidatePlanes;
                 
                 %superResolve
-                currentTrackMov.superResolve(val2Use);
+                currentTrackMov.superResolve;
                 
                 %tracking occurs here
                 currentTrackMov.trackParticle(trackParam);

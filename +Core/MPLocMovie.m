@@ -215,7 +215,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             end
         end
                 
-        function superResolve(obj, val2Use)
+        function superResolve(obj)
             disp('super resolving positions ... ');
             data2Resolve = obj.particles.List;
             
@@ -225,7 +225,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 for j = 1:length(frameData)
                     SRList{i}{j} = SRList{i}{j}(1,{'row','col','z'});
                     partData = frameData{j};
-                    [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}),val2Use);
+                    [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}));
                     
                     SRList{i}{j} = data;
                     SRList{i}{j}.intensity = partData.intensity(3);
