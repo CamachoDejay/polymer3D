@@ -440,23 +440,24 @@ classdef MPLocMovie < Core.MPParticleMovie
              
         end
         
-        function [data]  = resolveXYZ(obj,partData,val2Use)
+        function [data]  = resolveXYZ(obj,partData)
             ellipRange = obj.ZCal.fitZParam.ellipRange;  
             pxSize = obj.info.pxSize;
-            switch val2Use
-                case 'bestFocus'
-                   row = partData.row(3)*pxSize;
-                   col = partData.col(3)*pxSize;
-                   z = partData.z(3);
-                case 'mean'
-                    idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
-                    row = mean(partData.row(idx2Keep))*pxSize;
-                    col = mean(partData.col(idx2Keep))*pxSize;
-                    z   = mean(partData.z(idx2Keep));
-                otherwise
-                    error('Unknown value to use, only know "bestFocus" and "mean"');
-            end
-            data = table(row,col,z,'VariableNames',{'row','col','z'});
+         
+           row  = partData.row(3)*pxSize;
+           col  = partData.col(3)*pxSize;
+           z    = partData.z(3);
+           data = table(row,col,z,'VariableNames',{'row','col','z'});
+           
+           idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
+           row = mean(partData.row(idx2Keep))*pxSize;
+           col = mean(partData.col(idx2Keep))*pxSize;
+           z   = mean(partData.z(idx2Keep));
+              
+           data.rowM = row;
+           data.colM = col;
+           data.zCol = z;
+            
          end
         
         function [method] = pickZFitMethod(obj)
