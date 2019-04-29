@@ -286,7 +286,7 @@ classdef MPLocMovie < Core.MPParticleMovie
     end
     
     
-    methods (Access = private)
+    methods (Access = protected)
         
         function [corrData] = applyTrans(obj, data2Corr, transMat, refPlane, currentPlane)
             %act depending on whether the current plane is smaller or
@@ -443,20 +443,26 @@ classdef MPLocMovie < Core.MPParticleMovie
         function [data]  = resolveXYZ(obj,partData)
             ellipRange = obj.ZCal.fitZParam.ellipRange;  
             pxSize = obj.info.pxSize;
-         
-           row  = partData.row(3)*pxSize;
-           col  = partData.col(3)*pxSize;
-           z    = partData.z(3);
-           data = table(row,col,z,'VariableNames',{'row','col','z'});
-           
-           idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
-           row = mean(partData.row(idx2Keep))*pxSize;
-           col = mean(partData.col(idx2Keep))*pxSize;
-           z   = mean(partData.z(idx2Keep));
-              
-           data.rowM = row;
-           data.colM = col;
-           data.zCol = z;
+            idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
+            partData(~idx2Keep,:) = table(nan);
+            
+            row  = partData.row(3)*pxSize;
+            col  = partData.col(3)*pxSize;
+            z    = partData.z(3);
+            data = table(row,col,z,'VariableNames',{'row','col','z'});
+            %check how to perform averaging depending on the camera config
+            [doAvg]  = obj.checkDoAverage;
+            
+            if doAvg
+               
+                row = mean(partData.row(idx2Keep))*pxSize;
+                col = mean(partData.col(idx2Keep))*pxSize;
+                z   = mean(partData.z(idx2Keep));
+            end
+            
+            data.rowM = row;
+            data.colM = col;
+            data.zM = z;
             
          end
         
@@ -492,6 +498,8 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             
         end
+        
+        
        
     end
 end

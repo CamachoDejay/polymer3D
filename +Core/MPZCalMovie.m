@@ -371,31 +371,9 @@ classdef MPZCalMovie < Core.MPCalMovie
                 %weighed average occur here
                 %diag is taken because of the matrix operation between weight
                 %and zAvg
-                camConfig = obj.calibrated.camConfig;
-                switch camConfig
-                    case 'fullRange'
-                        if and(particle.ellip(3)>0.8,particle.ellip(3)<1.25)
-                            avg = false;
-                        else
-                            avg = true;
-                        end
-                           
-                    case 'interleaved'
-                        
-                            avg = true;
-        
-                    case 'equal'
-                        if and(particle.ellip(3)>0.8,particle.ellip(3)<1.25)
-                            avg = false;
-                        else
-                            avg = true;
-                        end
-                        
-                    otherwise
-                        error('unknown camera config');
-                end
+                [doAvg]  = obj.checkDoAverage;
                 
-                if avg
+                if doAvg
                     zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);
                 else 
                     zAvg = zPos;

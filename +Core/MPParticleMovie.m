@@ -640,7 +640,7 @@ classdef MPParticleMovie < Core.MPMovie
 
         end
         
-        function [int,SNR] = getIntensity(ROI,sig)
+        function [int,SNR]  = getIntensity(ROI,sig)
             %extract central position
             center = [ceil(size(ROI,1)/2),ceil(size(ROI,2)/2)];
             rowPos = center(1);
@@ -664,12 +664,13 @@ classdef MPParticleMovie < Core.MPMovie
             %calculate signal
             int = px2SumInt - bkg;
             int = sum(sum(int));
-            SNR = max(px2SumInt)/bkgVar;
+            %SNR = max(max(px2SumInt))/bkgVar;
+            SNR = sqrt(int);
         end
        
      end
      
-     methods (Access = private)
+     methods (Access = protected)
         %method linked to candidate
         function [run,candidate] = existCandidate(obj,Path,ext)
             
@@ -901,6 +902,31 @@ classdef MPParticleMovie < Core.MPMovie
 
         end
         
+        function [doAvg]  = checkDoAverage(obj)
+            camConfig = obj.calibrated.camConfig;
+            switch camConfig
+                case 'fullRange'
+                    if and(particle.ellip(3)>0.8,particle.ellip(3)<1.25)
+                        doAvg = false;
+                    else
+                        doAvg = true;
+                    end
+
+                case 'interleaved'
+
+                        doAvg = true;
+
+                case 'equal'
+                    if and(particle.ellip(3)>0.8,particle.ellip(3)<1.25)
+                        doAvg = false;
+                    else
+                        doAvg = true;
+                    end
+
+                otherwise
+                    error('unknown camera config');
+            end
+        end
        
      end
 end
