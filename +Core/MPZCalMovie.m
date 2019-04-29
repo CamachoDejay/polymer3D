@@ -374,17 +374,18 @@ classdef MPZCalMovie < Core.MPCalMovie
                 camConfig = obj.calibrated.camConfig;
                 switch camConfig
                     case 'fullRange'
-                        if and(particle.ellip(3)>0.9,particle.ellip(3)>1.11)
+                        if and(particle.ellip(3)>0.8,particle.ellip(3)<1.25)
                             avg = false;
                         else
                             avg = true;
                         end
                            
                     case 'interleaved'
-                        avg = true;
                         
+                            avg = true;
+        
                     case 'equal'
-                        if and(particle.ellip(3)>0.9,particle.ellip(3)>1.11)
+                        if and(particle.ellip(3)>0.8,particle.ellip(3)<1.25)
                             avg = false;
                         else
                             avg = true;
