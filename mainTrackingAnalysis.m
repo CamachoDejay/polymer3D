@@ -1,12 +1,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%% MAIN TRACKING ANALYSIS %%%%%%%%%%%%%%%%%%%%%%%%%%
 % The aim this code is to plot/view tracking data in a nice way. Coding it
 % outside of the object allows for a bit of flexibility.
-
+clear;
+close all;
+clc;
 %% USER INPUT
 
-filePath = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS\X';
-dim = 'x';
-period = 19;
+filePath = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS OD35\Z';
+dim = 'z';
+period = 20;
 idx2Plot = 1;
 %% LOADING
 
@@ -24,16 +26,24 @@ fileRef = trackData.traces(:,2);
 nTraces = length(traces);
 lenTraces = cellfun(@height,traces);
 
-maxLen = max(lenTraces);
-
-idx2Mot = [0 period-1:period:maxLen];
+[maxLen,idx] = max(lenTraces);
+maxFrame = max(traces{idx}.frame);
+idx2Mot = [0 period:period:maxFrame+1];
 
 precPerTrace = zeros(nTraces,1);
 accPerTrace = zeros(nTraces,1);
+
+precMPerTrace = zeros(nTraces,1);
+accMPerTrace = zeros(nTraces,1);
+intPerTrace = zeros(nTraces,1);
+SNRPerTrace = zeros(nTraces,1);
+
 counter = 0;
-precPerStep =[];
-accPerStep =[];
-motPlot = zeros(maxLen,1);
+precMPerStep = [];
+accMPerStep  = [];
+precPerStep  = [];
+accPerStep   = [];
+
 figure
 hold on
 for i =1:nTraces
@@ -43,51 +53,99 @@ for i =1:nTraces
     currStep  = step{i};
     stepSize = max(currStep)*1000;
     lenCTrace = height(currTrace);
-    
-    if lenCTrace == maxLen
-        
-       CM = mean([currTrace.row,currTrace.col,currTrace.z],1);
+
+    data2Plot = getData2Plot(currTrace,dim);
+    prec = zeros(length(idx2Mot)-1,1);
+    acc = prec;
+    precM = zeros(length(idx2Mot)-1,1);
+    accM = precM;
+    int  = prec;
+    SNR  = prec;
+    frames = currTrace.frame;
        
-       data2Plot = getData2Plot(currTrace,dim);
-       prec = zeros(length(idx2Mot)-1,1);
-       acc = prec;
+    for j = 1: length(idx2Mot)-1
+
+       idx = idx2Mot(j)+1:idx2Mot(j+1);
+       [~,idx2Frame] = intersect(frames,idx);
+       if ~isempty(idx2Frame)
+           prec(j)  = std(data2Plot(idx2Frame,1));
+           acc(j)   = mean(data2Plot(idx2Frame,1));
+           precM(j) = std(data2Plot(idx2Frame,2));
+           accM(j)  = mean(data2Plot(idx2Frame,2));
+           int(j)   = mean(currTrace.intensity(idx2Frame));
+           SNR(j)   = mean(currTrace.SNR(idx2Frame));
        
-       for j = 1: length(idx2Mot)-1
-           
-           idx = idx2Mot(j)+1:idx2Mot(j+1);
-           prec(j) = std(data2Plot(idx));
-           acc(j)  = mean(data2Plot(idx));
-           
-           
        end
-       plot(data2Plot)
-       accPerStep = [accPerStep; abs(diff(acc))-stepSize];
-       precPerStep  = [precPerStep; prec];
-       accPerTrace(i) = mean(abs(diff(acc)));
-       precPerTrace(i)  = mean(prec);
-       counter = counter+1;
-    
     end
+    plot(data2Plot(:,1))
+    %clean data
+    prec(prec==0)   = [];
+    acc(acc==0)     = [];
+    precM(precM==0) = [];
+    accM(accM==0)   = [];
+    int(int==0)     = [];
+    SNR(SNR==0)     = [];
+    
+    precPerStep  = [precPerStep; prec];
+    precMPerStep  = [precMPerStep; precM];
+    precPerTrace(i)  = mean(prec);
+    precMPerTrace(i)  = mean(precM);
+    intPerTrace(i) = mean(int);
+    SNRPerTrace(i) = mean(SNR);
+    
+    if length(prec)>1
+        
+        accPerStep = [accPerStep; abs(diff(acc))-stepSize];
+        accMPerStep = [accMPerStep; abs(diff(accM))-stepSize];
+        accPerTrace(i) = mean(abs(diff(acc)));
+        accMPerTrace(i) = mean(abs(diff(accM)));
+        
+    end
+
+    counter = counter+1;
+    
 end
 accPerTrace(accPerTrace==0) = [];
 precPerTrace(precPerTrace==0)   = [];
+accMPerTrace(accMPerTrace==0) = [];
+precMPerTrace(precMPerTrace==0)   = [];
 
-accuracy = mean(abs(accPerTrace-stepSize));
-precision  = mean(precPerTrace);
+accuracy = nanmean(abs(accPerTrace-stepSize));
+precision  = nanmean(precPerTrace);
 
-fprintf('The average tracking precision is %d nm based on %d traces\n',round(precision),counter);
-fprintf('The average tracking accuracy is %d nm  based on %d traces\n',round(accuracy),counter);
-fprintf('The FWHM is %d nm based on %d traces\n',round(2*sqrt(2*log(2))*precision),counter)
+accuracyM = nanmean(abs(accMPerTrace-stepSize));
+precisionM  = nanmean(precMPerTrace);
 
+intensity  = mean(intPerTrace);
+SNR        = mean(SNRPerTrace);
+
+
+fprintf('The average tracking precision for best focus is %d nm based on %d traces\n',round(precision),counter);
+fprintf('The average tracking accuracy for best focus is %d nm  based on %d traces\n',round(accuracy),counter);
+fprintf('The FWHM for best focus is %d nm based on %d traces\n',round(2*sqrt(2*log(2))*precision),counter)
+
+fprintf('The average tracking precision for mean is %d nm based on %d traces\n',round(precisionM),counter);
+fprintf('The average tracking accuracy for mean is %d nm  based on %d traces\n',round(accuracyM),counter);
+fprintf('The FWHM for mean is %d nm based on %d traces\n',round(2*sqrt(2*log(2))*precisionM),counter)
+
+fprintf('The average intensity is %d photons\n',intensity);
+fprintf('The average SNR is %d \n',SNR);
 
 figure
 subplot(1,2,1)
 histogram(precPerStep)
-title('Precision');
+title('Precision for best focus');
 subplot(1,2,2)
 histogram(accPerStep)
-title('Accuracy')
+title('Accuracy for best focus')
 
+figure
+subplot(1,2,1)
+histogram(precMPerStep)
+title('Precision for Mean');
+subplot(1,2,2)
+histogram(accMPerStep)
+title('Accuracy for Mean')
 
 
 
@@ -105,10 +163,10 @@ for i = 1:length(tracePlot)
     currTrace = tracePlot{i};
     currMot = mot{i};
     data2Plot = getData2Plot(currTrace,dim);
-    scatter(1:length(data2Plot),data2Plot,'filled')
+    scatter(1:length(data2Plot),data2Plot(:,1),'filled')
     
 end
-motPlot = abs(mot{i})*1000;
+motPlot = mot{i}*1000;
 motPlot = motPlot(currTrace.frame);
 motPlot = motPlot - mean(motPlot);
 plot(motPlot,'-r','LineWidth',2);
@@ -119,14 +177,17 @@ function [data2Plot] = getData2Plot(currTrace,dim)
     switch(dim)
         
         case 'x'
-            data2Plot = currTrace.col-mean(currTrace.col);
+            data2Plot(:,1) = currTrace.col-mean(currTrace.col);
+            data2Plot(:,2) = currTrace.colM-mean(currTrace.colM);
             
         case 'y'
-            data2Plot = currTrace.row-mean(currTrace.row);
+            data2Plot(:,1) = currTrace.row-mean(currTrace.row);
+            data2Plot(:,2) = currTrace.rowM-mean(currTrace.rowM);
         
         case 'z'
             
-            data2Plot = currTrace.z-mean(currTrace.z);
+            data2Plot(:,1) = currTrace.z-mean(currTrace.z);
+            data2Plot(:,2) = currTrace.zM-mean(currTrace.zM);
     end
 
 end
@@ -136,12 +197,12 @@ function [step,mot] = getMotor(trackData,dim)
     switch(dim)
         case 'x'
            
-            mot  = trackData.traces(:,4);
+            mot  = abs(trackData.traces(:,4));
             step = trackData.traces(:,3);
         
         case 'y'
         
-            mot  = trackData.traces(:,6);
+            mot  = abs(trackData.traces(:,6));
             step = trackData.traces(:,5);
         
         case 'z'

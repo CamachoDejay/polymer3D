@@ -629,8 +629,8 @@ classdef MPTrackingMovie < Core.MPLocMovie
                     if ~isnan(currentTrace)
                         
                         traces3D{currentTrace}(fCounter(currentTrace),...
-                            {'row','col','z','intensity','SNR','frame'}) =...
-                            [currentPart(:,{'row','col','z','intensity','SNR'}),  table(i)];
+                            {'row','col','z','rowM','colM','zM','intensity','SNR','frame'}) =...
+                            [currentPart(:,{'row','col','z','rowM','colM','zM','intensity','SNR'}),  table(i)];
                         
                         
                         fCounter(currentTrace) = fCounter(currentTrace)+1;
