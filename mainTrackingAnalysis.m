@@ -72,12 +72,12 @@ end
 accPerTrace(accPerTrace==0) = [];
 precPerTrace(precPerTrace==0)   = [];
 
-precision = mean(abs(accPerTrace-stepSize));
-accuracy  = mean(precPerTrace);
+accuracy = mean(abs(accPerTrace-stepSize));
+precision  = mean(precPerTrace);
 
-fprintf('The average tracking precision is %d nm based on %d traces\n',round(accuracy),counter);
-fprintf('The average tracking accuracy is %d nm  based on %d traces \n',round(precision),counter);
-
+fprintf('The average tracking precision is %d nm based on %d traces\n',round(precision),counter);
+fprintf('The average tracking accuracy is %d nm  based on %d traces\n',round(accuracy),counter);
+fprintf('The FWHM is %d nm based on %d traces\n',round(2*sqrt(2*log(2))*precision),counter)
 
 
 figure
