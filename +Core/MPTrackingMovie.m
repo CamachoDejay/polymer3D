@@ -29,7 +29,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             assert(and(isfield(trackParam,'euDistXY'),isfield(trackParam,'euDistZ')),...
                 'Tracking parameter is expected to be a struct with two field "euDistPXY" and "euDistZ"')
             assert(~isempty(obj.corrected),'Data needs to be corrected before tracking');
-            assert(and(obj.corrected.XY,obj.corrected.Z),'Data needs to be corrected before tracking');
+            assert(or(and(obj.corrected.XY,obj.corrected.Z),isempty(obj.SRCal)),'Data needs to be corrected before tracking');
             
             %We copy the List as boolean to keep track of where there are
             %still particles left

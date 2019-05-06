@@ -219,20 +219,34 @@ classdef MPLocMovie < Core.MPParticleMovie
             disp('super resolving positions ... ');
             data2Resolve = obj.particles.List;
             
-            SRList = cell(data2Resolve);
+            SRList = [];
             for i = 1:length(data2Resolve)
                 frameData = data2Resolve{i};
+                frameData2Store = table(zeros(size(frameData)),...
+                    zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
+                    zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
+                    zeros(size(frameData)),zeros(size(frameData)),'VariableNames',...
+                    {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
+                
                 for j = 1:length(frameData)
-                    SRList{i}{j} = SRList{i}{j}(1,{'row','col','z'});
+                    %SRList{i}{j} = SRList{i}{j}(1,{'row','col','z'});
                     partData = frameData{j};
                     [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}));
-                    
-                    SRList{i}{j} = data;
-                    SRList{i}{j}.intensity = partData.intensity(3);
-                    SRList{i}{j}.SNR = partData.SNR(3);
+                    frameData2Store(j,{'row','col','z','rowM','colM','zM'}) = data;
+                    frameData2Store.intensity(j) = partData.intensity(3);
+                    frameData2Store.SNR(j) = partData.SNR(3);
+                    frameData2Store.t(j) = j;
+                    %SRList{i}{j} = data;
+                    %SRList{i}{j}.intensity = partData.intensity(3);
+                    %SRList{i}{j}.SNR = partData.SNR(3);
 
                 end
+             SRList = [SRList;frameData2Store];   
+                
             end
+            
+            %clean up the list
+            SRList(isnan(SRList.row),:) = [];
                 
             obj.particles.SRList = SRList;    
             disp('========> DONE ! <=========');

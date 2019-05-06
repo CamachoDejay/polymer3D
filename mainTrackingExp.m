@@ -3,11 +3,11 @@ clear
 close all;
 
 
-path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - 50';
-path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2ZCal = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\test\ZCal';
+path2SRCal = [];
 
-path2File = 'E:\Data\Leuven Data\2019\04 - April\3\Spirals';
-path2Cal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2File = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\test\X';
+path2Cal = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\test\2DCal';
 
 detectParam.delta = 6;
 detectParam.chi2 = 60;
@@ -22,6 +22,7 @@ calib.retrieveMovies;
 calib.calcIndivCal;
 calib.calcCombinedCal;
 calib.showCal(1);
+calib.save;
 
 %% create experiments
 

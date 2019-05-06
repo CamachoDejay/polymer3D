@@ -66,23 +66,28 @@ classdef TrackingExperiment < handle
         end
         
         function set.SRCal(obj,SRCal)
-            assert(isfolder(SRCal), 'The given path is not a folder');
-            
-            %Check Given path
-            [file2Analyze] = Core.Movie.getFileInPath(SRCal,'SRCalibration.mat');
-            
-            if isempty(file2Analyze)
-                error('No SR calibration file found in the given folder');
-            else
-                fileName = [file2Analyze.folder filesep file2Analyze.name];
-                cal = load(fileName);
-                field = fieldnames(cal);
-                cal = cal.(field{1});
-                assert(and(isstruct(cal), and(isfield(cal,'trans'),isfield(cal,'rot'))),...
-                    'SR calibration is supposed to be a struct with 2 fields');
-                
-                obj.SRCal.cal = cal;
+            if isempty(SRCal)
+                obj.SRCal.cal = SRCal;
                 obj.SRCal.path = SRCal;
+            else
+                assert(isfolder(SRCal), 'The given path is not a folder');
+
+                %Check Given path
+                [file2Analyze] = Core.Movie.getFileInPath(SRCal,'SRCalibration.mat');
+
+                if isempty(file2Analyze)
+                    error('No SR calibration file found in the given folder');
+                else
+                    fileName = [file2Analyze.folder filesep file2Analyze.name];
+                    cal = load(fileName);
+                    field = fieldnames(cal);
+                    cal = cal.(field{1});
+                    assert(and(isstruct(cal), and(isfield(cal,'trans'),isfield(cal,'rot'))),...
+                        'SR calibration is supposed to be a struct with 2 fields');
+
+                    obj.SRCal.cal = cal;
+                    obj.SRCal.path = SRCal;
+                end
             end
             
         end
