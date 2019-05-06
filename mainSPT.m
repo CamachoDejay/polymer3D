@@ -10,7 +10,7 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File = 'E:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\X\XTrackExtendedConfCS_1';
+path2File = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS OD5\Z\ZTrackInterleaved_1';
 path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
 
@@ -19,7 +19,7 @@ path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 % path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 20;
 info.type = 'normal';
 %info.frame2Load = 1:50; % if want to analyze only part of the movie(full
 %is default)
@@ -63,13 +63,13 @@ mpMov.saveMovie('gif',30,10,1)
 
 %% MP Particle Movie
 mpPartMov = Core.MPParticleMovie(path2File,calib.getCal,info);
-mpPartMov.giveInfo;
+mpPartMov.giveInfo; 
 mpPartMov.calibrate;
 %% getCandidatePos
 
 mpPartMov.findCandidatePos(detectParam);
 %candidate = mpPartMov.getCandidatePos(24);
-mpPartMov.showCandidate(20);
+mpPartMov.showCandidate(1);
 
 %% SR Localize
 mpPartMov.SRLocalizeCandidate;

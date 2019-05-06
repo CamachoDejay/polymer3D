@@ -3,18 +3,18 @@ clear
 close all;
 
 
-path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - CS';
+path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - 50';
 path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
-path2File = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS OD45\X';
+path2File = 'E:\Data\Leuven Data\2019\04 - April\3\Spirals';
 path2Cal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
 
 detectParam.delta = 6;
-detectParam.chi2 = 30;
+detectParam.chi2 = 60;
 
 %% MP Cal
 info.type = 'normal';
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 calib = Core.MPPlaneCalibration(path2Cal,info);
@@ -32,10 +32,8 @@ trackingExp = Core.TrackingExperiment(path2File,path2Cal,info,path2SRCal,path2ZC
 trackingExp.retrieveMovies;
 
 %% get TrackingData
-detectParam.delta = 6;
-detectParam.chi2 = 60;
-trackParam.euDistXY = 400;
-trackParam.euDistZ  = 400;
+trackParam.euDistXY = 2000;
+trackParam.euDistZ  = 2000;
 val2Use = 'bestFocus';
 trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);
 

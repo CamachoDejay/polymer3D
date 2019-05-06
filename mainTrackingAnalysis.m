@@ -6,10 +6,11 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS OD35\Z';
+filePath = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - 100\Z';
 dim = 'z';
 period = 20;
-idx2Plot = 1;
+idx2Plot = 4;
+stepApplied = 200;
 %% LOADING
 
 fileName = [filePath filesep 'trackResults.mat'];
@@ -21,7 +22,7 @@ trackData = trackData.(name{1});
 %% Process Data
 
 traces = trackData.traces(:,1);
-[step,mot] = getMotor(trackData,dim);
+[stepMot,mot] = getMotor(trackData,dim);
 fileRef = trackData.traces(:,2);
 nTraces = length(traces);
 lenTraces = cellfun(@height,traces);
@@ -50,10 +51,10 @@ for i =1:nTraces
     
     currTrace = traces{i};
     currMot   = mot{i}(2:end);
-    currStep  = step{i};
+    currStep  = stepMot{i};
     stepSize = max(currStep)*1000;
     lenCTrace = height(currTrace);
-
+    
     data2Plot = getData2Plot(currTrace,dim);
     prec = zeros(length(idx2Mot)-1,1);
     acc = prec;
@@ -62,7 +63,7 @@ for i =1:nTraces
     int  = prec;
     SNR  = prec;
     frames = currTrace.frame;
-       
+
     for j = 1: length(idx2Mot)-1
 
        idx = idx2Mot(j)+1:idx2Mot(j+1);
@@ -74,7 +75,7 @@ for i =1:nTraces
            accM(j)  = mean(data2Plot(idx2Frame,2));
            int(j)   = mean(currTrace.intensity(idx2Frame));
            SNR(j)   = mean(currTrace.SNR(idx2Frame));
-       
+
        end
     end
     plot(data2Plot(:,1))
@@ -85,21 +86,21 @@ for i =1:nTraces
     accM(accM==0)   = [];
     int(int==0)     = [];
     SNR(SNR==0)     = [];
-    
+
     precPerStep  = [precPerStep; prec];
     precMPerStep  = [precMPerStep; precM];
     precPerTrace(i)  = mean(prec);
     precMPerTrace(i)  = mean(precM);
     intPerTrace(i) = mean(int);
     SNRPerTrace(i) = mean(SNR);
-    
+
     if length(prec)>1
-        
+
         accPerStep = [accPerStep; abs(diff(acc))-stepSize];
         accMPerStep = [accMPerStep; abs(diff(accM))-stepSize];
         accPerTrace(i) = mean(abs(diff(acc)));
         accMPerTrace(i) = mean(abs(diff(accM)));
-        
+
     end
 
     counter = counter+1;
@@ -116,8 +117,8 @@ precision  = nanmean(precPerTrace);
 accuracyM = nanmean(abs(accMPerTrace-stepSize));
 precisionM  = nanmean(precMPerTrace);
 
-intensity  = mean(intPerTrace);
-SNR        = mean(SNRPerTrace);
+intensity  = nanmean(intPerTrace);
+SNR        = nanmean(SNRPerTrace);
 
 
 fprintf('The average tracking precision for best focus is %d nm based on %d traces\n',round(precision),counter);
@@ -167,6 +168,9 @@ for i = 1:length(tracePlot)
     
 end
 motPlot = mot{i}*1000;
+if ~strcmp(dim,'z')
+    motPlot = abs(motPlot);
+end
 motPlot = motPlot(currTrace.frame);
 motPlot = motPlot - mean(motPlot);
 plot(motPlot,'-r','LineWidth',2);
@@ -197,12 +201,12 @@ function [step,mot] = getMotor(trackData,dim)
     switch(dim)
         case 'x'
            
-            mot  = abs(trackData.traces(:,4));
+            mot  = trackData.traces(:,4);
             step = trackData.traces(:,3);
         
         case 'y'
         
-            mot  = abs(trackData.traces(:,6));
+            mot  = trackData.traces(:,6);
             step = trackData.traces(:,5);
         
         case 'z'
