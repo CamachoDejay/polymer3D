@@ -70,8 +70,7 @@ classdef MPPlaneCalibration < handle
             
             fieldN = fieldnames(obj.MPCalibrations);
             nfields = numel(fieldN);
-            
-            allData = [];
+      
             for i = 1: nfields
                 
                 if isfield(obj.info,'nChan')
