@@ -6,11 +6,11 @@ classdef Movie < handle
     
     properties (SetAccess = 'private')
        raw
-       ext
-       
+       ext 
     end
-    properties 
-       info 
+    
+    properties (SetAccess = 'protected')
+        info 
     end
     
     methods
@@ -138,6 +138,13 @@ classdef Movie < handle
         function [info] = getInfo(obj)
             
             info = obj.info;
+            
+        end
+        
+        function addInfo(obj,field,value)
+            assert(ischar(field),'field is expected to be a char');
+            
+            obj.info.(field) = value;
             
         end
         
