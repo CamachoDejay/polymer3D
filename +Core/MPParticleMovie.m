@@ -150,8 +150,11 @@ classdef MPParticleMovie < Core.MPMovie
         function [locPos] = getLocPos(obj,frames)
              %Extract the position of the candidate of a given frame
             [idx] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
-            locPos = obj.unCorrLocPos{idx};
-            
+            if ~isempty(obj.corrLocPos)
+                locPos = obj.corrLocPos{idx};
+            else
+                locPos = obj.unCorrLocPos{idx};
+            end
             if isempty(locPos)
                 
                 warning('There was no candidate found in this frames, please check that you ran findCandidate on this frame, if yes, check the data');
@@ -223,8 +226,8 @@ classdef MPParticleMovie < Core.MPMovie
                         nParticles(idx) = 0;
                         
                     else
-                        %#2 Consolidate the position of the given frame
-                        %across plane
+                          %#2 Consolidate the position of the given frame
+                          %across plane
                           %Calculate a focus metric (FM) combining ellipticity and GLRT FM.
                             [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.fMetric);
 
@@ -397,6 +400,7 @@ classdef MPParticleMovie < Core.MPMovie
             counter = 1;
             nPart = 0;
             maxIt = size(candMet,1);
+            zMethod = obj.info.zMethod;
             candidateList = cell(max(size(find(~isnan(focusMetric)))),1);
             %continue until the list is not empty
             while and(~isempty(focusMetric), ~isnan(nanmax(focusMetric)))
@@ -441,7 +445,7 @@ classdef MPParticleMovie < Core.MPMovie
                         direction = +1;%check below (Plane 1 is the uppest plane 8 is lowest)
                     end
                     
-                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction,consThresh);
+                    [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction,consThresh,zMethod);
                     if ~all(isPart ==0)
                         id = cand.plane(isPart)-currentCand.plane;
                         particle(3+id,:) = cand(isPart,:);
@@ -454,7 +458,7 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 planeConfig = particle.plane;
                 
-                [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes,camConfig);
+                [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes,camConfig,zMethod);
                 
                 %Store
                 if checkRes
@@ -480,7 +484,7 @@ classdef MPParticleMovie < Core.MPMovie
     end
      methods (Static)
        
-        function [isPart]   = isPartPlane(current, next, direction,consThresh)
+        function [isPart]   = isPartPlane(current, next, direction,consThresh,zMethod)
             %This function aim at determining whether a candidate from one
             %plane and the another are actually the same candidate on
             %different plane or different candidate. The decision is based
@@ -495,9 +499,20 @@ classdef MPParticleMovie < Core.MPMovie
             [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row, current.col],...
                 [next.row, next.col],thresh);
             
-%             % Test ellipticity
-            [checkRes2] = Core.MPParticleMovie.checkEllipticity(current.ellip,...
+            if strcmp(zMethod,'PSFE')
+             % Test ellipticity
+                [checkRes2] = Core.MPParticleMovie.checkEllipticity(current.ellip,...
                 next.ellip,direction);
+            
+            elseif strcmp(zMethod,'Intensity')
+                
+                checkRes2 = checkRes1;
+                
+            else
+                
+                error('Unknown Z method for consolidation');
+                
+            end
             
             % Test focus Metric
             maxExpFM = current.fMetric+0.1*current.fMetric;
@@ -558,72 +573,75 @@ classdef MPParticleMovie < Core.MPMovie
             
         end
         
-        function [checkRes] = checkPlaneConfig(planeConfig,nPlanes,camConfig)
+        function [checkRes] = checkPlaneConfig(planeConfig,nPlanes,camConfig,zMethod)
             %Here we will check that the consolidation found based on the
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
-            switch nPlanes
-                case 1
-                    nPlanesEdge = 1;
-                    nPlanesFullRange = 1;
-                    nPlanesInterleaved = 1;
-                case 2
-                    
-                    nPlanesEdge = 1;
-                    nPlanesFullRange = 1;
-                    nPlanesInterleaved = 1;
-                
-                case 4
-                    
-                    nPlanesEdgeFrange = 1;
-                    nPlanesFullRange = 2;
-                    nPlanesInterleaved = 2;
-                    
-                case 8
-                    
-                    nPlanesEdgeFrange = 1;
-                    nPlanesEdgeInterleaved = 2;
-                    nPlanesFullRange = 2;
-                    nPlanesInterleaved = 3;
-                otherwise
-                    error('Unknown number of planes, only expect 1,2,4,8')
+            if strcmp(zMethod,'Intensity')
+                testPlanes = sum(~isnan(planeConfig))>=3;
+            elseif strcmp(zMethod,'PSFE')
+                switch nPlanes
+                    case 1
+                        nPlanesEdgeFrange = 1;
+                        nPlanesFullRange = 1;
+                        nPlanesInterleaved = 1;
+                    case 2
+
+                        nPlanesEdgeFrange = 1;
+                        nPlanesFullRange = 1;
+                        nPlanesInterleaved = 1;
+
+                    case 4
+
+                        nPlanesEdgeFrange = 1;
+                        nPlanesFullRange = 2;
+                        nPlanesInterleaved = 2;
+
+                    case 8
+
+                        nPlanesEdgeFrange = 1;
+                        nPlanesEdgeInterleaved = 2;
+                        nPlanesFullRange = 2;
+                        nPlanesInterleaved = 3;
+                    otherwise
+                        error('Unknown number of planes, only expect 1,2,4,8')
+                end
+                %Let us test that we have consolidate the particle in at least
+                %3 Planes
+                isEdgePlane = or(~isempty(find(planeConfig==1,1)),~isempty(find(planeConfig==8,1)));
+
+
+                switch camConfig
+                    case 'fullRange'
+                        if isEdgePlane
+
+                            testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdgeFrange;
+
+                        else
+                            testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesFullRange;
+                        end
+
+                    case 'interleaved'
+                        if isEdgePlane
+                            testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdgeInterleaved;
+                        else
+
+                            testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesInterleaved;
+                        end
+                    case 'equal'
+                        if isEdgePlane
+
+                            testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdgeFrange;
+
+                        else
+                            testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesFullRange;
+                        end
+
+                    otherwise
+                        error('unknown camera configuration');
+                end
+            
             end
-            %Let us test that we have consolidate the particle in at least
-            %3 Planes
-            isEdgePlane = or(~isempty(find(planeConfig==1,1)),~isempty(find(planeConfig==8,1)));
-            
-
-            switch camConfig
-                case 'fullRange'
-                    if isEdgePlane
-
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdgeFrange;
-
-                    else
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesFullRange;
-                    end
-
-                case 'interleaved'
-                    if isEdgePlane
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdgeInterleaved;
-                    else
-
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesInterleaved;
-                    end
-                case 'equal'
-                    if isEdgePlane
-
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesEdgeFrange;
-
-                    else
-                        testPlanes = length(find(~isnan(planeConfig)==true)) >= nPlanesFullRange;
-                    end
-
-                otherwise
-                    error('unknown camera configuration');
-            end
-            
-            
             if testPlanes
                 %We check that there is no "Gap" in the plane configuration
                 %as it would not make sense.

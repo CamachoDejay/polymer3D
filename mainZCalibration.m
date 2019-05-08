@@ -4,11 +4,11 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - CS';
-path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2zCal = 'E:\Data\Leuven Data\2019\05 - May\';
+path2Cal  = 'E:\Data\Leuven Data\2019\05 - May\';
 
-detectParam.delta = 6;
-detectParam.chi2 = 60;
+detectParam.delta = 8;
+detectParam.chi2 = 40;
 fitZParam.deg = 6;
 fitZParam.ellipRangeCal = [0.5 2]; %for calibration
 fitZParam.ellipRange = [0.65 1.54];%To be used for data (we do not want to use too large values==> edge planes)
@@ -20,6 +20,7 @@ info.type = 'normal';
 info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
+info.zMethod    = 'Intensity';%or 'PSFE'
 calib = Core.MPPlaneCalibration(path2Cal,info);
 calib.retrieveMovies;
 calib.calcIndivCal;

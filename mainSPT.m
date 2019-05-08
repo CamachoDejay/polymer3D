@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS OD5\Z\ZTrackInterleaved_1';
-path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2File = 'E:\Data\Leuven Data\2019\05 - May\TestCalibrationIntensity_1';
+path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
@@ -26,6 +26,7 @@ info.type = 'normal';
 info.runMethod = 'run'; %will avoid the question to user to pop by giving
 info.nChan = 4;
 info.fitMethod  = 'Phasor';
+info.zMethod = 'Intensity';
 %the answer before
 %% create a Movie Object
 mov1 = Core.Movie(path2File,info);
