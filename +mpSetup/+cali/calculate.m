@@ -21,7 +21,7 @@ switch nargin
         
 end
 
-cal.correctInt = false;
+cal.correctInt = correctInt;
 
 
 cal.reorder    = true;
@@ -116,6 +116,8 @@ if cal.correctInt
     [ chData1c, chData2c ] = mpSetup.cali.getChData( movC1, movC2, cal.ROI );
     % calculate intensity correction
     [ cal.Icorrf ] = mpSetup.cali.findChInt( chData1c, chData2c, cal.inFocus );
+    maxInt = max(cal.fit,[],1);
+    cal.Icorrf = maxInt./max(maxInt);
 else
     cal.Icorrf = ones(8,1);
 end
