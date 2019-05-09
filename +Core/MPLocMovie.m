@@ -479,33 +479,30 @@ classdef MPLocMovie < Core.MPParticleMovie
             z    = partData.z(3);
             data = table(row,col,z,'VariableNames',{'row','col','z'});
             %check how to perform averaging depending on the camera config
-            [doAvg]  = obj.checkDoAverage;
+            [doAvg]  = obj.checkDoAverage(partData.ellip(3));
             
             if doAvg
                 elliptRange = ellipRange(1):0.001:ellipRange(2);
-            %we weigh the average later base on how much out of focus the
-            %plane was.
+                %we weigh the average later base on how much out of focus the
+                %plane was.
                 wRange1 = length(elliptRange(elliptRange<=1));
                 wRange2 = length(elliptRange(elliptRange>=1));
                 weight1 = linspace(1,5,wRange1);
                 weight2 = linspace(5,1,wRange2);
                 finalWeight = [weight1 weight2];
-                
-                idx = idx2Keep;
-                for k = 1 :length(ellip2Keep)
+                ellipKept = partData.ellip(idx2Keep);
+                idx = ellipKept;
+                for k = 1 :length(ellipKept)
 
-                    [~,idx(k)] = min(abs(elliptRange-ellip2Keep(k)));
+                    [~,idx(k)] = min(abs(elliptRange-ellipKept(k)));
 
                 end
 
                 weight = finalWeight(idx);
                 %Weighed average
-                rowAvg = sum(diag(currentPart.row(id)* weight))/sum(weight) * pxSize;
-                colAvg = sum(diag(currentPart.col(id)* weight))/sum(weight) * pxSize;
-                                %best focus Value
-                row = mean(partData.row(idx2Keep))*pxSize;
-                col = mean(partData.col(idx2Keep))*pxSize;
-                z   = mean(partData.z(idx2Keep));
+                row = sum(diag(partData.row(idx2Keep)* weight))/sum(weight) * pxSize;
+                col = sum(diag(partData.col(idx2Keep)* weight))/sum(weight) * pxSize;
+                z   = sum(diag(partData.z(idx2Keep)* weight))/sum(weight) * pxSize;
             end
             
             data.rowM = row;
