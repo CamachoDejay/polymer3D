@@ -10,7 +10,7 @@ filePath = 'E:\Data\Leuven Data\2019\04 - April\3\Spirals';
 ignoreF = 6;
 dim = 'z';
 period = 20;
-idx2Plot = 4;
+idx2Plot = 3;
 stepApplied = 200;
 longTraceThresh = 10;
 %% LOADING
@@ -87,21 +87,45 @@ xAcc(xPrec==0)  = [];
 yAcc(xPrec==0)  = [];
 zAcc(xPrec==0)  = [];
 
-%% Plotting
+%% Plotting per file
 figure
+hold on
+fileIdx = cell2mat(file);
+idx = fileIdx==idx2Plot;
+
+traces2Plot = alignedTraces(idx);
+
+for i = 1:length(traces2Plot)
+    cTrace = traces2Plot{i};
+    scatter3(cTrace(:,1),cTrace(:,2),cTrace(:,3),10,cTrace(:,3),'filled');
+    plot3(cTrace(:,1),cTrace(:,2),cTrace(:,3))
+end
+
+%% Plotting
+%initialize sphere
+nfacets = 15;
+res = 50;
+[sx,sy,sz]= sphere(nfacets);
+figure
+hold on
 plot3(cSpiral(:,1),cSpiral(:,2),cSpiral(:,3),'LineWidth',3);
+
+for i = 1:length(cSpiral(:,1))
+    Sx = sx*res+cSpiral(i,1);
+    Sy = sy*res+cSpiral(i,2);
+    Sz = sz*res+cSpiral(i,3);
+    surf(Sx,Sy,Sz)
+    
+end
 hold on
 for i = 1: length(traces)
-   
-    cTrace = alignedTraces{i};
-    
+
+    cTrace = alignedTraces{i};  
     scatter3(cTrace(:,1),cTrace(:,2),cTrace(:,3),10,cTrace(:,3),'filled');
-    
-    
     
 end
 colormap('jet')
 hold off
 
-fprintf('The mean precision in\n x =%d, y=%d, z=%d\n',mean(xPrec),mean(yPrec),mean(zPrec));
-fprintf('The mean accuracy in\n x =%d, y=%d, z=%d\n',mean(xAcc),mean(yAcc),mean(zAcc));
+fprintf('The mean precision in\n x =%d, y=%d, z=%d\n',median(xPrec),median(yPrec),median(zPrec));
+fprintf('The mean accuracy in\n x =%d, y=%d, z=%d\n',median(xAcc),median(yAcc),median(zAcc));
