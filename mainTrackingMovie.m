@@ -3,10 +3,10 @@ clc;
 close all;
 clear;
 
-path2ZCal = [];
+path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\4\ZCal CS';
 path2SRCal = [];
 
-path2File = 'E:\Data\Leuven Data\2019\05 - May\TestCalibrationIntensity_1';
+path2File = 'E:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\X\XTrackExtendedConfCS_1';
 path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 
@@ -14,7 +14,7 @@ detectParam.delta = 6;
 detectParam.chi2 = 40;
 info.runMethod = 'load';
 info.type = 'normal';
-info.zMethod = 'Intensity';
+info.zMethod = 'PSFE';
 info.fitMethod = 'Phasor';
 %%
 calib = Core.MPPlaneCalibration(path2Cal,info);
@@ -38,13 +38,13 @@ MPTrackMov.SRLocalizeCandidate;
 rot = true;
 refPlane = 4;
 MPTrackMov.applySRCal(rot,refPlane);
-%% Plane consolidation
-
-MPTrackMov.consolidatePlanes
-
 
 %% e-Z transformation
 MPTrackMov.applyZCal;
+
+%% Plane consolidation
+
+MPTrackMov.consolidatePlanes
 
 
 %% Super resolve

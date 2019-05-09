@@ -151,7 +151,7 @@ classdef MPLocMovie < Core.MPParticleMovie
         
         function applyZCal(obj)
             
-            assert(~isempty(obj.particles),'You need consolidate before applying zCalibration');
+            assert(~isempty(obj.unCorrLocPos),'Need to fit before applying the calibration');
             if isempty(obj.ZCal)
                 
                 warning('Z Calibration needed to correct the data, using Intensity instead');
@@ -163,37 +163,17 @@ classdef MPLocMovie < Core.MPParticleMovie
                 warning('Z calibration is currently being applied on non-SRCorrected (X-Y) data');
             end
             
-            data = obj.particles.List; 
+            data = obj.corrLocPos; 
             zCal = obj.ZCal;
             zMethod = obj.info.zMethod;
             
             if strcmp(zMethod,'Intensity')
-                disp('Applying Z Calibration using Intensity'); 
-                method.fit = [];
-                method.z = zMethod;
-                
-                for i = 1 : length(data)
-                    currData = data{i};
-                    nPart = size(currData,1);
-
-                    for j = 1 : nPart
-                        currPart = currData{j,1};
-                        currIntensity = currPart.intensity;
-                        currentPlane = currPart.plane;
-                        [zPos] = obj.getZPosition(currIntensity,zCal,currentPlane,method);
-         
-                        obj.corrLocPos{i}.z(j) = zPos;
-
-                    end
-
-                 end   
-                
+               
             elseif strcmp(zMethod,'PSFE')
             
                 %we check which method is best:
                 [method] = obj.pickZFitMethod;
-                method.fit = method;
-                method.z   = zMethod;
+                
                 %Here we translate ellipticity into z position based on
                 %calibration
                 nPlanesCal = size(zCal.calib,1);
@@ -203,18 +183,17 @@ classdef MPLocMovie < Core.MPParticleMovie
                 disp('Applying Z Calibration using PSFE and ZCal');
                 for i = 1 : length(data)
                     currData = data{i};
-                    nPart = size(currData,1);
+                    nPos = size(currData,1);
 
-                    for j = 1 : nPart
+                    for j = 1 : nPos
 
                         currentEllip = currData.ellip(j);
                         currentPlane = currData.plane(j);
                         [zPos] = obj.getZPosition(currentEllip,zCal,currentPlane,method);
 
                         obj.corrLocPos{i}.z(j) = zPos;
-
                     end
-
+                    
                 end
                          %Here we translate the ellipticity range into zRange for each
                 %plane
@@ -222,12 +201,16 @@ classdef MPLocMovie < Core.MPParticleMovie
                 ellipRange = zCal.fitZParam.ellipRange;
                 nPlanes = obj.calibrated.nPlanes;
                 zRange = cell(nPlanes,1);
+                
                 for i = 1 : nPlanes
                     zRange{i} = obj.getZRange(ellipRange,zCal,i,method);
                 end
+                
                 obj.corrected.Z = true;
                 obj.calibrated.zRange = zRange;
-                end
+            else
+                error('Unknown Z method');
+            end
 
             disp('=======> DONE ! <========');
         end
@@ -429,41 +412,27 @@ classdef MPLocMovie < Core.MPParticleMovie
         function [zPos,inRange] = getZPosition(obj,val2Z,zCal,currentPlane,method)
             
             relZ = obj.calibrated.oRelZPos;
-            zMethod = method.z;
-            fitMethod = method.fit;
-            switch zMethod
-                case 'Intensity'
-                    idx2Data = ~isnan(val2Z);
-                    xAxis = relZ(currentPlane(idx2Data));
-                    
-                    [out,Fit] = SimpleFitting.gauss1D(val2Z(idx2Data), xAxis);
-                    
-                    domain = min(xAxis)*2 : 0.01 :0.5;
-                    F = SimpleFitting.gaussian(out,domain);
-                    zPos = out(2);
-                    
-                case 'PSFE'
-                zRange = zCal.fitZParam.zRange;
-                zRange = zRange{currentPlane};
-                zVec = zRange(1):1:zRange(2); %Here we assume accuracy >= 1nm
 
-                switch fitMethod
-                    case 'poly'
+            zRange = zCal.fitZParam.zRange;
+            zRange = zRange{currentPlane};
+            zVec = zRange(1):1:zRange(2); %Here we assume accuracy >= 1nm
 
-                        fit = polyval(zCal.calib{currentPlane,1},zVec);
+            switch method
+                case 'poly'
 
-                    case 'spline'
-                        fit = ppval(zCal.calib{currentPlane,2},zVec);
-                end
+                    fit = polyval(zCal.calib{currentPlane,1},zVec);
 
-                %find the index of the value the closest to the particle
-                %ellipticity
-                 [~,idx] = min(abs(fit-val2Z));
-
-                 zPos = zVec(idx)+ relZ(currentPlane)*1000;          
-                 inRange = and(val2Z>=zCal.fitZParam(1).ellipRange(1),...
-                     val2Z<=zCal.fitZParam(1).ellipRange(2));
+                case 'spline'
+                    fit = ppval(zCal.calib{currentPlane,2},zVec);
             end
+
+            %find the index of the value the closest to the particle
+            %ellipticity
+             [~,idx] = min(abs(fit-val2Z));
+
+             zPos = zVec(idx)+ relZ(currentPlane)*1000;          
+             inRange = and(val2Z>=zCal.fitZParam(1).ellipRange(1),...
+                 val2Z<=zCal.fitZParam(1).ellipRange(2));
             
              if isempty(zPos)
                  disp('ouuups zpos is empty');
@@ -513,7 +482,27 @@ classdef MPLocMovie < Core.MPParticleMovie
             [doAvg]  = obj.checkDoAverage;
             
             if doAvg
-               
+                elliptRange = ellipRange(1):0.001:ellipRange(2);
+            %we weigh the average later base on how much out of focus the
+            %plane was.
+                wRange1 = length(elliptRange(elliptRange<=1));
+                wRange2 = length(elliptRange(elliptRange>=1));
+                weight1 = linspace(1,5,wRange1);
+                weight2 = linspace(5,1,wRange2);
+                finalWeight = [weight1 weight2];
+                
+                idx = idx2Keep;
+                for k = 1 :length(ellip2Keep)
+
+                    [~,idx(k)] = min(abs(elliptRange-ellip2Keep(k)));
+
+                end
+
+                weight = finalWeight(idx);
+                %Weighed average
+                rowAvg = sum(diag(currentPart.row(id)* weight))/sum(weight) * pxSize;
+                colAvg = sum(diag(currentPart.col(id)* weight))/sum(weight) * pxSize;
+                                %best focus Value
                 row = mean(partData.row(idx2Keep))*pxSize;
                 col = mean(partData.col(idx2Keep))*pxSize;
                 z   = mean(partData.z(idx2Keep));
