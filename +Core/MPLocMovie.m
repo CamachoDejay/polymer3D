@@ -472,49 +472,48 @@ classdef MPLocMovie < Core.MPParticleMovie
             zMethod = obj.info.zMethod;
             switch zMethod
                 case 'Intensity'
-                    
                 case 'PSFE'
 
-                ellipRange = obj.ZCal.fitZParam.ellipRange;  
-                pxSize = obj.info.pxSize;
-                idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
-                partData(~idx2Keep,:) = table(nan);
+                    ellipRange = obj.ZCal.fitZParam.ellipRange;  
+                    pxSize = obj.info.pxSize;
+                    idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
+                    partData(~idx2Keep,:) = table(nan);
 
-                row  = partData.row(3)*pxSize;
-                col  = partData.col(3)*pxSize;
-                z    = partData.z(3);
-                data = table(row,col,z,'VariableNames',{'row','col','z'});
-                %check how to perform averaging depending on the camera config
-                [doAvg]  = obj.checkDoAverage(partData.ellip(3));
+                    row  = partData.row(3)*pxSize;
+                    col  = partData.col(3)*pxSize;
+                    z    = partData.z(3);
+                    data = table(row,col,z,'VariableNames',{'row','col','z'});
+                    %check how to perform averaging depending on the camera config
+                    [doAvg]  = obj.checkDoAverage(partData.ellip(3));
 
-                if doAvg
-                    elliptRange = ellipRange(1):0.001:ellipRange(2);
-                    %we weigh the average later base on how much out of focus the
-                    %plane was.
-                    wRange1 = length(elliptRange(elliptRange<=1));
-                    wRange2 = length(elliptRange(elliptRange>=1));
-                    weight1 = linspace(1,5,wRange1);
-                    weight2 = linspace(5,1,wRange2);
-                    finalWeight = [weight1 weight2];
-                    ellipKept = partData.ellip(idx2Keep);
-                    idx = ellipKept;
-                    for k = 1 :length(ellipKept)
+                    if doAvg
+                        elliptRange = ellipRange(1):0.001:ellipRange(2);
+                        %we weigh the average later base on how much out of focus the
+                        %plane was.
+                        wRange1 = length(elliptRange(elliptRange<=1));
+                        wRange2 = length(elliptRange(elliptRange>=1));
+                        weight1 = linspace(1,5,wRange1);
+                        weight2 = linspace(5,1,wRange2);
+                        finalWeight = [weight1 weight2];
+                        ellipKept = partData.ellip(idx2Keep);
+                        idx = ellipKept;
+                        for k = 1 :length(ellipKept)
 
-                        [~,idx(k)] = min(abs(elliptRange-ellipKept(k)));
+                            [~,idx(k)] = min(abs(elliptRange-ellipKept(k)));
 
+                        end
+
+                        weight = finalWeight(idx);
+                        %Weighed average
+                        row = sum(diag(partData.row(idx2Keep)* weight))/sum(weight) * pxSize;
+                        col = sum(diag(partData.col(idx2Keep)* weight))/sum(weight) * pxSize;
+                        z   = sum(diag(partData.z(idx2Keep)* weight))/sum(weight) * pxSize;
                     end
 
-                    weight = finalWeight(idx);
-                    %Weighed average
-                    row = sum(diag(partData.row(idx2Keep)* weight))/sum(weight) * pxSize;
-                    col = sum(diag(partData.col(idx2Keep)* weight))/sum(weight) * pxSize;
-                    z   = sum(diag(partData.z(idx2Keep)* weight))/sum(weight) * pxSize;
-                end
-
-                data.rowM = row;
-                data.colM = col;
-                data.zM = z;
-            end
+                    data.rowM = row;
+                    data.colM = col;
+                    data.zM = z;
+             end
          end
         
         function [method] = pickZFitMethod(obj)
