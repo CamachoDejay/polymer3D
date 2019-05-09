@@ -3,17 +3,19 @@ clc;
 close all;
 clear;
 
-path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - CS';
-path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2ZCal = [];
+path2SRCal = [];
 
-path2File = 'E:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\X\XTrackExtendedConfCS_1';
-path2Cal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2File = 'E:\Data\Leuven Data\2019\05 - May\TestCalibrationIntensity_1';
+path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 40;
 info.runMethod = 'load';
 info.type = 'normal';
+info.zMethod = 'Intensity';
+info.fitMethod = 'Phasor';
 %%
 calib = Core.MPPlaneCalibration(path2Cal,info);
 calib.retrieveMovies;
@@ -32,20 +34,22 @@ MPTrackMov.findCandidatePos(detectParam);
 
 %fit position
 MPTrackMov.SRLocalizeCandidate;
-
 %% Data correction
 rot = true;
 refPlane = 4;
 MPTrackMov.applySRCal(rot,refPlane);
-%% e-Z transformation
-MPTrackMov.applyZCal;
-
 %% Plane consolidation
 
 MPTrackMov.consolidatePlanes
+
+
+%% e-Z transformation
+MPTrackMov.applyZCal;
+
+
 %% Super resolve
 val2Use = 'bestFocus';
-MPTrackMov.superResolve(val2Use);
+MPTrackMov.superResolve();
 %% plot
 frames = 1:500;
 

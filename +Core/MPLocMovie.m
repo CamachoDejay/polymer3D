@@ -20,19 +20,12 @@ classdef MPLocMovie < Core.MPParticleMovie
                 
                 
                 case 4
-                    if ~isempty(SRCal)
-                        obj.SRCal = SRCal;
-                    end
+                    obj.SRCal
                     obj.ZCal = [];
                 case 5
                     
-                    if ~isempty(SRCal)
-                        obj.SRCal = SRCal;
-                    end
-                    
-                    if ~isempty(zCal)
-                        obj.ZCal = zCal;
-                    end
+                    obj.SRCal = SRCal;
+                    obj.ZCal = zCal;
                
                 otherwise
                     error('Too many input arguments');
@@ -40,45 +33,52 @@ classdef MPLocMovie < Core.MPParticleMovie
         end
         
         function set.SRCal(obj,SRCal)
-            assert(isfolder(SRCal), 'The given path is not a folder');
             
-            %Check Given path
-            [file2Analyze] = Core.Movie.getFileInPath(SRCal,'SRCalibration.mat');
-            
-            if isempty(file2Analyze)
-                error('No SR calibration file found in the given folder');
+            if ~isempty(SRCal)
+                assert(isfolder(SRCal), 'The given path is not a folder');
+
+                %Check Given path
+                [file2Analyze] = Core.Movie.getFileInPath(SRCal,'SRCalibration.mat');
+
+                if isempty(file2Analyze)
+                    error('No SR calibration file found in the given folder');
+                else
+                    fileName = [file2Analyze.folder filesep file2Analyze.name];
+                    cal = load(fileName);
+                    field = fieldnames(cal);
+                    cal = cal.(field{1});
+                    assert(and(isstruct(cal), and(isfield(cal,'trans'),isfield(cal,'rot'))),...
+                        'SR calibration is supposed to be a struct with 2 fields');
+
+                    obj.SRCal = cal; 
+                end
             else
-                fileName = [file2Analyze.folder filesep file2Analyze.name];
-                cal = load(fileName);
-                field = fieldnames(cal);
-                cal = cal.(field{1});
-                assert(and(isstruct(cal), and(isfield(cal,'trans'),isfield(cal,'rot'))),...
-                    'SR calibration is supposed to be a struct with 2 fields');
-                
-                obj.SRCal = cal; 
+                obj.SRCal = [];
             end
-            
         end
         
         function set.ZCal(obj,zCal)
-            
-            assert(isfolder(zCal), 'The given path is not a folder');
-            
-            %Check Given path
-            [file2Analyze] = Core.Movie.getFileInPath(zCal,'zCalibration.mat');
-            
-            if isempty(file2Analyze)
-                error('No z calibration file found in the given folder');
+            if ~isempty(zCal)
+                assert(isfolder(zCal), 'The given path is not a folder');
+
+                %Check Given path
+                [file2Analyze] = Core.Movie.getFileInPath(zCal,'zCalibration.mat');
+
+                if isempty(file2Analyze)
+                    error('No z calibration file found in the given folder');
+                else
+                    fileName = [file2Analyze.folder filesep file2Analyze.name];
+                    cal = load(fileName);
+                    field = fieldnames(cal);
+                    cal = cal.(field{1});
+                    assert(isstruct(cal),'zCalibration is supposed to be in cells format');
+                    assert(and(isfield(cal,'fitZParam'),isfield(cal,'calib')),...
+                        'Something is wrong in the fields of your Z calibration');
+
+                    obj.ZCal = cal; 
+                end
             else
-                fileName = [file2Analyze.folder filesep file2Analyze.name];
-                cal = load(fileName);
-                field = fieldnames(cal);
-                cal = cal.(field{1});
-                assert(isstruct(cal),'zCalibration is supposed to be in cells format');
-                assert(and(isfield(cal,'fitZParam'),isfield(cal,'calib')),...
-                    'Something is wrong in the fields of your Z calibration');
-                
-                obj.ZCal = cal; 
+                obj.ZCal = [];
             end
         end
         
@@ -135,7 +135,6 @@ classdef MPLocMovie < Core.MPParticleMovie
                             %we store the corrected data
                             obj.corrLocPos{i}(currData.plane==currentPlane,{'row','col','plane'}) = corrData;
 
-
                         end
                     end
 
@@ -152,54 +151,84 @@ classdef MPLocMovie < Core.MPParticleMovie
         
         function applyZCal(obj)
             
-            assert(~isempty(obj.unCorrLocPos),'You need to find candidate and SR Localized them before applying corrections');
-            assert(~isempty(obj.ZCal),'Z Calibration needed to correct the data');
+            assert(~isempty(obj.particles),'You need consolidate before applying zCalibration');
+            if isempty(obj.ZCal)
+                
+                warning('Z Calibration needed to correct the data, using Intensity instead');
+                obj.addInfo('zMethod','Intensity');
+            end
             
             if isempty(obj.corrLocPos)
-                obj.corrLocPos = obj.localizedPos;
+                obj.corrLocPos = obj.unCorrLocPos;
                 warning('Z calibration is currently being applied on non-SRCorrected (X-Y) data');
             end
             
-            data = obj.corrLocPos; 
+            data = obj.particles.List; 
             zCal = obj.ZCal;
+            zMethod = obj.info.zMethod;
             
-            %we check which method is best:
-            [method] = obj.pickZFitMethod;
-            
-            %Here we translate ellipticity into z position based on
-            %calibration
-            nPlanesCal = size(zCal.calib,1);
-            nPlanesFile = obj.calibrated.nPlanes;
-            assert(nPlanesCal == nPlanesFile,'Mismatch between number of planes in Z calibration and file');
-            
-            disp('Applying Z Calibration');
-            for i = 1 : length(data)
-                currData = data{i};
-                nPos = size(currData,1);
+            if strcmp(zMethod,'Intensity')
+                disp('Applying Z Calibration using Intensity'); 
+                method.fit = [];
+                method.z = zMethod;
                 
-                for j = 1 : nPos
-                    
-                    currentEllip = currData.ellip(j);
-                    currentPlane = currData.plane(j);
-                    [zPos] = obj.getZPosition(currentEllip,zCal,currentPlane,method);
-                   
-                    obj.corrLocPos{i}.z(j) = zPos;
-                    
+                for i = 1 : length(data)
+                    currData = data{i};
+                    nPart = size(currData,1);
+
+                    for j = 1 : nPart
+                        currPart = currData{j,1};
+                        currIntensity = currPart.intensity;
+                        currentPlane = currPart.plane;
+                        [zPos] = obj.getZPosition(currIntensity,zCal,currentPlane,method);
+         
+                        obj.corrLocPos{i}.z(j) = zPos;
+
+                    end
+
+                 end   
+                
+            elseif strcmp(zMethod,'PSFE')
+            
+                %we check which method is best:
+                [method] = obj.pickZFitMethod;
+                method.fit = method;
+                method.z   = zMethod;
+                %Here we translate ellipticity into z position based on
+                %calibration
+                nPlanesCal = size(zCal.calib,1);
+                nPlanesFile = obj.calibrated.nPlanes;
+                assert(nPlanesCal == nPlanesFile,'Mismatch between number of planes in Z calibration and file');
+
+                disp('Applying Z Calibration using PSFE and ZCal');
+                for i = 1 : length(data)
+                    currData = data{i};
+                    nPart = size(currData,1);
+
+                    for j = 1 : nPart
+
+                        currentEllip = currData.ellip(j);
+                        currentPlane = currData.plane(j);
+                        [zPos] = obj.getZPosition(currentEllip,zCal,currentPlane,method);
+
+                        obj.corrLocPos{i}.z(j) = zPos;
+
+                    end
+
                 end
-               
-            end
-            
-            %Here we translate the ellipticity range into zRange for each
-            %plane
-            
-            ellipRange = zCal.fitZParam.ellipRange;
-            nPlanes = obj.calibrated.nPlanes;
-            zRange = cell(nPlanes,1);
-            for i = 1 : nPlanes
-                zRange{i} = obj.getZRange(ellipRange,zCal,i,method);
-            end
-            obj.corrected.Z = true;
-            obj.calibrated.zRange = zRange;
+                         %Here we translate the ellipticity range into zRange for each
+                %plane
+
+                ellipRange = zCal.fitZParam.ellipRange;
+                nPlanes = obj.calibrated.nPlanes;
+                zRange = cell(nPlanes,1);
+                for i = 1 : nPlanes
+                    zRange{i} = obj.getZRange(ellipRange,zCal,i,method);
+                end
+                obj.corrected.Z = true;
+                obj.calibrated.zRange = zRange;
+                end
+
             disp('=======> DONE ! <========');
         end
         
@@ -397,29 +426,45 @@ classdef MPLocMovie < Core.MPParticleMovie
   
         end
     
-        function [zPos,inRange] = getZPosition(obj,ellip,zCal,currentPlane,method)
+        function [zPos,inRange] = getZPosition(obj,val2Z,zCal,currentPlane,method)
             
             relZ = obj.calibrated.oRelZPos;
-            zRange = zCal.fitZParam.zRange;
-            zRange = zRange{currentPlane};
-            zVec = zRange(1):1:zRange(2); %Here we assume accuracy >= 1nm
-            
-            switch method
-                case 'poly'
+            zMethod = method.z;
+            fitMethod = method.fit;
+            switch zMethod
+                case 'Intensity'
+                    idx2Data = ~isnan(val2Z);
+                    xAxis = relZ(currentPlane(idx2Data));
                     
-                    fit = polyval(zCal.calib{currentPlane,1},zVec);
-                
-                case 'spline'
-                    fit = ppval(zCal.calib{currentPlane,2},zVec);
+                    [out,Fit] = SimpleFitting.gauss1D(val2Z(idx2Data), xAxis);
+                    
+                    domain = min(xAxis)*2 : 0.01 :0.5;
+                    F = SimpleFitting.gaussian(out,domain);
+                    zPos = out(2);
+                    
+                case 'PSFE'
+                zRange = zCal.fitZParam.zRange;
+                zRange = zRange{currentPlane};
+                zVec = zRange(1):1:zRange(2); %Here we assume accuracy >= 1nm
+
+                switch fitMethod
+                    case 'poly'
+
+                        fit = polyval(zCal.calib{currentPlane,1},zVec);
+
+                    case 'spline'
+                        fit = ppval(zCal.calib{currentPlane,2},zVec);
+                end
+
+                %find the index of the value the closest to the particle
+                %ellipticity
+                 [~,idx] = min(abs(fit-val2Z));
+
+                 zPos = zVec(idx)+ relZ(currentPlane)*1000;          
+                 inRange = and(val2Z>=zCal.fitZParam(1).ellipRange(1),...
+                     val2Z<=zCal.fitZParam(1).ellipRange(2));
             end
             
-            %find the index of the value the closest to the particle
-            %ellipticity
-             [~,idx] = min(abs(fit-ellip));
-             
-             zPos = zVec(idx)+ relZ(currentPlane)*1000;          
-             inRange = and(ellip>=zCal.fitZParam(1).ellipRange(1),...
-                 ellip<=zCal.fitZParam(1).ellipRange(2));
              if isempty(zPos)
                  disp('ouuups zpos is empty');
              end

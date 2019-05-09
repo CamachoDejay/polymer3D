@@ -150,11 +150,9 @@ classdef MPParticleMovie < Core.MPMovie
         function [locPos] = getLocPos(obj,frames)
              %Extract the position of the candidate of a given frame
             [idx] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
-            if ~isempty(obj.corrLocPos)
-                locPos = obj.corrLocPos{idx};
-            else
-                locPos = obj.unCorrLocPos{idx};
-            end
+          
+            locPos = obj.unCorrLocPos{idx};
+           
             if isempty(locPos)
                 
                 warning('There was no candidate found in this frames, please check that you ran findCandidate on this frame, if yes, check the data');
@@ -578,7 +576,7 @@ classdef MPParticleMovie < Core.MPMovie
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
             if strcmp(zMethod,'Intensity')
-                testPlanes = sum(~isnan(planeConfig))>=3;
+                testPlanes = sum(~isnan(planeConfig))>=4;
             elseif strcmp(zMethod,'PSFE')
                 switch nPlanes
                     case 1
