@@ -12,7 +12,8 @@ path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 detectParam.delta = 6;
 detectParam.chi2 = 40;
-info.runMethod = 'load';
+roiRad = 7;
+info.runMethod = 'run';
 info.type = 'normal';
 info.zMethod = 'PSFE';
 info.fitMethod = 'Phasor';
@@ -33,7 +34,7 @@ MPTrackMov.giveInfo
 MPTrackMov.findCandidatePos(detectParam);
 
 %fit position
-MPTrackMov.SRLocalizeCandidate;
+MPTrackMov.SRLocalizeCandidate(roiRad);
 %% Data correction
 rot = true;
 refPlane = 4;

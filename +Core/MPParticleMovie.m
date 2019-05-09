@@ -8,6 +8,7 @@ classdef MPParticleMovie < Core.MPMovie
         unCorrLocPos
         corrLocPos
         particles
+        intData
         
     end
     
@@ -682,6 +683,7 @@ classdef MPParticleMovie < Core.MPMovie
             int = sum(sum(int));
             %SNR = max(max(px2SumInt))/bkgVar;
             SNR = sqrt(int);
+           
         end
        
      end
