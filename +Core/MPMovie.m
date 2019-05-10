@@ -245,10 +245,11 @@ classdef MPMovie < Core.Movie
                 
             elseif isstruct(obj.calibrated)
                 fieldsN = fieldnames(obj.calibrated.filePath);
+                data = zeros(obj.cal2D.file.ROI(1,4),obj.cal2D.file.ROI(1,3),numel(fieldsN));
                 for i = 1:numel(fieldsN)
                     %Load plane
                     [mov] = Load.Movie.tif.getframes(obj.calibrated.filePath.(fieldsN{i}),idx);
-                    data.(fieldsN{i}) = mov;
+                    data(:,:,i) = mov;
                     
                 end
             end  
