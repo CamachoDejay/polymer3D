@@ -371,7 +371,7 @@ classdef MPZCalMovie < Core.MPCalMovie
                 %weighed average occur here
                 %diag is taken because of the matrix operation between weight
                 %and zAvg
-                [doAvg]  = obj.checkDoAverage;
+                [doAvg]  = obj.checkDoAverage(particle.ellip(3));
                 
                 if doAvg
                     zAvg = sum(diag(zAvg(:)* weight(:)'))/sum(weight);

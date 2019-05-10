@@ -902,11 +902,11 @@ classdef MPParticleMovie < Core.MPMovie
 
         end
         
-        function [doAvg]  = checkDoAverage(obj)
+        function [doAvg]  = checkDoAverage(obj,ellip)
             camConfig = obj.calibrated.camConfig;
             switch camConfig
                 case 'fullRange'
-                    if and(particle.ellip(3)>0.8,particle.ellip(3)<1.25)
+                    if and(ellip>0.8,ellip<1.25)
                         doAvg = false;
                     else
                         doAvg = true;
@@ -917,7 +917,7 @@ classdef MPParticleMovie < Core.MPMovie
                         doAvg = true;
 
                 case 'equal'
-                    if and(particle.ellip(3)>0.8,particle.ellip(3)<1.25)
+                    if and(ellip>0.8,ellip<1.25)
                         doAvg = false;
                     else
                         doAvg = true;
