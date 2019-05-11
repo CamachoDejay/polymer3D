@@ -3,19 +3,19 @@ clc;
 close all;
 clear;
 
-path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\4\ZCal CS';
+path2ZCal = [];
 path2SRCal = [];
 
-path2File = 'E:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\X\XTrackExtendedConfCS_1';
+path2File = 'E:\Data\Leuven Data\2019\05 - May\TestCalibrationIntensity_1';
 path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 
 detectParam.delta = 6;
 detectParam.chi2 = 40;
-roiRad = 7;
+roiRad = 6;
 info.runMethod = 'run';
 info.type = 'normal';
-info.zMethod = 'PSFE';
+info.zMethod = 'Intensity';
 info.fitMethod = 'Phasor';
 %%
 calib = Core.MPPlaneCalibration(path2Cal,info);

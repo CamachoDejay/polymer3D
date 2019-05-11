@@ -243,11 +243,11 @@ classdef MPLocMovie < Core.MPParticleMovie
                 for j = 1:length(frameData)
                     %SRList{i}{j} = SRList{i}{j}(1,{'row','col','z'});
                     partData = frameData{j};
-                    [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}));
+                    [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}),j);
                     frameData2Store(j,{'row','col','z','rowM','colM','zM'}) = data;
                     frameData2Store.intensity(j) = partData.intensity(3);
                     frameData2Store.SNR(j) = partData.SNR(3);
-                    frameData2Store.t(j) = j;
+                    frameData2Store.t(j) = i;
                     %SRList{i}{j} = data;
                     %SRList{i}{j}.intensity = partData.intensity(3);
                     %SRList{i}{j}.SNR = partData.SNR(3);
@@ -269,7 +269,7 @@ classdef MPLocMovie < Core.MPParticleMovie
              part = obj.particles.SRList;
             switch nargin
                 case 1
-                    frames = 1:length(part);
+                    frames = min(part.t):max(part.t);
                 case 2 
                     [frames] = obj.checkFrame(frames,obj.raw.maxFrame(1));
             end
@@ -279,14 +279,15 @@ classdef MPLocMovie < Core.MPParticleMovie
             hold on
             for i = 1:length(frames)
                 cFrame = frames(i);
-                currentFrame = part{cFrame};
-                if ~isempty(length(part{cFrame}))
+                currentFrame = part(part.t==cFrame,:);
+                if ~isempty(currentFrame)
                     
-                    for j = 1: length(currentFrame)
-                        currentPart = currentFrame{j};
-                        data = table2array(currentPart(1,{'row','col','z'}));
+                    for j = 1: height(currentFrame)
+                        currentPart = currentFrame(j,:);
+                        
                         sizeMarker = 5;
-                        scatter3(data(2),data(1),data(3),sizeMarker,data(3),'filled');
+                        scatter3(currentPart.col,currentPart.row,currentPart.z,...
+                            sizeMarker,currentPart.z,'filled');
                        
                         
                     end
@@ -468,14 +469,41 @@ classdef MPLocMovie < Core.MPParticleMovie
              
         end
         
-        function [data]  = resolveXYZ(obj,partData)
+        function [data]  = resolveXYZ(obj,partData,frame)
             zMethod = obj.info.zMethod;
+            pxSize = obj.info.pxSize;
             switch zMethod
                 case 'Intensity'
+                    ROIRad = 7;
+                    frameData = obj.getFrame(frame);
+                    
+                    %Get ROI XZ, YZ scaled to same pixel size
+                    [ROIXZ,ROIYZ] = obj.getScaledZROI(partData(3,:),ROIRad,frameData);
+                    
+                    %Calculate radial symmetry
+                    [XZ,~,~] = Localization.radialcenter(ROIXZ);
+                    [YZ,~,~] = Localization.radialcenter(ROIYZ);
+                    
+                    %Convert result to nm
+                    XZ = XZ * pxSize;
+                    YZ = YZ * pxSize;
+                    
+                    row = partData.row(3)*pxSize;
+                    col = partData.col(3)*pxSize;
+                    z = (XZ+YZ)/2;
+                    
+                    %store the data
+                    data = table(row,col,z,'VariableNames',{'row','col','z'});
+                    
+                    data.rowM = row;
+                    data.colM = col;
+                    data.zM = z;
+                    
+                    
                 case 'PSFE'
 
                     ellipRange = obj.ZCal.fitZParam.ellipRange;  
-                    pxSize = obj.info.pxSize;
+                    
                     idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
                     partData(~idx2Keep,:) = table(nan);
 
@@ -549,7 +577,30 @@ classdef MPLocMovie < Core.MPParticleMovie
             
         end
         
-        
+        function [ROIZCol,ROIZRow] = getScaledZROI(obj,partData,ROIRad,volIm)
+            
+            %Possible improvement : Translate the coordinate of the best
+            %focus into the otherplanes to extract the exact value where
+            %the PSF should be taken
+            pxSizeXY = obj.info.pxSize;
+            zPx = obj.calibrated.nPlanes;
+            %Here we divide the pxSize by two
+            zVol = abs(obj.cal2D.file.inFocus(end).relZPos)*1000;
+            
+            scaleFactor = zVol/zPx/pxSizeXY;
+            
+           
+            rowIdx = round(partData.row -ROIRad:partData.row+ROIRad);
+            colIdx = round(partData.col -ROIRad:partData.col+ROIRad);
+            
+            ROI = volIm(rowIdx,colIdx,:);
+            
+            ROI = imresize3(ROI,[size(ROI,1),size(ROI,1),zPx*scaleFactor]);
+            
+            ROIZCol = squeeze(sum(ROI,1));
+            ROIZRow = squeeze(sum(ROI,2));
+            
+        end
        
     end
 end
