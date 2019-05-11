@@ -577,7 +577,7 @@ classdef MPParticleMovie < Core.MPMovie
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
             if strcmp(zMethod,'Intensity')
-                testPlanes = sum(~isnan(planeConfig))>=4;
+                testPlanes = sum(~isnan(planeConfig))>=3;
             elseif strcmp(zMethod,'PSFE')
                 switch nPlanes
                     case 1
@@ -793,10 +793,10 @@ classdef MPParticleMovie < Core.MPMovie
                 position = table(zeros(500,1),zeros(500,1),zeros(500,1),...
                     zeros(500,1),'VariableNames',{'row', 'col', 'meanFAR','plane'});
                 [volIm] = obj.getFrame(frames(i));
-                nameFields = fieldnames(volIm);
+                nPlanes = size(volIm,3);
                 
-                for j = 1:length(nameFields)
-                    currentIM = double(volIm.(nameFields{j}));
+                for j = 1:nPlanes
+                    currentIM = volIm(:,:,j);
                     %localization occurs here
                     [ pos, meanFAR, ~ ] = Localization.smDetection(currentIM,...
                         delta, FWHM_pix, chi2 );
@@ -842,11 +842,11 @@ classdef MPParticleMovie < Core.MPMovie
                     zeros(size(frameCandidate,1),1),zeros(size(frameCandidate,1),1),...
                     'VariableNames',varNames);
                 sigSetup = [obj.info.sigma_px obj.info.sigma_px];
-                fieldN = fieldnames(data);
+                
             for i = 1:size(frameCandidate,1)
                 
                 plane = frameCandidate.plane(i);
-                planeData = double(data.(fieldN{plane}));
+                planeData = double(data(:,:,plane));
                 %Get the ROI
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
