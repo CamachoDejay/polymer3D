@@ -490,7 +490,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                     
                     row = partData.row(3)*pxSize;
                     col = partData.col(3)*pxSize;
-                    z = (XZ+YZ)/2;
+                    z = -(XZ+YZ)/2;
                     
                     %store the data
                     data = table(row,col,z,'VariableNames',{'row','col','z'});

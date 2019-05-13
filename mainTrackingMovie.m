@@ -4,16 +4,16 @@ close all;
 clear;
 
 path2ZCal = [];
-path2SRCal = [];
+path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 path2File = 'E:\Data\Leuven Data\2019\05 - May\TestCalibrationIntensity_1';
 path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 
 detectParam.delta = 6;
-detectParam.chi2 = 40;
+detectParam.chi2 = 30;
 roiRad = 6;
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.type = 'normal';
 info.zMethod = 'Intensity';
 info.fitMethod = 'Phasor';
