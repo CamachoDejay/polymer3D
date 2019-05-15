@@ -233,7 +233,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             SRList = [];
             for i = 1:length(data2Resolve)
-                if i==25
+                if i==40
                     disp('stop');
                 end
                 frameData = data2Resolve{i};
@@ -610,8 +610,9 @@ classdef MPLocMovie < Core.MPParticleMovie
 
             ROI = volIm(ROI(1):ROI(2),ROI(3):ROI(4),:);
             ROI = imresize3(ROI,[size(ROI,1),size(ROI,1),scaleFactor]);
+            center = round([size(ROI,1)/2,size(ROI,2)/2]);
             
-            ROIZCol = squeeze(sum(ROI,1));
+            ROIZCol = squeeze(sum(ROI(center(1)-2:center(1)+2,center(2)-2:center(2)+2,:),1));
             ROIZRow = squeeze(sum(ROI,2));
             
         end
