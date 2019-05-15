@@ -233,6 +233,9 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             SRList = [];
             for i = 1:length(data2Resolve)
+                if i==25
+                    disp('stop');
+                end
                 frameData = data2Resolve{i};
                 frameData2Store = table(zeros(size(frameData)),...
                     zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
@@ -243,7 +246,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 for j = 1:length(frameData)
                     %SRList{i}{j} = SRList{i}{j}(1,{'row','col','z'});
                     partData = frameData{j};
-                    [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip'}),j);
+                    [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}),i);
                     frameData2Store(j,{'row','col','z','rowM','colM','zM'}) = data;
                     frameData2Store.intensity(j) = partData.intensity(3);
                     frameData2Store.SNR(j) = partData.SNR(3);
@@ -274,27 +277,15 @@ classdef MPLocMovie < Core.MPParticleMovie
                     [frames] = obj.checkFrame(frames,obj.raw.maxFrame(1));
             end
            
-            
+            tic
             figure()
             hold on
-            for i = 1:length(frames)
-                cFrame = frames(i);
-                currentFrame = part(part.t==cFrame,:);
-                if ~isempty(currentFrame)
-                    
-                    for j = 1: height(currentFrame)
-                        currentPart = currentFrame(j,:);
-                        
-                        sizeMarker = 5;
-                        scatter3(currentPart.col,currentPart.row,currentPart.z,...
-                            sizeMarker,currentPart.z,'filled');
-                       
-                        
-                    end
-                end
-                    
-            end
             
+            sizeMarker =5;
+            scatter3(part.col,part.row,part.z,sizeMarker,part.z,'filled')
+            axis ij;
+
+            toc
             title('all Localization plotted');
             xlabel('x position in nm');
             ylabel('y position in nm');
@@ -474,11 +465,14 @@ classdef MPLocMovie < Core.MPParticleMovie
             pxSize = obj.info.pxSize;
             switch zMethod
                 case 'Intensity'
+                    
                     ROIRad = 7;
                     frameData = obj.getFrame(frame);
+                    planes = partData(~isnan(partData.plane),:).plane;
+                    nPlanes = length(planes);
                     
                     %Get ROI XZ, YZ scaled to same pixel size
-                    [ROIXZ,ROIYZ] = obj.getScaledZROI(partData(3,:),ROIRad,frameData);
+                    [ROIXZ,ROIYZ] = obj.getScaledZROI(partData,ROIRad,frameData);
                     
                     %Calculate radial symmetry
                     [XZ,~,~] = Localization.radialcenter(ROIXZ);
@@ -488,10 +482,21 @@ classdef MPLocMovie < Core.MPParticleMovie
                     XZ = XZ * pxSize;
                     YZ = YZ * pxSize;
                     
+                    isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
+                  
                     row = partData.row(3)*pxSize;
                     col = partData.col(3)*pxSize;
-                    z = -(XZ+YZ)/2;
+                    %get Z position
+                    if isEdgePlane
+                        
+                        planeZPos = obj.calibrated.oRelZPos(planes(1))*1000;                        
+                        z = -(XZ+YZ)/2 + planeZPos;
+                        
+                    else
+                        
+                        z = -(XZ+YZ)/2 ;
                     
+                    end
                     %store the data
                     data = table(row,col,z,'VariableNames',{'row','col','z'});
                     
@@ -582,20 +587,29 @@ classdef MPLocMovie < Core.MPParticleMovie
             %Possible improvement : Translate the coordinate of the best
             %focus into the otherplanes to extract the exact value where
             %the PSF should be taken
+            planes = partData(~isnan(partData.plane),:).plane;
+            nPlanes = length(planes);
+            isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
+            
             pxSizeXY = obj.info.pxSize;
-            zPx = obj.calibrated.nPlanes;
-            %Here we divide the pxSize by two
-            zVol = abs(obj.cal2D.file.inFocus(end).relZPos)*1000;
             
-            scaleFactor = zVol/zPx/pxSizeXY;
+            if isEdgePlane
+                 zVol =  abs(abs(obj.cal2D.file.inFocus(planes(1)).relZPos*1000) - ...
+                     abs(obj.cal2D.file.inFocus(planes(end)).relZPos*1000));%
+                 volIm = volIm(:,:,planes);
+            else
             
-           
-            rowIdx = round(partData.row -ROIRad:partData.row+ROIRad);
-            colIdx = round(partData.col -ROIRad:partData.col+ROIRad);
-            
-            ROI = volIm(rowIdx,colIdx,:);
-            
-            ROI = imresize3(ROI,[size(ROI,1),size(ROI,1),zPx*scaleFactor]);
+                zVol =  abs(obj.cal2D.file.inFocus(end).relZPos*1000);%abs(abs(obj.cal2D.file.inFocus(planes(1)).relZPos*1000) - ...
+            end
+
+            scaleFactor = zVol/pxSizeXY;
+
+            imSize = size(volIm);
+            pos = [round(partData.row(3)),round(partData.col(3))];
+            ROI = Misc.getROIs(pos,ROIRad,imSize(1:2));
+
+            ROI = volIm(ROI(1):ROI(2),ROI(3):ROI(4),:);
+            ROI = imresize3(ROI,[size(ROI,1),size(ROI,1),scaleFactor]);
             
             ROIZCol = squeeze(sum(ROI,1));
             ROIZRow = squeeze(sum(ROI,2));

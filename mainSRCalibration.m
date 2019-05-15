@@ -4,15 +4,16 @@ clc
 close all;
 %% get path to SRCalibration
 
-path2SRCal = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
-path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
+path2SRCal = 'E:\leuven data\05 May\13\2D Cal';
+path2Cal  = 'E:\leuven data\05 May\13\2D Cal';
 
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod = 'Phasor';
+info.zMethod   = 'PSFE';
 calib = Core.MPPlaneCalibration(path2Cal,info);
 calib.retrieveMovies;
 calib.calcIndivCal;
@@ -27,7 +28,7 @@ testSRCal.retrieveSRCalMov;
 
 %% extract zData
 detectParam.delta = 6;
-detectParam.chi2 = 60;
+detectParam.chi2 = 40;
 detectParam.consThresh = 3;
 
 trackParam.commonPlanes = 1; 

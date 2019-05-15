@@ -6,7 +6,7 @@ clear
 close all
 clc
 
-path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2Cal  = 'E:\leuven data\05 May\13\2D Cal';
 info.runMethod = 'load';
 info.nChan = 4;
 %% 
