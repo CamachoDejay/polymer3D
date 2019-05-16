@@ -228,8 +228,13 @@ classdef MPParticleMovie < Core.MPMovie
                           %#2 Consolidate the position of the given frame
                           %across plane
                           %Calculate a focus metric (FM) combining ellipticity and GLRT FM.
-                            [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.fMetric);
-
+                          switch obj.info.zMethod
+                              case 'Intensity'
+                                 %we do not do anythin at the moment.
+                                 focusMetric = fCandMet.fMetric;
+                              case 'PSFE' 
+                                [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.fMetric);
+                          end
                             %reformating to keep the same format as how the data is saved
                             %later
                             fCandMet.fMetric = focusMetric;

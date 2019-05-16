@@ -11,7 +11,7 @@ path2Cal  =  'F:\Data\Leuven Data\2019\05 - May\10\2DCal';
 
 
 detectParam.delta = 8;
-detectParam.chi2 = 120;
+detectParam.chi2 = 200;
 roiRad = 6;
 info.runMethod = 'run';
 info.type = 'normal';
