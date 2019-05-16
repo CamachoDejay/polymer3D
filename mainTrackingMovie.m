@@ -7,13 +7,13 @@ path2ZCal = [];
 path2SRCal = [];
 
 path2File = 'F:\Data\Leuven Data\2019\05 - May\10\2D_cal_NOPSFE_1';
-path2Cal  =  'E:\leuven data\05 May\13\2D Cal';
+path2Cal  =  'F:\Data\Leuven Data\2019\05 - May\10\2DCal';
 
 
-detectParam.delta = 6;
-detectParam.chi2 = 20;
+detectParam.delta = 8;
+detectParam.chi2 = 120;
 roiRad = 6;
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.type = 'normal';
 info.zMethod = 'Intensity';
 info.fitMethod = 'Phasor';
@@ -27,9 +27,14 @@ calib.showCal(1);
 
 MPTrackMov = Core.MPTrackingMovie(path2File,calib.getCal,info,path2SRCal,path2ZCal);
 MPTrackMov.calibrate;
+MPTrackMov.giveInfo
+%% test detection
+
+MPTrackMov.findCandidatePos(detectParam,1);
+MPTrackMov.showCandidate(1);
 %% Detection
 
-MPTrackMov.giveInfo
+
 %find candidate
 MPTrackMov.findCandidatePos(detectParam);
 

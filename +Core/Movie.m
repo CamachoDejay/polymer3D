@@ -151,10 +151,10 @@ classdef Movie < handle
         function giveInfo(obj)
             %Make a prompt asking some question to the user.
             prompt = {'Enter the pixel size: ','Enter the NA of the objective ',...
-                'Enter the emission wavelength', 'Any comment about experiment?'};
+                'Enter the emission wavelength','FWHM (px):' 'Any comment about experiment?'};
             dlgTitle = 'Information about experimental parameters';
             numLines = 1;
-            defaultVal = {'95','1.2','520',''};
+            defaultVal = {'95','1.2','520','2',''};
             answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
             
             assert(~isempty(answer),'User canceled input dialog, Simulation was aborted')
@@ -168,11 +168,12 @@ classdef Movie < handle
             emW = str2double(answer(3));
             assert(~isnan(emW),'Emission wavelength should be numerical');
             
-            comment = answer(4);
+            FWHM_pix = str2double(answer(4));
+            assert(~isnan(FWHM_pix),'FWHM should be numerical');
+            
+            comment = answer(5);
             %Calculate some setup parameters
-            sigma_nm = 0.25 * emW/NA;
-            FWHMnm = sigma_nm * sqrt(8*log(2));
-            FWHM_pix = FWHMnm/pxSize;
+            sigma_nm = 0.25 * emW/NA; 
             sigmaPix = sigma_nm/pxSize;
             %store info        
             obj.info.pxSize = pxSize;

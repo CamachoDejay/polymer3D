@@ -40,7 +40,7 @@ classdef MPParticleMovie < Core.MPMovie
                         
                     case 3
                         
-                        [frames] = obj.checkFrame(frames);
+                        [frames] = obj.checkFrame(frames,obj.calibrated.nFrames);
                         
                     otherwise
                         
@@ -273,7 +273,7 @@ classdef MPParticleMovie < Core.MPMovie
         
         function [particle] = getParticles(obj,frames)
             %GetParticles
-            [idx] = obj.checkFrame(frames);
+            [idx] = obj.checkFrame(frames,obj.calibrated.nFrames(1));
             particle = obj.particles.List{idx};
             
             if isempty(particle)
@@ -290,10 +290,9 @@ classdef MPParticleMovie < Core.MPMovie
             assert(~isempty(obj.candidatePos{idx}),'There is no candidate found in that frame, check that you ran the detection for that frame');
             
             [frame] = getFrame(obj,idx);
-            assert(isstruct(frame),'Error unknown data format, data should be a struct, wrong output from getFrame');
             
-            nImages = numel(fields(frame));
-            fNames = fieldnames(frame);
+            nImages = size(frame,3);
+           
             nsFig = 2;
             
             candidate = obj.getCandidatePos(idx);
@@ -307,7 +306,7 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 subplot(2,nImages/nsFig,i)
                 hold on
-                imagesc(frame.(fNames{i}))
+                imagesc(frame(:,:,i))
                 plot(colPos(planeIdx==i),rowPos(planeIdx==i),'g+')
                 axis image;
                 grid on;
@@ -315,7 +314,7 @@ classdef MPParticleMovie < Core.MPMovie
                 a.XTickLabel = [];
                 a.YTickLabel = [];
                 a.GridColor = [1 1 1];
-                title({fNames{i},sprintf(' Zpos = %0.3f',obj.calibrated.oRelZPos(i))});
+                title({['Plane ' num2str(i)],sprintf(' Zpos = %0.3f',obj.calibrated.oRelZPos(i))});
                 colormap('jet')
                 hold off
                 

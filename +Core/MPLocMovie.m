@@ -97,7 +97,7 @@ classdef MPLocMovie < Core.MPParticleMovie
            
             if isempty(obj.corrLocPos)
                 
-                    obj.corrLocPos = obj.localizedPos;
+                    obj.corrLocPos = obj.unCorrLocPos;
                     
             end
             
@@ -242,19 +242,25 @@ classdef MPLocMovie < Core.MPParticleMovie
                     zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
                     zeros(size(frameData)),zeros(size(frameData)),'VariableNames',...
                     {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
-                
+                if strcmpi(obj.info.zMethod,'Intensity')
+                    fData = obj.getFrame(i);
+                end
                 for j = 1:length(frameData)
-                    %SRList{i}{j} = SRList{i}{j}(1,{'row','col','z'});
+                   
                     partData = frameData{j};
-                    [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}),i);
+                    
+                    switch obj.info.zMethod
+                        case 'Intensity'
+                            [data] = obj.resolveXYZInt(partData(:,{'row','col','z','ellip','plane'}),fData);
+                        case 'PSFE'
+                            [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}));
+                    end
+                        
                     frameData2Store(j,{'row','col','z','rowM','colM','zM'}) = data;
                     frameData2Store.intensity(j) = partData.intensity(3);
                     frameData2Store.SNR(j) = partData.SNR(3);
                     frameData2Store.t(j) = i;
-                    %SRList{i}{j} = data;
-                    %SRList{i}{j}.intensity = partData.intensity(3);
-                    %SRList{i}{j}.SNR = partData.SNR(3);
-
+                
                 end
              SRList = [SRList;frameData2Store];   
                 
@@ -460,94 +466,94 @@ classdef MPLocMovie < Core.MPParticleMovie
              
         end
         
-        function [data]  = resolveXYZ(obj,partData,frame)
-            zMethod = obj.info.zMethod;
+        function [data]  = resolveXYZ(obj,partData)
+         
+
+            ellipRange = obj.ZCal.fitZParam.ellipRange;  
+
+            idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
+            partData(~idx2Keep,:) = table(nan);
+
+            row  = partData.row(3)*pxSize;
+            col  = partData.col(3)*pxSize;
+            z    = partData.z(3);
+            data = table(row,col,z,'VariableNames',{'row','col','z'});
+            %check how to perform averaging depending on the camera config
+            [doAvg]  = obj.checkDoAverage(partData.ellip(3));
+
+            if doAvg
+                elliptRange = ellipRange(1):0.001:ellipRange(2);
+                %we weigh the average later base on how much out of focus the
+                %plane was.
+                wRange1 = length(elliptRange(elliptRange<=1));
+                wRange2 = length(elliptRange(elliptRange>=1));
+                weight1 = linspace(1,5,wRange1);
+                weight2 = linspace(5,1,wRange2);
+                finalWeight = [weight1 weight2];
+                ellipKept = partData.ellip(idx2Keep);
+                idx = ellipKept;
+                for k = 1 :length(ellipKept)
+
+                    [~,idx(k)] = min(abs(elliptRange-ellipKept(k)));
+
+                end
+
+                weight = finalWeight(idx);
+                %Weighed average
+                row = sum(diag(partData.row(idx2Keep)* weight))/sum(weight) * pxSize;
+                col = sum(diag(partData.col(idx2Keep)* weight))/sum(weight) * pxSize;
+                z   = sum(diag(partData.z(idx2Keep)* weight))/sum(weight) * pxSize;
+            end
+
+            data.rowM = row;
+            data.colM = col;
+            data.zM = z;
+            
+        end
+         
+        function [data] = resolveXYZInt(obj,partData,frameData)
+           
             pxSize = obj.info.pxSize;
-            switch zMethod
-                case 'Intensity'
-                    
-                    ROIRad = 7;
-                    frameData = obj.getFrame(frame);
-                    planes = partData(~isnan(partData.plane),:).plane;
-                    nPlanes = length(planes);
-                    
-                    %Get ROI XZ, YZ scaled to same pixel size
-                    [ROIXZ,ROIYZ] = obj.getScaledZROI(partData,ROIRad,frameData);
-                    
-                    %Calculate radial symmetry
-                    [XZ,~,~] = Localization.radialcenter(ROIXZ);
-                    [YZ,~,~] = Localization.radialcenter(ROIYZ);
-                    
-                    %Convert result to nm
-                    XZ = XZ * pxSize;
-                    YZ = YZ * pxSize;
-                    
-                    isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
-                  
-                    row = partData.row(3)*pxSize;
-                    col = partData.col(3)*pxSize;
-                    %get Z position
-                    if isEdgePlane
-                        
-                        planeZPos = obj.calibrated.oRelZPos(planes(1))*1000;                        
-                        z = -(XZ+YZ)/2 + planeZPos;
-                        
-                    else
-                        
-                        z = -(XZ+YZ)/2 ;
-                    
-                    end
-                    %store the data
-                    data = table(row,col,z,'VariableNames',{'row','col','z'});
-                    
-                    data.rowM = row;
-                    data.colM = col;
-                    data.zM = z;
-                    
-                    
-                case 'PSFE'
+            ROIRad = 9;
+            
+            planes = partData(~isnan(partData.plane),:).plane;
+            nPlanes = length(planes);
 
-                    ellipRange = obj.ZCal.fitZParam.ellipRange;  
-                    
-                    idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
-                    partData(~idx2Keep,:) = table(nan);
+            %Get ROI XZ, YZ scaled to same pixel size
+            [ROIXZ,ROIYZ] = obj.getScaledZROI(partData,ROIRad,frameData);
 
-                    row  = partData.row(3)*pxSize;
-                    col  = partData.col(3)*pxSize;
-                    z    = partData.z(3);
-                    data = table(row,col,z,'VariableNames',{'row','col','z'});
-                    %check how to perform averaging depending on the camera config
-                    [doAvg]  = obj.checkDoAverage(partData.ellip(3));
+            %Calculate radial symmetry
+            [XZ,~,~] = Localization.radialcenter(ROIXZ);
+            [YZ,~,~] = Localization.radialcenter(ROIYZ);
 
-                    if doAvg
-                        elliptRange = ellipRange(1):0.001:ellipRange(2);
-                        %we weigh the average later base on how much out of focus the
-                        %plane was.
-                        wRange1 = length(elliptRange(elliptRange<=1));
-                        wRange2 = length(elliptRange(elliptRange>=1));
-                        weight1 = linspace(1,5,wRange1);
-                        weight2 = linspace(5,1,wRange2);
-                        finalWeight = [weight1 weight2];
-                        ellipKept = partData.ellip(idx2Keep);
-                        idx = ellipKept;
-                        for k = 1 :length(ellipKept)
+            %Convert result to nm
+            XZ = XZ * pxSize;
+            YZ = YZ * pxSize;
 
-                            [~,idx(k)] = min(abs(elliptRange-ellipKept(k)));
+            isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
 
-                        end
+            row = partData.row(3)*pxSize;
+            col = partData.col(3)*pxSize;
+            %get Z position
+            if isEdgePlane
 
-                        weight = finalWeight(idx);
-                        %Weighed average
-                        row = sum(diag(partData.row(idx2Keep)* weight))/sum(weight) * pxSize;
-                        col = sum(diag(partData.col(idx2Keep)* weight))/sum(weight) * pxSize;
-                        z   = sum(diag(partData.z(idx2Keep)* weight))/sum(weight) * pxSize;
-                    end
+                planeZPos = obj.calibrated.oRelZPos(planes(1))*1000;                        
+                z = -(XZ+YZ)/2 + planeZPos;
 
-                    data.rowM = row;
-                    data.colM = col;
-                    data.zM = z;
-             end
-         end
+            else
+
+                z = -(XZ+YZ)/2 ;
+
+            end
+            %store the data
+            data = table(row,col,z,'VariableNames',{'row','col','z'});
+
+            data.rowM = row;
+            data.colM = col;
+            data.zM = z;
+
+            
+        end
         
         function [method] = pickZFitMethod(obj)
             
@@ -605,14 +611,15 @@ classdef MPLocMovie < Core.MPParticleMovie
             scaleFactor = zVol/pxSizeXY;
 
             imSize = size(volIm);
-            pos = [round(partData.row(3)),round(partData.col(3))];
-            ROI = Misc.getROIs(pos,ROIRad,imSize(1:2));
+            pos = [round(nanmean(partData.row)),round(nanmean(partData.col))];
+   
+            ROIs = Misc.getROIs(pos,ROIRad,imSize(1:2));
 
-            ROI = volIm(ROI(1):ROI(2),ROI(3):ROI(4),:);
+            ROI = volIm(ROIs(1):ROIs(2),ROIs(3):ROIs(4),:);
             ROI = imresize3(ROI,[size(ROI,1),size(ROI,1),scaleFactor]);
             center = round([size(ROI,1)/2,size(ROI,2)/2]);
             
-            ROIZCol = squeeze(sum(ROI(center(1)-2:center(1)+2,center(2)-2:center(2)+2,:),1));
+            ROIZCol = squeeze(sum(ROI(center(1)-2:center(1)+2,:,:),1));
             ROIZRow = squeeze(sum(ROI,2));
             
         end
