@@ -55,12 +55,12 @@ else
     % correct int
     waitbar(.5,h,'Doing some simple math...')
     for i = 1:size(chC1,3)
-        data(:,:,i,:) = chC1(:,:,i,:).*C(i);
+        data(:,:,i,:) = chC1(:,:,i,:)./C(i);
     end
     
     waitbar(.7,h,'Doing some simple math...')
     for i = 1:size(chC1,3)
-        data(:,:,i+size(chC1,3),:) = chC2(:,:,i,:).*C(i+size(chC1,3));
+        data(:,:,i+size(chC1,3),:) = chC2(:,:,i,:)./C(i+size(chC1,3));
     end
     
     waitbar(.9,h,'Reordering...')
