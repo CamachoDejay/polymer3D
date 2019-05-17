@@ -468,7 +468,7 @@ classdef MPLocMovie < Core.MPParticleMovie
         
         function [data]  = resolveXYZ(obj,partData)
          
-
+            pxSize = obj.info.pxSize;
             ellipRange = obj.ZCal.fitZParam.ellipRange;  
 
             idx2Keep = and(partData.ellip > ellipRange(1), partData.ellip < ellipRange(2));
@@ -511,7 +511,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             
         end
          
-        function [data] = resolveXYZInt(obj,partData,frameData)
+        function [data]  = resolveXYZInt(obj,partData,frameData)
            
             pxSize = obj.info.pxSize;
             ROIRad = 9;

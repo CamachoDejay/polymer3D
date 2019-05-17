@@ -581,7 +581,7 @@ classdef MPParticleMovie < Core.MPMovie
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
             if strcmp(zMethod,'Intensity')
-                testPlanes = sum(~isnan(planeConfig))>=3;
+                testPlanes = sum(~isnan(planeConfig))>=2;
             elseif strcmp(zMethod,'PSFE')
                 switch nPlanes
                     case 1
