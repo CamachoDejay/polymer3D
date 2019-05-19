@@ -150,12 +150,14 @@ classdef MPLocMovie < Core.MPParticleMovie
         end
         
         function applyZCal(obj)
-            
+            disp('Applying Z Calibration... ');
             assert(~isempty(obj.unCorrLocPos),'Need to fit before applying the calibration');
             if isempty(obj.ZCal)
                 
                 warning('Z Calibration needed to correct the data, using Intensity instead');
                 obj.addInfo('zMethod','Intensity');
+                obj.corrected.Z = false;
+                disp('========> DONE ! <=========');
             end
             
             if isempty(obj.corrLocPos)
@@ -168,6 +170,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             zMethod = obj.info.zMethod;
             
             if strcmp(zMethod,'Intensity')
+                obj.corrected.z = false;
                
             elseif strcmp(zMethod,'PSFE')
             
@@ -208,10 +211,11 @@ classdef MPLocMovie < Core.MPParticleMovie
                 
                 obj.corrected.Z = true;
                 obj.calibrated.zRange = zRange;
+                
             else
                 error('Unknown Z method');
             end
-
+            
             disp('=======> DONE ! <========');
         end
         

@@ -25,48 +25,103 @@ classdef MPTrackingMovie < Core.MPLocMovie
             assert(~isempty(obj.calibrated),'Data should be calibrated to do ZzCalibrationration');
             assert(~isempty(obj.candidatePos), 'No candidate found, please run findCandidatePos before zzCalibrationration');
             assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZzCalibrationration');
-            assert(isstruct(trackParam),'Tracking parameter is expected to be a struct with two field euDistXY and euDistZ')
-            assert(and(isfield(trackParam,'euDistXY'),isfield(trackParam,'euDistZ')),...
-                'Tracking parameter is expected to be a struct with two field "euDistPXY" and "euDistZ"')
             assert(~isempty(obj.corrected),'Data needs to be corrected before tracking');
-            assert(or(and(obj.corrected.XY,obj.corrected.Z),isempty(obj.SRCal)),'Data needs to be corrected before tracking');
             
-            %We copy the List as boolean to keep track of where there are
-            %still particles left
-            [listBool] = Core.trackingMethod.copyList(obj.particles.List,1);
-            %We copy as NaN for storage of the traces;
-            [traces]   = Core.trackingMethod.copyList(obj.particles.List,NaN);
-            %We pick the first particle available
-            [idx] = Core.trackingMethod.pickParticle(listBool);
-            counter = 1;
-            errCount =1;
-            while (idx)
-                %loop until there is no particle (pickParticle return false)
-                if errCount>10000
-                    warning('While loop ran for unexpectedly longer time');
-                    break;
-                    
-                end
-                %Connect particles (cf consolidation but across frames
-                [listIdx] = Core.MPTrackingMovie.connectParticles(obj.particles.SRList,listBool,idx, trackParam);
-                %if the particle was connected in less than 5 frames we remove
-                % its appearance from the list bool
-                if length(listIdx) < 5
-                    
-                    [listBool] = Core.trackingMethod.removeParticles(listBool,listIdx);
-                    
-                else
-                    %Otherwise we store traces, increment counter and remove.
-                    [traces]  = Core.trackingMethod.storeTraces(traces,listIdx,counter);
-                    counter = counter +1;
-                    [listBool] = Core.trackingMethod.removeParticles(listBool,listIdx);
-                    
-                end
-                % We pick a new particle and start all over again
-                [idx] = Core.trackingMethod.pickParticle(listBool);
-                errCount = errCount +1;
+            if or(and(obj.corrected.XY,obj.corrected.Z),isempty(obj.SRCal))
+                
+                warning('Some corrections were not applied to the data');
+            
             end
-            counter = counter -1;
+            
+            switch nargin
+                case 1
+                    trackParam.radius = 300; %in nm
+                    trackParam.memory = 3;
+                case 2
+                    
+                otherwise
+                    error('too many input arguments')
+            end
+            assert(isstruct(trackParam),'Tracking parameter is expected to be a struct with two field radius and memory')
+            assert(and(isfield(trackParam,'radius'),isfield(trackParam,'memory')),...
+                'Tracking parameter is expected to be a struct with two field "radius" and "memory"')
+           
+            DataToTrack = obj.particles.SRList;
+            ImMax = max(DataToTrack.t);
+            %Converts data
+            ToTrack = Core.trackingMethod.ConvertData(DataToTrack,ImMax);
+            
+            Initialized = [ToTrack{1},(1:size(ToTrack{1},1))'];
+
+            ToTrack(1) = [];
+
+            %%%%% INITIALIZE FOR TRACKING DATA
+            % TrackedData = Tracked;
+            TrackedData_data = {Initialized};
+            TrackedData_maxid = max(TrackedData_data{end}(:,end));
+
+            NextFrame = Core.Tracking.CoordsInFrameNextFrame;
+            NextFrame.dataNext =ToTrack{1};
+            NextFrame.timeNext =NextFrame.dataNext(1,end);
+
+            MemoryArray_data = [];
+
+            %%%%% TRACK DATA RECURSIVELY
+            radius = trackParam.radius;
+            MaximumTimeMem = trackParam.memory;
+            totlengthFinal =0;
+            h = waitbar(0,'Tracking particles...');
+            while ~isempty(ToTrack) 
+                if ~isempty(NextFrame.dataNext)
+                    waitbar(NextFrame.timeNext/ImMax,h,'TrackingParticles');
+                    %Upon every iteration, memory must be cleaned to remove any particles
+                    %that have possible moved out of the frame, and have stayed out of the
+                    %frame for longer then MaximumTimeMem
+
+                    MemoryArray_data = Core.trackingMethod.CleanMemory(MemoryArray_data,NextFrame.timeNext,MaximumTimeMem);
+
+                    %Add remaining memory to the previous frame and initialize the array
+                    %for tracking
+
+                    ImPrev = Core.Tracking.CoordsInFramePreviousFrame;
+
+                    ImPrev.time = length(TrackedData_data);
+                    ImPrev.data = ImPrev.AddMemoryToPreviouslyTrackedData( TrackedData_data{end},MemoryArray_data);
+
+                    %Search for neighbours in the immedeate vicitinity of radius = radius
+                    NextFrame.PossibleNeighbours = Core.trackingMethod.SearchNeighbours(NextFrame,ImPrev.data,radius);
+
+                    %Resolve any conflitcs by minimizing the overall distance. 
+
+                    NextFrame.PossibleNeighbours = Core.trackingMethod.ResolveConflicts(NextFrame.PossibleNeighbours);
+
+                    %Add any unassigned particles to the memory
+
+                    MemoryArray_data = Core.trackingMethod.AddToMemory(NextFrame.PossibleNeighbours, ImPrev.data);
+
+                    %Add tracked data to the array of tracked data by assigning possible
+                    %candidates to the indeces of the next frame
+
+                    [TrackedData_data{end+1},TrackedData_maxid] = Core.trackingMethod.AddDataToTracked( ImPrev.data ,NextFrame.dataNext, NextFrame.PossibleNeighbours,TrackedData_maxid);
+
+                end
+                ToTrack(1) = [];
+           
+                %Initialize for next step
+                if ~isempty(ToTrack)
+                NextFrame.dataNext = ToTrack{1};
+                    if ~isempty(ToTrack{1})
+                        NextFrame.timeNext =NextFrame.dataNext(1,end);
+                    else
+                        NextFrame.timeNext =NextFrame.timeNext+1;
+                    end
+                end
+
+            end
+            close(h);
+            AllParticles = cell(1,TrackedData_maxid);
+
+            TrackedData = Core.trackingMethod.ConvertFinalOutput( TrackedData_data,AllParticles);
             
             obj.particles.traces = traces;
             obj.particles.nTraces = counter;

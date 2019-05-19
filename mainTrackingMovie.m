@@ -13,7 +13,7 @@ path2Cal  =  'D:\Documents\Unif\PhD\2019-Data\04 - Apr\extended\test\2DCal';
 detectParam.delta = 6;
 detectParam.chi2 = 40 ;
 roiRad = 6;
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.type = 'normal';
 info.zMethod = 'Intensity';
 info.fitMethod = 'Phasor';
@@ -67,8 +67,8 @@ MPTrackMov.showCorrLoc();
 %MPTrackMov.showParticle;
 
 %% tracking
-trackParam.euDistXY = 400;
-trackParam.euDistZ  = 300;
+trackParam.radius = 300;
+trackParam.memory = 3;
 MPTrackMov.trackParticle(trackParam);
 traces = MPTrackMov.getTraces;
 %% plot

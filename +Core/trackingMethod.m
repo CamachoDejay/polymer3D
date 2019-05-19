@@ -257,6 +257,163 @@ classdef trackingMethod < handle
             end
             
         end
+        
+        %%%%%%%%%%%%%%%%%%% FROM SERGEY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function ALLDataConverted = ConvertData(inputData,ImMax)
+    
+            assert(istable(inputData),'Wrong format of the input data :(. Can not continue, sorry for the inconvenience!');
+            ALLDataConverted = cell(ImMax,1);
+            
+            for i=1:ImMax      
+                
+                    time = inputData.t(inputData.t==i);
+                    x = inputData.col(inputData.t==i);
+                    y = inputData.row(inputData.t==i);
+                    z = inputData.z(inputData.t==i);
+                    ALLDataConverted{i} =[x ,y,z,time];
+                    
+            end
+
+        end
+        
+        %%% RESOLVE TRACKING CONFLICTS
+        function AllCandidates = ResolveConflicts(InitialArray)
+              % Preallocate
+              allarray = zeros( size(InitialArray,2),3);
+              % Reform array into Column 1: Candidate indeces in NextFrame
+              %                    Column 2: Distance to the point particle id index in
+              %                    previous frame
+              %                    Column 3: Corresponding particle-id indeces in previous frame
+              for i=1:length(InitialArray)
+                 InitialArray{2,i}(:,3)=i;
+                 [m,~]=size(InitialArray{2,i});
+                 ind = find(allarray(:,1)==0,1,'first');
+                 allarray(ind:ind+m-1,:) = [InitialArray{2,i}];
+              end
+
+              % Find the overall minima of the array sum using Hungarian algorithm, and
+              % add it to the AllCandidates array of all of possible further
+              % tracked particle trajectories 
+              allarray(allarray(:,1)==0,:)=[];      
+
+              dim = max([max(allarray(:,1)),max(allarray(:,3))]);
+              MatrixToMinimize = Inf(dim,dim);
+              for i=1:length(allarray(:,1))
+                MatrixToMinimize(allarray(i,1),allarray(i,3))=allarray(i,2);
+              end
+              [AllCandidates,~] = Minimization.munkres(MatrixToMinimize) ;
+              AllCandidates(2,:)=1:length(AllCandidates);
+              AllCandidates(:,AllCandidates(1,:)==0) =[];
+              AllCandidates = fliplr(AllCandidates');
+
+
+        end
+
+        %%% FIND POSSIBLE NEIGHBOURS
+        function PossibleNeighbours = FindPossibleNeighbours(NextFrame,PreviousFrame,Radius,PossibleNeighbours)
+               % Searches for any possible neighbours in the radius = Radius. Outputs a cell array of indeces from NextFrame, corresponding to any points 
+               %  withing the circle of radius = Radius. Removes the used line from
+               %  the array every iteration step, and stops once array is empty
+               if ~isempty(PreviousFrame)
+
+                   DistanceToAllThePointsInTheNextFrame = Core.trackingMethod.dist3d(PreviousFrame(1,1:3), NextFrame(:,1:3));
+                   [DistancesSmallerThenRadius] = find( DistanceToAllThePointsInTheNextFrame < Radius );
+
+                   PossibleNeighbours(end+1)  = {[DistancesSmallerThenRadius,DistanceToAllThePointsInTheNextFrame(DistancesSmallerThenRadius)]};
+                   PossibleNeighbours = Core.trackingMethod.FindPossibleNeighbours(NextFrame,PreviousFrame(2:end,:),Radius,PossibleNeighbours);  
+
+               end
+               NoParticlesDetected = 0; 
+
+               for i=1:length(PossibleNeighbours)
+                   if ~isempty(PossibleNeighbours{1,i})
+                      NoParticlesDetected = 1; 
+                   end
+               end
+               if  logical(NoParticlesDetected)==0
+                    warning('No neighbours detected in the next frame, check your radius or detection threshold')
+               end
+        end
+
+        %%% FIND NEIGHBOURS IN NEXT FRAME
+        function PossibleNeighbours = SearchNeighbours(input_data ,IMPREV,radius)            
+            allids = input_data.ConstructACellArrayWithAllParticleIds(IMPREV,{[]});
+            tempneighbours = Core.trackingMethod.FindPossibleNeighbours(input_data.dataNext,IMPREV,radius,{[]});
+            PossibleNeighbours =[allids(2:end) ; tempneighbours(2:end)];
+        end
+        %%% 3D EUCLIDIAN DISTANCES
+        function distan = dist3d(Point, Arr)
+
+            distan = sqrt((Arr(:,1)-Point(1)).^2 + (Arr(:,2)-Point(2)).^2 + (Arr(:,3)-Point(3)).^2);
+        end
+        
+        %%% This function adds new tracked data to the already existing array. If new particles come in, it will expand the array and maxid as well.
+        function [DataAdded,maxid] = AddDataToTracked(PreviousData,DataToAdd, NeighbourData,maxid)
+        %Preallocate and initialize
+           DataAdded =[];
+
+           if ~isempty(NeighbourData)
+           [~,n]= size([DataToAdd(NeighbourData(1,1),:),PreviousData(NeighbourData(1,2),end)]);
+           DataAdded =zeros(1000,n);
+
+        %Add tracked data
+
+           if ~isempty(DataToAdd)
+               CopyOfNeighbourData= NeighbourData;
+               DataAdded= [DataToAdd(NeighbourData(:,1),:) ,PreviousData(NeighbourData(:,2),end)];
+        %Remove all already assigned ids from the datatoadd, so that only unassigned ids remain          
+               DataToAdd(CopyOfNeighbourData(:,1),:)=[];
+        %Run through unassigned data and add as new id, and increase maxid by 1
+               if ~isempty(DataAdded)
+               newmaxid =maxid+length(DataToAdd(:,1));
+               DataAdded =[DataAdded ; [DataToAdd ,[maxid+1:newmaxid]']];
+               maxid = newmaxid;
+               end
+
+           else
+           warning('No Particles were detected , check your radius threshold')
+           return
+           end
+           DataAdded(DataAdded(:,1)==0,:)=[];
+           end
+        end
+%% FUNCTION DEFINITIONS FOR MEMORY HANDLING
+%%% Cleans memory from irrelevant points for which time has exceed the maximum time allowed for memory.
+        function CleanedMemory = CleanMemory(data, Time,MaxTime)
+            if ~isempty(data)   
+
+               data(abs(data(:,end-1)-Time)>MaxTime,:) = [];
+               CleanedMemory = data;
+            else
+               CleanedMemory = [];
+            end
+
+
+        end
+        %%% Adds to memory any particles that did not find a neighbour in their vicinity
+        function AddedMemory = AddToMemory(Neighbours, PreviousData)
+            PreviousData(Neighbours(:,2),:) = [];
+            AddedMemory = PreviousData;
+        end
+
+
+%% Conversion of final output 
+        function Data = ConvertFinalOutput( TrackedData ,Data)
+            %TODO: output table !
+            while ~isempty(TrackedData)
+                if ~isempty(TrackedData{1})
+                    TimeFrame = TrackedData(1);
+                    IdMax = max(TimeFrame{1,1}(:,end));
+                    for i=1:IdMax
+                        Data{i} = [Data{i} ;TimeFrame{1,1}(TimeFrame{1,1}(:,end)==i,:)];
+                    end
+                end
+                TrackedData(1) =[];
+            end
+
+        end
+
+        
     end
 end
 

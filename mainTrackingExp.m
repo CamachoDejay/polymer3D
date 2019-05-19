@@ -3,11 +3,11 @@ clear
 close all;
 
 
-path2ZCal = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
+path2ZCal  = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
 path2SRCal = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
 
-path2File = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\test';
-path2Cal  =  'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
+path2File  = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\glycerol';
+path2Cal   =  'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
 
 
 detectParam.delta = 6;
@@ -18,7 +18,7 @@ info.type = 'normal';
 info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
-info.zMethod = 'PSFE';
+info.zMethod = 'Intensity';
 % calib = Core.MPPlaneCalibration(path2Cal,info);
 % calib.retrieveMovies;
 % calib.calcIndivCal;
