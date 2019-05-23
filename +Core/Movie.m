@@ -150,11 +150,10 @@ classdef Movie < handle
         
         function giveInfo(obj)
             %Make a prompt asking some question to the user.
-            prompt = {'Enter the pixel size: ','Enter the NA of the objective ',...
-                'Enter the emission wavelength','FWHM (px):' 'Any comment about experiment?'};
+            prompt = {'Enter the pixel size: ','FWHM (px):', 'Any comment about experiment?'};
             dlgTitle = 'Information about experimental parameters';
             numLines = 1;
-            defaultVal = {'95','1.2','520','2',''};
+            defaultVal = {'95','3',''};
             answer = inputdlg(prompt, dlgTitle,numLines,defaultVal);
             
             assert(~isempty(answer),'User canceled input dialog, Simulation was aborted')
@@ -162,23 +161,23 @@ classdef Movie < handle
             pxSize = str2double(answer(1));
             assert(~isnan(pxSize),'Number of Frame should be numerical');%If not a number
             
-            NA = str2double(answer(2));
-            assert(~isnan(NA),'NA should be numerical');
-            
-            emW = str2double(answer(3));
-            assert(~isnan(emW),'Emission wavelength should be numerical');
-            
-            FWHM_pix = str2double(answer(4));
+%             NA = str2double(answer(2));
+%             assert(~isnan(NA),'NA should be numerical');
+%             
+%             emW = str2double(answer(3));
+%             assert(~isnan(emW),'Emission wavelength should be numerical');
+%             
+            FWHM_pix = str2double(answer(2));
             assert(~isnan(FWHM_pix),'FWHM should be numerical');
             
-            comment = answer(5);
+            comment = answer(3);
             %Calculate some setup parameters
-            sigma_nm = 0.25 * emW/NA; 
-            sigmaPix = sigma_nm/pxSize;
+            %sigma_nm = 0.25 * emW/NA; 
+            sigmaPix = FWHM_pix/2.355;
             %store info        
             obj.info.pxSize = pxSize;
-            obj.info.NA = NA;
-            obj.info.emW = emW;
+%             obj.info.NA = NA;
+%             obj.info.emW = emW;
             obj.info.FWHM_px =  FWHM_pix;
             obj.info.sigma_px = sigmaPix;
             obj.info.comment = comment;
