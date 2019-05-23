@@ -231,7 +231,7 @@ classdef MPParticleMovie < Core.MPMovie
                           switch obj.info.zMethod
                               case 'Intensity'
                                  %we do not do anythin at the moment.
-                                 focusMetric = fCandMet.fMetric;
+                                 focusMetric = abs(fCandMet.fMetric);
                               case 'PSFE' 
                                 [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.fMetric);
                           end
@@ -426,19 +426,19 @@ classdef MPParticleMovie < Core.MPMovie
                         
                         %Check which planes are to be checked (currently 2 planes
                         %above and 2 planes below the given plane
-                        planes2Check = currentPlane-2:currentPlane-1;
+                        planes2Check = currentPlane-nPlanes:currentPlane-1;
                         planes2Check = planes2Check(planes2Check>0);
-                        planes2Check = [planes2Check currentPlane+1:currentPlane+2];
+                        planes2Check = [planes2Check currentPlane+1:currentPlane+nPlanes];
                         planes2Check = planes2Check(planes2Check<nPlanes+1);
                         
                 end
                 currentCand = candMet(idx,:);
                 direction = -1;%Start by checking above
                 
-                particle = array2table(nan(5,size(currentCand,2)));
+                particle = array2table(nan(nPlanes,size(currentCand,2)));
                 particle.Properties.VariableNames = currentCand.Properties.VariableNames;
                 
-                particle(3,:) = currentCand;
+                particle(currentCand.plane,:) = currentCand;
                 nCheck = length(planes2Check);
                 camConfig = obj.calibrated.camConfig;
                 for i = 1:nCheck
@@ -450,32 +450,34 @@ classdef MPParticleMovie < Core.MPMovie
                     
                     [isPart] = Core.MPParticleMovie.isPartPlane(currentCand,cand,direction,consThresh,zMethod);
                     if ~all(isPart ==0)
-                        id = cand.plane(isPart)-currentCand.plane;
-                        particle(3+id,:) = cand(isPart,:);
+                        id = cand.plane(isPart);
+                        particle(id,:) = cand(isPart,:);
                     end
                     
                 end
+               
+                %We remove the particle(s) from the list
+                focusMetric(ismember(candMet(:,1), particle(:,1))) = [];
+                candMet(ismember(candMet(:,1), particle(:,1)),:) = [];
+                %format particle to be the same as before:
+                [particle] = obj.makeParticle(particle);
                 
-                %Check if the resulting configuration of the plane make
+                 %Check if the resulting configuration of the plane make
                 %sense e.g. no hole in the configuration
-                
-                planeConfig = particle.plane;
-                
+                 planeConfig = particle.plane;
                 [checkRes] = Core.MPParticleMovie.checkPlaneConfig(planeConfig,nPlanes,camConfig,zMethod);
                 
                 %Store
                 if checkRes
                     
                     nPart = nPart +1;
+                    %store particle in a new list
                     candidateList{nPart,1} = particle;
-                    %We remove the particle(s) from the list
-                    focusMetric(ismember(candMet(:,1), particle(:,1))) = [];
-                    candMet(ismember(candMet(:,1), particle(:,1)),:) = [];
                     
                 else
                     %Otherwise we remove it from the best focus search list
                     %by putting focus metric to NaN
-                    focusMetric(idx) = NaN;
+                    %focusMetric(idx) = NaN;
                     
                 end
                 
@@ -667,7 +669,7 @@ classdef MPParticleMovie < Core.MPMovie
             rowPos = center(1);
             colPos = center(2);
             %we integrate at 3*sigma (take ROI
-            roiSignal = ceil(3*sig);
+            roiSignal = ceil(sig);
             
             %get the idx for the ROI to integrate
             rowIdx = rowPos-roiSignal(1):rowPos+roiSignal(1);
@@ -687,6 +689,10 @@ classdef MPParticleMovie < Core.MPMovie
             int = sum(sum(int));
             %SNR = max(max(px2SumInt))/bkgVar;
             SNR = sqrt(int);
+            if or(SNR<0,int<0)
+                int = sum(sum(px2SumInt));
+                SNR = sqrt(int);
+            end
            
         end
        
@@ -855,72 +861,89 @@ classdef MPParticleMovie < Core.MPMovie
                 [roi_lims] = EmitterSim.getROI(frameCandidate.col(i), frameCandidate.row(i),...
                     delta, size(planeData,2), size(planeData,1));
                 ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
-                
-                if strcmpi(obj.info.fitMethod,'phasor')
-                    %Phasor fitting to get x,y,e
-                    [row,col,e,magX,magY] = Localization.phasor(ROI);
-                    rowPos = round(frameCandidate.row(i)) + row;
-                    colPos = round(frameCandidate.col(i)) + col;
-                    
-                elseif strcmpi(obj.info.fitMethod,'Gauss')
-                    [X,Y] = meshgrid(frameCandidate.col(i)-delta:frameCandidate.col(i)+...
-                        delta,frameCandidate.row(i)-delta:frameCandidate.row(i)+delta);
-                    domain(:,:,1) = X;
-                    domain(:,:,2) = Y;
-        
-                    %Gauss (slower)
-                    [gPar] = Localization.Gauss.MultipleFitting(ROI,frameCandidate.col(i),...
-                        frameCandidate.row(i),domain,1);%data,x0,y0,domain,nbOfFit
-                    colPos = gPar(5); %Should be directly the position of the particle as we
-                        %gave above the domain of the ROI in the space of the image
-                    rowPos = gPar(6);
-                    
-                    row = rowPos - round(frameCandidate.row(i));
-                    col = colPos - round(frameCandidate.col(i));
+                roiSize = size(ROI);
+                if roiSize(1)==roiSize(2)
+                    if strcmpi(obj.info.fitMethod,'phasor')
+                        %Phasor fitting to get x,y,e
+                        [row,col,e,magX,magY] = Localization.phasor(ROI);
+                        rowPos = round(frameCandidate.row(i)) + row;
+                        colPos = round(frameCandidate.col(i)) + col;
 
-                    e = gPar(3)/gPar(2);
-                    
-                    magX = 0;
-                    magY = 0;
-                else
-                    %Phasor fitting to get x,y,e
-                    [row,col,e,magX,magY] = Localization.phasor(ROI);
-                    rowPos = round(frameCandidate.row(i)) + row;
-                    colPos = round(frameCandidate.col(i)) + col;
-                end
-                
-                 %LRT focus metric
-                [fMetric,~] = Localization.likelihoodRatioTest(ROI,sigSetup,[row col]);
-                
-                if magX>=magY
-                    sig(1) = sigSetup(1) * magX/magY;
-                    sig(2) = sigSetup(2);
-                else
-                    sig(1) = sigSetup(1);
-                    sig(2) = sigSetup(2) * magY/magX;
-                end
-               
-                [int,SNR] = obj.getIntensity(ROI,sigSetup);
-                %LRT focus metric
-                [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
-                
-                
+                    elseif strcmpi(obj.info.fitMethod,'Gauss')
+                        [X,Y] = meshgrid(frameCandidate.col(i)-delta:frameCandidate.col(i)+...
+                            delta,frameCandidate.row(i)-delta:frameCandidate.row(i)+delta);
+                        domain(:,:,1) = X;
+                        domain(:,:,2) = Y;
 
-                %storing info
-                candMet.row(i) = rowPos;
-                candMet.col(i) = colPos;
-                candMet.z(i) = 0;
-                candMet.ellip(i) = e;
-                candMet.magX(i) = magX;
-                candMet.magY(i) = magY;
-                candMet.intensity(i) = int;
-                candMet.SNR(i) = SNR;
-                candMet.meanFAR(i) = frameCandidate.meanFAR(i);
-                candMet.fMetric(i) = fMetric;
-                candMet.gFitMet(i) = gFitMet;
-                candMet.plane(i) = plane;
-                
+                        %Gauss (slower)
+                        [gPar] = Localization.Gauss.MultipleFitting(ROI,frameCandidate.col(i),...
+                            frameCandidate.row(i),domain,1);%data,x0,y0,domain,nbOfFit
+                        colPos = gPar(5); %Should be directly the position of the particle as we
+                            %gave above the domain of the ROI in the space of the image
+                        rowPos = gPar(6);
+
+                        row = rowPos - round(frameCandidate.row(i));
+                        col = colPos - round(frameCandidate.col(i));
+
+                        e = gPar(3)/gPar(2);
+
+                        magX = 0;
+                        magY = 0;
+                    else
+                        %Phasor fitting to get x,y,e
+                        [row,col,e,magX,magY] = Localization.phasor(ROI);
+                        rowPos = round(frameCandidate.row(i)) + row;
+                        colPos = round(frameCandidate.col(i)) + col;
+                    end
+
+                     %LRT focus metric
+                    [fMetric,~] = Localization.likelihoodRatioTest(ROI,sigSetup,[row col]);
+
+                    if magX>=magY
+                        sig(1) = sigSetup(1) * magX/magY;
+                        sig(2) = sigSetup(2);
+                    else
+                        sig(1) = sigSetup(1);
+                        sig(2) = sigSetup(2) * magY/magX;
+                    end
+
+                    [int,SNR] = obj.getIntensity(ROI,sigSetup);
+                    %LRT focus metric
+                    [gFitMet,~] = Localization.likelihoodRatioTest(ROI,sig,[row col]);
+
+                    %storing info
+                    candMet.row(i) = rowPos;
+                    candMet.col(i) = colPos;
+                    candMet.z(i) = 0;
+                    candMet.ellip(i) = e;
+                    candMet.magX(i) = magX;
+                    candMet.magY(i) = magY;
+                    candMet.intensity(i) = int;
+                    candMet.SNR(i) = SNR;
+                    candMet.meanFAR(i) = frameCandidate.meanFAR(i);
+                    candMet.fMetric(i) = fMetric;
+                    candMet.gFitMet(i) = gFitMet;
+                    candMet.plane(i) = plane;
+                else
+                    
+                    %storing info
+                    candMet.row(i)          = NaN;
+                    candMet.col(i)          = NaN;
+                    candMet.z(i)            = NaN;
+                    candMet.ellip(i)        = NaN;
+                    candMet.magX(i)         = NaN;
+                    candMet.magY(i)         = NaN;
+                    candMet.intensity(i)    = NaN;
+                    candMet.SNR(i)          = NaN;
+                    candMet.meanFAR(i)      = NaN;
+                    candMet.fMetric(i)      = NaN;
+                    candMet.gFitMet(i)      = NaN;
+                    candMet.plane(i)        = NaN;
+                end
             end
+            %remove NaN's  
+            idx = isnan(candMet.row);
+            candMet(idx,:) = [];
 
         end
         
@@ -952,6 +975,31 @@ classdef MPParticleMovie < Core.MPMovie
                 otherwise
                     error('unknown camera config');
             end
+        end
+        
+        function [newPart] = makeParticle(~,particleData)
+            newPart = array2table(nan(5,size(particleData,2)));
+            newPart.Properties.VariableNames = particleData.Properties.VariableNames;
+            %store best focus in center
+            [~,idx] = nanmax(particleData.fMetric);
+            if idx-2 > 0
+                newPart(1,:) = particleData(idx-2,:);
+            end
+            
+            if idx-1 > 0
+                newPart(2,:) = particleData(idx-1,:);
+            end
+            
+            newPart(3,:) = particleData(idx,:);
+            
+            if idx+1 <= 8
+                newPart(4,:) = particleData(idx+1,:);
+            end
+            
+            if idx+2 <= 8
+                newPart(5,:) = particleData(idx+2,:);
+            end
+        
         end
        
      end
