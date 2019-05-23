@@ -237,9 +237,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             SRList = [];
             for i = 1:length(data2Resolve)
-                if i==40
-                    disp('stop');
-                end
+            
                 frameData = data2Resolve{i};
                 frameData2Store = table(zeros(size(frameData)),...
                     zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
@@ -534,21 +532,21 @@ classdef MPLocMovie < Core.MPParticleMovie
             XZ = XZ * pxSize;
             YZ = YZ * pxSize;
 
-            isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
+            %isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
 
             row = partData.row(3)*pxSize;
             col = partData.col(3)*pxSize;
             %get Z position
-            if isEdgePlane
+%             if isEdgePlane
+% 
+%                 planeZPos = obj.calibrated.oRelZPos(planes(1))*1000;                        
+%                 z = -(XZ+YZ)/2 + planeZPos;
+% 
+%             else
 
-                planeZPos = obj.calibrated.oRelZPos(planes(1))*1000;                        
-                z = -(XZ+YZ)/2 + planeZPos;
+            z = -(XZ+YZ)/2 ;
 
-            else
-
-                z = -(XZ+YZ)/2 ;
-
-            end
+%             end
             %store the data
             data = table(row,col,z,'VariableNames',{'row','col','z'});
 
@@ -599,18 +597,18 @@ classdef MPLocMovie < Core.MPParticleMovie
             %the PSF should be taken
             planes = partData(~isnan(partData.plane),:).plane;
             nPlanes = length(planes);
-            isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
+           % isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
             
             pxSizeXY = obj.info.pxSize;
             
-            if isEdgePlane
-                 zVol =  abs(abs(obj.cal2D.file.inFocus(planes(1)).relZPos*1000) - ...
-                     abs(obj.cal2D.file.inFocus(planes(end)).relZPos*1000));%
-                 volIm = volIm(:,:,planes);
-            else
-            
-                zVol =  abs(obj.cal2D.file.inFocus(end).relZPos*1000);%abs(abs(obj.cal2D.file.inFocus(planes(1)).relZPos*1000) - ...
-            end
+%             if isEdgePlane
+%                  zVol =  abs(abs(obj.cal2D.file.inFocus(planes(1)).relZPos*1000) - ...
+%                      abs(obj.cal2D.file.inFocus(planes(end)).relZPos*1000));%
+%                  volIm = volIm(:,:,planes);
+%             else
+%             
+            zVol =  abs(obj.cal2D.file.inFocus(end).relZPos*1000);%abs(abs(obj.cal2D.file.inFocus(planes(1)).relZPos*1000) - ...
+           % end
 
             scaleFactor = zVol/pxSizeXY;
 
