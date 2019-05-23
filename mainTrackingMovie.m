@@ -6,8 +6,8 @@ clear;
 path2ZCal = [];
 path2SRCal = [];
 
-path2File = 'E:\leuven data\05 May\13\1-40 Flue beads\Fluo\Fluo ejection_2';
-path2Cal  =  'E:\leuven data\05 May\13\2D Cal';
+path2File = 'F:\Data\Leuven Data\2019\05 - May\10\2D_cal_NOPSFE_1';
+path2Cal  =  'F:\Data\Leuven Data\2019\05 - May\10\2DCal';
 
 detectParam.delta = 6;
 detectParam.chi2 = 80;

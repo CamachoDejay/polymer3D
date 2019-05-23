@@ -180,18 +180,18 @@ classdef MPParticleMovie < Core.MPMovie
                         frames = 1: obj.calibrated.nFrames;
                         roiSize = 6;
                         disp('Running consolidation on every frame with roi of 6 pixel');
-                        consThresh = 3;
+                        consThresh = 4;
                     case 2
                         
                         frames = 1: obj.calibrated.nFrames;
                         disp('Running consolidation on every frame')
-                        consThresh = 3;
+                        consThresh = 4;
                     case 3
                         
                         [frames] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
                         assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
                         assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
-                        consThresh = 3;
+                        consThresh = 4;
                     case 4
                         [frames] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
                         assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')

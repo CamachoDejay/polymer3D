@@ -285,7 +285,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                     [frames] = obj.checkFrame(frames,obj.raw.maxFrame(1));
             end
            
-            tic
+           
             figure()
             hold on
             
@@ -293,7 +293,6 @@ classdef MPLocMovie < Core.MPParticleMovie
             scatter3(part.col,part.row,part.z,sizeMarker,part.z,'filled')
             axis ij;
 
-            toc
             title('all Localization plotted');
             xlabel('x position in nm');
             ylabel('y position in nm');
