@@ -61,8 +61,8 @@ classdef MPTrackingMovie < Core.MPLocMovie
             TrackedData_maxid = max(TrackedData_data{end}(:,end));
 
             NextFrame = Core.Tracking.CoordsInFrameNextFrame;
-            NextFrame.dataNext =ToTrack{1};
-            NextFrame.timeNext =NextFrame.dataNext(1,end);
+            NextFrame.dataNext = ToTrack{1};
+            NextFrame.timeNext = NextFrame.dataNext(1,end);
 
             MemoryArray_data = [];
 
@@ -123,16 +123,16 @@ classdef MPTrackingMovie < Core.MPLocMovie
 
             TrackedData = Core.trackingMethod.ConvertFinalOutput( TrackedData_data,AllParticles);
             
-            obj.particles.traces = traces;
-            obj.particles.nTraces = counter;
+            obj.particles.traces = TrackedData;
+            obj.particles.nTraces = length(TrackedData);
             
-            [trace3D] = obj.get3DTraces;
+            %[trace3D] = obj.get3DTraces;
             
-            obj.traces3D = trace3D;
+            obj.traces3D = TrackedData;
             
             filename =[obj.raw.movInfo.Path filesep 'Traces3D.mat'];
             
-            save(filename,'trace3D');
+            save(filename,'TrackedData');
             
             
         end
