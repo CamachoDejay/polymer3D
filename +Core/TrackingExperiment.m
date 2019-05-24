@@ -93,27 +93,31 @@ classdef TrackingExperiment < handle
         end
         
         function set.ZCal(obj,zCal)
-            
-            assert(isfolder(zCal), 'The given path is not a folder');
-            
-            %Check Given path
-            [file2Analyze] = Core.Movie.getFileInPath(zCal,'zCalibration.mat');
-            
-            if isempty(file2Analyze)
-                error('No z calibration file found in the given folder');
-            else
-                fileName = [file2Analyze.folder filesep file2Analyze.name];
-                cal = load(fileName);
-                field = fieldnames(cal);
-                cal = cal.(field{1});
-                assert(isstruct(cal),'zCalibration is supposed to be in cells format');
-                assert(and(isfield(cal,'fitZParam'),isfield(cal,'calib')),...
-                    'Something is wrong in the fields of your Z calibration');
-                
-                obj.ZCal.cal = cal;
+            if isempty(zCal)
+                obj.ZCal.cal = zCal;
                 obj.ZCal.path = zCal;
+            else
+                assert(isfolder(zCal), 'The given path is not a folder');
+
+                %Check Given path
+                [file2Analyze] = Core.Movie.getFileInPath(zCal,'zCalibration.mat');
+
+                if isempty(file2Analyze)
+                    error('No z calibration file found in the given folder');
+                else
+                    fileName = [file2Analyze.folder filesep file2Analyze.name];
+                    cal = load(fileName);
+                    field = fieldnames(cal);
+                    cal = cal.(field{1});
+                    assert(isstruct(cal),'zCalibration is supposed to be in cells format');
+                    assert(and(isfield(cal,'fitZParam'),isfield(cal,'calib')),...
+                        'Something is wrong in the fields of your Z calibration');
+
+                    obj.ZCal.cal = cal;
+                    obj.ZCal.path = zCal;
+                end
+            end    
             end
-        end
         
         %get 3D traces
         
