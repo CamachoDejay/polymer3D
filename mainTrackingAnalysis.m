@@ -6,8 +6,8 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - 100\Z';
-dim = 'z';
+filePath = 'F:\Data\Leuven Data\2019\04 - April\3\XYZ - CS\X';
+dim = 'x';
 period = 20;
 idx2Plot = 4;
 stepApplied = 200;
@@ -96,7 +96,7 @@ for i =1:nTraces
 
     if length(prec)>1
 
-        accPerStep = [accPerStep; abs(diff(acc))-stepSize];
+        accPerStep = [accPerStep; abs(diff(acc)-stepSize];
         accMPerStep = [accMPerStep; abs(diff(accM))-stepSize];
         accPerTrace(i) = mean(abs(diff(acc)));
         accMPerTrace(i) = mean(abs(diff(accM)));
@@ -174,6 +174,11 @@ end
 motPlot = motPlot(currTrace.frame);
 motPlot = motPlot - mean(motPlot);
 plot(motPlot,'-r','LineWidth',2);
+
+figure
+
+
+
 %% function
 
 function [data2Plot] = getData2Plot(currTrace,dim)
