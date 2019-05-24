@@ -3,15 +3,15 @@ clear
 close all;
 
 
-path2ZCal  = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
-path2SRCal = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
+path2ZCal  = [];
+path2SRCal = [];
 
-path2File  = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\glycerol';
-path2Cal   =  'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
+path2File  = 'M:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\3W';
+path2Cal   =  'M:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\2D';
 
 
 detectParam.delta = 6;
-detectParam.chi2 = 60;
+detectParam.chi2 = 120;
 
 %% MP Cal
 info.type = 'normal';
@@ -19,12 +19,12 @@ info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 info.zMethod = 'Intensity';
-% calib = Core.MPPlaneCalibration(path2Cal,info);
-% calib.retrieveMovies;
-% calib.calcIndivCal;
-% calib.calcCombinedCal;
-% calib.showCal(1);
-% calib.save;
+calib = Core.MPPlaneCalibration(path2Cal,info);
+calib.retrieveMovies;
+calib.calcIndivCal;
+calib.calcCombinedCal;
+calib.showCal(1);
+calib.save;
 
 %% create experiments
 
