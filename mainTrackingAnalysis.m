@@ -6,8 +6,8 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - 100\Z';
-dim = 'z';
+filePath = 'F:\Data\Leuven Data\2019\04 - April\3\XYZ - CS\X';
+dim = 'x';
 period = 20;
 idx2Plot = 4;
 stepApplied = 200;
@@ -23,7 +23,8 @@ trackData = trackData.(name{1});
 
 traces = trackData.traces(:,1);
 [stepMot,mot] = getMotor(trackData,dim);
-fileRef = trackData.traces(:,2);
+fileRef = cell2mat(trackData.traces(:,2));
+nFiles = max(fileRef);
 nTraces = length(traces);
 lenTraces = cellfun(@height,traces);
 
@@ -47,6 +48,8 @@ accPerStep   = [];
 
 figure
 hold on
+allData = nan(nTraces,maxLen);
+allDataM = allData;
 for i =1:nTraces
     
     currTrace = traces{i};
@@ -69,6 +72,8 @@ for i =1:nTraces
        idx = idx2Mot(j)+1:idx2Mot(j+1);
        [~,idx2Frame] = intersect(frames,idx);
        if ~isempty(idx2Frame)
+           allData(i,idx2Frame) = data2Plot(idx2Frame,1);
+           allDataM(i,idx2Frame) = data2Plot(idx2Frame,2);
            prec(j)  = std(data2Plot(idx2Frame,1));
            acc(j)   = mean(data2Plot(idx2Frame,1));
            precM(j) = std(data2Plot(idx2Frame,2));
@@ -154,7 +159,7 @@ title('Accuracy for Mean')
 figure 
 hold on
 %select the traces to plot
-idx = cell2mat(fileRef)==idx2Plot;
+idx = fileRef==idx2Plot;
 tracePlot = traces(idx);
 lenTraces = lenTraces(idx);
 idx2 =lenTraces==max(lenTraces);
@@ -174,6 +179,19 @@ end
 motPlot = motPlot(currTrace.frame);
 motPlot = motPlot - mean(motPlot);
 plot(motPlot,'-r','LineWidth',2);
+
+%plot with errorBar
+allStd = zeros(nFiles,size(allData,2));
+for i = 1:nFiles
+    idx = fileRef ==i;
+    allStd(i,:) = nanstd(allData(idx,:),1);     
+    
+end
+error = mean(allStd,1);
+
+figure
+h= Plotting.shadedErrorBar(1:length(error),motPlot,error);
+
 %% function
 
 function [data2Plot] = getData2Plot(currTrace,dim)
