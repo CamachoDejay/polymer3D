@@ -279,7 +279,12 @@ classdef trackingMethod < handle
         %%% RESOLVE TRACKING CONFLICTS
         function AllCandidates = ResolveConflicts(InitialArray)
               % Preallocate
-              allarray = zeros( size(InitialArray,2),3);
+              %allarray = zeros( size(InitialArray,2),3);
+              %Boris edit: Correct preallocation
+              totSize = cell2mat(cellfun(@size,InitialArray(2,:),'UniformOutput',false));
+              totSize = sum(totSize(1:2:end));
+              allarray = zeros(totSize,3);
+              
               % Reform array into Column 1: Candidate indeces in NextFrame
               %                    Column 2: Distance to the point particle id index in
               %                    previous frame

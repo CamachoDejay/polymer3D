@@ -15,7 +15,7 @@ detectParam.chi2 = 120;
 
 %% MP Cal
 info.type = 'normal';
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 info.zMethod = 'Intensity';
