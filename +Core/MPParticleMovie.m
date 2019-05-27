@@ -992,11 +992,11 @@ classdef MPParticleMovie < Core.MPMovie
             
             newPart(3,:) = particleData(idx,:);
             
-            if idx+1 <= 8
+            if idx+1 <= 8 && idx+1<= height(particleData)
                 newPart(4,:) = particleData(idx+1,:);
             end
             
-            if idx+2 <= 8
+            if idx+2 <= 8 && idx+2 <= height(particleData)
                 newPart(5,:) = particleData(idx+2,:);
             end
         

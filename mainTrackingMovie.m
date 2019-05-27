@@ -6,7 +6,7 @@ clear;
 path2ZCal = [];
 path2SRCal = [];
 
-path2File = 'F:\Data\Leuven Data\2019\05 - May\10\2D_cal_NOPSFE_1';
+path2File = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\MultiColor\ejection_1';
 path2Cal  =  'F:\Data\Leuven Data\2019\05 - May\10\2DCal';
 
 detectParam.delta = 6;
@@ -66,7 +66,7 @@ MPTrackMov.showCorrLoc();
 %MPTrackMov.showParticle;
 
 %% tracking
-trackParam.radius = 500;
+trackParam.radius = 1000;
 trackParam.memory = 3;
 MPTrackMov.trackParticle(trackParam);
 traces = MPTrackMov.getTraces;
