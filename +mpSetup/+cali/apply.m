@@ -7,10 +7,10 @@ if or(isempty(cam1),isempty(cam2))
     error('Calibration expect 2 cameras, update will be performed later');
 else
     %test if some of the data is transmission
-    S1 = mean(mean(mean(cam1)));
-    S2 = mean(mean(mean(cam2)));
+    S1 = double(median(median(median(cam1))));
+    S2 = double(median(median(median(cam2))));
     
-    if abs(S1-S2) > 5*min([S1,S2])
+    if abs(S1-S2) > 3*min([S1,S2])
         warning('One cam is much brighter than the other, assuming Transmission data');
         nChan = size(cal.ROI,1)/2;
         if S1< S2
