@@ -225,7 +225,7 @@ classdef TrackingExperiment < handle
                 zStep = cell(length(traces),1);
                 zStep(:,1) = {zSt};
                 
-                allTraces = [allTraces; traces, fileN,colStep,colMot,rowStep,rowMot,zStep,zMot ];
+                allTraces = [allTraces; traces(:), fileN,colStep,colMot,rowStep,rowMot,zStep,zMot ];
                 
             end
             

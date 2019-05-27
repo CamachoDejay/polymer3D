@@ -9,7 +9,7 @@ classdef Movie < handle
        ext 
     end
     
-    properties (SetAccess = 'protected')
+    properties 
         info 
     end
     
