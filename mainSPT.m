@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File = 'E:\Data\Leuven Data\2019\04 - April\3\XYZ - CS OD5\Z\ZTrackInterleaved_1';
-path2Cal  =  'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2File = 'F:\DarkField\Trapping_1';
+path2Cal  =  'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
