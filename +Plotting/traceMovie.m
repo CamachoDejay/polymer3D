@@ -10,7 +10,7 @@ Trailing = 100;
 frameRate = 50;
 yLimit = [0 65000];
 xLimit = [0 45000];
-zLimit = [-2000 500];
+zLimit = [-2000 -500];
 %% test data type
 
 if istable(TrackedData{1})
@@ -102,7 +102,7 @@ end
 %                 SY = Y*20+data2Plot.row(currData.frame==i);
 %                 SZ = Z*20+data2Plot.z(currData.frame==i);
     Fig = figure;
-    view(3);
+   view(3);
      xlim(xLimit);
      ylim(yLimit);
     xlim manual;
@@ -110,7 +110,7 @@ end
     gcf;
     hold on
     
-    for i = 1:maxFr
+    for i = 1:200
        
         for j = 1:length(data)
             currData = data{j};
@@ -135,7 +135,7 @@ end
                 xlim manual;
                 ylim manual;
                 zlim manual;
-               view(3);
+                view(3);
                 gcf;
                 hold on
                 switch dataType
@@ -156,7 +156,7 @@ end
 
         if i == 1
 
-            imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',1);
+            imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
 
         else
 
