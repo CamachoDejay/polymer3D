@@ -1,7 +1,10 @@
 %% User Input
 
 path2Save = 'D:\Documents\Unif\PhD\Papers\04 - Particle Tracking\Figure';
+
 ext = '.gif';
+filename=sprintf('%s%s3Dejection%s', path2Save,filesep,ext);
+
 data = TrackedData;
 Trailing = 100;
 frameRate = 50;
@@ -91,7 +94,6 @@ end
 
 %% Make Movie
  
-filename=sprintf('%s%sRheology%s', path2Save,filesep,ext);
 
     %get max Frame
     maxFr = max(maxFr);
@@ -133,7 +135,7 @@ filename=sprintf('%s%sRheology%s', path2Save,filesep,ext);
                 xlim manual;
                 ylim manual;
                 zlim manual;
-                view(3);
+               view(3);
                 gcf;
                 hold on
                 switch dataType
@@ -152,7 +154,7 @@ filename=sprintf('%s%sRheology%s', path2Save,filesep,ext);
         im = frame2im(frame);
         [imind,cm] = rgb2ind(im,256);
 
-        if i == 2
+        if i == 1
 
             imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',1);
 

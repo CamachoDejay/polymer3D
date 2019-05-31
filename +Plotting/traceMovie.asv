@@ -1,6 +1,7 @@
 %% User Input
 
 path2Save = 'D:\Documents\Unif\PhD\Papers\04 - Particle Tracking\Figure';
+
 ext = '.gif';
 data = TrackedData;
 Trailing = 100;
@@ -91,7 +92,6 @@ end
 
 %% Make Movie
  
-filename=sprintf('%s%sRheology%s', path2Save,filesep,ext);
 
     %get max Frame
     maxFr = max(maxFr);
@@ -100,7 +100,7 @@ filename=sprintf('%s%sRheology%s', path2Save,filesep,ext);
 %                 SY = Y*20+data2Plot.row(currData.frame==i);
 %                 SZ = Z*20+data2Plot.z(currData.frame==i);
     Fig = figure;
-    view(3);
+    %view(3);
      xlim(xLimit);
      ylim(yLimit);
     xlim manual;
@@ -133,13 +133,18 @@ filename=sprintf('%s%sRheology%s', path2Save,filesep,ext);
                 xlim manual;
                 ylim manual;
                 zlim manual;
-                view(3);
+               % view(3);
                 gcf;
                 hold on
-                switch 
-                plot3(data2Plot.col,data2Plot.row,data2Plot.z,'color',[0 0 1])             
-                scatter3(currData.col(idx2Frame),currData.row(idx2Frame),currData.z(idx2Frame),40,[1 0 0],'filled')
-            
+                switch dataType
+                    case 'table'
+                        plot3(data2Plot.col,data2Plot.row,data2Plot.z,'color',[0 0 1])             
+                        scatter3(currData.col(idx2Frame),currData.row(idx2Frame),currData.z(idx2Frame),40,[1 0 0],'filled')
+                    case 'matrix'
+                        plot3(data2Plot(:,1),data2Plot(:,2),data2Plot(:,3),'color',[0 0 1])             
+                        scatter3(currData(idx2Frame,1),currData(idx2Frame,2),currData(idx2Frame,3),40,[1 0 0],'filled')
+                   
+                end
             end
         end
         drawnow;
