@@ -268,6 +268,7 @@ classdef trackingMethod < handle
             AllFieldName(end-2:end) = [];
             AllFieldName{end+1} = 'NumParticle';
             input_data = table2array(input_data);
+            ALLDataConverted = cell(ImMax,1);
 
             for i=1:ImMax         
                     ALLDataConverted{i} =input_data(input_data(:,end)==i,:);
@@ -275,22 +276,6 @@ classdef trackingMethod < handle
 
         end
 
-%         function ALLDataConverted = ConvertData(inputData,ImMax)
-%     
-%             assert(istable(inputData),'Wrong format of the input data :(. Can not continue, sorry for the inconvenience!');
-%             ALLDataConverted = cell(ImMax,1);
-%             
-%             for i=1:ImMax      
-%                 
-%                     time = inputData.t(inputData.t==i);
-%                     x = inputData.col(inputData.t==i);
-%                     y = inputData.row(inputData.t==i);
-%                     z = inputData.z(inputData.t==i);
-%                     ALLDataConverted{i} =[x ,y,z,time];
-%                     
-%             end
-% 
-%         end
         
         %%% RESOLVE TRACKING CONFLICTS
         function AllCandidates = ResolveConflicts(InitialArray)
@@ -438,24 +423,7 @@ classdef trackingMethod < handle
                Data{i}.Properties.VariableNames = AllFieldName;
             end
 
-        end
-
-%         function Data = ConvertFinalOutput( TrackedData ,Data)
-%             %TODO: output table !
-%             while ~isempty(TrackedData)
-%                 if ~isempty(TrackedData{1})
-%                     TimeFrame = TrackedData(1);
-%                     IdMax = max(TimeFrame{1,1}(:,end));
-%                     for i=1:IdMax
-%                         Data{i} = [Data{i} ;TimeFrame{1,1}(TimeFrame{1,1}(:,end)==i,:)];
-%                     end
-%                 end
-%                 TrackedData(1) =[];
-%             end
-% 
-%         end
-
-        
+        end        
     end
 end
 
