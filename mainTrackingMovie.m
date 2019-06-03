@@ -6,13 +6,13 @@ clear;
 path2ZCal = [];
 path2SRCal = [];
 
-path2File = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\MultiColor\ejection_1';
-path2Cal  =  'F:\Data\Leuven Data\2019\05 - May\10\2DCal';
+path2File = 'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\3W\ejection_1';
+path2Cal  =  'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\2D';
 
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 40;
 roiRad = 7;
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.type = 'normal';
 info.zMethod = 'PSFE';
 info.fitMethod = 'Phasor';

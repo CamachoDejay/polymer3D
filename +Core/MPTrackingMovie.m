@@ -49,7 +49,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             DataToTrack = obj.particles.SRList;
             ImMax = max(DataToTrack.t);
             %Converts data
-            ToTrack = Core.trackingMethod.ConvertData(DataToTrack,ImMax);
+            [ToTrack,AllField] = Core.trackingMethod.ConvertData(DataToTrack,ImMax);
             
             Initialized = [ToTrack{1},(1:size(ToTrack{1},1))'];
 
@@ -121,7 +121,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             close(h);
             AllParticles = cell(1,TrackedData_maxid);
 
-            TrackedData = Core.trackingMethod.ConvertFinalOutput( TrackedData_data,AllParticles);
+            TrackedData = Core.trackingMethod.ConvertFinalOutput( TrackedData_data,AllParticles,AllField);
             
             obj.particles.traces = TrackedData;
             obj.particles.nTraces = length(TrackedData);
