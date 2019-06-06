@@ -37,6 +37,7 @@ trackingExp.retrieveMovies;
 %% get TrackingData
 trackParam.radius  = 1000;
 trackParam.memory  = 3;
+
 val2Use = 'bestFocus';
 trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);
 

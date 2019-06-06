@@ -5,11 +5,10 @@ clear;
 close all;
 clc;
 %% USER INPUT
-
 filePath = 'F:\Data\Leuven Data\2019\04 - April\3\XYZ - CS\X';
 dim = 'x';
 period = 20;
-idx2Plot = 4;
+idx2Plot = 3;
 stepApplied = 200;
 %% LOADING
 
@@ -23,7 +22,8 @@ trackData = trackData.(name{1});
 
 traces = trackData.traces(:,1);
 [stepMot,mot] = getMotor(trackData,dim);
-fileRef = trackData.traces(:,2);
+fileRef = cell2mat(trackData.traces(:,2));
+nFiles = max(fileRef);
 nTraces = length(traces);
 lenTraces = cellfun(@height,traces);
 
@@ -47,6 +47,8 @@ accPerStep   = [];
 
 figure
 hold on
+allData = nan(nTraces,length(mot{1}));
+allDataM = allData;
 for i =1:nTraces
     
     currTrace = traces{i};
@@ -55,7 +57,7 @@ for i =1:nTraces
     stepSize = max(currStep)*1000;
     lenCTrace = height(currTrace);
     
-    data2Plot = getData2Plot(currTrace,dim);
+    data2Plot = getData2Plot(currTrace,dim,mot{i});
     prec = zeros(length(idx2Mot)-1,1);
     acc = prec;
     precM = zeros(length(idx2Mot)-1,1);
@@ -69,6 +71,8 @@ for i =1:nTraces
        idx = idx2Mot(j)+1:idx2Mot(j+1);
        [~,idx2Frame] = intersect(frames,idx);
        if ~isempty(idx2Frame)
+           allData(i,frames(idx2Frame)) = data2Plot(idx2Frame,1);
+           allDataM(i,frames(idx2Frame)) = data2Plot(idx2Frame,2);
            prec(j)  = std(data2Plot(idx2Frame,1));
            acc(j)   = mean(data2Plot(idx2Frame,1));
            precM(j) = std(data2Plot(idx2Frame,2));
@@ -78,7 +82,7 @@ for i =1:nTraces
 
        end
     end
-    plot(data2Plot(:,1))
+    plot(currTrace.frame,data2Plot(:,1))
     %clean data
     prec(prec==0)   = [];
     acc(acc==0)     = [];
@@ -154,7 +158,7 @@ title('Accuracy for Mean')
 figure 
 hold on
 %select the traces to plot
-idx = cell2mat(fileRef)==idx2Plot;
+idx = fileRef==idx2Plot;
 tracePlot = traces(idx);
 lenTraces = lenTraces(idx);
 idx2 =lenTraces==max(lenTraces);
@@ -163,8 +167,8 @@ tracePlot = tracePlot(idx2);
 for i = 1:length(tracePlot)
     currTrace = tracePlot{i};
     currMot = mot{i};
-    data2Plot = getData2Plot(currTrace,dim);
-    scatter(1:length(data2Plot),data2Plot(:,1),'filled')
+    data2Plot = getData2Plot(currTrace,dim,currMot);
+    scatter(1:length(data2Plot),data2Plot(:,1),5,'filled')
     
 end
 motPlot = mot{i}*1000;
@@ -173,6 +177,7 @@ if ~strcmp(dim,'z')
 end
 motPlot = motPlot(currTrace.frame);
 motPlot = motPlot - mean(motPlot);
+<<<<<<< HEAD
 plot(motPlot,'-r','LineWidth',2);
 
 figure
@@ -180,23 +185,50 @@ figure
 
 
 %% function
+=======
+%plot(motPlot,'-r','LineWidth',2);
 
-function [data2Plot] = getData2Plot(currTrace,dim)
+%plot with errorBar
+idx = isnan(nanmean(allData,1));
+allData(:,idx) =[];
+allStd = zeros(nFiles,size(allData,2));
+for i = 1:nFiles
+    idx = fileRef ==i;
+    allStd(i,:) = nanstd(allData(idx,:),1);     
+    
+end
+error = nanmean(allStd,1);
 
+figure
+h= Plotting.shadedErrorBar(1:length(error),motPlot,3*error);
+>>>>>>> master
+
+%% function
+
+function [data2Plot] = getData2Plot(currTrace,dim,mot)
+    
     switch(dim)
         
         case 'x'
-            data2Plot(:,1) = currTrace.col-mean(currTrace.col);
-            data2Plot(:,2) = currTrace.colM-mean(currTrace.colM);
+            mot = abs(mot*1000);
+            mot = mot-mean(mot);
+            currMot = mot(currTrace.frame);
+            data2Plot(:,1) = currTrace.col-mean(currTrace.col) + mean(currMot);
+            data2Plot(:,2) = currTrace.colM-mean(currTrace.colM) + mean(currMot);
             
         case 'y'
-            data2Plot(:,1) = currTrace.row-mean(currTrace.row);
-            data2Plot(:,2) = currTrace.rowM-mean(currTrace.rowM);
+            mot = abs(mot*1000);
+            mot = mot-mean(mot);
+            currMot = mot(currTrace.frame);
+            data2Plot(:,1) = currTrace.row-mean(currTrace.row) + mean(currMot);
+            data2Plot(:,2) = currTrace.rowM-mean(currTrace.rowM) + mean(currMot);
         
         case 'z'
-            
-            data2Plot(:,1) = currTrace.z-mean(currTrace.z);
-            data2Plot(:,2) = currTrace.zM-mean(currTrace.zM);
+            mot = mot*1000;
+            mot = mot - mean(mot);
+            currMot = mot(currTrace.frame);
+            data2Plot(:,1) = currTrace.z-mean(currTrace.z) + mean(currMot);
+            data2Plot(:,2) = currTrace.zM-mean(currTrace.zM) + mean(currMot);
     end
 
 end

@@ -4,8 +4,10 @@ clc
 close all;
 %% get path to zCalibration
 
-path2zCal = 'E:\Data\Leuven Data\2019\05 - May\';
-path2Cal  = 'E:\Data\Leuven Data\2019\05 - May\';
+
+path2zCal = 'E:\Data\Leuven Data\2019\04 - April\4\ZCal 100';
+path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
+
 
 detectParam.delta = 8;
 detectParam.chi2 = 40;
@@ -13,7 +15,7 @@ fitZParam.deg = 6;
 fitZParam.ellipRangeCal = [0.5 2]; %for calibration
 fitZParam.ellipRange = [0.65 1.54];%To be used for data (we do not want to use too large values==> edge planes)
 trackParam.euDistPx = 3; 
-trackParam.commonPlanes = 2; %1 for extended, 2 for interleaved
+trackParam.commonPlanes = 1; %1 for extended, 2 for interleaved
 
 %% Initialize a zCalibration Object
 info.type = 'normal';

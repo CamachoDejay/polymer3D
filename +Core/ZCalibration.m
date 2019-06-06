@@ -483,11 +483,11 @@ classdef ZCalibration < handle
                         accuracyM2plot = zStep(1:end-1)*1000-zExp;
                         %accuracyM2plot  = (data(:,6)-data2SubZavg(:));
                         
-                        accuracyZMean = [accuracyZMean mean(abs(accuracyM2plot))];
-                        accuracyZFocus = [accuracyZFocus mean(abs(accuracyF2plot))];
+                        accuracyZMean = [accuracyZMean median(abs(accuracyM2plot))];
+                        accuracyZFocus = [accuracyZFocus median(abs(accuracyF2plot))];
                                                
-                        accuracyXFocus = [accuracyXFocus mean(abs(accuracyX2plot))];
-                        accuracyYFocus = [accuracyXFocus mean(abs(accuracyY2plot))];
+                        accuracyXFocus = [accuracyXFocus median(abs(accuracyX2plot))];
+                        accuracyYFocus = [accuracyXFocus median(abs(accuracyY2plot))];
                         
                         zPlot = [zPlot; data(1:end-1,3), accuracyF2plot, data(1:end-1,6), accuracyM2plot];
                         

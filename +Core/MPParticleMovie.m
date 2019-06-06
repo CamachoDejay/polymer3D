@@ -951,7 +951,9 @@ classdef MPParticleMovie < Core.MPMovie
             camConfig = obj.calibrated.camConfig;
             switch camConfig
                 case 'fullRange'
-                    if and(ellip>0.9,ellip<1.1)
+
+                    if and(ellip>0.8,ellip<1.25)
+
                         doAvg = false;
                     else
                         doAvg = true;
@@ -962,8 +964,9 @@ classdef MPParticleMovie < Core.MPMovie
                         doAvg = true;
 
                 case 'equal'
-                    if and(ellip > 0.9, ellip < 1.1)
-                        
+
+                    if and(ellip>0.8,ellip<1.25)
+
                         doAvg = false;
                     
                     else
