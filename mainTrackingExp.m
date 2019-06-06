@@ -3,22 +3,22 @@ clear
 close all;
 
 
-path2ZCal  = [];
-path2SRCal = [];
+path2ZCal  = 'P:\Belgium\20190514\3D';
+path2SRCal = 'P:\Belgium\20190514\3D';
 
-path2File  = 'M:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\3W';
-path2Cal   =  'M:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\2D';
+path2File  = 'P:\Belgium\20190514\0%Glycerol\10 ms';
+path2Cal   =  'P:\Belgium\20190514\2D';
 
 
 detectParam.delta = 6;
-detectParam.chi2 = 120;
+detectParam.chi2 = 60;
 
 %% MP Cal
 info.type = 'normal';
 info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
-info.zMethod = 'Intensity';
+info.zMethod = 'PSFE';
 calib = Core.MPPlaneCalibration(path2Cal,info);
 calib.retrieveMovies;
 calib.calcIndivCal;
@@ -45,10 +45,13 @@ traces = trackingExp.getTraces3D;
 
 %% Get Intensity
 
-[int,SNR] = trackingExp.getAvgIntensity;
+%[int,SNR] = trackingExp.getAvgIntensity;
 
 %% save Data
 
 trackingExp.saveData;
+
+fileName = [path2File filesep 'fullExperiment.mat'];
+save(fileName,'trackingExp','-v7.3');
 
 
