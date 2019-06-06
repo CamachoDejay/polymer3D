@@ -10,7 +10,7 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File = 'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\3W\ejection_1';
+path2File = 'E:\Data\Leuven Data\2019\05 - May\Viscosity\glycerol\Exp';
 path2Cal  =  'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\2D';
 
 
