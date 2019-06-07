@@ -134,6 +134,8 @@ function [k1, k2, k3, k4, nFrames] = indexFrameHeader(frameHeader)
             if nWrong > 0.01*nFrames
                 error('More than 1% of the data has mistakes, cannot pursue')
             end
+            
+            idx2Delete = zeros(1,nWrong);
             %correct the errors
             for i = 1:nWrong
                 currErr = duplicate(i);
@@ -160,14 +162,12 @@ function [k1, k2, k3, k4, nFrames] = indexFrameHeader(frameHeader)
                 [~,idx] = max(counter);
                 
                 val2Delete = cIFDs(idx);
-                
-                idx2Delete = find(and(C==cCam,and(IFD==val2Delete,T==duplicate(i))));
-                
-                k1(idx2Delete) = [];
-                k2(idx2Delete)  = [];
+                idx2Delete(i) = find(and(C==cCam,and(IFD==val2Delete,T==duplicate(i))));
+
                 
             end
-            
+            k1(idx2Delete) = [];
+            k2(idx2Delete)  = [];
             
             
         end
@@ -189,18 +189,25 @@ function out = initFrameInfoStruc(nFrames)
 end
 
 function checkFrameInfo(frameInfo)
+    disp('checking Camera synchronization');
+    frame2Comp = 20;
     cellC = {frameInfo.C};
     matC = cellfun(@str2num,cellC);
-    test = abs(diff(matC));
-    sumTest = sum(test);
+    %We check the first 20 frames as they should be perfectly synchronized
+    %if camera sync was properly used.
+    test = abs(diff(matC(1:frame2Comp)));
     
-    if sumTest> 0.02*length(test)
+    if all(test)
         
     else
-        ans = questdlg('It seems like the camera are not properly synchronized, do you still want to proceed?','Question to user','No','Yes','No');
-        switch ans
+        answer = questdlg('It seems like the camera are not properly synchronized, do you still want to proceed?','Question to user','No','Yes','No');
+        switch answer
             case 'Yes'
             case 'No'
+                disp('If you are running folder analysis, please remove the unsynced file from the folder');
+                error('Camera are not synchronized, User aborted the analysis');
+            otherwise
+                disp('If you are running folder analysis, please remove the unsynced file from the folder');
                 error('Camera are not synchronized, User aborted the analysis');
         end
     end
