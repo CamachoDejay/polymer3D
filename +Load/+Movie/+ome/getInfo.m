@@ -46,7 +46,9 @@ for imIdx = 1:nImFiles
     
     frameCell{imIdx} = frameInfo;
 end
+% check frameInfo
 
+checkFrameInfo(frameInfo);
 
 %Add extrainfo to the movie, in particular, info about camera, max Frame,
 %and zStack into movieInfo
@@ -141,9 +143,11 @@ function [k1, k2, k3, k4, nFrames] = indexFrameHeader(frameHeader)
                 testCam = sum(cCs);
                 %determine which camera is wrong
                 if testCam > 1
-                    cIFDs = cIFDs(cCs==1);  
+                    cIFDs = cIFDs(cCs==1);
+                    cCam = 1;
                 else
                     cIFDs = cIFDs(cCs==0);
+                    cCam = 0;
                 end
                 
                 %determine which of these IFD value is duplicated
@@ -157,7 +161,7 @@ function [k1, k2, k3, k4, nFrames] = indexFrameHeader(frameHeader)
                 
                 val2Delete = cIFDs(idx);
                 
-                idx2Delete = find(and(IFD==val2Delete,T==duplicate(i)));
+                idx2Delete = find(and(C==cCam,and(IFD==val2Delete,T==duplicate(i))));
                 
                 k1(idx2Delete) = [];
                 k2(idx2Delete)  = [];
@@ -182,4 +186,25 @@ function out = initFrameInfoStruc(nFrames)
     out(nFrames).File = [];
     out(nFrames).Pos = [];
     out(nFrames).expT = [];
+end
+
+function checkFrameInfo(frameInfo)
+    cellC = {frameInfo.C};
+    matC = cellfun(@str2num,cellC);
+    test = abs(diff(matC));
+    sumTest = sum(test);
+    
+    if sumTest> 0.02*length(test)
+        
+    else
+        ans = questdlg('It seems like the camera are not properly synchronized, do you still want to proceed?','Question to user','No','Yes','No');
+        switch ans
+            case 'Yes'
+            case 'No'
+                error('Camera are not synchronized, User aborted the analysis');
+        end
+    end
+    
+    
+
 end
