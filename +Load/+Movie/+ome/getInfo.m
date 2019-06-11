@@ -41,14 +41,24 @@ for imIdx = 1:nImFiles
         str2 = frameHead(k3(i):k4(i));
         [ frameInfo(i).C, frameInfo(i).T, frameInfo(i).Z, frameInfo(i).IFD,...
             frameInfo(i).P, frameInfo(i).File, frameInfo(i).Pos,...
-            frameInfo(i).expT ] = getInfoFromString( str1, str2 );
+            frameInfo(i).expT,frameInfo(i).time] = getInfoFromString( str1, str2 );
+ 
     end
-    
+    tZero = frameInfo(1).time;
+    for i = 1:nFrames
+       frameInfo(i).time = frameInfo(i).time-tZero; 
+    end
+        
     frameCell{imIdx} = frameInfo;
 end
 % check frameInfo
 
-checkFrameInfo(frameInfo);
+[checkRes] = checkFrameInfo(frameInfo);
+%if checkRes is true we fix camera frame
+if checkRes
+    %TODO: Fix misynchronization
+    error('Fixing synchronization is not ready yet, sorry for the inconvenience')
+end
 
 %Add extrainfo to the movie, in particular, info about camera, max Frame,
 %and zStack into movieInfo
@@ -178,17 +188,18 @@ end
 
 function out = initFrameInfoStruc(nFrames)
 % helper function to init an empty frameInfo structure
-    out(nFrames).C = [];
-    out(nFrames).T = [];
-    out(nFrames).Z = [];
-    out(nFrames).IFD = [];
-    out(nFrames).P = [];
+    out(nFrames).C    = [];
+    out(nFrames).T    = [];
+    out(nFrames).Z    = [];
+    out(nFrames).IFD  = [];
+    out(nFrames).P    = [];
     out(nFrames).File = [];
-    out(nFrames).Pos = [];
+    out(nFrames).Pos  = [];
     out(nFrames).expT = [];
+    out(nFrames).time  = [];
 end
 
-function checkFrameInfo(frameInfo)
+function [checkRes] = checkFrameInfo(frameInfo)
     disp('checking Camera synchronization');
     frame2Comp = 20;
     cellC = {frameInfo.C};
@@ -196,19 +207,21 @@ function checkFrameInfo(frameInfo)
     %We check the first 20 frames as they should be perfectly synchronized
     %if camera sync was properly used.
     test = abs(diff(matC(1:frame2Comp)));
-    
+    checkRes = false;
     if all(test)
         
     else
         answer = questdlg('It seems like the camera are not properly synchronized, do you still want to proceed?','Question to user','No','Yes','No');
         switch answer
             case 'Yes'
+                checkRes = true;
             case 'No'
                 disp('If you are running folder analysis, please remove the unsynced file from the folder');
                 error('Camera are not synchronized, User aborted the analysis');
             otherwise
                 disp('If you are running folder analysis, please remove the unsynced file from the folder');
                 error('Camera are not synchronized, User aborted the analysis');
+                
         end
     end
     
