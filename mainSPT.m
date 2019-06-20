@@ -10,9 +10,10 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File =  'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample A_50nm_1000000_5K_1mg\movie00004.HIS';
-path2Cal  =  'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\2D';
+file.path =  'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample A_50nm_1000000_5K_1mg\1';
+path2Cal  =  [];
 
+file.ext = '.his';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -29,14 +30,14 @@ info.fitMethod  = 'Phasor';
 info.zMethod = 'Intensity';
 %the answer before
 %% create a Movie Object
-mov1 = Core.Movie(path2File,info);
+mov1 = Core.Movie(file,info);
 mov1.giveInfo;
 %mov2 = Core.Movie(path2zCal);
 %%
 
 mov1.saveMovie('mp4',10,5);
 %% showFrame
-mov1.showFrame(25,5);
+mov1.showFrame(1,5);
 %mov2.showFrame(51);
 %% Calib
 % calib = Core.MPCalibration(path2Cal,info);
@@ -53,7 +54,7 @@ calib.showCal(1)
 calib.offTarget;
 %% Calibrate
 info.runMethod = 'run';
-mpMov = Core.MPMovie(path2File,calib.getCal,info);
+mpMov = Core.MPMovie(file,path2Cal,info);
 mpMov.giveInfo;
 
 mpMov.calibrate;
