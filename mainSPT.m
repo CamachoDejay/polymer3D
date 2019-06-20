@@ -10,7 +10,7 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\FixLoad\10W\ejection_5';
+path2File =  'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample A_50nm_1000000_5K_1mg\movie00004.HIS';
 path2Cal  =  'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\2D';
 
 
