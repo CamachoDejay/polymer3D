@@ -519,33 +519,37 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             planes = partData(~isnan(partData.plane),:).plane;
             nPlanes = length(planes);
+            
+            if nPlanes==1
+                z= 0;
+            else
+                %Get ROI XZ, YZ scaled to same pixel size
+                [ROIXZ,ROIYZ] = obj.getScaledZROI(partData,ROIRad,frameData);
 
-            %Get ROI XZ, YZ scaled to same pixel size
-            [ROIXZ,ROIYZ] = obj.getScaledZROI(partData,ROIRad,frameData);
+                %Calculate radial symmetry
+                [XZ,~,~] = Localization.radialcenter(ROIXZ);
+                [YZ,~,~] = Localization.radialcenter(ROIYZ);
 
-            %Calculate radial symmetry
-            [XZ,~,~] = Localization.radialcenter(ROIXZ);
-            [YZ,~,~] = Localization.radialcenter(ROIYZ);
+                %Convert result to nm
+                XZ = XZ * pxSize;
+                YZ = YZ * pxSize;
 
-            %Convert result to nm
-            XZ = XZ * pxSize;
-            YZ = YZ * pxSize;
+                %isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
 
-            %isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
+                
+                %get Z position
+    %             if isEdgePlane
+    % 
+    %                 planeZPos = obj.calibrated.oRelZPos(planes(1))*1000;                        
+    %                 z = -(XZ+YZ)/2 + planeZPos;
+    % 
+    %             else
 
+                z = -(XZ+YZ)/2 ;
+            end
             row = partData.row(3)*pxSize;
             col = partData.col(3)*pxSize;
-            %get Z position
-%             if isEdgePlane
-% 
-%                 planeZPos = obj.calibrated.oRelZPos(planes(1))*1000;                        
-%                 z = -(XZ+YZ)/2 + planeZPos;
-% 
-%             else
 
-            z = -(XZ+YZ)/2 ;
-
-%             end
             %store the data
             data = table(row,col,z,'VariableNames',{'row','col','z'});
 

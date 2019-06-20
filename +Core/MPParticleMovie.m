@@ -298,7 +298,7 @@ classdef MPParticleMovie < Core.MPMovie
             
             nImages = size(frame,3);
            
-            nsFig = 2;
+            nsFig = ceil(nImages/4);
             
             candidate = obj.getCandidatePos(idx);
             rowPos    = candidate.row;
@@ -583,7 +583,11 @@ classdef MPParticleMovie < Core.MPMovie
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
             if strcmp(zMethod,'Intensity')
-                testPlanes = sum(~isnan(planeConfig))>=2;
+                if nPlanes ==1
+                    testPlanes = true;
+                else
+                    testPlanes = sum(~isnan(planeConfig))>=2;
+                end
             elseif strcmp(zMethod,'PSFE')
                 switch nPlanes
                     case 1

@@ -369,7 +369,7 @@ classdef Movie < handle
             assert(isfolder(path),'The path given is not a folder')
             
             folderContent = dir(path);
-            index2Images  = contains(lower({folderContent.name}),ext);
+            index2Images  = contains(lower({folderContent.name}),ext,'IgnoreCase',true);
             file2Analyze  = folderContent(index2Images);
                         
         end
@@ -388,7 +388,13 @@ classdef Movie < handle
             end
             fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
             
+            if size(file2Analyze,1)>1
+                disp('Several files found in the directorly loading only: ');
+                disp(fullPath);
+            end
+            
             switch ext
+                
                 case '.ome.tif'
                     
                     [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);

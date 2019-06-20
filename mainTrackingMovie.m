@@ -6,32 +6,26 @@ clear;
 path2ZCal = [];
 path2SRCal = [];
 
-path2File = 'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\3W\ejection_1';
-path2Cal  =  'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\2D';
+file.path = 'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample A_50nm_1000000_5K_1mg\1';
+file.ext  = '.his';
+path2Cal  =[];
 
 detectParam.delta = 6;
-detectParam.chi2 = 40;
+detectParam.chi2 = 20;
 roiRad = 7;
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.type = 'normal';
 info.zMethod = 'PSFE';
 info.fitMethod = 'Phasor';
-%%
-calib = Core.MPPlaneCalibration(path2Cal,info);
-calib.retrieveMovies;
-calib.calcIndivCal;
-calib.calcCombinedCal;
-calib.showCal(1);
-%%
-    
-MPTrackMov = Core.MPTrackingMovie(path2File,calib.getCal,info,path2SRCal,path2ZCal);
+%%  
+MPTrackMov = Core.MPTrackingMovie(file,path2Cal,info,path2SRCal,path2ZCal);
 MPTrackMov.calibrate;
 MPTrackMov.giveInfo
 
 %% test detection
 
-% MPTrackMov.findCandidatePos(detectParam,1);
-% MPTrackMov.showCandidate(1);
+ MPTrackMov.findCandidatePos(detectParam,1);
+ MPTrackMov.showCandidate(1);
 
 %% Detection
 %find candidate
