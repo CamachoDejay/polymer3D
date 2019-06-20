@@ -1,4 +1,4 @@
-I function [ frameCell, movieInfo, tfl ] = getInfo( path2file )
+function [ frameCell, movieInfo, tfl ] = getInfo( path2file )
 %GETINFO receives as input the path to the file and gives back all
 %infromation about the frames, the movie and total number of frames
 %   Detailed explanation goes here
@@ -101,11 +101,7 @@ if ~movieInfo.isMultiImage
     frameCell = frameInfo;
     
 end
-
 end
-
-
-
 function [k1, k2, k3, k4, nFrames] = indexFrameHeader(frameHeader)
 % helper function that indexes over the frame header
     k1 = strfind(frameHeader, '<TiffData');
@@ -211,12 +207,13 @@ function [checkRes] = checkFrameInfo(frameInfo)
     if all(test)
         
     else
-        answer = questdlg('It seems like the camera are not properly synchronized, do you still want to proceed?','Question to user','No','Yes','No');
+        answer = questdlg('It seems like the camera are not properly synchronized, do you still want to proceed?','Question to user','Yes','No','No');
         switch answer
             case 'Yes'
                 checkRes = true;
             case 'No'
                 disp('If you are running folder analysis, please remove the unsynced file from the folder');
+                disp (['The unsynced file is:',frameInfo(1).File ])
                 error('Camera are not synchronized, User aborted the analysis');
             otherwise
                 disp('If you are running folder analysis, please remove the unsynced file from the folder');
