@@ -1,5 +1,5 @@
 function [frameInfo,movInfo] = getInfo(path2File)
-    
+    [path,file,ext] = fileparts(path2File);
     %Create a bioformat reader
     imReader = bfGetReader(path2File);
     %Get the metaData
@@ -27,11 +27,11 @@ function [frameInfo,movInfo] = getInfo(path2File)
     Cam  = 0;
     
     %Store info for output
-    frameInfo = [];
+    frameInfo.File = [file ext];
     
     movInfo.Width  = X;
     movInfo.Length = Y;
-    movInfo.Path   = path2File;
+    movInfo.Path   = path;
     movInfo.isMultiImage = isMultiImage;
     movInfo.isZStack = isZStack;
     movInfo.Cam = Cam;
