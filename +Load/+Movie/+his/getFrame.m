@@ -16,7 +16,7 @@ for i = 1: length(idx)
     fi = idx(i);
     imReader.setSeries(fi-1); %idx start from 1 in matlab but from 0 in Java
 
-    frame = bfGetPlane(imReader,1); % get the first and only plane in the series
+    frame(:,:,i) = bfGetPlane(imReader,1); % get the first and only plane in the series
     %which for some reason needs to be one not 0 x)
 
 
