@@ -1,4 +1,4 @@
-function [ frameCell, movieInfo, tfl ] = getInfo( path2file )
+I function [ frameCell, movieInfo, tfl ] = getInfo( path2file )
 %GETINFO receives as input the path to the file and gives back all
 %infromation about the frames, the movie and total number of frames
 %   Detailed explanation goes here
