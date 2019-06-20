@@ -22,99 +22,75 @@ classdef Movie < handle
             
             %Give a status depending on input.
             switch nargin
-                case 1
+                case 0
                     
                     error('A path to the folder where the movie is is needed to create a movie object.')
                     
-                case 2
-                    obj.raw = raw;
+                case 1
                     info.type = 'normal';
                     info.runMethod = 'load';
                     info.frame2Load = 1:obj.raw.maxFrame(1);
-                    obj.info = info;
-                    
-                case 3
-                    
-                    if ~isfield(info,'runMethod')
-                        quest = 'If we find data from previous analysis, do you want to load them or run the analysis again ?';
-                        title = 'Question to User';
-                        btn1  = 'Load';
-                        btn2 = 'run again';
-                        defbtn = 'Load';
-                        answer = questdlg(quest,title,btn1,btn2,defbtn);
-                        
-                        switch answer
-                            case 'Load'
-                                
-                                info.runMethod = 'load';
-                                
-                            case 'run again'
-                                
-                                info.runMethod = 'run';
-                            otherwise
-                                error('WTF');
-                        end
-                    end
                     
                     
-                    obj.raw = raw;
-                    if ~isfield(info,'frame2Load')
-                        info.frame2Load = 1:obj.raw.maxFrame(1);
-                    end
-                    obj.info = info;
+                case 2
                     
                 otherwise
                     
                     error('Unexpected number of argument');
                     
             end
+            %ask question to user
+            
+            if ~isfield(info,'runMethod')
+                quest = 'If we find data from previous analysis, do you want to load them or run the analysis again ?';
+                title = 'Question to User';
+                btn1  = 'Load';
+                btn2 = 'run again';
+                defbtn = 'Load';
+                answer = questdlg(quest,title,btn1,btn2,defbtn);
+                
+                switch answer
+                    case 'Load'
+                        
+                        info.runMethod = 'load';
+                        
+                    case 'run again'
+                        
+                        info.runMethod = 'run';
+                    otherwise
+                        error('WTF');
+                end
+            end
+           
+            obj.raw  = raw;
+            if ~isfield(info,'frame2Load')
+                info.frame2Load = 1:obj.raw.maxFrame(1);
+            end
+            obj.info = info;
             
         end
         
         function set.raw(obj,raw)
             %This function will be adapted later to be able to take any
             %type of Movie (not only OME-TIFF).
-            assert(ischar(raw), 'Input path needs to be a char or string');
+            assert(isstruct(raw),'raw is expected to be a structure');
+            assert(and(isfield(raw,'path'),isfield(raw,'ext')),'raw is expected to be a structure with 2 fields: path and ext');
+            assert(ischar(raw.path), 'Input path needs to be a char or string');
+            assert(isfolder(raw.path),'Input path should be a folder containing one dataset to analyze');
             
-            ext = obj.getFileExt(raw);
-            
-            if isfolder(raw) %empty means folder
-                %Check Given path
-                [file2Analyze] = Core.Movie.getOMETIF(raw);
-                
-                if length(file2Analyze)>1
-                    fprintf('More than one Tiff, loading only:\n %s', file2Analyze(1).name);
-                    fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
-                    [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
-                    
-                    if iscell(frameInfo)
-                        disp('Those tiff are multi-Images, we combine the info...')
-                        [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo);
-                        movInfo.indivFrame = movInfo.maxFrame;
-                        movInfo.maxFrame = totFrame;
-                        
-                    end
-                    movInfo.ext = '.ome.tif';
-                else
-                    
-                    fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
-                    obj.load(fullPath);
-                end
-            elseif isfile(raw)
-                
-                
-                [frameInfo,movInfo] = obj.load(raw);
-                
-            else
-                error('path given is neither a file or a folder')
-            end
-            
+            %check extension is known
+            Core.Movie.checkExtension(raw.ext);
+            ext = lower(raw.ext);
+            %load info
+            [frameInfo, movInfo] = obj.loadInfo(raw);
+                       
             obj.raw.movInfo   = movInfo;
             obj.raw.frameInfo = frameInfo;
-            obj.raw.fullPath  = movInfo.Path;
+            obj.raw.fullPath  = [movInfo.Path filesep frameInfo(1).File];
             obj.raw.maxFrame  = movInfo.maxFrame;
+            obj.raw.ext       = ext;
         end
-        
+                
         function set.info(obj,inform)
             
             assert(isstruct(inform),'Information is expected to be a structure');
@@ -253,27 +229,27 @@ classdef Movie < handle
             
             switch ext
                 case '.his'
-                    [movC1] = Load.Movie.his.getFrame(obj.raw.movInfo.Path,idx);
+                    [movC1] = Load.Movie.his.getFrame(obj.raw.fullPath,idx);
                     data.Cam1 = movC1;
                 case '.ome.tif'
                     %LoadCam
                     [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
                     movC2 = fliplr(movC2);
                     if isfield(obj.info,'ROI')
-
+                        
                         ROI = round(obj.info.ROI);
                         data.Cam1 = movC1(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3),:);
                         
                     else
-
+                        
                         data.Cam1 = movC1;
                         data.Cam2 = movC2;
-
+                        
                     end
                 otherwise
                     error('WTF Unknown extension, should have broken before !!!')
             end
-
+            
             
         end
         
@@ -393,61 +369,69 @@ classdef Movie < handle
             assert(isfolder(path),'The path given is not a folder')
             
             folderContent = dir(path);
-            index2Images  = contains({folderContent.name},ext);
+            index2Images  = contains(lower({folderContent.name}),ext);
             file2Analyze  = folderContent(index2Images);
-            
+                        
         end
         
-        function [file2Analyze] = getOMETIF(path)
-            %Variant of getFileInPath for .ome.tif file
-            expExt = '.ome.tif';
-            %Check Given path
-            [file2Analyze] = Core.Movie.getFileInPath(path, expExt);
-            assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
+        function [frameInfo,movInfo] = loadInfo(rawInfo)
+            assert(isstruct(rawInfo),'raw is expected to be a structure');
+            assert(and(isfield(rawInfo,'path'),isfield(rawInfo,'ext')),'raw is expected to be a structure with 2 fields: path and ext');
+            assert(ischar(rawInfo.path), 'Input path needs to be a char or string');
+            assert(isfolder(rawInfo.path),'Input path should be a folder containing one dataset to analyze');
+           
+            ext = lower(rawInfo.ext);
+            path = rawInfo.path;
+            [file2Analyze] = Core.Movie.getFileInPath(path,ext);
+            if isempty(file2Analyze)
+                warning('Did not find any file of the extension provided in the folder provided');
+            end
+            fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
             
-        end
-        
-        function [frameInfo,movInfo] = load(path)
-            assert(isfile(path),'path provided is not a file');
-            
-            ext = Core.Movie.getFileExt(path);
-        
             switch ext
                 case '.ome.tif'
-                        
-                    [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(path);
-                    movInfo.indivFrame = movInfo.maxFrame;
+                    
+                    [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
 
-                    movInfo.ext = [ext2,ext];
-                    %Check info for 2 cam
-                    if length(movInfo.Cam) ~= 2
-                        warning('Only 1 camera found in the selected file');
+                    if iscell(frameInfo)
+                        disp('Those tiff are multi-Images, we combine the info...')
+                        [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo);
+                        movInfo.indivFrame = movInfo.maxFrame;
+                        movInfo.maxFrame = totFrame;
+
                     end
                     
                 case '.his'
-                    [frameInfo,movInfo] = Load.Movie.his.getInfo(path);
-                    movInfo.ext = ext;
+                   
+                    [frameInfo,movInfo] = Load.Movie.his.getInfo(fullPath);
                     
-                otherwise
-                    error('Unkown file extension, sorry for the inconvenience');
-        
             end
-            
-            
+            movInfo.ext = ext;
+            movInfo.indivFrame = movInfo.maxFrame;
             
         end
         
+        function checkExtension(ext)
+            ext = lower(ext);
+            extensionList = {'.his','.ome.tif'};
+            
+            check = contains(extensionList,ext);
+            
+            assert(sum(check)==1,'Error, unknown extension provided');
+        
+        end
+        
         function [ext] = getFileExt(path)
-           
+            
             if isfolder(path)
-               ext = [];
+                ext = [];
             elseif isfile(path)
-               
-               [~,name,ext1] = fileparts(path);
-               [~,~,ext2] = fileparts(name);
-               
-               ext = [lower(ext2),lower(ext1)];
-           end
+                
+                [~,name,ext1] = fileparts(path);
+                [~,~,ext2] = fileparts(name);
+                
+                ext = [lower(ext2),lower(ext1)];
+            end
             
             
             
