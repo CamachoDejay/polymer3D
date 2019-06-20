@@ -84,33 +84,38 @@ classdef Movie < handle
         function set.raw(obj,raw)
             %This function will be adapted later to be able to take any
             %type of Movie (not only OME-TIFF).
-            assert(isfolder(raw), 'The given path is not a folder');
+            assert(ischar(raw), 'Input path needs to be a char or string');
+            
+            
+            if isfolder(raw)
+                %Check Given path
+                [file2Analyze] = Core.Movie.getOMETIF(raw);
 
-            %Check Given path
-            [file2Analyze] = Core.Movie.getOMETIF(raw);
+                if length(file2Analyze)>1
+                    fprintf('More than one Tiff, loading only:\n %s', file2Analyze(1).name);
+                    fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
+                    [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
 
-            if length(file2Analyze)>1
-                fprintf('More than one Tiff, loading only:\n %s', file2Analyze(1).name);
-                fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
-                [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
+                    if iscell(frameInfo)
+                        disp('Those tiff are multi-Images, we combine the info...')
+                        [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo);
+                        movInfo.indivFrame = movInfo.maxFrame;
+                        movInfo.maxFrame = totFrame;
+                    end
+                else
 
-                if iscell(frameInfo)
-                    disp('Those tiff are multi-Images, we combine the info...')
-                    [frameInfo, totFrame] = Load.Movie.ome.combineFrameInfo(frameInfo);
-                    movInfo.indivFrame = movInfo.maxFrame;
-                    movInfo.maxFrame = totFrame;
-                end
+                    fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
+                    obj.load(fullPath);
+                end                    
+            elseif isfile(raw)
+                
+               
+                [frameInfo,movInfo] = obj.load(raw);
+                
             else
-
-                fullPath = [file2Analyze(1).folder filesep file2Analyze(1).name];
-                [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(fullPath);
-                movInfo.indivFrame = movInfo.maxFrame;
-                %Check info for 2 cam
-               if length(movInfo.Cam) ~= 2
-                   warning('Only 1 camera found in the selected file');
-               end 
-            end                    
-         
+                error('path given is neither a file or a folder')
+            end
+                
             obj.raw.movInfo   = movInfo;
             obj.raw.frameInfo = frameInfo;
             obj.raw.fullPath  = fullPath;
@@ -355,6 +360,7 @@ classdef Movie < handle
             end
         end
         
+        
     end
     
     methods (Static)
@@ -398,6 +404,41 @@ classdef Movie < handle
             [file2Analyze] = Core.Movie.getFileInPath(path, expExt);
             assert(~isempty(file2Analyze),sprintf('The given directory does not any %s files',expExt));
             
+        end
+        
+        function [frameInfo,movInfo] = load(path)
+            assert(isfile(path),'path provided is not a file');
+            %get extension
+            [~,name,ext] = fileparts(path);
+            
+            if strcmpi(ext,'.tif')
+                [~,~,ext2] = fileparts(name);
+                
+                if strcmpi(ext2,'.ome')
+                    
+                    [frameInfo, movInfo, ~ ] = Load.Movie.ome.getInfo(path);
+                    movInfo.indivFrame = movInfo.maxFrame;
+                        %Check info for 2 cam
+                    if length(movInfo.Cam) ~= 2
+                        warning('Only 1 camera found in the selected file');
+                    end 
+                    
+                else
+                    
+                    error('cannot process tif files yet, sorry :(')
+                    
+                end
+                
+            elseif strcmpi(ext,'.HIS')
+                 [frameInfo,movInfo] = Load.Move.his.getInfo(path);
+                 
+                
+            else
+                error('Unkown file extension, sorry for the inconvenience');
+            end
+            
+            
+        
         end
         
     end
