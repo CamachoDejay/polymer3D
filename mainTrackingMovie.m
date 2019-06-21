@@ -15,6 +15,7 @@ detectParam.chi2 = 20;
 roiRad = 7;
 info.runMethod = 'load';
 info.type = 'normal';
+info.frame2Load = 'all';
 info.zMethod = 'PSFE';
 info.fitMethod = 'Phasor';
 %%  

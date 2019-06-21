@@ -4,6 +4,7 @@ classdef SRCalibration < handle
     
     properties
         path
+        ext
         info
         SRCalMovies
         cal2D
@@ -16,7 +17,8 @@ classdef SRCalibration < handle
         function obj = SRCalibration(path2SRCal,cal2D,info)
             %zCalibration Construct an instance of this class
             %   Detailed explanation goes here
-            obj.path = path2SRCal;
+            obj.path = path2SRCal.path;
+            obj.ext  = path2SRCal.ext;
             obj.cal2D = cal2D;
             obj.info = info;
         end
@@ -36,12 +38,12 @@ classdef SRCalibration < handle
         end
         
         function set.cal2D(obj,cal2D)
-            assert(isstruct(cal2D),'2D Calibration is expected to be received as a structure');
-            assert(isfield(cal2D,'fullPath'),'Missing field "fullPath" in cal2D structure');
-            assert(isfield(cal2D,'file'),'Missing field "file" in cal2D structure');
-            
-            obj.cal2D = cal2D;
-            
+                assert(isstruct(cal2D),'2D Calibration is expected to be received as a structure');
+                assert(isfield(cal2D,'fullPath'),'Missing field "fullPath" in cal2D structure');
+                assert(isfield(cal2D,'file'),'Missing field "file" in cal2D structure');
+
+                obj.cal2D = cal2D;
+  
         end
         
         function retrieveSRCalMov(obj)
@@ -52,14 +54,19 @@ classdef SRCalibration < handle
             for i = 3:size(folder2Mov,1)
                 %If element i is a folder
                 if folder2Mov(i).isdir
-                    %Check if the directory
-                    currDir = dir([folder2Mov(i).folder filesep folder2Mov(i).name]);
-                    idx = contains({currDir.name}, 'ome.tif');
-                    if ~all(idx==0)
+                    
+                    folderPath = [folder2Mov(i).folder filesep folder2Mov(i).name];
+                    file2Analyze = Core.Movie.getFileInPath(folderPath,obj.ext);
+               
+                    if ~isempty(file2Analyze)    
+                        file.path = file2Analyze.folder;
+                        file.ext  = obj.ext;
+                        
+                        tmp = Core.MPSRCalMovie(file, obj.cal2D,obj.info);
+                        tmp.calibrate;
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
-                        tmp = Core.MPSRCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
-                        tmp.calibrate;
+                        
                         [zStep, ~] = tmp.getZPosMotor;
                         %TODO: Check other motor position (we do not want
                         %any other movement here.
@@ -72,9 +79,11 @@ classdef SRCalibration < handle
                             %if it is not we throw a warning message as it
                             %might be that many movie are in the main
                             %folder
-                            warning(['In ' folder2Mov(i).folder filesep folder2Mov(i).name ' no movement of the Z motor was found, the file is therefore ignored']);
+                            error(['In ' folder2Mov(i).folder filesep folder2Mov(i).name ' no movement of the Z motor was found, the file is therefore ignored']);
                             
                         end
+                        
+                        
                     else
                         
                         warning([folder2Mov(i).folder filesep folder2Mov(i).name ' did not contain any ome.Tif and is therefore ignored']);

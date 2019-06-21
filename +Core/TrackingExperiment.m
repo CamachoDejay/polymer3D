@@ -6,6 +6,7 @@ classdef TrackingExperiment < handle
     properties
         
         path
+        ext
         trackMovies
         cal2D
         info
@@ -20,7 +21,8 @@ classdef TrackingExperiment < handle
         function obj = TrackingExperiment(folder2Data,cal2D,info,SRCalPath,zCalPath)
             %TrackingExperiment Construct an instance of this class
             %   Detailed explanation goes here
-            obj.path = folder2Data;
+            obj.path = folder2Data.path;
+            obj.ext  = folder2Data.ext;
             obj.cal2D = cal2D;
             obj.info = info;
             obj.ZCal = zCalPath;
@@ -45,24 +47,28 @@ classdef TrackingExperiment < handle
         end
         
         function set.cal2D(obj,cal2D)
-            assert(ischar(cal2D), 'Path should be given as a string');
-            assert(isfolder(cal2D), 'The path given is not a folder, ZCalibration expect a folder. In the folder it is expected to find separate folder for each zCalMovie.')
-            
-            [file2Analyze] = Core.Movie.getFileInPath(cal2D,'2DCal.mat');
-            
-            if isempty(file2Analyze)
-                error('No 2D calibration file found in the given folder');
+            if isempty(cal2D)
+                obj.cal2D = [];
             else
-                fileName = [file2Analyze.folder filesep file2Analyze.name];
-                cal = load(fileName);
-                field = fieldnames(cal);
-                cal = cal.(field{1});
-                assert(and(isstruct(cal), and(isfield(cal,'camConfig'),isfield(cal,'file'))),...
-                    '2D calibration is supposed to be a struct with 4 fields');
-                obj.cal2D = cal;
-                
+                assert(ischar(cal2D), 'Path should be given as a string');
+                assert(isfolder(cal2D), 'The path given is not a folder, ZCalibration expect a folder. In the folder it is expected to find separate folder for each zCalMovie.')
+
+                [file2Analyze] = Core.Movie.getFileInPath(cal2D,'2DCal.mat');
+
+                if isempty(file2Analyze)
+                    error('No 2D calibration file found in the given folder');
+                else
+                    fileName = [file2Analyze.folder filesep file2Analyze.name];
+                    cal = load(fileName);
+                    field = fieldnames(cal);
+                    cal = cal.(field{1});
+                    assert(and(isstruct(cal), and(isfield(cal,'camConfig'),isfield(cal,'file'))),...
+                        '2D calibration is supposed to be a struct with 4 fields');
+                    obj.cal2D = cal;
+
+                end
             end
-            
+
         end
         
         function set.SRCal(obj,SRCal)
@@ -134,12 +140,14 @@ classdef TrackingExperiment < handle
             %loop through the content of the directory
             for i = 3:size(folder2Mov,1)
                 %Check if the directory
-                currDir = dir([folder2Mov(i).folder filesep folder2Mov(i).name]);
-                idx = contains({currDir.name}, 'ome.tif');
-                if ~all(idx==0)
-                    %we extract z motor position to check if the movie
-                    %is indeed a zCalibration (expect zStack)
-                    tmp = Core.MPTrackingMovie(currDir(1).folder , obj.cal2D,obj.info, obj.SRCal.path, obj.ZCal.path);
+                folderPath = [folder2Mov(i).folder filesep folder2Mov(i).name];
+                file2Analyze = Core.Movie.getFileInPath(folderPath,obj.ext);
+               
+                if ~isempty(file2Analyze)
+                    
+                    file.path = file2Analyze.folder;
+                    file.ext  = obj.ext;
+                    tmp = Core.MPTrackingMovie(file , obj.cal2D,obj.info, obj.SRCal.path, obj.ZCal.path);
                     tmp.calibrate;
                     obj.trackMovies.(['mov' num2str(i-2)]) = tmp;
                     

@@ -5,7 +5,8 @@ close all;
 %% get path to zCalibration
 
 
-path2zCal = 'E:\Data\Leuven Data\2019\04 - April\4\ZCal 100';
+file.path = 'E:\Data\Leuven Data\2019\04 - April\4\ZCal 100';
+file.ext  = '.ome.tif';
 path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 
@@ -23,13 +24,8 @@ info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 info.zMethod    = 'Intensity';%or 'PSFE'
-calib = Core.MPPlaneCalibration(path2Cal,info);
-calib.retrieveMovies;
-calib.calcIndivCal;
-calib.calcCombinedCal;
-calib.showCal(1);
-calib.save;
-zCal = Core.ZCalibration(path2zCal,path2Cal,info);
+
+zCal = Core.ZCalibration(file,path2Cal,info);
 
 %% get zCalibrationMovie
 

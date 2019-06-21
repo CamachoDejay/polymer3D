@@ -3,7 +3,8 @@ clear
 close all
 %% FilePath
 %folder where folder of file are contained
-path2MPCal = 'C:\Users\MIPP\Desktop\2DCal\28-01-2019';
+file.path = 'C:\Users\MIPP\Desktop\2DCal\28-01-2019';
+file.ext ='.ome.tif';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
@@ -11,7 +12,7 @@ info.nChan = 4;
 info.runMethod = 'load';
 info.frame2Load = 'all';
 
-MPCal = Core.MPPlaneCalibration(path2MPCal,info);
+MPCal = Core.MPPlaneCalibration(file,info);
 
 %% retrieve Cal Movie
 

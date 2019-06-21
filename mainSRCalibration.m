@@ -4,7 +4,8 @@ clc
 close all;
 %% get path to SRCalibration
 
-path2SRCal = 'E:\leuven data\05 May\13\2D Cal';
+file.path = 'E:\leuven data\05 May\13\2D Cal';
+file.ext  = '.ome.tif';
 path2Cal  = 'E:\leuven data\05 May\13\2D Cal';
 
 
@@ -14,13 +15,8 @@ info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod = 'Phasor';
 info.zMethod   = 'PSFE';
-calib = Core.MPPlaneCalibration(path2Cal,info);
-calib.retrieveMovies;
-calib.calcIndivCal;
-calib.calcCombinedCal;
-calib.showCal(1);
 
-testSRCal = Core.SRCalibration(path2SRCal,calib.getCal,info);
+testSRCal = Core.SRCalibration(file,path2Cal,info);
 
 %% get zCalibrationMovie
 

@@ -5,6 +5,7 @@ classdef ZCalibration < handle
     
     properties
         path
+        ext
         zCalMovies
         cal2D
         info
@@ -20,7 +21,8 @@ classdef ZCalibration < handle
         function obj = ZCalibration(path2zCal,cal2D,info)
             %zCalibration Construct an instance of this class
             %   Detailed explanation goes here
-            obj.path = path2zCal;
+            obj.path = path2zCal.path;
+            obj.ext  = path2zCal.ext;
             obj.cal2D = cal2D;
             obj.info = info;
             %We prepare zAccuracy
@@ -71,34 +73,38 @@ classdef ZCalibration < handle
             folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
             %loop through the content of the directory
             for i = 3:size(folder2Mov,1)
-                    %Check if the directory
-                    currDir = dir([folder2Mov(i).folder filesep folder2Mov(i).name]);
-                    idx = contains({currDir.name}, 'ome.tif');
-                    if ~all(idx==0)
-                        %we extract z motor position to check if the movie
-                        %is indeed a zCalibration (expect zStack)
-                        tmp = Core.MPZCalMovie([folder2Mov(i).folder filesep folder2Mov(i).name], obj.cal2D,obj.info);
-                        tmp.calibrate;
-                        [zStep, ~] = tmp.getZPosMotor;
-                        %TODO: Check other motor position (we do not want
-                        %any other movement here.
-                        
-                        if zStep ~= 0
-                            %if it is we store
-                            obj.zCalMovies.(['zCal' num2str(i-2)]) = tmp;
-                        
-                        else
-                            %if it is not we throw a warning message as it
-                            %might be that many movie are in the main
-                            %folder
-                            warning(['In ' folder2Mov(i).folder filesep folder2Mov(i).name ' no movement of the Z motor was found, the file is therefore ignored']);
-                        
-                        end
-                    else
-                        
-                        warning([folder2Mov(i).folder filesep folder2Mov(i).name ' did not contain any ome.Tif and is therefore ignored']);
+                folderPath = [folder2Mov(i).folder filesep folder2Mov(i).name];
+                file2Analyze = Core.Movie.getFileInPath(folderPath,obj.ext);
+               
+                if ~isempty(file2Analyze)
                     
+                    file.path = file2Analyze.folder;
+                    file.ext  = obj.ext;
+                    
+                    %we extract z motor position to check if the movie
+                    %is indeed a zCalibration (expect zStack)
+                    tmp = Core.MPZCalMovie(file, obj.cal2D,obj.info);
+                    tmp.calibrate;
+                    [zStep, ~] = tmp.getZPosMotor;
+                    %TODO: Check other motor position (we do not want
+                    %any other movement here.
+
+                    if zStep ~= 0
+                        %if it is we store
+                        obj.zCalMovies.(['zCal' num2str(i-2)]) = tmp;
+
+                    else
+                        %if it is not we throw a warning message as it
+                        %might be that many movie are in the main
+                        %folder
+                        warning(['In ' folder2Mov(i).folder filesep folder2Mov(i).name ' no movement of the Z motor was found, the file is therefore ignored']);
+
                     end
+                else
+
+                    warning([folder2Mov(i).folder filesep folder2Mov(i).name ' did not contain any ome.Tif and is therefore ignored']);
+
+                end
                 
             end
             disp('=======> DONE ! <========')

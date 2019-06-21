@@ -5,6 +5,7 @@ classdef MPPlaneCalibration < handle
     
     properties (SetAccess = 'private')
         path
+        ext
         MPCalibrations
         info
         allCal
@@ -16,7 +17,8 @@ classdef MPPlaneCalibration < handle
         function obj = MPPlaneCalibration(path2MPCal,info)
             %zCalibration Construct an instance of this class
             %   Detailed explanation goes here
-            obj.path = path2MPCal;            
+            obj.path = path2MPCal.path;
+            obj.ext  = path2MPCal.ext;
             obj.info = info;
       
         end
@@ -47,21 +49,21 @@ classdef MPPlaneCalibration < handle
             folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
             %loop through the content of the directory
             for i = 3:size(folder2Mov,1)
-                    %Check if the directory
-                    currDir = dir([folder2Mov(i).folder filesep folder2Mov(i).name]);
-                    idx = contains({currDir.name}, 'ome.tif');
-                    if ~all(idx==0)
-                        %we extract z motor position to check if the movie
-                        %is indeed a zCalibration (expect zStack)
-                        tmp = Core.MPCalibration([folder2Mov(i).folder filesep folder2Mov(i).name], obj.info);
-                        obj.MPCalibrations.(['MPCal' num2str(i-2)]) = tmp;
- 
-                    else
-                        
-                        warning([folder2Mov(i).folder filesep folder2Mov(i).name ' did not contain any ome.Tif and is therefore ignored']);
-                    
-                    end
-                
+                folderPath = [folder2Mov(i).folder filesep folder2Mov(i).name];
+                file2Analyze = Core.Movie.getFileInPath(folderPath,obj.ext);
+
+                if ~isempty(file2Analyze)
+                    %we extract z motor position to check if the movie
+                    %is indeed a zCalibration (expect zStack)
+                    tmp = Core.MPCalibration([folder2Mov(i).folder filesep folder2Mov(i).name], obj.info);
+                    obj.MPCalibrations.(['MPCal' num2str(i-2)]) = tmp;
+
+                else
+
+                    warning([folder2Mov(i).folder filesep folder2Mov(i).name ' did not contain any ome.Tif and is therefore ignored']);
+
+                end
+
             end
             disp('=======> DONE ! <========')
         end
