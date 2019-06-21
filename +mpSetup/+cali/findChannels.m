@@ -6,7 +6,7 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
     %From Rafa:
     sig = im(20:end-20,:);
     sig = sig(:);
-    bg = im([1:20 end-20:end],:);
+    bg = im(:,980:1030);
     bg = bg(:);
     
     %check that signal and background are somewhat separated

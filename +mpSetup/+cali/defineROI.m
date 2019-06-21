@@ -17,8 +17,8 @@ function [ ROI ] = defineROI( chaWin, chC1, chC2, im_size )
     x2 = x1+chaWin(1)-1;
     y1 = ROI(:,2);
     y2 = y1+chaWin(2)-1;
-    assert(and(all(x1>0),all(x2<im_size(2))),'Problems with ROI lims')
-    assert(and(all(y1>0),all(y2<im_size(1))),'Problems with ROI lims')
+    assert(and(all(x1>0),all(x2<=im_size(2))),'Problems with ROI lims')
+    assert(and(all(y1>0),all(y2<=im_size(1))),'Problems with ROI lims')
     
 %     for ch = 1:8
 %         % check which camera im looking at
