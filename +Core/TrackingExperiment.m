@@ -318,9 +318,9 @@ classdef TrackingExperiment < handle
             end
             MSD = cell(traces);
             MSDmat = zeros(obj.trackMovies.('mov1').raw.movInfo.maxFrame(1),length(traces));
-            for i = 1 : length(traces)
+            for i = 1 : size(traces,1)
                 
-                currentTrace = traces{i};
+                currentTrace = traces{i,:};
                 
                 if size(traces{i},1)>10
                     coord = [currentTrace.col,currentTrace.row,currentTrace.z];
@@ -331,14 +331,14 @@ classdef TrackingExperiment < handle
                     MSD{i} = RMSD;
                     MSDmat(1:length(RMSD),i) = RMSD(:);
                 end
-                sizes = cellfun(@size,traces,'UniformOutput',false);
-                idxMat   = cellfun(@(x) x==11,sizes(:,1), 'UniformOutput', 0);
-                idx = cellfun(@sum,idxMat,'UniformOutput',1);
-                %delete traces where no MSD was calculated 
-                traces(logical(~idx),:) = [];
-                MSD(logical(~idx),:) = [];
+               
             end 
-            
+            sizes = cellfun(@size,traces,'UniformOutput',false);
+            idxMat   = cellfun(@(x) x==11,sizes(:,1), 'UniformOutput', 0);
+            idx = cellfun(@sum,idxMat,'UniformOutput',1);
+            %delete traces where no MSD was calculated 
+            traces(logical(~idx),:) = [];
+            MSD(logical(~idx),:) = [];
             obj.MSD = MSD;
             obj.traces3D = traces;    
             
