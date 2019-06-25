@@ -46,7 +46,7 @@ traces = trackingExp.getTraces3D;
 
 %% Get MSD
 
-%[MSD,~] = trackingExp.getRMSD(dimension);
+[MSD,~] = trackingExp.getRMSD(dimension);
 
 %% save Data
 

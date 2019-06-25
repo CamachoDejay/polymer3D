@@ -321,20 +321,26 @@ classdef TrackingExperiment < handle
             for i = 1 : length(traces)
                 
                 currentTrace = traces{i};
-                coord = [currentTrace.col,currentTrace.row,currentTrace.z];
-                [RMSD,~] = Core.MPTrackingMovie.calcMeanSqrD(coord,dimension);
-                currentTrace.RMSD = zeros(size(currentTrace.row,1),1);
-                currentTrace.RMSD(1:end-1) = RMSD;
-                traces{i} = currentTrace;
-                MSD{i} = RMSD;
-                MSDmat(1:length(RMSD),i) = RMSD(:);
                 
+                if size(traces{i},1)>10
+                    coord = [currentTrace.col,currentTrace.row,currentTrace.z];
+                    [RMSD,~] = Core.MPTrackingMovie.calcMeanSqrD(coord,dimension);
+                    currentTrace.RMSD = zeros(size(currentTrace.row,1),1);
+                    currentTrace.RMSD(1:end-1) = RMSD;
+                    traces{i} = currentTrace;
+                    MSD{i} = RMSD;
+                    MSDmat(1:length(RMSD),i) = RMSD(:);
+                end
+                sizes = cellfun(@size,traces,'UniformOutput',false);
+                idxMat   = cellfun(@(x) x==11,sizes(:,1), 'UniformOutput', 0);
+                idx = cellfun(@sum,idxMat,'UniformOutput',1);
+                %delete traces where no MSD was calculated 
+                traces(logical(~idx),:) = [];
+                MSD(logical(~idx),:) = [];
             end 
+            
             obj.MSD = MSD;
-            obj.traces3D = traces;
-                     
-            
-            
+            obj.traces3D = traces;    
             
         end
         
