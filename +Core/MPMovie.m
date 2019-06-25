@@ -279,47 +279,61 @@ classdef MPMovie < Core.Movie
         end
         
         function [xStep, xPosMotor] = getXPosMotor(obj)
-              %small function that extract the zStep from the info in the raw
-            nFrames = obj.raw.maxFrame(1);
-            xPosMotor = zeros(nFrames,1);
-            
-            for i = 1 : obj.raw.maxFrame(1)
-                
-                xPosMotor(i) = obj.raw.frameInfo(2*i).Pos(1);
-                
+            if strcmpi(obj.raw.ext,'ome.tif')
+                  %small function that extract the zStep from the info in the raw
+                nFrames = obj.raw.maxFrame(1);
+                xPosMotor = zeros(nFrames,1);
+
+                for i = 1 : obj.raw.maxFrame(1)
+
+                    xPosMotor(i) = obj.raw.frameInfo(2*i).Pos(1);
+
+                end
+
+                xStep = diff(xPosMotor);
+            else
+                xStep = zeros(obj.raw.maxFrame(1),1);
+                xPosMotor = zeros(obj.raw.maxFrame(1),1);
             end
-            
-            xStep = diff(xPosMotor);
-            
         end
         
         function [yStep, yPosMotor] = getYPosMotor(obj)
-            %small function that extract the zStep from the info in the raw
-            nFrames = obj.raw.maxFrame(1);
-            yPosMotor = zeros(nFrames,1);
+            if strcmpi(obj.raw.ext,'ome.tif')
+                %small function that extract the zStep from the info in the raw
+                nFrames = obj.raw.maxFrame(1);
+                yPosMotor = zeros(nFrames,1);
 
-            for i = 1 : obj.raw.maxFrame(1)
+                for i = 1 : obj.raw.maxFrame(1)
 
-                yPosMotor(i) = obj.raw.frameInfo(2*i).Pos(2);
+                    yPosMotor(i) = obj.raw.frameInfo(2*i).Pos(2);
 
+                end
+
+                yStep = diff(yPosMotor);
+            else
+                yStep = zeros(obj.raw.maxFrame(1),1);
+                yPosMotor = zeros(obj.raw.maxFrame(1),1);
             end
-
-            yStep = diff(yPosMotor);
 
         end
         
         function [zStep, zPosMotor] = getZPosMotor(obj)
-            %small function that extract the zStep from the info in the raw
-            nFrames = obj.raw.maxFrame(1);
-            zPosMotor = zeros(nFrames,1);
-            
-            for i = 1 : obj.raw.maxFrame(1)
-                
-                zPosMotor(i) = obj.raw.frameInfo(2*i).Pos(3);
-                
+            if strcmpi(obj.raw.ext,'ome.tif')
+                %small function that extract the zStep from the info in the raw
+                nFrames = obj.raw.maxFrame(1);
+                zPosMotor = zeros(nFrames,1);
+
+                for i = 1 : obj.raw.maxFrame(1)
+
+                    zPosMotor(i) = obj.raw.frameInfo(2*i).Pos(3);
+
+                end
+
+                zStep = diff(zPosMotor);
+            else
+                zStep = zeros(obj.raw.maxFrame(1),1);
+                zPosMotor = zeros(obj.raw.maxFrame(1),1);
             end
-            
-            zStep = diff(zPosMotor);
             
         end 
                 

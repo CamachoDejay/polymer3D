@@ -6,13 +6,13 @@ close all;
 path2ZCal  = [];
 path2SRCal = [];
 
-file.path  = 'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample I_200nm_4000_5K_1mg';
+file.path  = 'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample C_50nm_1000000_1K_1mg\fastAcq';
 file.ext   = '.his';
 path2Cal   =  [];
 
-
+dimension = '2D';
 detectParam.delta = 6;
-detectParam.chi2 = 60;
+detectParam.chi2 = 24;
 
 %% Storing info about the file
 info.type = 'normal';
@@ -29,6 +29,7 @@ trackingExp = Core.TrackingExperiment(file,path2Cal,info,path2SRCal,path2ZCal);
 
 trackingExp.retrieveMovies;
 
+
 %% get TrackingData
 trackParam.radius  = 1000;
 trackParam.memory  = 3;
@@ -42,6 +43,10 @@ traces = trackingExp.getTraces3D;
 %% Get Intensity
 
 [int,SNR] = trackingExp.getAvgIntensity;
+
+%% Get MSD
+
+%[MSD,~] = trackingExp.getRMSD(dimension);
 
 %% save Data
 

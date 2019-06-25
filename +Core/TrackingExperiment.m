@@ -213,28 +213,27 @@ classdef TrackingExperiment < handle
                 [traces] = currentTrackMov.getTraces;
                 fileN = cell(length(traces),1);
                 fileN(:,1) = {i};
-                
+           
                 [xStep,xMotor] = currentTrackMov.getXPosMotor;
                 [yStep,yMotor] = currentTrackMov.getYPosMotor;
                 [zSt,zMotor]   = currentTrackMov.getZPosMotor;
-                
+
                 colMot = cell(length(traces),1);
                 colMot(:,1) = {xMotor};
                 colStep = cell(length(traces),1);
                 colStep(:,1) = {xStep};
-                
+
                 rowMot = cell(length(traces),1);
                 rowMot(:,1) = {yMotor};
                 rowStep = cell(length(traces),1);
                 rowStep(:,1) = {yStep};
-                
+
                 zMot = cell(length(traces),1);
                 zMot(:,1) = {zMotor};
                 zStep = cell(length(traces),1);
                 zStep(:,1) = {zSt};
-                
+
                 allTraces = [allTraces; traces(:), fileN,colStep,colMot,rowStep,rowMot,zStep,zMot ];
-                
             end
             
             obj.traces3D = allTraces;
@@ -323,12 +322,12 @@ classdef TrackingExperiment < handle
                 
                 currentTrace = traces{i};
                 coord = [currentTrace.col,currentTrace.row,currentTrace.z];
-                [MSD,~] = Core.MPTrackingMovie.calcMeanSqrD(coord,dimension);
+                [RMSD,~] = Core.MPTrackingMovie.calcMeanSqrD(coord,dimension);
                 currentTrace.RMSD = zeros(size(currentTrace.row,1),1);
-                currentTrace.RMSD(1:end-1) = MSD;
+                currentTrace.RMSD(1:end-1) = RMSD;
                 traces{i} = currentTrace;
-                MSD{i} = MSD;
-                MSDmat(1:length(MSD),i) = MSD(:);
+                MSD{i} = RMSD;
+                MSDmat(1:length(RMSD),i) = RMSD(:);
                 
             end 
             obj.MSD = MSD;
