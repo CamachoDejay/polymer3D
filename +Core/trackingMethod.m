@@ -262,8 +262,9 @@ classdef trackingMethod < handle
         
         
         function [ALLDataConverted,AllFieldName] =ConvertData(input_data,ImMax)
-    
-            assert(istable(input_data),'Wrong format of the input data :(. Can not continue, sorry for the inconvenience!')
+            
+            assert(istable(input_data),'Wrong format of the input data :(. Expected a table, tracking aborted!')
+            
             AllFieldName = fieldnames(input_data);
             AllFieldName(end-2:end) = [];
             AllFieldName{end+1} = 'NumParticle';

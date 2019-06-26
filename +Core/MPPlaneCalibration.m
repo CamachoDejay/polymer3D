@@ -119,7 +119,7 @@ classdef MPPlaneCalibration < handle
  
             end
 
-            ROI = round(mean(allROI,3));
+            ROI = floor(mean(allROI,3));
             RelZPos = mean(allRelZpos,2);
             tmp = num2cell(RelZPos');
             [inFocus(1,:).relZPos] = tmp{:};
