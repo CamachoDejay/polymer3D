@@ -387,8 +387,6 @@ classdef MPMovie < Core.Movie
                         %reformat in X,Y,P,T format for the saveCalibrated
                         %part
                         data(:,:,1,1:size(movC1,3)) = uint16(movC1);
-%                         idx = squeeze(all(data==0,[1:3]));
-%                         data(:,:,:,idx) = [];
                         isTransmission = false;
                         [calib] = obj.saveCalibrated(data,endFrame,isTransmission,MP);
                         
