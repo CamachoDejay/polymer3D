@@ -6,7 +6,7 @@ close all;
 path2ZCal  = [];
 path2SRCal = [];
 
-file.path  = 'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample G_100nm_50000_1K_1mg\normAcq';
+file.path  = 'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample G_100nm_50000_1K_1mg\fastAcq';
 file.ext   = '.his';
 path2Cal   =  [];
 
