@@ -6,7 +6,7 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'F:\Data\Leuven Data\2019\04 - April\3\Spirals';
+filePath = 'F:\Data\Leuven Data\2019\04 - April\4\SPiral';
 ignoreF = 6;
 dim = 'z';
 period = 20;

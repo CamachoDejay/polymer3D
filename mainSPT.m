@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File = 'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\3W\ejection_1';
-path2Cal  =  'E:\leuven data\05 May\17 camera at different plane fluo\the 2 cameras with different plane\2D';
+path2File = 'F:\Data\Leuven Data\2019\04 - April\4\SPiral\XYZTrackExtendedConfCS_2';
+path2Cal  =  'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
@@ -19,7 +19,7 @@ path2Cal  =  'E:\leuven data\05 May\17 camera at different plane fluo\the 2 came
 % path2Cal = '..\data\Multiplane\PlaneCalib\BeadsCalibrationZStack_1';
 
 detectParam.delta = 6;
-detectParam.chi2 = 20;
+detectParam.chi2 = 60;
 info.type = 'normal';
 %info.frame2Load = 1:50; % if want to analyze only part of the movie(full
 %is default)
@@ -35,7 +35,7 @@ mov1.giveInfo;
 
 mov1.saveMovie('mp4',10,5);
 %% showFrame
-mov1.showFrame(25,5);
+mov1.showFrame(25,10);
 %mov2.showFrame(51);
 %% Calib
 % calib = Core.MPCalibration(path2Cal,info);
@@ -69,7 +69,7 @@ mpPartMov.calibrate;
 
 mpPartMov.findCandidatePos(detectParam);
 %candidate = mpPartMov.getCandidatePos(24);
-mpPartMov.showCandidate(1);
+mpPartMov.showCandidate(25);
 
 %% SR Localize
 mpPartMov.SRLocalizeCandidate;

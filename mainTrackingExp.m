@@ -3,11 +3,11 @@ clear
 close all;
 
 
-path2ZCal = 'E:\Data\Leuven Data\2019\04 - April\3\ZCal - 50';
-path2SRCal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2ZCal = 'F:\Data\Leuven Data\2019\04 - April\4\ZCal CS';
+path2SRCal = 'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
-path2File = 'E:\Data\Leuven Data\2019\04 - April\3\Spirals';
-path2Cal = 'E:\Data\Leuven Data\2019\04 - April\3\2DCal';
+path2File = 'F:\Data\Leuven Data\2019\04 - April\4\SPiral';
+path2Cal = 'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 detectParam.delta = 6;
 detectParam.chi2 = 60;

@@ -451,7 +451,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             z    = partData.z(3);
             data = table(row,col,z,'VariableNames',{'row','col','z'});
             %check how to perform averaging depending on the camera config
-            [doAvg]  = obj.checkDoAverage;
+            [doAvg]  = obj.checkDoAverage(partData.ellip(3));
             
             if doAvg
                
