@@ -3,20 +3,20 @@ clear
 close all;
 
 
-path2ZCal  = [];
-path2SRCal = [];
+path2ZCal  = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
+path2SRCal = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
 
-file.path  = 'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample G_100nm_50000_1K_1mg\fastAcq';
-file.ext   = '.his';
-path2Cal   =  [];
+file.path  = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\glycerol';
+file.ext   = '.ome.tif';
+path2Cal   =  'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
 
-dimension = '2D';
+dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2 = 40;
+detectParam.chi2 = 60;
 
 %% Storing info about the file
 info.type = 'normal';
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 info.zMethod = 'Intensity';
@@ -35,7 +35,7 @@ trackParam.radius  = 1000;
 trackParam.memory  = 3;
 
 val2Use = 'bestFocus';
-trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);
+trackingExp.retrieveTrackData(detectParam,trackParam);
 
 traces = trackingExp.getTraces3D;
 

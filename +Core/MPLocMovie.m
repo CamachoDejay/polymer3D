@@ -170,7 +170,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             zMethod = obj.info.zMethod;
             
             if strcmp(zMethod,'Intensity')
-                obj.corrected.z = false;
+                obj.corrected.Z = false;
                
             elseif strcmp(zMethod,'PSFE')
             
@@ -515,7 +515,7 @@ classdef MPLocMovie < Core.MPParticleMovie
         function [data]  = resolveXYZInt(obj,partData,frameData)
            
             pxSize = obj.info.pxSize;
-            ROIRad = 9;
+            ROIRad = ceil(obj.info.FWHM_px/2+1);
             
             planes = partData(~isnan(partData.plane),:).plane;
             nPlanes = length(planes);
@@ -624,7 +624,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             ROI = imresize3(ROI,[size(ROI,1),size(ROI,1),scaleFactor]);
             center = round([size(ROI,1)/2,size(ROI,2)/2]);
             
-            ROIZCol = squeeze(sum(ROI(center(1)-2:center(1)+2,:,:),1));
+            ROIZCol = squeeze(sum(ROI,1));
             ROIZRow = squeeze(sum(ROI,2));
             
         end

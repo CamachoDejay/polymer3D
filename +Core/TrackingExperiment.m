@@ -163,9 +163,9 @@ classdef TrackingExperiment < handle
         
         %Calculate tracking traces
         
-        function retrieveTrackData(obj,detectParam, trackParam,val2Use)
+        function retrieveTrackData(obj,detectParam, trackParam)
             %Checking user input
-            assert(nargin==4, 'retrieveZCalData expects 2 inputs, 1)detection Parameters, tracking parameter');
+            assert(nargin==3, 'retrieveZCalData expects 2 inputs, 1)detection Parameters, tracking parameter');
             assert(and(isstruct(detectParam),and(isfield(detectParam,'chi2'),isfield(detectParam,'delta'))),'Detection parameter is expected to be a struct with 2 fields : "chi2"(~threshold for detection) and "delta"(size of window for test)');
             assert(and(isfield(trackParam,'radius'),isfield(trackParam,'memory')),...
                 'Tracking parameter is expected to be a struct with two field "radius" and "memory"')
