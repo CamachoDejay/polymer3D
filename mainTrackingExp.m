@@ -16,7 +16,7 @@ detectParam.chi2 = 60;
 
 %% Storing info about the file
 info.type = 'normal';
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 info.zMethod = 'Intensity';

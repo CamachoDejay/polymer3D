@@ -527,25 +527,13 @@ classdef MPLocMovie < Core.MPParticleMovie
                 [ROIXZ,ROIYZ] = obj.getScaledZROI(partData,ROIRad,frameData);
 
                 %Calculate radial symmetry
-                [XZ,~,~] = Localization.radialcenter(ROIXZ);
-                [YZ,~,~] = Localization.radialcenter(ROIYZ);
-
-                %Convert result to nm
-                XZ = XZ * pxSize;
-                YZ = YZ * pxSize;
-
-                %isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
-
-                
-                %get Z position
-    %             if isEdgePlane
-    % 
-    %                 planeZPos = obj.calibrated.oRelZPos(planes(1))*1000;                        
-    %                 z = -(XZ+YZ)/2 + planeZPos;
-    % 
-    %             else
-
-                z = -(XZ+YZ)/2 ;
+                [XZ,~,~] = Localization.radialcenter(ROIXZ(:,domain));
+                [YZ,~,~] = Localization.radialcenter(ROIYZ(:,domain));
+                 
+                XZ = (domain(1)+XZ-1)*pxSize;
+                YZ = (domain(1)+YZ-1)*pxSize;
+                                   
+                z = -(XZ+YZ)/2;
             end
             row = partData.row(3)*pxSize;
             col = partData.col(3)*pxSize;
@@ -600,19 +588,11 @@ classdef MPLocMovie < Core.MPParticleMovie
             %the PSF should be taken
             planes = partData(~isnan(partData.plane),:).plane;
             nPlanes = length(planes);
-           % isEdgePlane = and(nPlanes <=3,or(ismember(1,planes),ismember(8,planes)));
-            
+          
             pxSizeXY = obj.info.pxSize;
-            
-%             if isEdgePlane
-%                  zVol =  abs(abs(obj.cal2D.file.inFocus(planes(1)).relZPos*1000) - ...
-%                      abs(obj.cal2D.file.inFocus(planes(end)).relZPos*1000));%
-%                  volIm = volIm(:,:,planes);
-%             else
-%             
+       
             zVol =  abs(obj.cal2D.file.inFocus(end).relZPos*1000);%abs(abs(obj.cal2D.file.inFocus(planes(1)).relZPos*1000) - ...
-           % end
-
+         
             scaleFactor = zVol/pxSizeXY;
 
             imSize = size(volIm);
@@ -626,7 +606,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             ROIZCol = squeeze(sum(ROI,1));
             ROIZRow = squeeze(sum(ROI,2));
-            
+     
         end
        
     end
