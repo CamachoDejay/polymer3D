@@ -10,7 +10,7 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-path2File = 'F:\Data\Leuven Data\2019\04 - April\4\SPiral\XYZTrackExtendedConfCS_2';
+path2File = 'F:\Data\Leuven Data\2019\04 - April\4\ZCal CS\ZCalExtendedConfCS_4';
 path2Cal  =  'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 
@@ -35,7 +35,7 @@ mov1.giveInfo;
 
 mov1.saveMovie('mp4',10,5);
 %% showFrame
-mov1.showFrame(25,10);
+mov1.showFrame(15,10);
 %mov2.showFrame(51);
 %% Calib
 % calib = Core.MPCalibration(path2Cal,info);

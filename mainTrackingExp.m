@@ -6,7 +6,7 @@ close all;
 path2ZCal = 'F:\Data\Leuven Data\2019\04 - April\4\ZCal CS';
 path2SRCal = 'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
-path2File = 'F:\Data\Leuven Data\2019\04 - April\4\SPiral';
+path2File = 'F:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\X';
 path2Cal = 'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
 detectParam.delta = 6;
@@ -32,8 +32,8 @@ trackingExp = Core.TrackingExperiment(path2File,path2Cal,info,path2SRCal,path2ZC
 trackingExp.retrieveMovies;
 
 %% get TrackingData
-trackParam.euDistXY = 1500;
-trackParam.euDistZ  = 300;
+trackParam.euDistXY = 500;
+trackParam.euDistZ  = 400;
 val2Use = 'bestFocus';
 trackingExp.retrieveTrackData(detectParam,trackParam,val2Use);
 

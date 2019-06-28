@@ -6,7 +6,7 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'F:\Data\Leuven Data\2019\04 - April\3\XYZ - CS\Z';
+filePath = 'F:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\Z';
 dim = 'z';
 period = 20;
 idx2Plot = 3;
@@ -66,15 +66,21 @@ for i =1:nTraces
     int  = prec;
     SNR  = prec;
     frames = currTrace.frame;
-
+    %slicing the data in each "step motion"
     for j = 1: length(idx2Mot)-1
 
        idx = idx2Mot(j)+1:idx2Mot(j+1);
        [~,idx2Frame] = intersect(frames,idx);
        if ~isempty(idx2Frame)
-           allData(i,frames(idx2Frame)) = data2Plot(idx2Frame,1);
-           allDataM(i,frames(idx2Frame)) = data2Plot(idx2Frame,2);
+           %to calculate inter particle std we remove the mean
+           allData(i,frames(idx2Frame)) = data2Plot(idx2Frame,1)-mean(data2Plot(idx2Frame,1));
+           allDataM(i,frames(idx2Frame)) = data2Plot(idx2Frame,2)-mean(data2Plot(idx2Frame,2));
+           
+           %calculate the std of on particle in one step
            prec(j)  = std(data2Plot(idx2Frame,1));
+           %for accuracy we calculate the mean so we can later calculate
+           %the difference between steps and thus the accuracy by comparing
+           %by the motor step
            acc(j)   = mean(data2Plot(idx2Frame,1));
            precM(j) = std(data2Plot(idx2Frame,2));
            accM(j)  = mean(data2Plot(idx2Frame,2));
@@ -176,9 +182,6 @@ motPlot = mot{i}*1000;
 if ~strcmp(dim,'z')
     motPlot = abs(motPlot);
 end
-motPlot = motPlot(currTrace.frame);
-motPlot = motPlot - mean(motPlot);
-%plot(motPlot,'-r','LineWidth',2);
 
 %plot with errorBar
 idx = isnan(nanmean(allData,1));
@@ -191,6 +194,9 @@ for i = 1:nFiles
 end
 error = nanmean(allStd,1);
 
+motPlot = motPlot(1:length(error));
+motPlot = motPlot - mean(motPlot);
+%plot(motPlot,'-r','LineWidth',2);
 figure
 h= Plotting.shadedErrorBar(1:length(error),motPlot,3*error);
 
