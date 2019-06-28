@@ -51,11 +51,14 @@ classdef MPPlaneCalibration < handle
             for i = 3:size(folder2Mov,1)
                 folderPath = [folder2Mov(i).folder filesep folder2Mov(i).name];
                 file2Analyze = Core.Movie.getFileInPath(folderPath,obj.ext);
-
+               
                 if ~isempty(file2Analyze)
+                    
+                    file.path = file2Analyze.folder;
+                    file.ext  = obj.ext;
                     %we extract z motor position to check if the movie
                     %is indeed a zCalibration (expect zStack)
-                    tmp = Core.MPCalibration([folder2Mov(i).folder filesep folder2Mov(i).name], obj.info);
+                    tmp = Core.MPCalibration(file, obj.info);
                     obj.MPCalibrations.(['MPCal' num2str(i-2)]) = tmp;
 
                 else

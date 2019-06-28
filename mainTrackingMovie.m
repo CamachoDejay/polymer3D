@@ -8,7 +8,7 @@ path2SRCal = [];
 
 file.path = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\ZPos\200 Fluo\Atempt_9';
 file.ext  = '.ome.tif';
-path2Cal  =[];
+path2Cal  ='C:\Users\Boris\Documents\MATLAB\data\Multiplane\2DCal';
 
 detectParam.delta = 6;
 detectParam.chi2 = 40;

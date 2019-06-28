@@ -6,11 +6,12 @@ clear
 close all
 clc
 
-path2Cal  = 'E:\leuven data\05 May\13\2D Cal';
+file.path  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\ZPos\2D';
+file.ext   = '.ome.tif';
 info.runMethod = 'load';
 info.nChan = 4;
 %% 
-calib = Core.MPPlaneCalibration(path2Cal,info);
+calib = Core.MPPlaneCalibration(file,info);
 
 calib.retrieveMovies;
 calib.calcIndivCal; 
