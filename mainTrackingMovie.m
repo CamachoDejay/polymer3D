@@ -6,12 +6,12 @@ clear;
 path2ZCal = [];
 path2SRCal = [];
 
-file.path = 'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample A_50nm_1000000_5K_1mg\1';
-file.ext  = '.his';
+file.path = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\ZPos\200 Fluo\Atempt_9';
+file.ext  = '.ome.tif';
 path2Cal  =[];
 
 detectParam.delta = 6;
-detectParam.chi2 = 20;
+detectParam.chi2 = 40;
 roiRad = 7;
 info.runMethod = 'load';
 info.type = 'normal';
