@@ -52,12 +52,16 @@ for imIdx = 1:nImFiles
     frameCell{imIdx} = frameInfo;
 end
 % check frameInfo
-
 [checkRes] = checkFrameInfo(frameInfo);
-%if checkRes is true we fix camera frame
-if checkRes
-    %TODO: Fix misynchronization
-    error('Fixing synchronization is not ready yet, sorry for the inconvenience')
+
+switch checkRes
+    case 'Yes'
+    case 'Fix'
+        error('Fixing synchronization is not ready yet, sorry for the inconvenience');
+    case 'No'
+        disp('If you are running folder analysis, please remove the file from the folder');
+        disp(['The unsynced file is: ',movieInfo.Path]);
+        error('Camera are not synchronized, user aborted the analysis')
 end
 
 %Add extrainfo to the movie, in particular, info about camera, max Frame,
@@ -203,25 +207,11 @@ function [checkRes] = checkFrameInfo(frameInfo)
     %We check the first 20 frames as they should be perfectly synchronized
     %if camera sync was properly used.
     test = abs(diff(matC(1:frame2Comp)));
-    checkRes = false;
+    
     if all(test)
-        
+        checkRes = 'Yes';
     else
-        answer = questdlg('It seems like the camera are not properly synchronized, do you still want to proceed?','Question to user','Yes','No','No');
-        switch answer
-            case 'Yes'
-                checkRes = true;
-            case 'No'
-                disp('If you are running folder analysis, please remove the unsynced file from the folder');
-                disp (['The unsynced file is:',frameInfo(1).File ])
-                error('Camera are not synchronized, User aborted the analysis');
-            otherwise
-                disp('If you are running folder analysis, please remove the unsynced file from the folder');
-                error('Camera are not synchronized, User aborted the analysis');
-                
-        end
-    end
-    
-    
-
+        checkRes = questdlg('It seems like the camera are not properly synchronized, do you still want to proceed?','Question to user','Yes','fix','No','No');
+     
+    end   
 end
