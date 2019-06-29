@@ -50,6 +50,14 @@ classdef MPTrackingMovie < Core.MPLocMovie
             ImMax = max(DataToTrack.t);
             %Converts data
             [ToTrack,AllField] = Core.trackingMethod.ConvertData(DataToTrack,ImMax);
+             
+            %check that there are particles in frame 1
+            if or(isempty (ToTrack{1}),isempty(ToTrack{2}))
+                ToTrack(1) = [];
+                while or(isempty(ToTrack{1}),isempty(ToTrack{2}))
+                    ToTrack(1) = [];
+                end   
+            end    
             
             Initialized = [ToTrack{1},(1:size(ToTrack{1},1))'];
 
