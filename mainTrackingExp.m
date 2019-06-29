@@ -2,21 +2,19 @@ clc
 clear 
 close all;
 
+path2ZCal = 'F:\Data\Leuven Data\2019\04 - April\4\ZCal CS';
+path2SRCal = 'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
-path2ZCal  = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
-path2SRCal = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
-
-file.path  = 'F:\Data\Leuven Data\2019\05 - May\Viscosity\glycerol';
+file.path  = 'F:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\X';
 file.ext   = '.ome.tif';
-path2Cal   =  'F:\Data\Leuven Data\2019\05 - May\Viscosity\Calibration';
-
+path2Cal = 'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 dimension = '3D';
 detectParam.delta = 6;
 detectParam.chi2 = 60;
 
 %% Storing info about the file
 info.type = 'normal';
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 info.zMethod = 'Intensity';
