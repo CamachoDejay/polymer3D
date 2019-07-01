@@ -6,10 +6,10 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'F:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\Z';
+filePath = 'F:\Data\Leuven Data\2019\04 - April\4\XYZ - OD50\Z';
 dim = 'z';
 period = 20;
-idx2Plot = 3;
+idx2Plot = 1;
 stepApplied = 200;
 %% LOADING
 
@@ -23,13 +23,18 @@ trackData = trackData.(name{1});
 
 traces = trackData.traces(:,1);
 [stepMot,mot] = getMotor(trackData,dim);
+
+lenTraces = cellfun(@height,traces);
+%only keep traces that have been measured for one period at least
+traces(lenTraces<period)= [];
+trackData.traces(lenTraces<period,:) = [];
+nTraces = length(traces);
+
 fileRef = cell2mat(trackData.traces(:,2));
 nFiles = max(fileRef);
-nTraces = length(traces);
-lenTraces = cellfun(@height,traces);
 
 [maxLen,idx] = max(lenTraces);
-maxFrame = max(traces{idx}.frame);
+maxFrame = max(traces{idx}.t);
 idx2Mot = [0 period:period:maxFrame+1];
 
 precPerTrace = zeros(nTraces,1);
@@ -65,7 +70,7 @@ for i =1:nTraces
     accM = precM;
     int  = prec;
     SNR  = prec;
-    frames = currTrace.frame;
+    frames = currTrace.t;
     %slicing the data in each "step motion"
     for j = 1: length(idx2Mot)-1
 
@@ -89,7 +94,7 @@ for i =1:nTraces
 
        end
     end
-    plot(currTrace.frame,data2Plot(:,1))
+    plot(currTrace.t,data2Plot(:,1))
     %clean data
     prec(prec==0)   = [];
     acc(acc==0)     = [];
@@ -168,17 +173,18 @@ hold on
 idx = fileRef==idx2Plot;
 tracePlot = traces(idx);
 lenTraces = lenTraces(idx);
-idx2 =lenTraces==max(lenTraces);
+idx2 =lenTraces>max(lenTraces-period);
 tracePlot = tracePlot(idx2);
 
 for i = 1:length(tracePlot)
     currTrace = tracePlot{i};
     currMot = mot{i};
     data2Plot = getData2Plot(currTrace,dim,currMot);
-    scatter(1:length(data2Plot),data2Plot(:,1),5,'filled')
+    plot(1:length(data2Plot),data2Plot(:,1))%,5,'filled')
     
 end
 motPlot = mot{i}*1000;
+
 if ~strcmp(dim,'z')
     motPlot = abs(motPlot);
 end
@@ -209,21 +215,21 @@ function [data2Plot] = getData2Plot(currTrace,dim,mot)
         case 'x'
             mot = abs(mot*1000);
             mot = mot-mean(mot);
-            currMot = mot(currTrace.frame);
+            currMot = mot(currTrace.t);
             data2Plot(:,1) = currTrace.col-mean(currTrace.col) + mean(currMot);
             data2Plot(:,2) = currTrace.colM-mean(currTrace.colM) + mean(currMot);
             
         case 'y'
             mot = abs(mot*1000);
             mot = mot-mean(mot);
-            currMot = mot(currTrace.frame);
+            currMot = mot(currTrace.t);
             data2Plot(:,1) = currTrace.row-mean(currTrace.row) + mean(currMot);
             data2Plot(:,2) = currTrace.rowM-mean(currTrace.rowM) + mean(currMot);
         
         case 'z'
             mot = mot*1000;
             mot = mot - mean(mot);
-            currMot = mot(currTrace.frame);
+            currMot = mot(currTrace.t);
             data2Plot(:,1) = currTrace.z-mean(currTrace.z) + mean(currMot);
             data2Plot(:,2) = currTrace.zM-mean(currTrace.zM) + mean(currMot);
     end

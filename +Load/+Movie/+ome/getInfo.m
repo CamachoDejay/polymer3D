@@ -53,7 +53,7 @@ for imIdx = 1:nImFiles
 end
 % check frameInfo
 [checkRes] = checkFrameInfo(frameInfo);
-
+%checkRes ='Yes';
 switch checkRes
     case 'Yes'
     case 'Fix'

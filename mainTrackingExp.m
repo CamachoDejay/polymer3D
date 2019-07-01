@@ -5,19 +5,19 @@ close all;
 path2ZCal = 'F:\Data\Leuven Data\2019\04 - April\4\ZCal CS';
 path2SRCal = 'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 
-file.path  = 'F:\Data\Leuven Data\2019\04 - April\4\XYZ - CS\X';
+file.path  = 'F:\Data\Leuven Data\2019\04 - April\4\XYZ - OD50\Z';
 file.ext   = '.ome.tif';
 path2Cal = 'F:\Data\Leuven Data\2019\04 - April\4\2DCal';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2 = 60;
+detectParam.chi2 = 24;
 
 %% Storing info about the file
 info.type = 'normal';
 info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
-info.zMethod = 'Intensity';
+info.zMethod = 'PSFE';
 
 %% create experiments
 
