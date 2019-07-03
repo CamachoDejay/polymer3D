@@ -10,10 +10,10 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'F:\Data\Leuven Data\2019\Johannes\TrackingHis\Sample A_50nm_1000000_5K_1mg\1';
+file.path =  'F:\Data\Leuven Data\2019\06 - June\Roger\ZPos\test 2DTrans 1000\Atempt_1';
 path2Cal  =  [];
 
-file.ext = '.his';
+file.ext = '.ome.tif';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -21,7 +21,7 @@ file.ext = '.his';
 
 detectParam.delta = 6;
 detectParam.chi2 = 20;
-info.type = 'normal';
+info.type = 'transmission';
 %info.frame2Load = 1:50; % if want to analyze only part of the movie(full
 %is default)
 info.runMethod = 'run'; %will avoid the question to user to pop by giving

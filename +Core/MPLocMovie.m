@@ -517,34 +517,49 @@ classdef MPLocMovie < Core.MPParticleMovie
             pxSize = obj.info.pxSize;
             ROIRad = ceil(obj.info.FWHM_px/2+1);
             
-            planes = partData(~isnan(partData.plane),:).plane;
+            planes  = partData(~isnan(partData.plane),:).plane;
             nPlanes = length(planes);
-            
+            bf = partData.plane(3);
+            planePos = obj.calibrated.oRelZPos;
             if nPlanes==1
                 z= 0;
             else
                 %Get ROI XZ, YZ scaled to same pixel size
-                [ROIXZ,ROIYZ] = obj.getScaledZROI(partData,ROIRad,frameData);
+                [Mag] = Core.MPLocMovie.getZPhasorMag(partData,ROIRad,frameData);
+                
+                domain = 1:length([Mag.x]);
+                data   = [Mag.x]+[Mag.y];
+                guess.sig = 1.5*obj.info.FWHM_px;
+                guess.mu  = bf;
+                [Res,~] = SimpleFitting.gauss1D(data,domain,guess);
+                
+                z = Res(2);
 
-                %Calculate radial symmetry
-                [XZ,~,~] = Localization.radialcenter(ROIXZ(:,domain));
-                [YZ,~,~] = Localization.radialcenter(ROIYZ(:,domain));
-                 
-                XZ = (domain(1)+XZ-1)*pxSize;
-                YZ = (domain(1)+YZ-1)*pxSize;
-                                   
-                z = -(XZ+YZ)/2;
             end
-            row = partData.row(3)*pxSize;
-            col = partData.col(3)*pxSize;
-
+            %if the z position is out of bound we do not consider the data
+            if or(z<min(domain),z>max(domain))
+                z   = NaN;                           
+                row = NaN;
+                col = NaN;
+                zM   = NaN;                           
+                rowM = NaN;
+                colM = NaN;
+            else
+                tmpZ = floor(z);
+                fracZ = z-tmpZ;
+                z = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
+                z = z*1000;
+                                         
+                row = partData.row(3)*pxSize;
+                col = partData.col(3)*pxSize;
+                zM = z;                      
+                rowM = partData.row(3)*pxSize;
+                colM = partData.col(3)*pxSize;
+                
+            end
             %store the data
-            data = table(row,col,z,'VariableNames',{'row','col','z'});
-
-            data.rowM = row;
-            data.colM = col;
-            data.zM = z;
-
+            data = table(row,col,z,rowM,colM,zM,...
+                   'VariableNames',{'row','col','z','rowM','colM','zM'});
             
         end
         
@@ -579,35 +594,28 @@ classdef MPLocMovie < Core.MPParticleMovie
             end
             
             
-        end
-        
-        function [ROIZCol,ROIZRow] = getScaledZROI(obj,partData,ROIRad,volIm)
-            
-            %Possible improvement : Translate the coordinate of the best
-            %focus into the otherplanes to extract the exact value where
-            %the PSF should be taken
-            planes = partData(~isnan(partData.plane),:).plane;
-            nPlanes = length(planes);
-          
-            pxSizeXY = obj.info.pxSize;
-       
-            zVol =  abs(obj.cal2D.file.inFocus(end).relZPos*1000);%abs(abs(obj.cal2D.file.inFocus(planes(1)).relZPos*1000) - ...
-         
-            scaleFactor = zVol/pxSizeXY;
+        end     
+    end
+    
+    methods (Static)
+        function [Mag] = getZPhasorMag(partData,ROIRad,volIm)
 
-            imSize = size(volIm);
-            pos = [round(nanmean(partData.row)),round(nanmean(partData.col))];
-   
-            ROIs = Misc.getROIs(pos,ROIRad,imSize(1:2));
+        %Possible improvement : Translate the coordinate of the best
+        %focus into the otherplanes to extract the exact value where
+        %the PSF should be taken    
+        imSize = size(volIm);
+        pos = [round(nanmean(partData.row)),round(nanmean(partData.col))];
 
-            ROI = volIm(ROIs(1):ROIs(2),ROIs(3):ROIs(4),:);
-            ROI = imresize3(ROI,[size(ROI,1),size(ROI,1),scaleFactor]);
-            center = round([size(ROI,1)/2,size(ROI,2)/2]);
-            
-            ROIZCol = squeeze(sum(ROI,1));
-            ROIZRow = squeeze(sum(ROI,2));
-     
+        ROIs = Misc.getROIs(pos,ROIRad,imSize(1:2));
+
+        ROI = volIm(ROIs(1):ROIs(2),ROIs(3):ROIs(4),:);
+
+        Mag = struct('x',zeros(1,size(ROI,3)),'y',zeros(1,size(ROI,3)));
+        for i =1:size(ROI,3)
+            [~,~,~,Mag(i).x,Mag(i).y] = Localization.phasor(ROI(:,:,i));
         end
-       
+
+        end 
+
     end
 end

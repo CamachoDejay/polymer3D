@@ -6,7 +6,7 @@ clear
 close all
 clc
 
-file.path  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\ZPos\2D';
+file.path  = 'F:\Data\Leuven Data\2019\06 - June\Roger\2Dcal\200 nm';
 file.ext   = '.ome.tif';
 info.runMethod = 'load';
 info.nChan = 4;
