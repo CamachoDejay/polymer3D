@@ -50,12 +50,14 @@ classdef MPTrackingMovie < Core.MPLocMovie
             ImMax = max(DataToTrack.t);
             %Converts data
             [ToTrack,AllField] = Core.trackingMethod.ConvertData(DataToTrack,ImMax);
-             
+            count = 0; 
             %check that there are particles in frame 1
             if or(isempty (ToTrack{1}),isempty(ToTrack{2}))
                 ToTrack(1) = [];
+                count = 1;
                 while or(isempty(ToTrack{1}),isempty(ToTrack{2}))
                     ToTrack(1) = [];
+                    count = count+1;
                 end   
             end    
             
@@ -65,7 +67,13 @@ classdef MPTrackingMovie < Core.MPLocMovie
 
             %%%%% INITIALIZE FOR TRACKING DATA
             % TrackedData = Tracked;
-            TrackedData_data = {Initialized};
+            if count >0
+                TrackedData_data = cell(1,count);
+                TrackedData_data = [TrackedData_data,{Initialized}];
+            else
+                TrackedData_data = {Initialized};
+            end
+            
             TrackedData_maxid = max(TrackedData_data{end}(:,end));
 
             NextFrame = Core.Tracking.CoordsInFrameNextFrame;
@@ -114,14 +122,25 @@ classdef MPTrackingMovie < Core.MPLocMovie
 
                 end
                 ToTrack(1) = [];
-           
+                
+                %Boris if the tracked data is empty we store the data f
+                if and(isempty(TrackedData_data{end}),~isempty(NextFrame.dataNext))
+                    Initialized = [NextFrame.dataNext,(TrackedData_maxid+1:TrackedData_maxid+size(NextFrame.dataNext,1))'];
+                    TrackedData_data{end} = Initialized;
+                    TrackedData_maxid = max(TrackedData_data{end}(:,end));
+                end
+                
                 %Initialize for next step
                 if ~isempty(ToTrack)
                 NextFrame.dataNext = ToTrack{1};
                     if ~isempty(ToTrack{1})
                         NextFrame.timeNext =NextFrame.dataNext(1,end);
+                      
                     else
                         NextFrame.timeNext =NextFrame.timeNext+1;
+                        %Boris Fix for data with "holes"
+                        TrackedData_data{end+1}= [];
+                        
                     end
                 end
 
