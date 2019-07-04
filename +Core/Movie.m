@@ -29,9 +29,7 @@ classdef Movie < handle
                 case 1
                     info.type = 'normal';
                     info.runMethod = 'load';
-                    info.frame2Load = 1:obj.raw.maxFrame(1);
-                    
-                    
+                                       
                 case 2
                     
                 otherwise

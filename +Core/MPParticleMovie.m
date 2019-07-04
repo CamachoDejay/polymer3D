@@ -29,14 +29,12 @@ classdef MPParticleMovie < Core.MPMovie
         function findCandidatePos(obj,detectParam, frames)
             %Method to perform localization on each plane for each frame
             %Check if some candidate exists already in the folder (previously saved)
-            [run, candidate] = obj.existCandidate(obj.raw.movInfo.Path, '.mat');
-            
-            if run
-                switch nargin
+             switch nargin
                     case 2
                         
                         frames = 1: obj.calibrated.nFrames;
                         disp('Running detection on every frame');
+     
                         
                     case 3
                         
@@ -46,7 +44,17 @@ classdef MPParticleMovie < Core.MPMovie
                         
                         error('too many inputs');
                         
-                end
+             end
+            
+            [run, candidate] = obj.existCandidate(obj.raw.movInfo.Path, '.mat');
+            
+            %if we only ask 1 frame we always run
+            if length(frames) == 1
+                run = true;
+            end
+            if run
+               
+                
                 %Localization occurs here
                 assert(~isempty(obj.info), 'Missing information about setup to be able to find candidates, please use giveInfo method first or load previous data');
                 assert(nargin>1,'not enough input argument or accept loading of previous data (if possible)');
@@ -62,11 +70,13 @@ classdef MPParticleMovie < Core.MPMovie
                 disp('Typically between 20 and 200');
                 
             end
-            
-            %save the data
-            fileName = sprintf('%s%scandidatePos.mat',obj.raw.movInfo.Path,'\');
-            save(fileName,'candidate');
-            
+            %if we only ask 1 frame we do not save
+            if length(frames) >1
+                %save the data
+                fileName = sprintf('%s%scandidatePos.mat',obj.raw.movInfo.Path,'\');
+                save(fileName,'candidate');
+            else
+            end
             obj.candidatePos = candidate;
             obj.info.detectParam = detectParam;
         end
@@ -714,7 +724,15 @@ classdef MPParticleMovie < Core.MPMovie
                     if any(contains({file2Analyze.name},'candidatePos')==true)
                         candidate = load([file2Analyze(1).folder filesep 'candidatePos.mat']);
                         candidate = candidate.candidate;
-                        run = false;
+                        
+                        if size(candidate,1)== obj.calibrated.nFrames
+                            run = false;
+                        else
+                           disp('Detection missing in some frames, rerunning detection');
+                           candidate = [];
+                           run = true;
+                        end
+                            
                     else
                 
                         run = true;

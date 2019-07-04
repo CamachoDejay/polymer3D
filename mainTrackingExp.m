@@ -10,11 +10,11 @@ file.ext   = '.ome.tif';
 path2Cal = 'F:\Data\Leuven Data\2019\06 - June\Roger\2Dcal\200 nm';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 60;
 
 %% Storing info about the file
 info.type = 'normal';
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 info.zMethod = 'Intensity';
@@ -27,6 +27,11 @@ trackingExp = Core.TrackingExperiment(file,path2Cal,info,path2SRCal,path2ZCal);
 
 trackingExp.retrieveMovies;
 
+%% test detection parameters
+frame = 65;
+testMov = trackingExp.trackMovies.mov1;
+testMov.findCandidatePos(detectParam,frame);
+testMov.showCandidate(frame);
 
 %% get TrackingData
 trackParam.radius  = 1000;

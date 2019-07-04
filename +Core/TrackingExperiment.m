@@ -149,7 +149,13 @@ classdef TrackingExperiment < handle
                     file.ext  = obj.ext;
                     tmp = Core.MPTrackingMovie(file , obj.cal2D,obj.info, obj.SRCal.path, obj.ZCal.path);
                     tmp.calibrate;
+                    if i == 3
+                        tmp.giveInfo;
+                    else
+                        tmp.info = obj.trackMovies.(['mov' num2str(1)]).getInfo; 
+                    end
                     obj.trackMovies.(['mov' num2str(i-2)]) = tmp;
+                    
                     
                 else
                     
@@ -177,17 +183,7 @@ classdef TrackingExperiment < handle
                 
                 disp(['Retrieving data from tracking file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                 currentTrackMov = obj.trackMovies.(fieldsN{i});
-                if i == 1
-                    %Ask user for info about the setup for detection
-                    currentTrackMov.giveInfo;
-                    
-                else
-                    %get the info about the setup stored into the first
-                    %object
-                    currentTrackMov.info = obj.trackMovies.(fieldsN{1}).getInfo;
-                    
-                end
-                
+                   
                 %Molecule detection
                 currentTrackMov.findCandidatePos(detectParam);
                 

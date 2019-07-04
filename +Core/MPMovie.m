@@ -356,11 +356,6 @@ classdef MPMovie < Core.Movie
                 frame2Load = 1:maxFrame;
             else
                 frame2Load = Core.Movie.checkFrame(frame2Load,maxFrame);
-                if max(frame2Load) > maxFrame
-                   
-                    frame2Load = 1:maxFrame;
-                                       
-                end
             end
             
             endFrame = max(frame2Load);
