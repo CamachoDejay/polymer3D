@@ -72,12 +72,13 @@ classdef ZCalibration < handle
             folder2Mov = dir(obj.path);
             folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
             %loop through the content of the directory
+            count =0;
             for i = 3:size(folder2Mov,1)
                 folderPath = [folder2Mov(i).folder filesep folder2Mov(i).name];
                 file2Analyze = Core.Movie.getFileInPath(folderPath,obj.ext);
                
                 if ~isempty(file2Analyze)
-                    
+                    count = count + 1;
                     file.path = file2Analyze.folder;
                     file.ext  = obj.ext;
                     
@@ -85,6 +86,11 @@ classdef ZCalibration < handle
                     %is indeed a zCalibration (expect zStack)
                     tmp = Core.MPZCalMovie(file, obj.cal2D,obj.info);
                     tmp.calibrate;
+                    if count == 1
+                        tmp.giveInfo;
+                    else
+                        tmp.info = obj.zCalMovies.(['mov' num2str(1)]).getInfo; 
+                    end
                     [zStep, ~] = tmp.getZPosMotor;
                     %TODO: Check other motor position (we do not want
                     %any other movement here.
@@ -123,16 +129,7 @@ classdef ZCalibration < handle
             allData = cell(nPlanes,3);
             for i = 1: nfields
                 disp(['Retrieving data from zCal file ' num2str(i) ' / ' num2str(nfields) ' ...']);
-                if i == 1
-                    %Ask user for info about the setup for detection
-                    obj.zCalMovies.(['zCal' num2str(i)]).giveInfo;
-                    
-                else
-                    %get the info about the setup stored into the first
-                    %object
-                    obj.zCalMovies.(['zCal' num2str(i)]).info = obj.zCalMovies.(['zCal' num2str(1)]).getInfo;
-                    
-                end
+  
                 %Molecule detection
                 obj.zCalMovies.(['zCal' num2str(i)]).findCandidatePos(detectParam);
                 

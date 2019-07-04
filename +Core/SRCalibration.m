@@ -50,11 +50,12 @@ classdef SRCalibration < handle
             %we get the zCalibration directory
             folder2Mov = dir(obj.path);
             folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
+            count = 0;
             %loop through the content of the directory
             for i = 3:size(folder2Mov,1)
                 %If element i is a folder
                 if folder2Mov(i).isdir
-                    
+                    count = count+1;
                     folderPath = [folder2Mov(i).folder filesep folder2Mov(i).name];
                     file2Analyze = Core.Movie.getFileInPath(folderPath,obj.ext);
                
@@ -64,6 +65,12 @@ classdef SRCalibration < handle
                         
                         tmp = Core.MPSRCalMovie(file, obj.cal2D,obj.info);
                         tmp.calibrate;
+                        
+                        if count == 1
+                            tmp.giveInfo;
+                        else
+                            tmp.info = obj.SRCalMovies.(['mov' num2str(1)]).getInfo; 
+                        end
                         %we extract z motor position to check if the movie
                         %is indeed a zCalibration (expect zStack)
                         
@@ -107,17 +114,7 @@ classdef SRCalibration < handle
             calPerPlane = cell(nPlanes,1);
             for i = 1: nfields
                 disp(['Retrieving data from SRCal file ' num2str(i) ' / ' num2str(nfields) ' ...']);
-                if i == 1
-                    %Ask user for info about the setup for detection
-                    obj.SRCalMovies.(fieldsN{i}).giveInfo;
-                    
-                else
-                    %get the info about the setup stored into the first
-                    %object
-                    
-                    obj.SRCalMovies.(fieldsN{i}).info = obj.SRCalMovies.(fieldsN{1}).getInfo;
-                    
-                end
+               
                 currMov = obj.SRCalMovies.(fieldsN{i});
                 %Molecule detection
                 currMov.findCandidatePos(detectParam);

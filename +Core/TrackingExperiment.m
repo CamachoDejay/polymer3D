@@ -138,18 +138,19 @@ classdef TrackingExperiment < handle
             folder2Mov = dir(obj.path);
             folder2Mov = folder2Mov(cell2mat({folder2Mov.isdir}));
             %loop through the content of the directory
+            count =0;
             for i = 3:size(folder2Mov,1)
                 %Check if the directory
                 folderPath = [folder2Mov(i).folder filesep folder2Mov(i).name];
                 file2Analyze = Core.Movie.getFileInPath(folderPath,obj.ext);
                
                 if ~isempty(file2Analyze)
-                    
+                    count = count+1;
                     file.path = file2Analyze.folder;
                     file.ext  = obj.ext;
                     tmp = Core.MPTrackingMovie(file , obj.cal2D,obj.info, obj.SRCal.path, obj.ZCal.path);
                     tmp.calibrate;
-                    if i == 3
+                    if count == 1
                         tmp.giveInfo;
                     else
                         tmp.info = obj.trackMovies.(['mov' num2str(1)]).getInfo; 
