@@ -322,7 +322,7 @@ classdef MPParticleMovie < Core.MPMovie
                 subplot(2,nImages/nsFig,i)
                 hold on
                 imagesc(frame(:,:,i))
-                plot(colPos(planeIdx==i),rowPos(planeIdx==i),'g+')
+                plot(colPos(planeIdx==i),rowPos(planeIdx==i),'g+','MarkerSize',10)
                 axis image;
                 grid on;
                 a = gca;
@@ -330,7 +330,7 @@ classdef MPParticleMovie < Core.MPMovie
                 a.YTickLabel = [];
                 a.GridColor = [1 1 1];
                 title({['Plane ' num2str(i)],sprintf(' Zpos = %0.3f',obj.calibrated.oRelZPos(i))});
-                colormap('jet')
+                colormap('hot')
                 hold off
                 
             end
