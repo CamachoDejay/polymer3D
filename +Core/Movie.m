@@ -37,28 +37,6 @@ classdef Movie < handle
                     error('Unexpected number of argument');
                     
             end
-            %ask question to user
-            
-            if ~isfield(info,'runMethod')
-                quest = 'If we find data from previous analysis, do you want to load them or run the analysis again ?';
-                title = 'Question to User';
-                btn1  = 'Load';
-                btn2 = 'run again';
-                defbtn = 'Load';
-                answer = questdlg(quest,title,btn1,btn2,defbtn);
-                
-                switch answer
-                    case 'Load'
-                        
-                        info.runMethod = 'load';
-                        
-                    case 'run again'
-                        
-                        info.runMethod = 'run';
-                    otherwise
-                        error('WTF');
-                end
-            end
            
             obj.raw  = raw;
             if ~isfield(info,'frame2Load')
@@ -87,11 +65,34 @@ classdef Movie < handle
             obj.raw.fullPath  = [movInfo.Path filesep frameInfo(1).File];
             obj.raw.maxFrame  = movInfo.maxFrame;
             obj.raw.ext       = ext;
+            
         end
                 
         function set.info(obj,inform)
             
             assert(isstruct(inform),'Information is expected to be a structure');
+            %check that all field are there:
+            %ask question to user
+            if ~isfield(inform,'runMethod')
+                quest = 'If we find data from previous analysis, do you want to load them or run the analysis again ?';
+                title = 'Question to User';
+                btn1  = 'Load';
+                btn2 = 'run again';
+                defbtn = 'Load';
+                answer = questdlg(quest,title,btn1,btn2,defbtn);
+                
+                switch answer
+                    case 'Load'
+                        
+                        inform.runMethod = 'load';
+                        
+                    case 'run again'
+                        
+                        inform.runMethod = 'run';
+                    otherwise
+                        error('WTF');
+                end
+            end
             
             if ~isfield(inform,'type')
                 disp('no type was provided, considering normal fluorescence movie');
