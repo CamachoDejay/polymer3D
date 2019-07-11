@@ -92,6 +92,27 @@ classdef Movie < handle
         function set.info(obj,inform)
             
             assert(isstruct(inform),'Information is expected to be a structure');
+            
+            if ~isfield(inform,'type')
+                disp('no type was provided, considering normal fluorescence movie');
+                inform.type = 'normal';
+            end
+            
+            if ~isfield(inform,'type')
+                disp('no fitMethod was provided, using Phasor');
+                inform.fitMethod = 'Phasor';
+            end
+            
+            if ~isfield(inform,'zMethod')
+                disp('no zMethod was provided, using PSFE')
+                inform.zMethod = 'PSFE';
+            end
+            
+            if ~isfield(inform,'calibrate')
+                disp('no calibration information was provided, no recalibration will be perform');
+                inform.calibrate = false;
+            end
+            
             names = fieldnames(inform);
             for i = 1:numel(fields(inform))
                 
@@ -112,7 +133,10 @@ classdef Movie < handle
             info = obj.info;
             
         end
-        
+        function [info] = checkInfo(info)
+            
+            
+        end
         function addInfo(obj,field,value)
             assert(ischar(field),'field is expected to be a char');
             

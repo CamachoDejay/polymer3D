@@ -12,9 +12,9 @@ classdef MPMovie < Core.Movie
     methods
         
         function obj = MPMovie(raw,cal,info)
-           
+            
             obj = obj@Core.Movie(raw,info);
-
+            
             obj.cal2D = cal;
             
         end
@@ -26,9 +26,9 @@ classdef MPMovie < Core.Movie
             else
                 if ischar(cal2D)
                     assert(isfolder(cal2D), 'The path given is not a folder, 2DCalibration expect a folder. In the folder it is expected to find separate folder for each zCalMovie.')
-
+                    
                     [file2Analyze] = Core.Movie.getFileInPath(cal2D,'2DCal.mat');
-
+                    
                     if isempty(file2Analyze)
                         error('No 2D calibration file found in the given folder');
                     else
@@ -39,107 +39,127 @@ classdef MPMovie < Core.Movie
                         assert(and(isstruct(cal), and(isfield(cal,'camConfig'),isfield(cal,'file'))),...
                             '2D calibration is supposed to be a struct with 4 fields');
                         obj.cal2D = cal;
-
+                        
                     end
-
+                    
                 else
                     assert(and(isstruct(cal2D), and(isfield(cal2D,'camConfig'),isfield(cal2D,'file'))),...
-                            '2D calibration is supposed to be a struct with 4 fields');
+                        '2D calibration is supposed to be a struct with 4 fields');
                     obj.cal2D = cal2D;
-
+                    
                 end
             end
-
+            
         end
         
         function set.calibrated(obj,calibrated)
-           
-              assert(isstruct(calibrated),'Calibrated is expected to be a struct');
-              obj.calibrated = calibrated;
-              
+            
+            assert(isstruct(calibrated),'Calibrated is expected to be a struct');
+            obj.calibrated = calibrated;
+            
         end
         
         function calibrate(obj)
             %Method that the user will call to calibrate the data
             folderContent = dir(obj.raw.movInfo.Path);
             idx2Calibrated = contains({folderContent.name}, 'calibrated');
-
+            
             %if there is only 1 diff value, this value must be 0 and thus
             %calibrated folder does not exist thus, we calibrate
             if length(unique(idx2Calibrated))<2
-
+                
                 disp('Calibrating the dataset');
                 [calibrate] = obj.applyCalib;
                 disp('Data is now calibrated');
-
-            %if there is 2 value, then calibrated folder exist and then we
-            %check if a calibration file is in there.
+                
+                %if there is 2 value, then calibrated folder exist and then we
+                %check if a calibration file is in there.
             elseif length(unique(idx2Calibrated))==2
-
+                
                 fullPath = [obj.raw.movInfo.Path filesep 'calibrated'];
-                [file2Analyze] = obj.getFileInPath(fullPath, '.mat'); 
-
+                [file2Analyze] = obj.getFileInPath(fullPath, '.mat');
+                
                 if (~isempty(file2Analyze))
-
-                    [file] = obj.getFileInPath (fullPath,'.tif');
-
-                    if ~isempty(file) %only work with 8 Planes now
-                        %If data is already calibrated we load it
-                       disp('The dataset is already calibrated, Loading from existing file');
-                       
-                        if length(file) ~= 8
-                           
-                            warning('Did not find 8 planes, if you are not using the prism it is okay, otherwise you might want to recalibrate');
-                       
-                        end
-                    end
-                    
-                    fullpath = [file2Analyze.folder filesep file2Analyze.name];
-                    tmp = load(fullpath);
-                    calibrate = tmp.calib;
-                    fieldN = fieldnames(calibrate.filePath);
-                    for i = 1: length(fieldN)
-
-                        currentPath = calibrate.filePath.(fieldN{i});
-                        idx1 = strfind(fullPath,'\calibrated');
-                        idx2 = strfind(currentPath,'\calibrated');                           
-                        newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
-                        calibrate.filePath.(fieldN{i}) = newPath;
-
-                    end
-                    
-                    if isfield(calibrate,'transPath')
-                        fieldN = fieldnames(calibrate.transPath);
+                    if obj.info.calibrate == true
+                        %need to delete existing tif files
+                        folder = file2Analyze.folder;
+                        filePattern = fullfile(folder,'*.tif');
+                        theFiles = dir(filePattern);
+                        fprintf(1,'Deleting calibration in folder: %s \n',folder);
                         
+                        for i = 1: length(theFiles)
+                            name = theFiles(i).name;
+                            fullFName = fullfile(folder,name);
+                            fprintf(1,'Deleting %s \n',name);
+                            delete(fullFName);
+                        end
+                        
+                        disp('Calibrating the dataset');
+                        [calibrate] = obj.applyCalib;
+                        disp('Data is now calibrated');
+                    else
+                        
+                        
+                        [file] = obj.getFileInPath (fullPath,'.tif');
+                        
+                        if ~isempty(file) %only work with 8 Planes now
+                            %If data is already calibrated we load it
+                            disp('The dataset is already calibrated, Loading from existing file');
+                            
+                            if length(file) ~= 8
+                                
+                                warning('Did not find 8 planes, if you are not using the prism it is okay, otherwise you might want to recalibrate');
+                                
+                            end
+                        end
+                        
+                        fullpath = [file2Analyze.folder filesep file2Analyze.name];
+                        tmp = load(fullpath);
+                        calibrate = tmp.calib;
+                        fieldN = fieldnames(calibrate.filePath);
                         for i = 1: length(fieldN)
-
-                            currentPath = calibrate.transPath.(fieldN{i});
+                            
+                            currentPath = calibrate.filePath.(fieldN{i});
                             idx1 = strfind(fullPath,'\calibrated');
-                            idx2 = strfind(currentPath,'\calibrated');                           
+                            idx2 = strfind(currentPath,'\calibrated');
                             newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
-                            calibrate.transPath.(fieldN{i}) = newPath;
+                            calibrate.filePath.(fieldN{i}) = newPath;
                             
                         end
-                    end
                         
-                    disp('Done');
+                        if isfield(calibrate,'transPath')
+                            fieldN = fieldnames(calibrate.transPath);
+                            
+                            for i = 1: length(fieldN)
+                                
+                                currentPath = calibrate.transPath.(fieldN{i});
+                                idx1 = strfind(fullPath,'\calibrated');
+                                idx2 = strfind(currentPath,'\calibrated');
+                                newPath = [fullPath(1:idx1-1) currentPath(idx2(1):end)];
+                                calibrate.transPath.(fieldN{i}) = newPath;
+                                
+                            end
+                        end
+                        
+                        disp('Done');
+                    end
                     
                 else
                     
-                %If no calibration was found we calibrate again
-                disp('Calibrating the dataset');
-                [calibrate] = obj.applyCalib;
-                disp('Data is now calibrated');
-
+                    %If no calibration was found we calibrate again
+                    disp('Calibrating the dataset');
+                    [calibrate] = obj.applyCalib;
+                    disp('Data is now calibrated');
+                    
                 end
             else
-
-              error('Something is wrong with your calibrated directory');
-
+                
+                error('Something is wrong with your calibrated directory');
+                
             end
-
+            
             obj.calibrated = calibrate;
-
+            
         end
         
         function h = showFrame(obj,idx,scaleBar,idx2Plane)
@@ -157,7 +177,7 @@ classdef MPMovie < Core.Movie
             %check the frame requested
             [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             %Get the data of the requested frame
-            [frame] = getFrame(obj,idx);            
+            [frame] = getFrame(obj,idx);
             pxSize = obj.info.pxSize/1000;%in µm
             scaleBarPx = scaleBar/pxSize;
             planes = size(frame,3);
@@ -174,7 +194,7 @@ classdef MPMovie < Core.Movie
             else
                 nsFig = ceil(planes/4);
             end
-                
+            
             if ~isempty(obj.calibrated)
                 
                 zPos = obj.calibrated.oRelZPos;
@@ -191,7 +211,7 @@ classdef MPMovie < Core.Movie
             
             ax = gca;
             outerpos = ax.OuterPosition;
-            ti = ax.TightInset; 
+            ti = ax.TightInset;
             left = outerpos(1) + ti(1);
             bottom = outerpos(2) + ti(2);
             ax_width = outerpos(3) - ti(1) - ti(3);
@@ -211,7 +231,7 @@ classdef MPMovie < Core.Movie
                 
                 imagesc(currentIM)
                 caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
-                hold on 
+                hold on
                 x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
                 y = ones(1,length(x))*size(currentIM,1)-0.05*size(currentIM,2);
                 text(mean(x),mean(y)-0.04*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',8);
@@ -225,7 +245,7 @@ classdef MPMovie < Core.Movie
                 a.GridColor = [1 1 1];
                 title({['plane ',num2str(i)],sprintf(' Zpos = %0.3f',zPos(i))});
                 hold off
-               
+                
                 
             end
         end
@@ -234,11 +254,11 @@ classdef MPMovie < Core.Movie
             %Allow the user to extract data from a specific frame, behavior
             %depends on the calibration
             assert(length(idx)==1,'Only one frame at a time');
-             [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
+            [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             %Behavior depend on status
             if isempty(obj.calibrated)
                 
-               [data] = getFrame@Core.Movie(obj,idx);
+                [data] = getFrame@Core.Movie(obj,idx);
                 
             elseif isstruct(obj.calibrated)
                 fieldsN = fieldnames(obj.calibrated.filePath);
@@ -250,13 +270,13 @@ classdef MPMovie < Core.Movie
                     data(:,:,i) = mov;
                     
                 end
-            end  
+            end
         end
         
         function [data] = getPlane(obj,idx,frame)
             %Allow the user to extract data from a specific plane, behavior
             %depends on the calibration
-            switch nargin 
+            switch nargin
                 case 1
                     frame = 1:obj.raw.maxFrame(1);
                 case 2
@@ -264,7 +284,7 @@ classdef MPMovie < Core.Movie
             assert(and(idx<9,idx>=1),'plane should be between 1 and 8');
             
             [data] = Load.Movie.tif.getframes(obj.calibrated.filePath.(sprintf('plane%d',idx)),frame);
-             
+            
             
         end
         
@@ -280,16 +300,16 @@ classdef MPMovie < Core.Movie
         
         function [xStep, xPosMotor] = getXPosMotor(obj)
             if strcmpi(obj.raw.ext,'ome.tif')
-                  %small function that extract the zStep from the info in the raw
+                %small function that extract the zStep from the info in the raw
                 nFrames = obj.raw.maxFrame(1);
                 xPosMotor = zeros(nFrames,1);
-
+                
                 for i = 1 : obj.raw.maxFrame(1)
-
+                    
                     xPosMotor(i) = obj.raw.frameInfo(2*i).Pos(1);
-
+                    
                 end
-
+                
                 xStep = diff(xPosMotor);
             else
                 xStep = zeros(obj.raw.maxFrame(1),1);
@@ -302,19 +322,19 @@ classdef MPMovie < Core.Movie
                 %small function that extract the zStep from the info in the raw
                 nFrames = obj.raw.maxFrame(1);
                 yPosMotor = zeros(nFrames,1);
-
+                
                 for i = 1 : obj.raw.maxFrame(1)
-
+                    
                     yPosMotor(i) = obj.raw.frameInfo(2*i).Pos(2);
-
+                    
                 end
-
+                
                 yStep = diff(yPosMotor);
             else
                 yStep = zeros(obj.raw.maxFrame(1),1);
                 yPosMotor = zeros(obj.raw.maxFrame(1),1);
             end
-
+            
         end
         
         function [zStep, zPosMotor] = getZPosMotor(obj)
@@ -322,25 +342,25 @@ classdef MPMovie < Core.Movie
                 %small function that extract the zStep from the info in the raw
                 nFrames = obj.raw.maxFrame(1);
                 zPosMotor = zeros(nFrames,1);
-
+                
                 for i = 1 : obj.raw.maxFrame(1)
-
+                    
                     zPosMotor(i) = obj.raw.frameInfo(2*i).Pos(3);
-
+                    
                 end
-
+                
                 zStep = diff(zPosMotor);
             else
                 zStep = zeros(obj.raw.maxFrame(1),1);
                 zPosMotor = zeros(obj.raw.maxFrame(1),1);
             end
             
-        end 
-                
+        end
+        
     end
     
     methods (Static)
-       
+        
     end
     
     methods (Access = private)
@@ -350,7 +370,7 @@ classdef MPMovie < Core.Movie
             frameInfo = obj.raw.frameInfo;
             movInfo   = obj.raw.movInfo;
             step = 100;
-            maxFrame = obj.raw.movInfo.maxFrame(1); 
+            maxFrame = obj.raw.movInfo.maxFrame(1);
             frame2Load = obj.info.frame2Load;
             if ischar(frame2Load)
                 frame2Load = 1:maxFrame;
@@ -367,11 +387,11 @@ classdef MPMovie < Core.Movie
             for i = 1:nStep
                 disp(['Calibrating step ' num2str(i)]);
                 if i < nStep
-                   
+                    
                     cFrame = frame(i):frame(i+1)-1;
                 else
-
-                    cFrame = frame(i):endFrame;                    
+                    
+                    cFrame = frame(i):endFrame;
                     
                 end
                 %change behavior depending on extension:
@@ -388,19 +408,19 @@ classdef MPMovie < Core.Movie
                     case '.ome.tif'
                         assert(~isempty(obj.cal2D.file),'no calibration file provided, cannot calibrate');
                         MP = true;
-                         % load the raw data 
+                        % load the raw data
                         [ movC1, movC2] = Load.Movie.ome.load( frameInfo, movInfo, cFrame );
-
+                        
                         %applying the calibration
                         [data,isTransmission] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
-
+                        
                         %saving data per plane and info to cal
                         [calib] = obj.saveCalibrated(data,endFrame,isTransmission,MP);
                 end
-            end 
+            end
             
-         end
-         
+        end
+        
         function [calib] = saveCalibrated(obj,data,maxFrame,isTransmission,MP)
             
             calDir = [obj.raw.movInfo.Path filesep 'calibrated'];
@@ -433,7 +453,7 @@ classdef MPMovie < Core.Movie
                     fPathTiff = [calDir filesep fName];
                     calib.filePath.(fieldN) = fPathTiff;
                 end
-
+                
                 calib.nFrames = maxFrame;
                 t = Tiff(fPathTiff, 'a');
                 t = dataStorage.writeTiff(t,data2Store,16);
@@ -443,13 +463,13 @@ classdef MPMovie < Core.Movie
                 %text file
                 if MP
                     fprintf(fid,...
-                    'Image plane %d: Cam %d, Channel %d Col1: %d Col2: %d, Rel. Zpos: %0.3f \n ',...
-                    i,cal.inFocus(cal.neworder(i)).cam,...
-                    cal.inFocus(cal.neworder(i)).ch,...
-                    cal.ROI(cal.neworder(i),1),...
-                    cal.ROI(cal.neworder(i),1)+...
-                    cal.ROI(cal.neworder(i),3),...
-                    cal.inFocus(cal.neworder(i)).relZPos);
+                        'Image plane %d: Cam %d, Channel %d Col1: %d Col2: %d, Rel. Zpos: %0.3f \n ',...
+                        i,cal.inFocus(cal.neworder(i)).cam,...
+                        cal.inFocus(cal.neworder(i)).ch,...
+                        cal.ROI(cal.neworder(i),1),...
+                        cal.ROI(cal.neworder(i),1)+...
+                        cal.ROI(cal.neworder(i),3),...
+                        cal.inFocus(cal.neworder(i)).relZPos);
                     calib.camConfig = obj.cal2D.camConfig;
                 else
                     fprintf(fid,...
@@ -466,15 +486,15 @@ classdef MPMovie < Core.Movie
                     idx2Plane = idx2Plane+1;
                 end
                 
-             
+                
             end
             calib.Width  = size(data,2);
             calib.Height = size(data,1);
             fclose(fid);
             fName = [calDir filesep 'calibrated.mat'];
             save(fName,'calib');
-         end
-
+        end
+        
     end
 end
 
