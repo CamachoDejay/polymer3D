@@ -6,7 +6,7 @@ clear
 close all
 clc
 
-file.path  = 'F:\Data\Leuven Data\2019\06 - June\Roger\2Dcal\200 nm';
+file.path  = 'F:\Data\Leuven Data\2019\07 - July\20190708\2D';
 file.ext   = '.ome.tif';
 info.runMethod = 'load';
 info.nChan = 4;

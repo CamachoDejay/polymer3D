@@ -8,7 +8,7 @@ function [ neworder, inFocus ] = getNewOrder( inFocus )
         inFocus([inFocus.zpos] == ordZpos(i)).globalch = i;        
     end
     
-    focus = cat(1,inFocus.frame);
+    focus = cat(1,inFocus.zpos);
     [~,neworder] = sort(focus,'descend');
     
 end
