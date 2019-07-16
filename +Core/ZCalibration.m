@@ -89,7 +89,7 @@ classdef ZCalibration < handle
                     if count == 1
                         tmp.giveInfo;
                     else
-                        tmp.info = obj.zCalMovies.(['mov' num2str(1)]).getInfo; 
+                        tmp.info = obj.zCalMovies.(['zCal' num2str(1)]).getInfo; 
                     end
                     [zStep, ~] = tmp.getZPosMotor;
                     %TODO: Check other motor position (we do not want
