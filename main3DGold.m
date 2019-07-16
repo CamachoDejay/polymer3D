@@ -8,15 +8,17 @@ close all
 path2Cal  = 'F:\Data\Leuven Data\2019\07 - July\20190708\2D';
 file.path = 'F:\Data\Leuven Data\2019\07 - July\20190708';
 file.ext  = '.ome.tif'; 
+focusPlane = 4;%=2 af
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
 nParticles = 2;%number of particles expected in the movie has to be exact
 pxSize = 95;%in nm
-minDist = 6; %in pixels (min distant expected between particles
+minDist = 4; %in pixels (min distant expected between particles
 scaleBar = 2; %in um
 tail = 20;%Length of the tail in frames, for plotting the traces on top of the movie
 frameRate = 30; %for saving the movie
-info.type = 'Transmission';%Transmission or normal movie
+info.type = 'normal';%Transmission or normal movie
 info.runMethod = 'load';
+info.calibrate = false;
 toAnalyze = '.ome.tif';%accepted: .mp4, .ome.tif, folder. (folder that contain folders of .ome.tif.
 outputFolder = 'Results';%name of the folder to output the results
 
@@ -58,47 +60,29 @@ disp('=======> DONE ! <========')
 mov.g2.showFrame(1,5);
 
 %% detection of the center of the beads
+
 %preallocate memory for storing data of the different files
 allData = struct('fileName',[],'locPos',[]);
-allData(size(folder2Mov,2)).locPos = [];
+allData(length(mov)).locPos = [];
+fields = fieldnames(mov);
+frame = 35;
 
-for i =1: size(folder2Mov,2)
-    
-    currentPath = folder2Mov(i).folder;
-    switch toAnalyze
-        case '.mp4'
-            p2file = [folder2Mov(i).folder filesep folder2Mov(i).name];
-            v = VideoReader(p2file);%Create VideoReader object
-            nFrames = floor(v.Duration*v.FrameRate);%extract the number of frames
-            fullStackIn = zeros(v.Height,v.Width,nFrames);%preallocate memory
-            for j = 1:nFrames
-                frame = readFrame(v);%read frames
-
-                fullStackIn(:,:,j) = rgb2gray(frame);%extract the intensity data from frames
-            end
-        otherwise
-            myMov = Core.Movie(currentPath,info,'.tif');%Create Movie Object
-            fullStack = myMov.getFrame(1);%extract first frame
-            frame = fullStack.Cam1;
-            %check if cropping is necessary
-            if size(frame,2) > 400
-                myMov.cropIm;
-            end
-            %load full stack
-            fullStack = myMov.getFrame;
-            %revert the intensity scale
-            if strcmpi(info.type,'transmission')
-                fullStackIn = imcomplement(fullStack.Cam1);
-            else
-                fullStackIn = fullStack.Cam1;
-            end
+for i = 1:length(mov)
+    currMov = mov.(fields{i});
+    %check detection
+    fullStack = currMov.getFrame(frame);
+    %revert the intensity scale
+    if strcmpi(info.type,'transmission')
+        fullStackIn = imcomplement(fullStack);
+    else
+        fullStackIn = fullStack;
     end
-    
+
     frame = 5;
     %get the n maxima where n is the number of particles expected and
     %minDist is the distance expected between them
-    [pos] = goldProj.nMaxDetection (fullStackIn(:,:,frame),nParticles,minDist);
-    
+    [pos] = goldProj.nMaxDetection (fullStackIn(:,:,focusPlane),nParticles,minDist);
+
     x0 = pos(:,2);
     y0 = pos(:,1);
 
@@ -110,7 +94,111 @@ for i =1: size(folder2Mov,2)
     imagesc(fullStackIn(:,:,frame))
     hold on
     plot(pos(:,2),pos(:,1),'r+')
+    
+    
+    %% Fitting
+    nFrames = currMov.raw.movInfo.maxFrame(1);
+    %get the X Y dommain
+    x = 1:size(fullStackIn,2);
+    y = 1:size(fullStackIn,1);
+    [domX,domY] = meshgrid(x,y);
+    dom(:,:,1) = domX;
+    dom(:,:,2) = domY;
+    %preallocate memory
+    data2Store = zeros(nFrames,3,nParticles);
+    fitMov = zeros(100,100,nFrames);
+    h = waitbar(0,'Fitting Data');%create waiting bar
+    unSortedData =[];
+    planePos = currMov.calibrated.oRelZPos;
+    for j = 1:nFrames
+        currentFrame = double(currMov.getFrame(j));
+        %inital detection of particles on currentFrame
+        [pos] = goldProj.nMaxDetection (currentFrame(:,:,focusPlane),nParticles,minDist);
+ 
+        x0 = pos(:,2);
+        y0 = pos(:,1);
+        %Multiple gaussian fitting occurs here
+        [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame(:,:,focusPlane),x0,y0,dom,nParticles); 
+        g = reshape(gPar(5:end),[2,nParticles]);
+        g = g';
+        
+        nPart = size(x0,1);
+        z = x0;
+        %Get Z position
+        for k = 1:nPart
+            partData.col = x0(k);
+            partData.row = y0(k);
+            [Mag] = Core.MPLocMovie.getZPhasorMag(partData,minDist,currentFrame);
+            domain = 1:length([Mag.x]);
+            data   = [Mag.x]+[Mag.y];
+            guess.sig = 1.5*minDist;
+            guess.mu  = focusPlane;
+            [Res,~] = SimpleFitting.gauss1D(data,domain,guess);
 
+            z(k) = Res(2);
+            if or(z(k)<min(domain),z(k)>max(domain))
+                z(k)   = NaN;                           
+            else
+            tmpZ = floor(z(k));
+            fracZ = z(k)-tmpZ;
+            z(k) = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
+            z(k) = z(k)*1000;
+            end
+        end
+        
+        
+        unSortedData = [unSortedData; g z ones(size(g,1),1)*j  ];
+        
+        %Generate an image of the Fit to be able to plot in case we want to
+        %check
+        xHRes = linspace(1,size(fullStackIn,2),100);
+        yHRes = linspace(1,size(fullStackIn,1),100);
+        [domHResX,domHResY] = meshgrid(xHRes,yHRes);
+        domHRes(:,:,1) = domHResX;
+        domHRes(:,:,2) = domHResY;
+        F = Localization.Gauss.MultipleGauss(gPar, domHRes,nParticles);
+        
+        if j>1
+            %Tracking based on MSD minimization 
+            newOrder = goldProj.simpleTracking(gPar(5:end),prevPos);
+            %reshaping to format the final data and sorting with new order
+            gPos = reshape(gPar(5:end),[2,nParticles]);
+            gPos = gPos(:,newOrder);
+            prevPos = reshape(gPos,[1,nParticles*2]);
+            gPos = reshape(gPos,[1,2,nParticles]);
+            gPos(:,3,:) = z;
+            %store data
+            data2Store(j,:,:) = gPos;
+            clear gPos
 
+        else
+            %First frame we just reshape
+            gPos = reshape(gPar(5:end),[2,nParticles]);
+            gPos = reshape(gPos,[1,2,nParticles]);
+            gPos(:,3,:) = z;
+            data2Store(j,:,:) = gPos;
+            %store the gPar in the prev for checking particle order
+            prevPos = gPar(5:end);
+            clear gPos
+        end
+        %store fittings
+        fitMov(:,:,j) = F;
+        %update waitbar value
+        waitbar(j/nFrames,h,'Fitting Data')
+    end
+    %save data to the current folder being analyze
+    filename = [currentPath filesep 'LocalizationData.mat'];
+    save(filename,'data2Store');
+    %store data in allData
+    allData(i).locPos = data2Store;
+    allData(i).fileName = currentPath;
+    %clear waitbar
+    close(h);
+     %store fittings
+    fitMov(:,:,j) = F;
+    %update waitbar value
+    waitbar(j/nFrames,h,'Fitting Data')
+    
 
 end
+

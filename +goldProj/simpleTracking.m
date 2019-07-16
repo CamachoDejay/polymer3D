@@ -12,7 +12,7 @@ for i = 1 : nPart
   
 end
 
-[newOrder,~] = goldProj.munkres(sqDist');
+[newOrder,~] = Minimization.munkres(sqDist');
 
 
 end
