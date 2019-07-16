@@ -38,4 +38,3 @@ function [ focus_met, in_focus, fit ] = getFocusMetric( chData1c, chData2c, Z1, 
     end
     
 end
-
