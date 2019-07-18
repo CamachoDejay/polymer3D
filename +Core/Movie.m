@@ -360,6 +360,22 @@ classdef Movie < handle
             end
         end
         
+        function [Pos] = getROIUser(obj)
+            data = obj.getFrame(obj.raw.maxFrame(1)/2);
+            
+            figure
+            imagesc(data.Cam1);
+            colormap('gray');
+            axis image
+            
+            disp('Please draw a rectangle on the image to crop it');
+            
+            h2 = drawRectangle(gca);
+            Pos = wait(h2);%store positions of the rectangle
+            delete(h2);%remove the rectangle from the image
+           
+           
+        end
         
     end
     

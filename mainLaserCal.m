@@ -5,10 +5,10 @@ close all;
 %% get path to zCalibration
 
 
-path2Cal = 'C:\Users\abaku\Desktop\TRACKING\FEATUREDETECTION\plane configuration_7\2DCal\';
-calpath ='C:\Users\abaku\Desktop\TRACKING\FEATUREDETECTION\plane configuration_7\';
+path2Cal = 'F:\Data\Leuven Data\2019\06 - June\Roger\29\2D';
+calpath ='F:\Data\Leuven Data\2019\06 - June\Roger\29\Laser focus\plane configuration_1';
 
-path = [path2Cal ];
+path = [calpath];
 
 raw.path = path;
 raw.ext = '.ome.tif';
@@ -18,15 +18,15 @@ info.type = 'normal';
 info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
-info.zMethod    = 'Intensity';%or 'PSFE'
+info.zMethod    = 'PSFE';%or 'PSFE'
 
 %%
-calib = Core.MPMovie(raw,calpath,info);
+calib = Core.MPMovie(raw,path2Cal,info);
 calib.calibrate;
 maxFrame = calib.raw.maxFrame(1);
 
 data = calib.getFrame(floor(maxFrame/2));
-[Mask] = Misc.GetROIFromUserInput(data(:,:,4),calib.cal2D.file.ROI );
+[Mask] = Misc.getROIFromUser(data(:,:,4));
 
 chData1las = zeros(size(data,1), size(data,2), size(data,3)/2, maxFrame);
 chData2las = zeros(size(data,1), size(data,2), size(data,3)/2, maxFrame);

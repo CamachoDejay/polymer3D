@@ -6,7 +6,7 @@ clear
 close all
 clc
 
-file.path  = 'F:\Data\Leuven Data\2019\06 - June\Roger\2Dcal\200 nm';
+file.path  = 'F:\Data\Leuven Data\2019\06 - June\Roger\29\2D';
 file.ext   = '.ome.tif';
 info.runMethod = 'load';
 info.nChan = 4;
@@ -17,7 +17,7 @@ calib.retrieveMovies;
 calib.calcIndivCal; 
 calib.calcCombinedCal;
 
-calib.showCal(1)
+calib.showCal(3)
 calib.offTarget;
 calib.save;
 %% PREV VERSION
