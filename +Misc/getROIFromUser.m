@@ -2,7 +2,7 @@ function [Mask] = getROIFromUser(im)
     
     Mask = zeros(size(im,1),size(im,2)); 
     %Show image to user
-    figure()
+    fig = figure();
     imagesc(im);
     colormap('gray');
     axis image
@@ -14,7 +14,8 @@ function [Mask] = getROIFromUser(im)
     y0  = floor(Pos(2));
     len = floor(Pos(3));
     wid = floor(Pos(4));
-   
+    delete(h)
+    close(fig);
     Mask(y0:y0+wid-1,x0:x0+len-1) = 1;
 
 end

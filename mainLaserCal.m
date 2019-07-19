@@ -1,5 +1,5 @@
 %%
-clear all
+clear
 clc
 close all;
 %% get path to zCalibration
@@ -20,14 +20,14 @@ info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 info.zMethod    = 'PSFE';%or 'PSFE'
 
-%%
+%% Load and calibrate
 calib = Core.MPMovie(raw,path2Cal,info);
 calib.calibrate;
 maxFrame = calib.raw.maxFrame(1);
-
-data = calib.getFrame(floor(maxFrame/2));
+%% Get ROI 
+data = calib.getFrame(1);
 [Mask] = Misc.getROIFromUser(data(:,:,4));
-
+%% Calculate focus Metric
 chData1las = zeros(size(data,1), size(data,2), size(data,3)/2, maxFrame);
 chData2las = zeros(size(data,1), size(data,2), size(data,3)/2, maxFrame);
 chData1nor = zeros(size(data,1), size(data,2), size(data,3)/2, maxFrame);
@@ -48,8 +48,13 @@ for i=1:maxFrame
 end
 [ focus_metLas, in_focusLas, fitLas ] = mpSetup.cali.getFocusMetric( chData1las,chData2las, zPosMotor, zPosMotor );
 [ focus_metNor, in_focusNor, fitNor ] = mpSetup.cali.getFocusMetric( chData1nor,chData2nor, zPosMotor, zPosMotor );
+%% get distance between planes
+distanceFourFirstPlane = mean([in_focusLas.zpos]);
+distanceToPlanes = (distanceFourFirstPlane - [in_focusNor.zpos])*1000;
 
-distanceToPlanes = [in_focusLas.zpos]- [in_focusNor.zpos];
+Results = table(distanceToPlanes(1),distanceToPlanes(2),distanceToPlanes(3),distanceToPlanes(4),...
+    distanceToPlanes(5),distanceToPlanes(6),distanceToPlanes(7),distanceToPlanes(8),...
+    'VariableNames',{'Plane1','Plane2','Plane3','Plane4','Plane5','Plane6',...
+    'Plane7','Plane8'})
 
-close all
 
