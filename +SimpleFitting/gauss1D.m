@@ -2,8 +2,10 @@ function [FitPar,Fit]=gauss1D(A,domain,guess)
 
 switch nargin
     case 2 
-        sigGuess = abs(domain(1)-domain(2));
-        [val,muGuess] = max(A);
+        sigGuess = abs((abs(domain(2))-abs(domain(1))))*3;
+
+        [val,idx] = max(A);
+        muGuess = domain(idx);
     case 3
         sigGuess = guess.sig;
         muGuess  = guess.mu;

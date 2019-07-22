@@ -299,7 +299,7 @@ classdef MPMovie < Core.Movie
         end
         
         function [xStep, xPosMotor] = getXPosMotor(obj)
-            if strcmpi(obj.raw.ext,'ome.tif')
+            if strcmpi(obj.raw.ext,'.ome.tif')
                 %small function that extract the zStep from the info in the raw
                 nFrames = obj.raw.maxFrame(1);
                 xPosMotor = zeros(nFrames,1);
@@ -318,7 +318,7 @@ classdef MPMovie < Core.Movie
         end
         
         function [yStep, yPosMotor] = getYPosMotor(obj)
-            if strcmpi(obj.raw.ext,'ome.tif')
+            if strcmpi(obj.raw.ext,'.ome.tif')
                 %small function that extract the zStep from the info in the raw
                 nFrames = obj.raw.maxFrame(1);
                 yPosMotor = zeros(nFrames,1);
@@ -338,7 +338,7 @@ classdef MPMovie < Core.Movie
         end
         
         function [zStep, zPosMotor] = getZPosMotor(obj)
-            if strcmpi(obj.raw.ext,'ome.tif')
+            if strcmpi(obj.raw.ext,'.ome.tif')
                 %small function that extract the zStep from the info in the raw
                 nFrames = obj.raw.maxFrame(1);
                 zPosMotor = zeros(nFrames,1);

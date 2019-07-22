@@ -190,11 +190,12 @@ classdef MPPlaneCalibration < handle
         relZPos = cell2mat({obj.cal.file.inFocus.relZPos});
         relZPos = relZPos(obj.cal.file.neworder);
         planeDist = abs(mean(diff(relZPos)))*1000;
+        minDist = min(abs(relZPos(2:end)))*1000;
         if planeDist > 350
             camConfig = 'fullRange';
-        elseif and(planeDist < 350, planeDist>250)
+        elseif and(minDist>100, planeDist>200)
             camConfig = 'interleaved';
-        elseif planeDist<250
+        elseif minDist<100
             camConfig = 'equal';
         else
             error('Something is wrong with your distance between planes')
@@ -214,27 +215,22 @@ classdef MPPlaneCalibration < handle
                     target    = distBetweenCamPlanes;
                     distBetweenCam = abs(zPos(5)-zPos(4));
                     offTarget = distBetweenCam - target;
-                    %offTarget = mean(abs(offTarget1));
-
-                    fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
-
-                    
+                   
                 case 'interleaved'
                     distBetweenCamPlanes = abs(mean(diff(zPos(1:2:end))) + mean(diff(zPos(2:2:end))))/2;
                     target    = distBetweenCamPlanes/2;
-                    distBetweenPlane = diff(zPos);
+                    distBetweenPlane = abs(diff(zPos));
                     offTarget1 = distBetweenPlane - target;
                     offTarget = mean(abs(offTarget1));
 
-                    fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
+               
                 case 'equal'
                     
                     distBetweenPlanes = abs(diff(zPos));
                     distBetweenPlanes = distBetweenPlanes(1:2:end);
                     offTarget = mean(distBetweenPlanes);
-                    fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
-            end
-           
+                end
+           fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
 
         end
         
