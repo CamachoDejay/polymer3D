@@ -133,7 +133,7 @@ classdef MPPlaneCalibration < handle
             obj.cal.file = obj.allCal(1).file;
             obj.cal.file = rmfield(obj.cal.file,{'focusMet','fit','Zpos'});
             obj.cal.file.ROI = ROI;
-            
+            obj.cal.file.Icorrf = squeeze(mean(allICorrF,3));
             obj.cal.file.inFocus = inFocus;
             [~] = obj.determineCAMConfig;
             disp('================>DONE<====================');
