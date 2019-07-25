@@ -5,10 +5,10 @@ close all
 
 %% User input
 
-path2Cal  = 'F:\Data\Leuven Data\2019\07 - July\20190708\2D';
-file.path = 'F:\Data\Leuven Data\2019\07 - July\20190708';
+path2Cal  = 'F:\Data\Leuven Data\2019\07 - July\2D-DarkField\Small';
+file.path = 'F:\Data\Leuven Data\2019\07 - July\DarkfieldFewParticles\2P';
 file.ext  = '.ome.tif'; 
-focusPlane = 4;%=2 af
+focusPlane = 5;%=2 af
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
 nParticles = 2;%number of particles expected in the movie has to be exact
 pxSize = 95;%in nm
@@ -57,7 +57,7 @@ for i = 3:size(folder2Mov,1)
 
 end
 disp('=======> DONE ! <========')
-mov.g2.showFrame(1,5);
+mov.g1.showFrame(1,5);
 
 %% detection of the center of the beads
 
@@ -108,7 +108,7 @@ for i = 1:length(mov)
     data2Store = zeros(nFrames,3,nParticles);
     fitMov = zeros(100,100,nFrames);
     h = waitbar(0,'Fitting Data');%create waiting bar
-    unSortedData =[];
+    %unSortedData =[];
     planePos = currMov.calibrated.oRelZPos;
     for j = 1:nFrames
         currentFrame = double(currMov.getFrame(j));
@@ -128,12 +128,16 @@ for i = 1:length(mov)
         for k = 1:nPart
             partData.col = x0(k);
             partData.row = y0(k);
-            [Mag] = Core.MPLocMovie.getZPhasorMag(partData,minDist,currentFrame);
-            domain = 1:length([Mag.x]);
-            data   = [Mag.x]+[Mag.y];
-            guess.sig = 1.5*minDist;
+            coord = round(g);
+%            [Mag] = Core.MPLocMovie.getZPhasorMag(partData,minDist,currentFrame);
+            ROI = currentFrame(coord(k,2)-minDist:coord(k,2)+minDist,...
+                coord(k,1)-minDist:coord(k,1)+minDist,:);
+                
+            toFit = squeeze(sum(sum(ROI)));
+            domain = 1:length(toFit);
+            guess.sig = minDist/2;
             guess.mu  = focusPlane;
-            [Res,~] = SimpleFitting.gauss1D(data,domain,guess);
+            [Res,fit] = SimpleFitting.gauss1D(toFit,domain,guess);
 
             z(k) = Res(2);
             if or(z(k)<min(domain),z(k)>max(domain))
@@ -147,7 +151,7 @@ for i = 1:length(mov)
         end
         
         
-        unSortedData = [unSortedData; g z ones(size(g,1),1)*j  ];
+       % unSortedData = [unSortedData; g z ones(size(g,1),1)*j  ];
         
         %Generate an image of the Fit to be able to plot in case we want to
         %check
@@ -186,6 +190,8 @@ for i = 1:length(mov)
         %update waitbar value
         waitbar(j/nFrames,h,'Fitting Data')
     end
+    
+    currentPath = currMov.raw.movInfo.Path;
     %save data to the current folder being analyze
     filename = [currentPath filesep 'LocalizationData.mat'];
     save(filename,'data2Store');
@@ -201,4 +207,5 @@ for i = 1:length(mov)
     
 
 end
-
+filename = [file.path filesep 'allData.mat'];
+save(filename,'allData');

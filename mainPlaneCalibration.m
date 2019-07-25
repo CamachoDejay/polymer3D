@@ -6,7 +6,7 @@ clear
 close all
 clc
 
-file.path  = 'F:\Data\Leuven Data\2019\07 - July\20190708\2D';
+file.path  = 'F:\Data\Leuven Data\2019\07 - July\2D-DarkField\Small';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';
@@ -18,7 +18,7 @@ calib.retrieveMovies;
 calib.calcIndivCal; 
 calib.calcCombinedCal;
 
-calib.showCal(3)
+calib.showCal(4)
 calib.offTarget;
 calib.save;
 %% PREV VERSION
