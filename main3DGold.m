@@ -62,7 +62,7 @@ mov.g1.showFrame(1,5);
 %% detection of the center of the beads
 
 %preallocate memory for storing data of the different files
-allData = struct('fileName',[],'locPos',[]);
+allData = struct('fileName',[],'traces',[]);
 allData(length(mov)).locPos = [];
 fields = fieldnames(mov);
 frame = 35;
@@ -105,6 +105,7 @@ for i = 1:length(mov)
     dom(:,:,1) = domX;
     dom(:,:,2) = domY;
     %preallocate memory
+       
     data2Store = zeros(nFrames,3,nParticles);
     fitMov = zeros(100,100,nFrames);
     h = waitbar(0,'Fitting Data');%create waiting bar
@@ -191,21 +192,40 @@ for i = 1:length(mov)
         waitbar(j/nFrames,h,'Fitting Data')
     end
     
+    %clear waitbar
+    close(h);
+    
     currentPath = currMov.raw.movInfo.Path;
     %save data to the current folder being analyze
     filename = [currentPath filesep 'LocalizationData.mat'];
     save(filename,'data2Store');
     %store data in allData
-    allData(i).locPos = data2Store;
-    allData(i).fileName = currentPath;
-    %clear waitbar
-    close(h);
-     %store fittings
+    allData(i).traces = data2Store;
+    allData(i).fileName = currentPath;  
+    %store fittings
     fitMov(:,:,j) = F;
-    %update waitbar value
-    waitbar(j/nFrames,h,'Fitting Data')
-    
 
 end
+
+%% convert Data to table
+
+
+for i =1: size(allData,2)
+    traces = cell(nParticles,1);
+    
+    for j = 1: nParticles
+        tabData = table(zeros(nFrames,1),zeros(nFrames,1),zeros(nFrames,1),...
+            zeros(nFrames,1),'VariableNames',{'x','y','z','t'});
+        
+        tabData.x = allData(i).traces(:,1,j);
+        tabData.y = allData(i).traces(:,2,j);
+        tabData.z = allData(i).traces(:,3,j);
+        tabData.t = (1:nFrames)';
+        
+        traces{j} = tabData;
+    end
+    allData(i).traces = traces;
+end
+
 filename = [file.path filesep 'allData.mat'];
 save(filename,'allData');
