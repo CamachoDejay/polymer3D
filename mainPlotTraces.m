@@ -6,11 +6,18 @@ close all
 
 %% User input
 
-minSize = 200;
+path2Save = 'D:\Documents\Unif\PhD\Papers\04 - Particle Tracking\Figure';
+ext = '.gif';
+filename=sprintf('%s%s2PTrapping%s', path2Save,filesep,ext);
+
+minSize = 200;%number of frame the traces needs to last to be plotted.
 expTime = 0.01; %sec
-
-%%
-
+sizeParticles = 200; % diameter in nm
+frameRate = 50;
+trailing = 20; %frame the traces stays in the movie
+%% Plot all Traces with time color-coding (4D plot)
+CM = zeros(size(trackRes.traces,1),3);
+maxFr = zeros(size(trackRes.traces,1),1);
 figure
 hold on
 for i = 1:size(trackRes.traces,1)
@@ -26,6 +33,78 @@ for i = 1:size(trackRes.traces,1)
         patch([colPlot(:)' nan],[rowPlot(:)' nan],[zPlot(:)' nan],[tPlot(:)' nan],'EdgeColor','interp','FaceColor','none')
 
     end        
+    CM(i,:) = [mean(currTrace.row),mean(currTrace.col),mean(currTrace.z)];
+    maxFr(i,:) = max(currTrace.t);
+end
+CM = mean(CM,1);
+maxFr = max(maxFr);
+%% Make Awesome movie
+
+radius = 500;
+yLimit = [CM(1)*pxSize-radius CM(1)*pxSize + radius];
+xLimit = [CM(2)*pxSize-radius CM(2)*pxSize + radius];
+zLimit = [CM(3)-radius CM(3) + radius];
+
+Fig = figure;
+view(3);
+xlim(xLimit);
+ylim(yLimit);
+zlim(zLimit);
+xlim manual;
+ylim manual;
+gcf;
+hold on
+
+[x,y,z] = sphere(32);
+x = x*sizeParticles/2;
+y = y*sizeParticles/2;
+z = z*sizeParticles/2;
+for i = 1 :maxFr
+    for j = 1:size(trackRes.traces,1)
+        currTrace = trackRes.traces{j,1};
+        idx2Frame = currTrace.t==i;
+        idx = i-trailing:i;
+        idx = ismember(currTrace.t,idx);
+        if ~all(idx==0)
+            
+            data2Plot = currTrace(idx,:);
+            xlim(xLimit);
+            ylim(yLimit);
+            zlim(zLimit)
+            xlim manual;
+            ylim manual;
+            zlim manual;
+            view(3);
+            gcf;
+            hold on
+
+            plot3(data2Plot.col*pxSize,data2Plot.row*pxSize,data2Plot.z,'color',[0 0 1])
+            X = x+currTrace.col(idx2Frame)*pxSize;
+            Y = y+currTrace.row(idx2Frame)*pxSize;
+            Z = z+currTrace.z(idx2Frame);
+            
+            surf(X,Y,Z,'LineStyle','none','Facecolor',[0.7,0.7,0.7])
+            camlight
+            lighting('gouraud');
+
+        end
+    end
+    drawnow;
+    frame = getframe(Fig);
+    im = frame2im(frame);
+    [imind,cm] = rgb2ind(im,256);
+
+    if i == 1
+
+        imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
+
+    else
+
+        imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
+
+    end
+    clf;
+
 end
 
 %% plot only a single traced

@@ -170,7 +170,7 @@ for i = 1:length(mov)
             gPos = reshape(gPar(5:end),[2,nParticles]);
             gPos = gPos(:,newOrder);
             prevPos = reshape(gPos,[1,nParticles*2]);
-            gPos = reshape(gPos,[1,2,nParticles]);
+            gPos = reshape(gPos,[1,2,nParticles])*pxSize;
             gPos(:,3,:) = z;
             %store data
             data2Store(j,:,:) = gPos;
@@ -215,10 +215,10 @@ for i =1: size(allData,2)
     
     for j = 1: nParticles
         tabData = table(zeros(nFrames,1),zeros(nFrames,1),zeros(nFrames,1),...
-            zeros(nFrames,1),'VariableNames',{'x','y','z','t'});
+            zeros(nFrames,1),'VariableNames',{'row','col','z','t'});
         
-        tabData.x = allData(i).traces(:,1,j);
-        tabData.y = allData(i).traces(:,2,j);
+        tabData.col = allData(i).traces(:,1,j);
+        tabData.row = allData(i).traces(:,2,j);
         tabData.z = allData(i).traces(:,3,j);
         tabData.t = (1:nFrames)';
         
@@ -226,6 +226,7 @@ for i =1: size(allData,2)
     end
     allData(i).traces = traces;
 end
-
-filename = [file.path filesep 'allData.mat'];
-save(filename,'allData');
+trackRes = allData;
+filename = [file.path filesep 'trackRes.mat'];
+save(filename,'trackRes');
+h = msgbox('Data succesfully saved');
