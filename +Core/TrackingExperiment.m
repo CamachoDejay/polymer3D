@@ -319,7 +319,7 @@ classdef TrackingExperiment < handle
                 
                 currentTrace = traces{i,:};
                 
-                if size(traces{i},1)>10
+                if size(traces{i},1)>1
                     coord = [currentTrace.col,currentTrace.row,currentTrace.z];
                     [RMSD,~] = Core.MPTrackingMovie.calcMeanSqrD(coord,dimension);
                     currentTrace.RMSD = zeros(size(currentTrace.row,1),1);

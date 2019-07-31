@@ -10,10 +10,10 @@ path2Save = 'D:\Documents\Unif\PhD\Papers\04 - Particle Tracking\Figure';
 ext = '.gif';
 filename=sprintf('%s%s2PTrapping%s', path2Save,filesep,ext);
 
-minSize = 200;%number of frame the traces needs to last to be plotted.
+minSize = 1;%number of frame the traces needs to last to be plotted.
 expTime = 0.01; %sec
 sizeParticles = 200; % diameter in nm
-frameRate = 50;
+frameRate = 20;
 trailing = 20; %frame the traces stays in the movie
 %% Plot all Traces with time color-coding (4D plot)
 CM = zeros(size(trackRes.traces,1),3);
@@ -24,13 +24,14 @@ for i = 1:size(trackRes.traces,1)
     
     currTrace = trackRes.traces{i,1};
     
-    if height(currTrace) >= minSize
+    if height(currTrace) > minSize
         colPlot = currTrace.col;
         rowPlot = currTrace.row;
         zPlot   = currTrace.z;
         tPlot   = currTrace.t*expTime;
+        plot3(colPlot,rowPlot,zPlot)
         %plot with time color coding
-        patch([colPlot(:)' nan],[rowPlot(:)' nan],[zPlot(:)' nan],[tPlot(:)' nan],'EdgeColor','interp','FaceColor','none')
+       % patch([colPlot(:)' nan],[rowPlot(:)' nan],[zPlot(:)' nan],[tPlot(:)' nan],'EdgeColor','interp','FaceColor','none')
 
     end        
     CM(i,:) = [mean(currTrace.row),mean(currTrace.col),mean(currTrace.z)];
@@ -40,10 +41,10 @@ CM = mean(CM,1);
 maxFr = max(maxFr);
 %% Make Awesome movie
 
-radius = 500;
-yLimit = [CM(1)*pxSize-radius CM(1)*pxSize + radius];
-xLimit = [CM(2)*pxSize-radius CM(2)*pxSize + radius];
-zLimit = [CM(3)-radius CM(3) + radius];
+radius = 1000;
+yLimit = [CM(1)-radius CM(1)+ radius];
+xLimit = [CM(2)-radius CM(2)+ radius];
+zLimit = [CM(3)-radius/4 CM(3) + radius/4];
 
 Fig = figure;
 view(3);
@@ -68,22 +69,24 @@ for i = 1 :maxFr
         if ~all(idx==0)
             
             data2Plot = currTrace(idx,:);
+            axis image
             xlim(xLimit);
             ylim(yLimit);
             zlim(zLimit)
             xlim manual;
             ylim manual;
             zlim manual;
+           
             view(3);
             gcf;
             hold on
 
-            plot3(data2Plot.col*pxSize,data2Plot.row*pxSize,data2Plot.z,'color',[0 0 1])
-            X = x+currTrace.col(idx2Frame)*pxSize;
-            Y = y+currTrace.row(idx2Frame)*pxSize;
+            plot3(data2Plot.col,data2Plot.row,data2Plot.z,'color',[0 0 1])
+            X = x+currTrace.col(idx2Frame);
+            Y = y+currTrace.row(idx2Frame);
             Z = z+currTrace.z(idx2Frame);
             
-            surf(X,Y,Z,'LineStyle','none','Facecolor',[0.7,0.7,0.7])
+            surf(X,Y,Z,'LineStyle','none','Facecolor',[0.4,0.4,0.4])
             camlight
             lighting('gouraud');
 

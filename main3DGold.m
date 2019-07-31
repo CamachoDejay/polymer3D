@@ -6,13 +6,13 @@ close all
 %% User input
 
 path2Cal  = 'F:\Data\Leuven Data\2019\07 - July\2D-DarkField\Small';
-file.path = 'F:\Data\Leuven Data\2019\07 - July\DarkfieldFewParticles\2P';
+file.path = 'F:\Data\Leuven Data\2019\07 - July\Particles\3dtracking';
 file.ext  = '.ome.tif'; 
-focusPlane = 5;%=2 af
+focusPlane = 3;%=2 af
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
-nParticles = 2;%number of particles expected in the movie has to be exact
+nParticles = 5;%number of particles expected in the movie has to be exact
 pxSize = 95;%in nm
-minDist = 4; %in pixels (min distant expected between particles
+minDist = 5; %in pixels (min distant expected between particles
 scaleBar = 2; %in um
 tail = 20;%Length of the tail in frames, for plotting the traces on top of the movie
 frameRate = 30; %for saving the movie
@@ -130,17 +130,24 @@ for i = 1:length(mov)
             partData.col = x0(k);
             partData.row = y0(k);
             coord = round(g);
-%            [Mag] = Core.MPLocMovie.getZPhasorMag(partData,minDist,currentFrame);
+            [Mag] = Core.MPLocMovie.getZPhasorMag(partData,minDist,currentFrame);
             ROI = currentFrame(coord(k,2)-minDist:coord(k,2)+minDist,...
-                coord(k,1)-minDist:coord(k,1)+minDist,:);
-                
-            toFit = squeeze(sum(sum(ROI)));
-            domain = 1:length(toFit);
-            guess.sig = minDist/2;
-            guess.mu  = focusPlane;
-            [Res,fit] = SimpleFitting.gauss1D(toFit,domain,guess);
-
-            z(k) = Res(2);
+            coord(k,1)-minDist:coord(k,1)+minDist,:);
+            BW   = imbinarize(uint16(ROI));
+            data = regionprops3(BW,'Centroid','VoxelIdxList');
+            idx = data.VoxelIdxList{1,1};
+            [y,x,ztmp] = ind2sub(size(ROI),idx);
+            counts = ROI(idx);
+            z(k) = sum(ztmp.*counts)/sum(counts);
+            
+            
+%             toFit = squeeze(max(max((ROI))));
+             domain = 1:size(ROI,3);
+%             guess.sig = minDist/2;
+%             guess.mu  = focusPlane;
+%             [Res,fit] = SimpleFitting.gauss1D(toFit,domain,guess);
+% 
+%             z(k) = Res(2);
             if or(z(k)<min(domain),z(k)>max(domain))
                 z(k)   = NaN;                           
             else
@@ -179,7 +186,7 @@ for i = 1:length(mov)
         else
             %First frame we just reshape
             gPos = reshape(gPar(5:end),[2,nParticles]);
-            gPos = reshape(gPos,[1,2,nParticles]);
+            gPos = reshape(gPos,[1,2,nParticles])*pxSize;
             gPos(:,3,:) = z;
             data2Store(j,:,:) = gPos;
             %store the gPar in the prev for checking particle order
