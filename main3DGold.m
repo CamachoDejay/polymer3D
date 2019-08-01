@@ -43,7 +43,7 @@ for i = 3:size(folder2Mov,1)
         if count == 1
             tmp.giveInfo;
         else
-            tmp.info = obj.trackMovies.(['mov' num2str(1)]).getInfo; 
+            tmp.info = mov.g1.getInfo; 
         end
         tmp.calibrate;
         mov.(['g' num2str(i-2)]) = tmp;
@@ -67,7 +67,7 @@ allData(length(mov)).locPos = [];
 fields = fieldnames(mov);
 frame = 35;
 
-for i = 1:length(mov)
+for i = 1:length(fields)
     currMov = mov.(fields{i});
     %check detection
     fullStack = currMov.getFrame(frame);

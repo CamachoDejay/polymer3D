@@ -149,12 +149,13 @@ classdef TrackingExperiment < handle
                     file.path = file2Analyze.folder;
                     file.ext  = obj.ext;
                     tmp = Core.MPTrackingMovie(file , obj.cal2D,obj.info, obj.SRCal.path, obj.ZCal.path);
-                    tmp.calibrate;
+                    
                     if count == 1
                         tmp.giveInfo;
                     else
                         tmp.info = obj.trackMovies.(['mov' num2str(1)]).getInfo; 
                     end
+                    tmp.calibrate;
                     obj.trackMovies.(['mov' num2str(i-2)]) = tmp;
                     
                     
