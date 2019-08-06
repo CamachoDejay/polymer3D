@@ -5,17 +5,17 @@ path2Save = 'D:\Documents\Unif\PhD\Papers\04 - Particle Tracking\Figure';
 ext = '.gif';
 filename=sprintf('%s%s3Dejection%s', path2Save,filesep,ext);
 
-data = TrackedData;
+data = allTraces;
 Trailing = 100;
 frameRate = 50;
 yLimit = [0 65000];
-xLimit = [0 45000];
-zLimit = [-2000 -500];
+xLimit = [10000 30000];
+zLimit = [-4500 -0];
 %% test data type
 
-if istable(TrackedData{1})
+if istable(data{1})
     dataType = 'table';
-elseif ismatrix(TrackedData{1})
+elseif ismatrix(data{1})
     dataType = 'matrix';
 end
 %%
@@ -27,7 +27,7 @@ for i = 1:length(data)
     currData = data{i};
     switch dataType
         case 'table'
-            maxFr(i) = max(currData.frame);
+            maxFr(i) = max(currData.t);
             testY = and(currData.row > yLimit(1), currData.row < yLimit(2));
             testX = and(currData.col > xLimit(1), currData.col < xLimit(2));
         case 'matrix'
@@ -47,10 +47,10 @@ data(idx2Delete) = [];
 
 %% Localization Density image
 
-ZStep = 800;
-XBin = 200;
-YBin = 200;
-countBound = [0 10];
+ZStep = 500;
+XBin = 500;
+YBin = 500;
+countBound = [0 50];
 
 %Put all the data into a single table
 tableData = data{1};
@@ -84,7 +84,7 @@ end
 figure
 hold on
 for i = 1:size(histData,3)
-   subplot(2,size(histData,3)/2,i)
+   subplot(2,round(size(histData,3)/2),i)
    imagesc(histData(:,:,i));
    caxis(countBound);
    title( ['Z = ' num2str(round(zBin(i)))])

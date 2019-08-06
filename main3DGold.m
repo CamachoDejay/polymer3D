@@ -6,13 +6,13 @@ close all
 %% User input
 
 path2Cal  = 'F:\Data\Leuven Data\2019\07 - July\2D-DarkField\Small';
-file.path = 'F:\Data\Leuven Data\2019\07 - July\Particles\3dtracking';
+file.path = 'F:\Data\Leuven Data\2019\07 - July\Issues\4p';
 file.ext  = '.ome.tif'; 
-focusPlane = 3;%=2 af
+focusPlane = 4;%=2 af
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
-nParticles = 5;%number of particles expected in the movie has to be exact
+nParticles = 4;%number of particles expected in the movie has to be exact
 pxSize = 95;%in nm
-minDist = 5; %in pixels (min distant expected between particles
+minDist = 3; %in pixels (min distant expected between particles
 scaleBar = 2; %in um
 tail = 20;%Length of the tail in frames, for plotting the traces on top of the movie
 frameRate = 30; %for saving the movie
@@ -139,22 +139,16 @@ for i = 1:length(fields)
             [y,x,ztmp] = ind2sub(size(ROI),idx);
             counts = ROI(idx);
             z(k) = sum(ztmp.*counts)/sum(counts);
-            
-            
-%             toFit = squeeze(max(max((ROI))));
-             domain = 1:size(ROI,3);
-%             guess.sig = minDist/2;
-%             guess.mu  = focusPlane;
-%             [Res,fit] = SimpleFitting.gauss1D(toFit,domain,guess);
-% 
-%             z(k) = Res(2);
+
+            domain = 1:size(ROI,3);
+
             if or(z(k)<min(domain),z(k)>max(domain))
                 z(k)   = NaN;                           
             else
-            tmpZ = floor(z(k));
-            fracZ = z(k)-tmpZ;
-            z(k) = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
-            z(k) = z(k)*1000;
+                tmpZ = floor(z(k));
+                fracZ = z(k)-tmpZ;
+                z(k) = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
+                z(k) = z(k)*1000;
             end
         end
         
@@ -215,8 +209,14 @@ for i = 1:length(fields)
 end
 
 %% convert Data to table
-
-
+figure
+hold on
+for i = 1: size(data2Store,3)
+    plot3(data2Store(:,1,i),data2Store(:,2,i),data2Store(:,3,i));
+    
+end
+axis image
+view(3)
 for i =1: size(allData,2)
     traces = cell(nParticles,1);
     

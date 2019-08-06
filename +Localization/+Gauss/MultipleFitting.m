@@ -11,8 +11,8 @@ end
 radius=(size(A,2)-1)/2;
 
 wguess = 3;
-lw = 1;
-uw = 5;
+lw = 3;
+uw = 3;
 
 bkgub = 2*min(A(:));
 bkglb = 0.95*min(A(:));
