@@ -6,22 +6,20 @@ close all
 %% User input
 
 path2Cal  = 'F:\Data\Leuven Data\2019\07 - July\2D-DarkField\Small';
-file.path = 'F:\Data\Leuven Data\2019\07 - July\Issues\4p';
-file.ext  = '.ome.tif'; 
+file.path = 'F:\Data\Leuven Data\2019\07 - July\DarkfieldFewParticles\1P';
+file.ext  = '.ome.tif';
+
 focusPlane = 4;%=2 af
-delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
-nParticles = 4;%number of particles expected in the movie has to be exact
-pxSize = 95;%in nm
+width = 0; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
+nParticles = 1;%number of particles expected in the movie has to be exact
 minDist = 3; %in pixels (min distant expected between particles
-scaleBar = 2; %in um
-tail = 20;%Length of the tail in frames, for plotting the traces on top of the movie
-frameRate = 30; %for saving the movie
+pxSize = 95;%in nm
+
 info.type = 'normal';%Transmission or normal movie
 info.runMethod = 'load';
 info.calibrate = false;
 toAnalyze = '.ome.tif';%accepted: .mp4, .ome.tif, folder. (folder that contain folders of .ome.tif.
 outputFolder = 'Results';%name of the folder to output the results
-
 %% Loading
 %we get the zCalibration directory
 folder2Mov = dir(file.path);
@@ -111,6 +109,7 @@ for i = 1:length(fields)
     h = waitbar(0,'Fitting Data');%create waiting bar
     %unSortedData =[];
     planePos = currMov.calibrated.oRelZPos;
+    width = zeros(1,nFrames);
     for j = 1:nFrames
         currentFrame = double(currMov.getFrame(j));
         %inital detection of particles on currentFrame
@@ -119,7 +118,8 @@ for i = 1:length(fields)
         x0 = pos(:,2);
         y0 = pos(:,1);
         %Multiple gaussian fitting occurs here
-        [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame(:,:,focusPlane),x0,y0,dom,nParticles); 
+        [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame(:,:,focusPlane),x0,y0,dom,nParticles,width); 
+        width(j) = (gPar(2) + gPar(3))/2;
         g = reshape(gPar(5:end),[2,nParticles]);
         g = g';
         
@@ -130,7 +130,7 @@ for i = 1:length(fields)
             partData.col = x0(k);
             partData.row = y0(k);
             coord = round(g);
-            [Mag] = Core.MPLocMovie.getZPhasorMag(partData,minDist,currentFrame);
+            %[Mag] = Core.MPLocMovie.getZPhasorMag(partData,minDist,currentFrame);
             ROI = currentFrame(coord(k,2)-minDist:coord(k,2)+minDist,...
             coord(k,1)-minDist:coord(k,1)+minDist,:);
             BW   = imbinarize(uint16(ROI));
@@ -150,6 +150,7 @@ for i = 1:length(fields)
                 z(k) = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
                 z(k) = z(k)*1000;
             end
+            
         end
         
         
@@ -195,7 +196,7 @@ for i = 1:length(fields)
     
     %clear waitbar
     close(h);
-    
+    disp(['The Average fitted width is: ' num2str(mean(width))])
     currentPath = currMov.raw.movInfo.Path;
     %save data to the current folder being analyze
     filename = [currentPath filesep 'LocalizationData.mat'];

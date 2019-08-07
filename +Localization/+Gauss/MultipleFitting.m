@@ -1,5 +1,5 @@
 %Fitting
-function [gpar,resnorm,res] = MultipleFitting(A,X0,Y0,domain,NbG)
+function [gpar,resnorm,res] = MultipleFitting(A,X0,Y0,domain,NbG,width)
 maxNFit = 8;
 if NbG > maxNFit
     error('too many PSF are asked, maximum is 8 for fitting')
@@ -10,9 +10,15 @@ if length(X0) < maxNFit
 end
 radius=(size(A,2)-1)/2;
 
-wguess = 3;
-lw = 3;
-uw = 3;
+if width >0
+    wguess = width;
+    lw = width;
+    uw = width;
+else
+    wguess = 3;
+    lw = 1;
+    uw = 5;
+end
 
 bkgub = 2*min(A(:));
 bkglb = 0.95*min(A(:));
