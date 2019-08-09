@@ -8,8 +8,8 @@ filename=sprintf('%s%s3Dejection%s', path2Save,filesep,ext);
 data = allTraces;
 Trailing = 100;
 frameRate = 50;
-yLimit = [0 65000];
-xLimit = [10000 30000];
+yLimit = [2000 10000];
+xLimit = [12500 22500];
 zLimit = [-4500 -0];
 %% test data type
 
@@ -50,7 +50,7 @@ data(idx2Delete) = [];
 ZStep = 500;
 XBin = 500;
 YBin = 500;
-countBound = [0 50];
+countBound = [0 100];
 
 %Put all the data into a single table
 tableData = data{1};
@@ -85,7 +85,7 @@ figure
 hold on
 for i = 1:size(histData,3)
    subplot(2,round(size(histData,3)/2),i)
-   imagesc(histData(:,:,i));
+   imagesc((yBin(1:end-1)-yBin(1))/1000,(xBin(1:end-1)-xBin(1))/1000,histData(:,:,i));
    caxis(countBound);
    title( ['Z = ' num2str(round(zBin(i)))])
    axis image; 

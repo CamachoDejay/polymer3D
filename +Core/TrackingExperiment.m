@@ -161,9 +161,16 @@ classdef TrackingExperiment < handle
                     
                 else
                     
-                    warning([folder2Mov(i).folder filesep folder2Mov(i).name ' did not contain any ome.Tif and is therefore ignored']);
+                    warning([folder2Mov(i).folder filesep folder2Mov(i).name ' did not contain any ' obj.ext ' file and is therefore ignored']);
                     
                 end
+                
+            end
+            
+            if isempty(obj.trackMovies)              
+               error(['No %s was found. Please check:\n',...
+                   '1) that you gave the correct file extension.\n',...
+                   '2) that you gave the path of a folder containing folders containing movies with the given extension'],obj.ext);        
                 
             end
             disp('=======> DONE ! <========')

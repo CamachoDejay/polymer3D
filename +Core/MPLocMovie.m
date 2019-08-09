@@ -522,7 +522,14 @@ classdef MPLocMovie < Core.MPParticleMovie
             bf = partData.plane(3);
             planePos = obj.calibrated.oRelZPos;
             if nPlanes==1
+                
                 z= 0;
+                row = partData.row(3)*pxSize;
+                col = partData.col(3)*pxSize;
+                zM = z;                      
+                rowM = partData.row(3)*pxSize;
+                colM = partData.col(3)*pxSize;
+                
             else
                 %Get ROI XZ, YZ scaled to same pixel size
                 [Mag] = Core.MPLocMovie.getZPhasorMag(partData,ROIRad,frameData);
@@ -534,29 +541,30 @@ classdef MPLocMovie < Core.MPParticleMovie
                 [Res,~] = SimpleFitting.gauss1D(data,domain,guess);
                 
                 z = Res(2);
+                %if the z position is out of bound we do not consider the data
+                if or(z<min(domain),z>max(domain))
+                    z   = NaN;                           
+                    row = NaN;
+                    col = NaN;
+                    zM   = NaN;                           
+                    rowM = NaN;
+                    colM = NaN;
+                else
+                    tmpZ = floor(z);
+                    fracZ = z-tmpZ;
+                    z = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
+                    z = z*1000;
+
+                    row = partData.row(3)*pxSize;
+                    col = partData.col(3)*pxSize;
+                    zM = z;                      
+                    rowM = partData.row(3)*pxSize;
+                    colM = partData.col(3)*pxSize;
+                
+                end
 
             end
-            %if the z position is out of bound we do not consider the data
-            if or(z<min(domain),z>max(domain))
-                z   = NaN;                           
-                row = NaN;
-                col = NaN;
-                zM   = NaN;                           
-                rowM = NaN;
-                colM = NaN;
-            else
-                tmpZ = floor(z);
-                fracZ = z-tmpZ;
-                z = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
-                z = z*1000;
-                                         
-                row = partData.row(3)*pxSize;
-                col = partData.col(3)*pxSize;
-                zM = z;                      
-                rowM = partData.row(3)*pxSize;
-                colM = partData.col(3)*pxSize;
-                
-            end
+            
             %store the data
             data = table(row,col,z,rowM,colM,zM,...
                    'VariableNames',{'row','col','z','rowM','colM','zM'});
