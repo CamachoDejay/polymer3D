@@ -603,13 +603,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
         % mean-squre-dispracement ('MSD')
         %
         %input parameters; cod is 2D or 3D aray including coordinate of trajectry.
-        if size(coord,1)< size(coord,2)
-
-            coord = coord';
-            warning('vector was wrongly oriented so we took the transpose');
-
-        end
-
+       
         dim = size(coord,2);
 
         switch dim
@@ -649,16 +643,16 @@ classdef MPTrackingMovie < Core.MPLocMovie
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        RMSD = zeros(length(coord)-1,1);
+        RMSD = zeros(size(coord,1)-1,1);
         %Calculate mean-squere-displacement
-        for i = 1:length(coord)-1
+        for i = 1:size(coord,1)-1
 
             stp = i;
             cnt =  1;
             D1  = [];
-            while cnt<=stp && cnt+stp<=length(coord)
+            while cnt<=stp && cnt+stp<=size(coord,1)
 
-                idx = cnt:stp:length(coord);
+                idx = cnt:stp:size(coord,1);
                 DX  = diff(coord(idx,1).');
                 DY  = diff(coord(idx,2).');
                 DZ  = diff(coord(idx,3).');
