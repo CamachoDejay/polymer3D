@@ -234,9 +234,11 @@ classdef MPLocMovie < Core.MPParticleMovie
         function superResolve(obj)
             disp('super resolving positions ... ');
             data2Resolve = obj.particles.List;
+            nPlanes = obj.calibrated.nPlanes;
             sizeS = cellfun(@size,data2Resolve,'UniformOutput',false);
             nParticles = cellfun(@sum,sizeS);
             nParticles = sum(nParticles)-length(nParticles);
+            pxSize = obj.info.pxSize;
             SRList = table(zeros(nParticles,1),...
                     zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
                     zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
@@ -258,8 +260,22 @@ classdef MPLocMovie < Core.MPParticleMovie
                     
                     switch obj.info.zMethod
                         case 'Intensity'
+                            if nPlanes ==1
+                                row  = partData.row(3)*pxSize;
+                                col  = partData.col(3)*pxSize;
+                                z    = partData.z(3);
+                                rowM = partData.row(3)*pxSize;
+                                colM = partData.col(3)*pxSize;
+                                zM   = partData.z(3);
+                                data = table(row,col,z,rowM,colM,zM,...
+                   'VariableNames',{'row','col','z','rowM','colM','zM'});
+
+                            else
+                            
                             fData = obj.getFrame(i);
                             [data] = obj.resolveXYZInt(partData(:,{'row','col','z','ellip','plane'}),fData);
+                            end
+                            
                         case 'PSFE'
                             [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}));
                     end
@@ -523,52 +539,40 @@ classdef MPLocMovie < Core.MPParticleMovie
            
             pxSize = obj.info.pxSize;
             ROIRad = ceil(obj.info.FWHM_px/2+1);
-            
             planes  = partData(~isnan(partData.plane),:).plane;
-            nPlanes = length(planes);
+
             bf = partData.plane(3);
             planePos = obj.calibrated.oRelZPos;
-            if nPlanes==1
-                
-                z= 0;
+            
+            %Get ROI XZ, YZ scaled to same pixel size
+            [Mag] = Core.MPLocMovie.getZPhasorMag(partData,ROIRad,frameData);
+
+            domain = 1:length([Mag.x]);
+            data   = [Mag.x]+[Mag.y];
+            guess.sig = 1.5*obj.info.FWHM_px;
+            guess.mu  = bf;
+            [Res,~] = SimpleFitting.gauss1D(data,domain,guess);
+
+            z = Res(2);
+            %if the z position is out of bound we do not consider the data
+            if or(z<min(domain),z>max(domain))
+                z   = NaN;                           
+                row = NaN;
+                col = NaN;
+                zM   = NaN;                           
+                rowM = NaN;
+                colM = NaN;
+            else
+                tmpZ = floor(z);
+                fracZ = z-tmpZ;
+                z = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
+                z = z*1000;
+
                 row = partData.row(3)*pxSize;
                 col = partData.col(3)*pxSize;
                 zM = z;                      
                 rowM = partData.row(3)*pxSize;
                 colM = partData.col(3)*pxSize;
-                
-            else
-                %Get ROI XZ, YZ scaled to same pixel size
-                [Mag] = Core.MPLocMovie.getZPhasorMag(partData,ROIRad,frameData);
-                
-                domain = 1:length([Mag.x]);
-                data   = [Mag.x]+[Mag.y];
-                guess.sig = 1.5*obj.info.FWHM_px;
-                guess.mu  = bf;
-                [Res,~] = SimpleFitting.gauss1D(data,domain,guess);
-                
-                z = Res(2);
-                %if the z position is out of bound we do not consider the data
-                if or(z<min(domain),z>max(domain))
-                    z   = NaN;                           
-                    row = NaN;
-                    col = NaN;
-                    zM   = NaN;                           
-                    rowM = NaN;
-                    colM = NaN;
-                else
-                    tmpZ = floor(z);
-                    fracZ = z-tmpZ;
-                    z = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
-                    z = z*1000;
-
-                    row = partData.row(3)*pxSize;
-                    col = partData.col(3)*pxSize;
-                    zM = z;                      
-                    rowM = partData.row(3)*pxSize;
-                    colM = partData.col(3)*pxSize;
-                
-                end
 
             end
             

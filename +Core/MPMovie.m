@@ -261,9 +261,8 @@ classdef MPMovie < Core.Movie
                 [data] = getFrame@Core.Movie(obj,idx);
                 
             elseif isstruct(obj.calibrated)
-                fieldsN = fieldnames(obj.calibrated.filePath);
-                movInfo = Load.Movie.tif.getinfo(obj.calibrated.filePath.(fieldsN{1}));
-                data = zeros(movInfo.Length,movInfo.Width,numel(fieldsN));
+                fieldsN = fieldnames(obj.calibrated.filePath);                
+                data = zeros(obj.calibrated.Height,obj.calibrated.Width,numel(fieldsN));
                 for i = 1:numel(fieldsN)
                     %Load plane
                     [mov] = Load.Movie.tif.getframes(obj.calibrated.filePath.(fieldsN{i}),idx);
