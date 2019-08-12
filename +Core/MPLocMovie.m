@@ -234,8 +234,15 @@ classdef MPLocMovie < Core.MPParticleMovie
         function superResolve(obj)
             disp('super resolving positions ... ');
             data2Resolve = obj.particles.List;
+            sizeS = cellfun(@size,data2Resolve,'UniformOutput',false);
+            nParticles = cellfun(@sum,sizeS);
+            nParticles = sum(nParticles)-length(nParticles);
+            SRList = table(zeros(nParticles,1),...
+                    zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
+                    zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
+                    zeros(nParticles,1), zeros(nParticles,1),'VariableNames',...
+                    {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
             
-            SRList = [];
             for i = 1:length(data2Resolve)
             
                 frameData = data2Resolve{i};
@@ -244,15 +251,14 @@ classdef MPLocMovie < Core.MPParticleMovie
                     zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
                     zeros(size(frameData)),zeros(size(frameData)),'VariableNames',...
                     {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
-                if strcmpi(obj.info.zMethod,'Intensity')
-                    fData = obj.getFrame(i);
-                end
+             
                 for j = 1:length(frameData)
                    
                     partData = frameData{j};
                     
                     switch obj.info.zMethod
                         case 'Intensity'
+                            fData = obj.getFrame(i);
                             [data] = obj.resolveXYZInt(partData(:,{'row','col','z','ellip','plane'}),fData);
                         case 'PSFE'
                             [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}));
@@ -264,10 +270,11 @@ classdef MPLocMovie < Core.MPParticleMovie
                     frameData2Store.t(j) = i;
                 
                 end
-             SRList = [SRList;frameData2Store];   
+             startIdx = find(SRList.row==0,1);   
+             SRList(startIdx:startIdx+height(frameData2Store)-1,:) = frameData2Store;   
                 
             end
-            
+     
             %clean up the list
             SRList(isnan(SRList.row),:) = [];
                 

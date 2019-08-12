@@ -5,9 +5,9 @@ close all;
 path2ZCal = [];
 path2SRCal = [];
 
-file.path  = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\TL';
-file.ext   = '.ome.tif';
-path2Cal = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\2DCal';
+file.path  = 'F:\Data\Leuven Data\2019\Johannes\DEbug';
+file.ext   = '.his';
+path2Cal = [];
 dimension = '3D';
 detectParam.delta = 6;
 detectParam.chi2 = 60;
@@ -18,7 +18,7 @@ info.runMethod = 'load'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
 info.zMethod = 'Intensity'; %Intensity or PSFE
-info.calibrate = true; %true to recalibrate;
+info.calibrate = false; %true to recalibrate;
 
 %% create experiments
 
