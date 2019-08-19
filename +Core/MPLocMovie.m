@@ -235,9 +235,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             disp('super resolving positions ... ');
             data2Resolve = obj.particles.List;
             nPlanes = obj.calibrated.nPlanes;
-            sizeS = cellfun(@size,data2Resolve,'UniformOutput',false);
-            nParticles = cellfun(@sum,sizeS);
-            nParticles = sum(nParticles)-length(nParticles);
+            nParticles = sum(obj.particles.nParticles);
             pxSize = obj.info.pxSize;
             SRList = table(zeros(nParticles,1),...
                     zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
