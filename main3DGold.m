@@ -168,7 +168,7 @@ for i = 1:length(fields)
         
         if j>1
             %Tracking based on MSD minimization 
-            newOrder = goldProj.simpleTracking(gPar(5:end),prevPos);
+            newOrder = goldProj.simpleTracking(gPar(5:end),prevPos,'2D');
             %reshaping to format the final data and sorting with new order
             gPos = reshape(gPar(5:end),[2,nParticles]);
             gPos = gPos(:,newOrder);
