@@ -23,11 +23,11 @@ if width.xy >0
 else
     wguessXY = 3;
     lwXY = 1;
-    uwXY = 5;
+    uwXY = 6;
     
     wguessZ = 2;
     lwZ = 0.5;
-    uwZ = 5;
+    uwZ = 8;
 end
 
 bkgub = 0.9  *  max(A(:));
