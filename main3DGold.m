@@ -117,6 +117,7 @@ for i = 1:length(fields)
  
         x0 = pos(:,2);
         y0 = pos(:,1);
+         
         %Multiple gaussian fitting occurs here
         [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame(:,:,focusPlane),x0,y0,dom,nParticles,width); 
         width(j) = (gPar(2) + gPar(3))/2;
