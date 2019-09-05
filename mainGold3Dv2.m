@@ -6,13 +6,13 @@ close all
 %% User input
 
 path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\08 - Aug\test3D Fitting\2DCal';
-file.path = 'D:\Documents\Unif\PhD\2019-Data\08 - Aug\test3D Fitting\1p';
+file.path = 'D:\Documents\Unif\PhD\2019-Data\09 - Sep\2P';
 file.ext  = '.ome.tif';
 
 focusPlane = 4;%=2 af
-width.xy = 0; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
-width.z  = 0;%see above
-nParticles = 1;%number of particles expected in the movie has to be exact
+width.xy = 3; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
+width.z  = 4;%see above
+nParticles = 2;%number of particles expected in the movie has to be exact
 minDist = 3; %in pixels (min distant expected between particles
 pxSize = 95;%in nm
 cropRadius = 30; %cut the frame to reduce the amount of data to be fitted
