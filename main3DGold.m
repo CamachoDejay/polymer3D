@@ -4,13 +4,12 @@ clc
 close all
 
 %% User input
-
-path2Cal  = 'F:\Data\Leuven Data\2019\07 - July\2D-DarkField\Small';
-file.path = 'F:\Data\Leuven Data\2019\07 - July\DarkfieldFewParticles\1P';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\08 - Aug\test3D Fitting\2DCal';
+file.path = 'D:\Documents\Unif\PhD\2019-Data\08 - Aug\test3D Fitting\1p';
 file.ext  = '.ome.tif';
 
 focusPlane = 4;%=2 af
-width = 0; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
+width = 3; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
 nParticles = 1;%number of particles expected in the movie has to be exact
 minDist = 3; %in pixels (min distant expected between particles
 pxSize = 95;%in nm
