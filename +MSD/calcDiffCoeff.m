@@ -18,11 +18,12 @@ function D = calcDiffCoeff(msd,fitRange,dim)
     end
 
     assert(min(size(msd))==1,'MSD needs to be provided as a vector')
-    assert(and(round(fitRange) == fitRange,isnumeric(fitRange)),'fit Range needs to be numerical interger');
+    assert(and(fitRange<=1,isnumeric(fitRange)),'fit Range needs to be numerical between 0 and 1');
     
-    tofit = msd(1:fitRange);
+    tofit = msd(1:round(fitRange*length(msd)));
+
     tau   = 1:length(tofit);
-    f     = fit(tofit,tau,'a*x+b');
+    f     = fit(tau(:),tofit(:),'a*x+b');
     
     g = coeffvalues(f);
     D = g(1)/div;
