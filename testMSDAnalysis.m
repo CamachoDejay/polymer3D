@@ -55,13 +55,13 @@ for i = 1: size(data,2)
         coord = coord-CM;
         
         msd = MSD.calc(coord/10^3,'3D');%convert to um;
-        D   = MSD.calcDiffCoeff(msd,fitRDiff,'3D');
+        D   = MSD.getDiffCoeff(msd,fitRDiff,'3D');
         D   = D/expTime;%convert from frame to s-1
-        n   = MSD.calcViscosity(D,R);
+        n   = MSD.getViscosity(D,R);
         
-        alpha = MSD.detDiffTypeAlpha(msd,expTime);
+        alpha = MSD.getDiffTypeAlpha(msd,expTime);
         if alpha < 1
-            rConf = MSD.detConfVol(msd,fitRConf);
+            rConf = MSD.getConfRad(msd,fitRConf,expTime);
         else
             rConf = NaN;
         end

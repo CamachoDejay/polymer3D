@@ -18,11 +18,11 @@
 %   - rConf: Confinement radius = sqrt(y0+A0), unit is the same as the
 %            input unit of msd;
 
-function [rConf] = detConfVol(msd,fitRange)
+function [rConf] = getConfRad(msd,fitRange,expTime)
      
-    domain = (1:round(fitRange*length(msd)));
+    domain = (1:round(fitRange*length(msd)))*expTime;
     toFit  = msd(1:round(fitRange*length(msd)));
-    initGuess = [max(toFit),min(toFit),mean(toFit)];
+    initGuess = [max(toFit)-min(toFit),min(toFit),mean(toFit)];
     
     [fPar,resnorm,res] = lsqcurvefit(@invExp,initGuess,...
             domain(:),toFit(:));
