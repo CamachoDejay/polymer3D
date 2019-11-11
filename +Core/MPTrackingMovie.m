@@ -596,7 +596,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             
             checkRes = abs(Z1-Z2) <= Thresh;
         end 
-            
+    end
     methods (Access = private)
         
         function [traces3D ] = get3DTraces(obj)

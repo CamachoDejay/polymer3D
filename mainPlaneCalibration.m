@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PhD\2019-Data\08 - Aug\test3D Fitting\2DCal';
+file.path  = 'D:\TmpData\Extended\2DCal';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';

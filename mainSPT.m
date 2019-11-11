@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'F:\Data\Leuven Data\2019\06 - June\Roger\ZPos\test 2DTrans 1000\Atempt_1';
-path2Cal  =  [];
+file.path =  'E:\Roger\20191107\Particles\4P_2';
+path2Cal  =  'E:\Roger\20191107\2D';
 
 file.ext = '.ome.tif';
 
@@ -21,7 +21,7 @@ file.ext = '.ome.tif';
 
 detectParam.delta = 6;
 detectParam.chi2 = 20;
-info.type = 'transmission';
+info.type = 'normal';
 %info.frame2Load = 1:50; % if want to analyze only part of the movie(full
 %is default)
 info.runMethod = 'run'; %will avoid the question to user to pop by giving

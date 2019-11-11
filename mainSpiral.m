@@ -6,7 +6,7 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'F:\Data\Leuven Data\2019\04 - April\4\SPiral';
+filePath = 'D:\TmpData\Extended\Helix';
 ignoreF = 6;
 dim = 'z';
 period = 20;
@@ -46,7 +46,7 @@ for i = 1:length(traces)
     
     Spiral{i} = [cXMot - mean(cXMot),cYMot - mean(cYMot),cZMot - mean(cZMot),frame(:)];
     
-    cFrames = cTrace.frame;
+    cFrames = cTrace.t;
     alignedTraces{i} = [cTrace.col - mean(cTrace.col) + mean(Spiral{i}(cFrames,1)),...
         cTrace.row - mean(cTrace.row) + mean(Spiral{i}(cFrames,2)),...
         cTrace.z - mean(cTrace.z) + mean(Spiral{i}(cFrames,3)),cFrames,ones(length(cFrames),1)*cFile];
@@ -108,15 +108,15 @@ res = 50;
 [sx,sy,sz]= sphere(nfacets);
 figure
 hold on
-plot3(cSpiral(:,1),cSpiral(:,2),cSpiral(:,3),'LineWidth',3);
-
-for i = 1:length(cSpiral(:,1))
-    Sx = sx*res+cSpiral(i,1);
-    Sy = sy*res+cSpiral(i,2);
-    Sz = sz*res+cSpiral(i,3);
-    surf(Sx,Sy,Sz)
-    
-end
+% plot3(cSpiral(:,1),cSpiral(:,2),cSpiral(:,3),'LineWidth',3);
+% 
+% for i = 1:length(cSpiral(:,1))
+%     Sx = sx*res+cSpiral(i,1);
+%     Sy = sy*res+cSpiral(i,2);
+%     Sz = sz*res+cSpiral(i,3);
+%     surf(Sx,Sy,Sz)
+%     
+% end
 hold on
 for i = 1: length(traces)
 

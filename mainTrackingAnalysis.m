@@ -6,7 +6,7 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'F:\Data\Leuven Data\2019\04 - April\4\XYZ - OD50\Z';
+filePath = 'D:\TmpData\Extended\OD25\Z';
 dim = 'z';
 period = 20;
 idx2Plot = 1;

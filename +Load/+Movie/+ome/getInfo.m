@@ -141,7 +141,7 @@ function [k1, k2, k3, k4, nFrames] = indexFrameHeader(frameHeader)
             duplicate = val(Ncount>2);
             nWrong = length(duplicate);
             disp([num2str(nWrong) ' wrong lines found']);
-            if nWrong > 0.01*nFrames
+            if nWrong > ceil(0.01*nFrames)
                 error('More than 1% of the data has mistakes, cannot pursue')
             end
             
@@ -202,6 +202,11 @@ end
 function [checkRes] = checkFrameInfo(frameInfo)
     disp('checking Camera synchronization');
     frame2Comp = 10;
+    if size(frameInfo,1) < frame2Comp
+       
+        frame2Comp = size(frameInfo,1);
+        
+    end
     cellC = {frameInfo.C};
     matC = cellfun(@str2num,cellC);
     %We check the first 20 frames as they should be perfectly synchronized

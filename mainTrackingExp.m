@@ -5,9 +5,9 @@ close all;
 path2ZCal = [];
 path2SRCal = [];
 
-file.path  = 'F:\Data\Leuven Data\2019\Johannes\DEbug';
-file.ext   = '.his';
-path2Cal = [];
+file.path  = 'D:\TmpData\Extended\Helix';
+file.ext   = '.ome.tif';
+path2Cal = 'D:\TmpData\Extended\2DCal';
 dimension = '3D';
 detectParam.delta = 6;
 detectParam.chi2 = 60;
@@ -29,7 +29,7 @@ trackingExp = Core.TrackingExperiment(file,path2Cal,info,path2SRCal,path2ZCal);
 trackingExp.retrieveMovies;
 
 %% test detection parameters
-frame = 65;
+frame = 20;
 testMov = trackingExp.trackMovies.mov1;
 testMov.findCandidatePos(detectParam,frame);
 testMov.showCandidate(frame);
@@ -50,7 +50,7 @@ traces = trackingExp.getTraces3D;
 
 %% Get MSD
 
-[MSD,~] = trackingExp.getRMSD(dimension);
+[MSD,~] = trackingExp.getMSD(dimension);
 %% show traces
 
 trackingExp.showTraces(1);

@@ -303,7 +303,7 @@ classdef TrackingExperiment < handle
             
         end
         
-        function [MSD,traces] = getRMSD(obj,dimension)
+        function [msd,traces] = getMSD(obj,dimension)
             
             assert(~isempty(obj.traces3D),'You need to extract 3D traces before extracting RMSD');
             
@@ -321,7 +321,7 @@ classdef TrackingExperiment < handle
                     error('too many input arguments');
                     
             end
-            MSD = cell(traces);
+            msd = cell(traces);
             MSDmat = zeros(obj.trackMovies.('mov1').raw.movInfo.maxFrame(1),length(traces));
             for i = 1 : size(traces,1)
                 
@@ -329,12 +329,12 @@ classdef TrackingExperiment < handle
                 
                 if size(traces{i},1)>1
                     coord = [currentTrace.col,currentTrace.row,currentTrace.z];
-                    [RMSD,~] = Core.MPTrackingMovie.calcMeanSqrD(coord,dimension);
-                    currentTrace.RMSD = zeros(size(currentTrace.row,1),1);
-                    currentTrace.RMSD(1:end-1) = RMSD;
+                    [msdTmp,~] = MSD.calc(coord,dimension);
+                    currentTrace.MSD = zeros(size(currentTrace.row,1),1);
+                    currentTrace.MSD(1:end-1) = msdTmp;
                     traces{i} = currentTrace;
-                    MSD{i} = RMSD;
-                    MSDmat(1:length(RMSD),i) = RMSD(:);
+                    msd{i} = msdTmp;
+                    MSDmat(1:length(msdTmp),i) = msdTmp(:);
                 end
                
             end 
@@ -343,8 +343,8 @@ classdef TrackingExperiment < handle
             idx = cellfun(@sum,idxMat,'UniformOutput',1);
             %delete traces where no MSD was calculated 
             traces(logical(~idx),:) = [];
-            MSD(logical(~idx),:) = [];
-            obj.MSD = MSD;
+            msd(logical(~idx),:) = [];
+            obj.MSD = msd;
             obj.traces3D = traces;    
             
         end
