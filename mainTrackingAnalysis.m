@@ -5,12 +5,13 @@ clear;
 close all;
 clc;
 %% USER INPUT
-
+%TODO: Use the motor motion to align traces on top of one another
 filePath = 'D:\TmpData\Extended\OD25\Z';
 dim = 'z';
 period = 20;
+minLength = 160;
 idx2Plot = 1;
-stepApplied = 200;
+stepApplied = 100;
 %% LOADING
 
 fileName = [filePath filesep 'trackResults.mat'];
@@ -20,14 +21,13 @@ name = fieldnames(trackData);
 trackData = trackData.(name{1});
 
 %% Process Data
-
 traces = trackData.traces(:,1);
 [stepMot,mot] = getMotor(trackData,dim);
 
 lenTraces = cellfun(@height,traces);
 %only keep traces that have been measured for one period at least
-traces(lenTraces<period)= [];
-trackData.traces(lenTraces<period,:) = [];
+traces(lenTraces<minLength)= [];
+trackData.traces(lenTraces<minLength,:) = [];
 nTraces = length(traces);
 
 fileRef = cell2mat(trackData.traces(:,2));

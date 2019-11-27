@@ -11,7 +11,7 @@ ignoreF = 6;
 dim = 'z';
 period = 20;
 idx2Plot = 3;
-stepApplied = 200;
+stepApplied = 50;
 longTraceThresh = 10;
 %% LOADING
 
@@ -108,15 +108,15 @@ res = 50;
 [sx,sy,sz]= sphere(nfacets);
 figure
 hold on
-% plot3(cSpiral(:,1),cSpiral(:,2),cSpiral(:,3),'LineWidth',3);
-% 
-% for i = 1:length(cSpiral(:,1))
-%     Sx = sx*res+cSpiral(i,1);
-%     Sy = sy*res+cSpiral(i,2);
-%     Sz = sz*res+cSpiral(i,3);
-%     surf(Sx,Sy,Sz)
-%     
-% end
+plot3(cSpiral(:,1),cSpiral(:,2),cSpiral(:,3),'LineWidth',3);
+
+for i = 1:length(cSpiral(:,1))
+    Sx = sx*res+cSpiral(i,1);
+    Sy = sy*res+cSpiral(i,2);
+    Sz = sz*res+cSpiral(i,3);
+    surf(Sx,Sy,Sz)
+    
+end
 hold on
 for i = 1: length(traces)
 

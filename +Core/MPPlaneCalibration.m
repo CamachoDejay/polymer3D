@@ -229,7 +229,7 @@ classdef MPPlaneCalibration < handle
                     distBetweenPlanes = abs(diff(zPos));
                     distBetweenPlanes = distBetweenPlanes(1:2:end);
                     offTarget = mean(distBetweenPlanes);
-                end
+            end
            fprintf('The difference between the target and the current plane conformation \nis %d nm',round(offTarget*1000));
 
         end
