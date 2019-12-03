@@ -5,7 +5,7 @@ close all;
 path2ZCal = [];
 path2SRCal = [];
 
-file.path  = 'D:\TmpData\Extended\OD25\Z';
+file.path  = 'D:\TmpData\Extended\OD25\test';
 file.ext   = '.ome.tif';
 path2Cal = 'D:\TmpData\Extended\2DCal';
 dimension = '3D';
@@ -14,7 +14,7 @@ detectParam.chi2 = 80;
 
 %% Storing info about the file
 info.type = 'normal'; %normal or transmission
-info.runMethod = 'run'; % load or run
+info.runMethod = 'load'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
 info.zMethod = 'Intensity'; %Intensity or PSFE

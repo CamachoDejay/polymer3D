@@ -233,66 +233,76 @@ classdef MPLocMovie < Core.MPParticleMovie
                 
         function superResolve(obj)
             disp('super resolving positions ... ');
-            data2Resolve = obj.particles.List;
-            nPlanes = obj.calibrated.nPlanes;
-            nParticles = sum(obj.particles.nParticles);
-            pxSize = obj.info.pxSize;
-            SRList = table(zeros(nParticles,1),...
-                    zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
-                    zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
-                    zeros(nParticles,1), zeros(nParticles,1),'VariableNames',...
-                    {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
             
-            for i = 1:length(data2Resolve)
-            
-                frameData = data2Resolve{i};
-                frameData2Store = table(zeros(size(frameData)),...
-                    zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
-                    zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
-                    zeros(size(frameData)),zeros(size(frameData)),'VariableNames',...
-                    {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
-             
-                for j = 1:length(frameData)
-                   
-                    partData = frameData{j};
-                    
-                    switch obj.info.zMethod
-                        case 'Intensity'
-                            if nPlanes ==1
-                                row  = partData.row(3)*pxSize;
-                                col  = partData.col(3)*pxSize;
-                                z    = partData.z(3);
-                                rowM = partData.row(3)*pxSize;
-                                colM = partData.col(3)*pxSize;
-                                zM   = partData.z(3);
-                                data = table(row,col,z,rowM,colM,zM,...
-                   'VariableNames',{'row','col','z','rowM','colM','zM'});
+            %Check if some particle were super resolved already:
+            [run,SRList] = obj.existZResParticles(obj.info.runMethod,obj.raw.movInfo.Path,'.mat');
+           
+            if run
+                data2Resolve = obj.particles.List;
+                nPlanes = obj.calibrated.nPlanes;
+                nParticles = sum(obj.particles.nParticles);
+                pxSize = obj.info.pxSize;
+                SRList = table(zeros(nParticles,1),...
+                        zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
+                        zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
+                        zeros(nParticles,1), zeros(nParticles,1),'VariableNames',...
+                        {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
 
-                            else
-                            
-                            fData = obj.getFrame(i);
-                            [data] = obj.resolveXYZInt(partData(:,{'row','col','z','ellip','plane'}),fData);
-                            end
-                            
-                        case 'PSFE'
-                            [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}));
+                for i = 1:length(data2Resolve)
+
+                    frameData = data2Resolve{i};
+                    frameData2Store = table(zeros(size(frameData)),...
+                        zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
+                        zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
+                        zeros(size(frameData)),zeros(size(frameData)),'VariableNames',...
+                        {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
+
+                    for j = 1:length(frameData)
+
+                        partData = frameData{j};
+
+                        switch obj.info.zMethod
+                            case 'Intensity'
+                                if nPlanes ==1
+                                    row  = partData.row(3)*pxSize;
+                                    col  = partData.col(3)*pxSize;
+                                    z    = partData.z(3);
+                                    rowM = partData.row(3)*pxSize;
+                                    colM = partData.col(3)*pxSize;
+                                    zM   = partData.z(3);
+                                    data = table(row,col,z,rowM,colM,zM,...
+                       'VariableNames',{'row','col','z','rowM','colM','zM'});
+
+                                else
+
+                                fData = obj.getFrame(i);
+                                [data] = obj.resolveXYZInt(partData(:,{'row','col','z','ellip','plane'}),fData);
+                                end
+
+                            case 'PSFE'
+                                [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}));
+                        end
+
+                        frameData2Store(j,{'row','col','z','rowM','colM','zM'}) = data;
+                        frameData2Store.intensity(j) = partData.intensity(3);
+                        frameData2Store.SNR(j) = partData.SNR(3);
+                        frameData2Store.t(j) = i;
+
                     end
-                        
-                    frameData2Store(j,{'row','col','z','rowM','colM','zM'}) = data;
-                    frameData2Store.intensity(j) = partData.intensity(3);
-                    frameData2Store.SNR(j) = partData.SNR(3);
-                    frameData2Store.t(j) = i;
-                
+                startIdx = find(SRList.row==0,1);   
+                SRList(startIdx:startIdx+height(frameData2Store)-1,:) = frameData2Store;   
+
                 end
-             startIdx = find(SRList.row==0,1);   
-             SRList(startIdx:startIdx+height(frameData2Store)-1,:) = frameData2Store;   
-                
+
+                %clean up the list
+                SRList(isnan(SRList.row),:) = [];
             end
-     
-            %clean up the list
-            SRList(isnan(SRList.row),:) = [];
-                
-            obj.particles.SRList = SRList;    
+            
+            obj.particles.SRList = SRList;
+            particle = obj.particles;
+            %Save the data
+            fileName = sprintf('%s%sparticle.mat',obj.raw.movInfo.Path,'\');
+            save(fileName,'particle');
             disp('========> DONE ! <=========');
             
         end
@@ -549,7 +559,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             data   = [Mag.x]+[Mag.y];
             guess.sig = 1.5*obj.info.FWHM_px;
             guess.mu  = bf;
-            [Res,~] = SimpleFitting.gauss1D(data,domain,guess);
+            [Res,fit] = SimpleFitting.gauss1D(data,domain,guess);
 
             z = Res(2);
             %if the z position is out of bound we do not consider the data
@@ -573,7 +583,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 colM = partData.col(3)*pxSize;
 
             end
-            
+            clf
             %store the data
             data = table(row,col,z,rowM,colM,zM,...
                    'VariableNames',{'row','col','z','rowM','colM','zM'});
@@ -611,10 +621,44 @@ classdef MPLocMovie < Core.MPParticleMovie
             end
             
             
-        end     
+        end
+        
     end
     
     methods (Static)
+        function [run, SRList] = existZResParticles(runMethod,Path, ext)
+            SRList = [];
+            switch runMethod
+                case 'load'
+                    [file2Analyze] = Core.Movie.getFileInPath(Path, ext);
+                    %Check if some candidate were already stored
+                    if any(contains({file2Analyze.name},'particle')==true)
+                        particle = load([file2Analyze(1).folder filesep 'particle.mat']);
+                        particle = particle.particle;
+                        if isfield(particle,'SRList')
+                            if ~isempty(particle.SRList)
+                                run = false;
+                                SRList = particle.SRList;
+                            else
+                                run = true;
+                            end
+                        else
+                            run = true;
+                        end
+                    else
+                
+                        run = true;
+                        
+                
+                    end
+                    
+                case 'run'
+                    
+                     run = true;
+                     
+                     
+            end
+        end
         function [Mag] = getZPhasorMag(partData,ROIRad,volIm)
 
         %Possible improvement : Translate the coordinate of the best
