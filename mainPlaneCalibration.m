@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PhD\2019-Data\11 - Nov\15 - 3DSwarm Test\2D';
+file.path  = 'D:\TmpData\Interleaved\2DCal';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';

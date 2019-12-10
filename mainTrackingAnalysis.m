@@ -6,7 +6,7 @@ close all;
 clc;
 %% USER INPUT
 %TODO: Use the motor motion to align traces on top of one another
-filePath = 'D:\TmpData\Extended\OD25\Z';
+filePath = 'D:\TmpData\Extended\OD25\test';
 dim = 'z';
 period = 20;
 minLength = 160;
@@ -28,6 +28,7 @@ lenTraces = cellfun(@height,traces);
 %only keep traces that have been measured for one period at least
 traces(lenTraces<minLength)= [];
 trackData.traces(lenTraces<minLength,:) = [];
+lenTraces(lenTraces<minLength) =[];
 nTraces = length(traces);
 
 fileRef = cell2mat(trackData.traces(:,2));

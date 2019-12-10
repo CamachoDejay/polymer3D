@@ -1,4 +1,4 @@
-%Fitting
+  %Fitting
 function [gpar,resnorm,res] = MultipleGFit3D(A,X0,Y0,Z0,domain,NbG,width)
 maxNFit = 5;
 if NbG > maxNFit
@@ -13,8 +13,8 @@ end
 if width.xy >0
     
     wguessXY = width.xy;
-    lwXY = width.xy;
-    uwXY = width.xy;
+    lwXY = width.xy-width.xy/2;
+    uwXY = width.xy+width.xy/2;
 else
     wguessXY = 3;
     lwXY = 1;
@@ -24,8 +24,8 @@ end
 
 if width.z >0
     wguessZ = width.z;
-    lwZ = width.z;
-    uwZ = width.z;
+    lwZ = width.z-width.z/2;
+    uwZ = width.z+width.z/2;
     
 else
     
@@ -36,25 +36,39 @@ else
 end
 
 bkgub = 0.9  *  max(A(:));
-bkglb = 0.95 * min(A(:));
+bkglb = 0.10 * min(A(:));
 Bkg0 = median(A(:));
 % PSFMicroscope=350; %nm
 % PSF=PSFMicroscope/160/2.355; %pixel
+minDomX = min(min(min(domain(:,:,:,1))));
+minDomY = min(min(min(domain(:,:,:,2))));
+minDomZ = min(min(min(domain(:,:,:,3))));
+
+maxDomX = max(max(max(domain(:,:,:,1))));
+maxDomY = max(max(max(domain(:,:,:,2))));
+maxDomZ = max(max(max(domain(:,:,:,3))));
+
+
+maxAbsDomX = max(max(max(abs(domain(:,:,:,1)))));
+maxAbsDomY = max(max(max(abs(domain(:,:,:,2)))));
+maxAbsDomZ = max(max(max(abs(domain(:,:,:,3)))));
 
 curvefitoptions = optimset('Display','off');
 % LOWER BOUND FOR FITTING PARAMETER
 %[peak Int,     sigma X,    sigma Y,        Bkg,            mean X,         mean Y
 lb        = [0.5*(max(A(:))-min(A(:)))              lwXY      lwZ         bkglb...
-       min(domain(:))        min(domain(:))     min(domain(:))        min(domain(:))...
-       min(domain(:))        min(domain(:))     min(domain(:))        min(domain(:))...
-       min(domain(:))        min(domain(:))     min(domain(:))        min(domain(:))...
-       min(domain(:))        min(domain(:))     min(domain(:))]; 
+       minDomX        minDomY     minDomZ-0.1*maxAbsDomZ...
+       minDomX        minDomY     minDomZ-0.1*maxAbsDomZ...
+       minDomX        minDomY     minDomZ-0.1*maxAbsDomZ...
+       minDomX        minDomY     minDomZ-0.1*maxAbsDomZ...
+       minDomX        minDomY     minDomZ-0.1*maxAbsDomZ]; 
 % UPPER BOUND FOR FITTING PARAMETER
 ub        = [1.2*(max(A(:)))  uwXY      uwZ        bkgub ...
-    max(domain(:))  max(domain(:))  max(domain(:))    max(domain(:))...
-    max(domain(:))  max(domain(:))  max(domain(:))    max(domain(:))...
-    max(domain(:))  max(domain(:))  max(domain(:))    max(domain(:))...
-    max(domain(:))  max(domain(:))  max(domain(:))];
+    maxDomX        minDomY     maxDomZ+0.1*maxAbsDomZ...
+    maxDomX        minDomY     maxDomZ+0.1*maxAbsDomZ...
+    maxDomX        minDomY     maxDomZ+0.1*maxAbsDomZ...
+    maxDomX        minDomY     maxDomZ+0.1*maxAbsDomZ...
+    maxDomX        minDomY     maxDomZ+0.1*maxAbsDomZ];
 
 lb = lb(1,1:4+(NbG)*3);
 ub = ub(1,1:4+(NbG)*3);

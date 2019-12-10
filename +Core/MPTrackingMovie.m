@@ -276,8 +276,8 @@ classdef MPTrackingMovie < Core.MPLocMovie
             pos.row = currentTraces.row - mainPos(1);
             pos.col = currentTraces.col - mainPos(2);% + roiRadius + 1/2;
             pos.z   = currentTraces.z;
-            framesIm = frames(ismember(frames,currentTraces.frame));
-            framesPos = find(ismember(currentTraces.frame,frames));
+            framesIm = frames(ismember(frames,currentTraces.t));
+            framesPos = find(ismember(currentTraces.t,frames));
             nFrames = length(framesIm);
              mov = struct('cdata', cell(1,nFrames), 'colormap', cell(1,nFrames));
              Fig = figure('pos',[100 100 1200 375]);
@@ -300,6 +300,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
                 subplot(2,obj.calibrated.nPlanes/2+2,[1,2,7,8])
                 scatter3(pos.col(1:j),pos.row(1:j),...
                     pos.z(1:j),25,pos.z(1:j),'filled');
+                title(['Frame' num2str(currentTraces.t(j))])
                 lim = [-roiRadius*pxSize,roiRadius*pxSize]; 
                 xlim(lim) 
                 ylim(lim)
@@ -341,6 +342,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
                     caxis([min(min(min(ROI))) max(max(max(ROI)))]);
                     set(gca,'visible','off');
                     set(gcf,'color','w');
+                   
                     axis image;
 
                     colormap('hot')

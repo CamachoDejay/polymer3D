@@ -155,7 +155,10 @@ classdef MPLocMovie < Core.MPParticleMovie
             if isempty(obj.ZCal)
                 
                 warning('Z Calibration needed to correct the data, using Intensity instead');
-                obj.addInfo('zMethod','Intensity');
+                if strcmp(obj.info.zMethod,'PSFE')
+                    error('zMethod is selected is PSFE while no z calibration was provided')
+                end
+             
                 obj.corrected.Z = false;
                 disp('========> DONE ! <=========');
             end
@@ -169,7 +172,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             zCal = obj.ZCal;
             zMethod = obj.info.zMethod;
             
-            if strcmp(zMethod,'Intensity')
+            if or(strcmp(zMethod,'Intensity'),strcmp(zMethod,'3DFit'))
                 obj.corrected.Z = false;
                
             elseif strcmp(zMethod,'PSFE')
@@ -247,8 +250,9 @@ classdef MPLocMovie < Core.MPParticleMovie
                         zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
                         zeros(nParticles,1), zeros(nParticles,1),'VariableNames',...
                         {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
-
-                for i = 1:length(data2Resolve)
+                nFrames = length(data2Resolve);
+                h = waitbar(0,'SuperResolving position...');
+                for i = 1:nFrames
 
                     frameData = data2Resolve{i};
                     frameData2Store = table(zeros(size(frameData)),...
@@ -256,7 +260,9 @@ classdef MPLocMovie < Core.MPParticleMovie
                         zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
                         zeros(size(frameData)),zeros(size(frameData)),'VariableNames',...
                         {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
-
+                    if i == 39
+                        disp('stop')
+                    end
                     for j = 1:length(frameData)
 
                         partData = frameData{j};
@@ -278,6 +284,22 @@ classdef MPLocMovie < Core.MPParticleMovie
                                 fData = obj.getFrame(i);
                                 [data] = obj.resolveXYZInt(partData(:,{'row','col','z','ellip','plane'}),fData);
                                 end
+                            case '3DFit'
+                                if nPlanes ==1
+                                    row  = partData.row(3)*pxSize;
+                                    col  = partData.col(3)*pxSize;
+                                    z    = partData.z(3);
+                                    rowM = partData.row(3)*pxSize;
+                                    colM = partData.col(3)*pxSize;
+                                    zM   = partData.z(3);
+                                    data = table(row,col,z,rowM,colM,zM,...
+                       'VariableNames',{'row','col','z','rowM','colM','zM'});
+
+                                else
+
+                                fData = obj.getFrame(i);
+                                [data] = obj.resolveXYZ3DFit(partData(:,{'row','col','z','ellip','plane'}),fData);
+                                end
 
                             case 'PSFE'
                                 [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}));
@@ -291,9 +313,9 @@ classdef MPLocMovie < Core.MPParticleMovie
                     end
                 startIdx = find(SRList.row==0,1);   
                 SRList(startIdx:startIdx+height(frameData2Store)-1,:) = frameData2Store;   
-
+                waitbar(i/nFrames,h,['SuperResolving positions: frame ' num2str(i) '/' num2str(nFrames) ' done']);
                 end
-
+                close(h);
                 %clean up the list
                 SRList(isnan(SRList.row),:) = [];
             end
@@ -543,7 +565,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             
         end
          
-        function [data]  = resolveXYZInt(obj,partData,frameData)
+        function [data] = resolveXYZInt(obj,partData,frameData)
            
             pxSize = obj.info.pxSize;
             ROIRad = ceil(obj.info.FWHM_px/2+1);
@@ -555,10 +577,10 @@ classdef MPLocMovie < Core.MPParticleMovie
             %Get ROI XZ, YZ scaled to same pixel size
             [Mag] = Core.MPLocMovie.getZPhasorMag(partData,ROIRad,frameData);
 
-            domain = 1:length([Mag.x]);
+            domain = planePos;
             data   = [Mag.x]+[Mag.y];
-            guess.sig = 1.5*obj.info.FWHM_px;
-            guess.mu  = bf;
+            guess.sig = 2*obj.info.FWHM_px*pxSize/1000;
+            guess.mu  = planePos(bf);
             [Res,fit] = SimpleFitting.gauss1D(data,domain,guess);
 
             z = Res(2);
@@ -571,9 +593,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 rowM = NaN;
                 colM = NaN;
             else
-                tmpZ = floor(z);
-                fracZ = z-tmpZ;
-                z = planePos(tmpZ)+fracZ*(planePos(tmpZ+1) - planePos(tmpZ));
+
                 z = z*1000;
 
                 row = partData.row(3)*pxSize;
@@ -583,10 +603,69 @@ classdef MPLocMovie < Core.MPParticleMovie
                 colM = partData.col(3)*pxSize;
 
             end
-            clf
+           
             %store the data
             data = table(row,col,z,rowM,colM,zM,...
                    'VariableNames',{'row','col','z','rowM','colM','zM'});
+            
+        end
+        
+        function [data] = resolveXYZ3DFit(obj,partData,frameData)
+             
+            pxSize = obj.info.pxSize;
+            ROIRad = ceil(obj.info.FWHM_px/2+1);
+
+            bf = partData.plane(3);
+            planePos = obj.calibrated.oRelZPos;
+            
+            imSize = size(frameData);
+            pos = [round(nanmean(partData.row)),round(nanmean(partData.col))];
+
+            ROIs = Misc.getROIs(pos,ROIRad,imSize(1:2));
+
+            ROI = frameData(ROIs(1):ROIs(2),ROIs(3):ROIs(4),:);
+            
+            x0 = mean([ROIs(3) ROIs(4)])*pxSize;
+            y0 = mean([ROIs(1) ROIs(2)])*pxSize;
+      
+            z0 = planePos(bf)*1000;
+            width.xy = 200;
+            width.z  = 600;
+            
+            x = (ROIs(3):ROIs(4))*pxSize;
+            y = (ROIs(1):ROIs(2))*pxSize;
+            z = planePos*1000;
+         
+            [domX,domY,domZ] = meshgrid(x,y,z);
+           
+            dom(:,:,:,1) = domX;
+            dom(:,:,:,2) = domY;
+            dom(:,:,:,3) = domZ;
+
+            %Multiple gaussian fitting occurs here
+            [gPar,resnorm,res] = Localization.Gauss.MultipleGFit3D(ROI,x0,y0,z0,dom,1,width);
+            z = gPar(:,7);
+            
+           
+
+            if or(z<min(planePos*1000),z>max(planePos*1000))
+                z   = NaN;                     
+                row = NaN;
+                col = NaN;
+                zM   = NaN;                           
+                rowM = NaN;
+                colM = NaN;
+            else
+                row = partData.row(3)*pxSize;
+                col = partData.col(3)*pxSize;
+                zM = z;                      
+                rowM = partData.row(3)*pxSize;
+                colM = partData.col(3)*pxSize;
+            end
+            %store the data
+            data = table(row,col,z,rowM,colM,zM,...
+                   'VariableNames',{'row','col','z','rowM','colM','zM'});
+            
             
         end
         

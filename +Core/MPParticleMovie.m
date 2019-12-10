@@ -242,6 +242,10 @@ classdef MPParticleMovie < Core.MPMovie
                               case 'Intensity'
                                  %we do not do anythin at the moment.
                                  focusMetric = abs(fCandMet.fMetric);
+                                 
+                              case '3DFit'
+                                 %we do not do anythin at the moment.
+                                 focusMetric = abs(fCandMet.fMetric);
                               case 'PSFE' 
                                 [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.fMetric);
                           end
@@ -519,7 +523,7 @@ classdef MPParticleMovie < Core.MPMovie
                 [checkRes2] = Core.MPParticleMovie.checkEllipticity(current.ellip,...
                 next.ellip,direction);
             
-            elseif strcmp(zMethod,'Intensity')
+            elseif or(strcmp(zMethod,'Intensity'),strcmp(zMethod,'3DFit'))
                 
                 checkRes2 = checkRes1;
                 
@@ -592,7 +596,7 @@ classdef MPParticleMovie < Core.MPMovie
             %Here we will check that the consolidation found based on the
             %best focused particle make sense with what we would expect and
             %also that we have enough planes.
-            if strcmp(zMethod,'Intensity')
+            if or(strcmp(zMethod,'Intensity'),strcmp(zMethod,'3DFit'))
                 if nPlanes ==1
                     testPlanes = true;
                 else
