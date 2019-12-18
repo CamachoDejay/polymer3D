@@ -1,9 +1,16 @@
 function [ zFocus, Fit ] = getSubResPlanePosition(focusMet, ZPos)
 
-guess.mu = sum(ZPos.*focusMet)./sum(focusMet);
-guess.sig = 2;
+[val,id] = max(focusMet);
+guess.mu = ZPos(id);
+guess.sig = 1;
 zFocus = zeros(1,size(focusMet,2));
-for k=1:size(focusMet,2)
-    [out,Fit] = SimpleFitting.gauss1D(focusMet(:,k), ZPos,guess);
-    zFocus(k) = out(2);
-end
+delta = 1.5;
+range = and(ZPos>ZPos(id)-delta,ZPos<ZPos(id)+delta);
+
+ZPos2Use = ZPos(range);
+focMet2Use = focusMet(range,:);
+
+[out,Fit] = SimpleFitting.gauss1D(focMet2Use, ZPos2Use,guess);
+zFocus = out(2);
+Fit = SimpleFitting.gaussian(out,ZPos);
+
