@@ -11,7 +11,7 @@ classdef trackingMethod < handle
     end
     
     methods(Static)
-        function listIdx  = connectParticles(List,listBool,idx, trackParam)
+        function listIdx  = connectParticles(List,listBool,idx, trackParam,zMethod)
             %function connecting particles across frame by checking if two
             %particles from different frame are partners
             isPart = true;
@@ -34,7 +34,7 @@ classdef trackingMethod < handle
                     nextPart = List{currentIdx(1)+1};
                     nextPart = nextPart(logical(checkRes));
                     %used to be additional use of checkRes, why?
-                    [isPart] = Core.trackingMethod.isPartFrame(part2Track,nextPart,1,trackParam);
+                    [isPart] = Core.trackingMethod.isPartFrame(part2Track,nextPart,1,trackParam,zMethod);
                     
                    
                     if(length(find(isPart==1))>1)
@@ -80,7 +80,7 @@ classdef trackingMethod < handle
             commonPlanes = logical(commonPlanes);
         end
         
-        function [isPart]   = isPartFrame(current, next, direction, trackParam)
+        function [isPart]   = isPartFrame(current, next, direction, trackParam,zMethod)
             %This function is designed to have PSFE plate ON
             assert(abs(direction) == 1, 'direction is supposed to be either 1 (up) or -1 (down)');
             assert(and(istable(current),iscell(next)), 'unexpected format in partners to track');
@@ -109,18 +109,21 @@ classdef trackingMethod < handle
                         commonPlanes = Core.trackingMethod.findCommonPlanes(current.plane,nextPart.plane);
                         roughcheck2  = sum(commonPlanes,1)>=nConsistentPlanes;
                         if all(roughcheck2 ==0)
-                            disp('Less than 2 planes in common, breaking out');
+                            %disp('Less than 2 planes in common, breaking out');
                         else
 
                                 % Test Euclidian distance
                                 Thresh = trackParam.euDistPx; %in px
                                 [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row(commonPlanes(:,1)) current.col(commonPlanes(:,1))],...
                                     [nextPart.row(commonPlanes(:,2)), nextPart.col(commonPlanes(:,2))],Thresh);
-
+                                
+                                if strcmp(zMethod,'PSFE')
                                 % Test ellipticity
                                 [checkRes2] = Core.MPParticleMovie.checkEllipticity(current.ellip(commonPlanes(:,1)),...
                                     nextPart.ellip(commonPlanes(:,2)),direction);
-                                
+                                else
+                                    [checkRes2] = true(size(checkRes1));
+                                end
                                 %To be a particle, we want the position and ellipticity to be
                                 %consistent in at least 2 planes 
                                 isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes,...

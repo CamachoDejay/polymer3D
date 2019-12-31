@@ -5,9 +5,9 @@ close all;
 path2ZCal = [];
 path2SRCal = [];
 
-file.path  = 'D:\TmpData\Extended\OD25\test';
+file.path  = 'E:\Boris\2019\12 - December\18-19 Precision no PSFE\test';
 file.ext   = '.ome.tif';
-path2Cal = 'D:\TmpData\Extended\2DCal';
+path2Cal = 'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal';
 dimension = '3D';
 detectParam.delta = 6;
 detectParam.chi2 = 80;

@@ -123,8 +123,8 @@ classdef SRCalibration < handle
             
             %Extraction of SRData
             nfields = numel(fieldnames(obj.SRCalMovies));
-            allData = cell(nPlanes-1,1);
-            calPerPlane = cell(nPlanes,1);
+            allData = cell(nPlanes-1,2);
+            calPerPlane = cell(nPlanes,2);
             for i = 1: nfields
                 disp(['Retrieving data from SRCal file ' num2str(i) ' / ' num2str(nfields) ' ...']);
                
@@ -146,9 +146,17 @@ classdef SRCalibration < handle
                 %in allData.
                 
                 for j = 1:length(allData)
-                    allData{j} = [allData{j} ; SRCalibData{j} ];
-                    calPerPlane{j} = [calPerPlane{j}; dataPerPlane{j}(dataPerPlane{j}.ellip<1,:)];
-                    calPerPlane{j+1} = [calPerPlane{j+1};dataPerPlane{j+1}(dataPerPlane{j+1}.ellip>1,:)];
+                    allData{j,1} = [allData{j,1} ; SRCalibData{j} ];
+                    if ~isempty(SRCalibData{j})
+                        allData{j,2} = [allData{j,2} ; ones(height(SRCalibData{j,1}),1)*i];
+                    end
+                end
+                
+                for j = 1:length(dataPerPlane)
+                    calPerPlane{j,1}   = [calPerPlane{j,1}; dataPerPlane{j}];
+                    if ~isempty(dataPerPlane{j})
+                        calPerPlane{j,2}   = [calPerPlane{j,2}; ones(height(dataPerPlane{j,1}),1)*i];
+                    end
                 end
                 
             end
@@ -238,16 +246,24 @@ classdef SRCalibration < handle
                 
                 mData = data{i};
                 nData = data{i+1};
+                mIdxMov = data{i,2};
+                nIdxMov = data{i+1,2};
                 
-                errRow{i} = mData.row(mData.ellip<1) - nData.row(nData.ellip>1);
-                errCol{i} = mData.col(mData.ellip<1) - nData.col(nData.ellip>1);
+                mTestIdx = mData.frame .* mData.partNum.^3 .*mIdxMov.^3;
+                nTestIdx = nData.frame .* nData.partNum.^3 .*nIdxMov.^3;
+                
+                idxM = ismember(mTestIdx,nTestIdx);
+                idxN = ismember(nTestIdx, mTestIdx);
+
+                errRow{i} = mData.row(idxM) - nData.row(idxN);
+                errCol{i} = mData.col(idxM) - nData.col(idxN);
                 euclDist{i} = sqrt(errRow{i}.^2+errCol{i}.^2);
                 
                 cData = corrData{i};
                 dData = corrData{i+1};
                 
-                errCRow{i}   =  cData.row(cData.ellip<1) - dData.row(dData.ellip>1);
-                errCCol{i}   =  cData.col(cData.ellip<1) - dData.col(dData.ellip>1);
+                errCRow{i}   =  cData.row(idxM) - dData.row(idxN);
+                errCCol{i}   =  cData.col(idxM) - dData.col(idxN);
                 euclCDist{i} = sqrt(errCRow{i}.^2+errCCol{i}.^2);
                 
                 allDist = [allDist; mData.row mData.col];

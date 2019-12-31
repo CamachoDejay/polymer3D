@@ -4,17 +4,17 @@ clc
 close all;
 %% get path to SRCalibration
 
-file.path = 'E:\leuven data\05 May\13\2D Cal';
+file.path = 'D:\Documents\Unif\PhD\2019-Data\TEST';
 file.ext  = '.ome.tif';
-path2Cal  = 'E:\leuven data\05 May\13\2D Cal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\TEST';
 
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod = 'Phasor';
-info.zMethod   = 'PSFE';
+info.zMethod   = 'Intensity';
 
 testSRCal = Core.SRCalibration(file,path2Cal,info);
 
@@ -24,8 +24,8 @@ testSRCal.retrieveSRCalMov;
 
 %% extract zData
 detectParam.delta = 6;
-detectParam.chi2 = 40;
-detectParam.consThresh = 3;
+detectParam.chi2 = 80;
+detectParam.consThresh = 4;
 
 trackParam.commonPlanes = 1; 
 trackParam.euDistPx = 3;

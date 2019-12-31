@@ -513,7 +513,8 @@ classdef MPSRCalMovie < Core.MPCalMovie
                         idx2Part = traces{i}{j};
                         if ~isnan(idx2Part)
                             startIdx = size(partData{idx2Part},1)+1;
-                            currentData = list{i}{j}(~isnan(list{i}{j}.row),{'row','col','ellip','plane'});
+                            currentData = list{i}{j}(~isnan(list{i}{j}.row),{'row','col','ellip','plane','magX','magY'});
+                            currentData.partNum = ones(height(currentData),1)*idx2Part;
                             idx = table(repmat(i,size(currentData.row,1),1),'VariableNames',{'frame'});
                             partData{idx2Part}(startIdx:startIdx+size(currentData.row,1)-1,:) = [currentData idx];
                         else
@@ -532,19 +533,16 @@ classdef MPSRCalMovie < Core.MPCalMovie
                 if length(test)<obj.calibrated.nPlanes
                     %put empty cells where test fails
                     partData{i} = [];
-                else%we check if data above and below focus is encountered
-                    del = false;
-                    for j = 1: length(test)
-                        data2Test2 = data2Test(data2Test.plane==j,:);
-                        if or(isempty(data2Test2(data2Test2.ellip<0.9,:)),isempty(data2Test2(data2Test2.ellip>1.1,:)))
-                            del = true;
-                        end
-                    end
-                    if del
-                        partData{i} = [];
-                    end
                 end
                 
+                if length(data2Test.plane(data2Test.plane==8))<15
+                   partData{i} = []; 
+                end
+                
+                
+                if length(data2Test.plane(data2Test.plane==1))<15
+                   partData{i} = []; 
+                end
                
             end
             %Deleting empty cells of the cell array
@@ -563,8 +561,11 @@ classdef MPSRCalMovie < Core.MPCalMovie
                     dataPlaneA = currentData(currentData.plane == planes(j),:);
                     dataPlaneB = currentData(currentData.plane == planes(j+1),:);
                     
-                    idx = obj.findOptimalDefocusing(dataPlaneA,dataPlaneB);
-                    
+                    if strcmp(obj.info.zMethod,'PSFE')
+                        idx = obj.findOptimalDefocusing(dataPlaneA,dataPlaneB);
+                    else
+                        idx = obj.findOptimalDefocusingInt(dataPlaneA,dataPlaneB);
+                    end
                     defocusFrame{i}(j,:) = [j idx];
                     
                 end
@@ -595,6 +596,22 @@ classdef MPSRCalMovie < Core.MPCalMovie
             
         end
         
+        function [idx] = findOptimalDefocusingInt(obj,dataPlaneA,dataPlaneB)
+                        
+            framesA = dataPlaneA.frame;
+            framesB = dataPlaneB.frame;
+            
+            commonFrame = intersect(framesA,framesB);
+            
+            magXA = dataPlaneA.magX(ismember(dataPlaneA.frame,commonFrame));
+            magXB = dataPlaneB.magX(ismember(dataPlaneB.frame,commonFrame));
+            [~,id] = min(abs(magXA-magXB));
+            
+            frames2Use = dataPlaneA.frame(ismember(commonFrame,dataPlaneA.frame));
+            
+            idx = frames2Use(id);
+            
+        end
         function [SRCalibData,dataPerPlane] = getCalibData(obj,partData,idx2Frame)
             nPlanes = obj.calibrated.nPlanes;
             SRCalibData = cell(nPlanes-1,1);
@@ -605,18 +622,18 @@ classdef MPSRCalMovie < Core.MPCalMovie
                 for j = 1:nPlanes-1
                     %Data Plane x
                     idx = and(currentData.plane==j,currentData.frame==idx2Frame{i}(j,2));
-                    idx2LEllip = currentData.ellip<=1;
-                    idx2HEllip = currentData.ellip>1;
-                    idx2LData  = logical(idx.*idx2LEllip);
-                    SRCalibData{j} = [SRCalibData{j}; currentData(idx2LData,:) ];
+%                   idx2LEllip = currentData.ellip<=1;
+%                   idx2HEllip = currentData.ellip>1;
+                  % idx2LData  = logical(idx.*idx2LEllip);
+                    SRCalibData{j} = [SRCalibData{j}; currentData(idx,:) ];
+                    %data per plane
+                    dataPerPlane{j} = [dataPerPlane{j}; currentData(idx,:)];
+                    
                     %Data Plane x+1
                     idx = and(currentData.plane==j+1,currentData.frame==idx2Frame{i}(j,2));
-                    idx2HData = logical(idx.*idx2HEllip);
-                    SRCalibData{j} = [SRCalibData{j}; currentData(idx2HData,:)];
-                    
-                    %data per plane
-                    dataPerPlane{j} = [dataPerPlane{j}; currentData(idx2LData,:)];
-                    dataPerPlane{j+1} = [dataPerPlane{j+1}; currentData(idx2HData,:)];
+%                     idx2HData = logical(idx.*idx2HEllip);
+                    SRCalibData{j} = [SRCalibData{j}; currentData(idx,:)];
+                    dataPerPlane{j+1} = [dataPerPlane{j+1}; currentData(idx,:)];
                 end
             end
             

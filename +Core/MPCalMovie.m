@@ -51,6 +51,7 @@ classdef MPCalMovie < Core.MPParticleMovie
             [idx] = Core.trackingMethod.pickParticle(listBool);
             counter = 1;
             errCount =1;
+            zMethod = obj.info.zMethod;
             while (idx)
                 %loop until there is no particle (pickParticle return false)
                 if errCount>10000
@@ -59,7 +60,7 @@ classdef MPCalMovie < Core.MPParticleMovie
                     
                 end
                 %Connect particles (cf consolidation but across frames
-                [listIdx] = Core.trackingMethod.connectParticles(obj.particles.List,listBool,idx, trackParam);
+                [listIdx] = Core.trackingMethod.connectParticles(obj.particles.List,listBool,idx, trackParam,zMethod);
                 %if the particle was connected in less than 5 frames we remove
                 % its appearance from the list bool
                 if length(listIdx) < 5
