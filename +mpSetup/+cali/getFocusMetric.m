@@ -5,7 +5,7 @@ function [ focus_met, in_focus, fit ] = getFocusMetric( chData1c, chData2c, Z1, 
     N = size(chData1c,4);
     nChan = size(chData1c,3);
     focus_met = zeros(N, nChan*2);
-    fit = zeros(N, nChan*2);
+    fit = nan(N, nChan*2*2);
     in_focus(nChan*2).cam   =  [];
     in_focus(nChan*2).ch    =  [];
     in_focus(nChan*2).frame =  [];
@@ -20,7 +20,8 @@ function [ focus_met, in_focus, fit ] = getFocusMetric( chData1c, chData2c, Z1, 
         % see when each channel is in focus
         %focus_met(:,i) = squeeze(mean(max(tmp)));
         focus_met(:,i) = squeeze(mean(max(imgradient3(tmp))));
-        [ zFocus, fit(:,i) ] = mpSetup.cali.getSubResPlanePosition(focus_met(:,i),Z1);
+        [ zFocus, fitTmp ] = mpSetup.cali.getSubResPlanePosition(focus_met(:,i),Z1);
+        fit(1:length(fitTmp),2*i-1:2*i,:) = fitTmp;
         in_focus(i).zpos = zFocus;
         [~,in_focus(i).frame] = min(abs(Z1-zFocus));
     end
@@ -35,7 +36,8 @@ function [ focus_met, in_focus, fit ] = getFocusMetric( chData1c, chData2c, Z1, 
         %focus_met(:,i) = squeeze(mean(max(tmp)));
         focus_met(:,i) = squeeze(mean(max(imgradient3(tmp))));
         
-        [ zFocus, fit(:,i) ] = mpSetup.cali.getSubResPlanePosition(focus_met(:,i),Z2);
+        [ zFocus, fitTmp ] = mpSetup.cali.getSubResPlanePosition(focus_met(:,i),Z2);
+        fit(1:length(fitTmp),2*i-1:2*i,:) = fitTmp;
         in_focus(i).zpos = zFocus;
         [~,in_focus(i).frame] = min(abs(Z2-zFocus));
     end

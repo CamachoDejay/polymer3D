@@ -12,5 +12,7 @@ focMet2Use = focusMet(range,:);
 
 [out,Fit] = SimpleFitting.gauss1D(focMet2Use, ZPos2Use,guess);
 zFocus = out(2);
-Fit = SimpleFitting.gaussian(out,ZPos);
+Fit(:,1) = ZPos2Use;
+Fit(:,2) = SimpleFitting.gaussian(out,ZPos2Use);
+
 

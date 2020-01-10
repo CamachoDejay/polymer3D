@@ -246,14 +246,31 @@ classdef SRCalibration < handle
                 
                 mData = data{i};
                 nData = data{i+1};
-                mIdxMov = data{i,2};
-                nIdxMov = data{i+1,2};
-                
-                mTestIdx = mData.frame .* mData.partNum.^3 .*mIdxMov.^3;
-                nTestIdx = nData.frame .* nData.partNum.^3 .*nIdxMov.^3;
-                
-                idxM = ismember(mTestIdx,nTestIdx);
-                idxN = ismember(nTestIdx, mTestIdx);
+%                 mIdxMov = data{i,2};
+%                 nIdxMov = data{i+1,2};
+%                 
+%                 mTestIdx = mData.frame.^3 .* mData.partNum.^3 .*mIdxMov.^3;
+%                 nTestIdx = nData.frame.^3 .* nData.partNum.^3 .*nIdxMov.^3;
+%                 
+%                 idxM = ismember(mTestIdx,nTestIdx);
+%                 idxN = ismember(nTestIdx, mTestIdx);
+                if size(mData,1)<size(nData,1)
+                    idxM = true(size(mData,1),1);
+                    idxN = true(size(nData,1),1);
+                    idxN(2:2:end) = false;
+                elseif size(mData,1)==size(nData,1)
+                    
+                    idxM = true(size(mData,1),1);
+                    idxM(1:2:end) = false;
+                    idxN = true(size(nData,1),1);
+                    idxN(2:2:end) = false;
+                else
+                    idxM = true(size(mData,1),1);
+                    idxN = true(size(nData,1),1);
+                   
+                    idxM(1:2:end) = false;
+                end
+
 
                 errRow{i} = mData.row(idxM) - nData.row(idxN);
                 errCol{i} = mData.col(idxM) - nData.col(idxN);

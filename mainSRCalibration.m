@@ -4,9 +4,9 @@ clc
 close all;
 %% get path to SRCalibration
 
-file.path = 'D:\Documents\Unif\PhD\2019-Data\TEST';
+file.path = 'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Interleaved\2DCal';
 file.ext  = '.ome.tif';
-path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\TEST';
+path2Cal  = 'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Interleaved\2DCal';
 
 
 %% Initialize a zCalibration Object
@@ -27,12 +27,12 @@ detectParam.delta = 6;
 detectParam.chi2 = 80;
 detectParam.consThresh = 4;
 
-trackParam.commonPlanes = 1; 
+trackParam.commonPlanes = 2; 
 trackParam.euDistPx = 3;
 
 testSRCal.retrieveSRCalData(detectParam,trackParam);
 
-% calibrate
+% calibratewwwnBB
 %% calc translation
 refPlane = 4;
 testSRCal.corrTranslation(refPlane);

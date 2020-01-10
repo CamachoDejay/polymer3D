@@ -5,12 +5,12 @@ clear;
 close all;
 clc;
 %% USER INPUT
-%TODO: Use the motor motion to align traces on top of one another
-filePath = 'D:\TmpData\Extended\OD25\test';
+
+filePath = 'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\OD25\Z';
 dim = 'z';
 period = 20;
 minLength = 160;
-idx2Plot = 1;
+idx2Plot = 2;
 stepApplied = 100;
 %% LOADING
 
@@ -56,6 +56,8 @@ figure
 hold on
 allData = nan(nTraces,length(mot{1}));
 allDataM = allData;
+allData2Plot(:,:,1) = allData;
+allData2Plot(:,:,2) = allData;
 for i =1:nTraces
     
     currTrace = traces{i};
@@ -65,6 +67,8 @@ for i =1:nTraces
     lenCTrace = height(currTrace);
     
     data2Plot = getData2Plot(currTrace,dim,mot{i});
+    allData2Plot(i,currTrace.t,1) = data2Plot(:,1);
+    allData2Plot(i,currTrace.t,2) = currTrace.t;
     prec = zeros(length(idx2Mot)-1,1);
     acc = prec;
     precM = zeros(length(idx2Mot)-1,1);
@@ -200,7 +204,8 @@ for i = 1:nFiles
     
 end
 error = nanmean(allStd,1);
-
+error = nanstd(allData,1);
+disp(['mean error is ' num2str(mean(error))])
 motPlot = motPlot(1:length(error));
 motPlot = motPlot - mean(motPlot);
 %plot(motPlot,'-r','LineWidth',2);

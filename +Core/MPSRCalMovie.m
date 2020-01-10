@@ -535,7 +535,7 @@ classdef MPSRCalMovie < Core.MPCalMovie
                     partData{i} = [];
                 end
                 
-                if length(data2Test.plane(data2Test.plane==8))<15
+                if length(data2Test.plane(data2Test.plane==8))<15   
                    partData{i} = []; 
                 end
                 
@@ -597,6 +597,15 @@ classdef MPSRCalMovie < Core.MPCalMovie
         end
         
         function [idx] = findOptimalDefocusingInt(obj,dataPlaneA,dataPlaneB)
+            
+            if and(all(dataPlaneA.plane==2),all(dataPlaneA.partNum ==10))
+                disp('test');
+            end
+            
+            if and(all(dataPlaneB.plane==2),all(dataPlaneB.partNum ==10))
+                disp('test');
+            end
+             
                         
             framesA = dataPlaneA.frame;
             framesB = dataPlaneB.frame;

@@ -101,7 +101,7 @@ classdef MPPlaneCalibration < handle
             nPlanes = length(allData(1).file.neworder);
             allROI = zeros([size(allData(1).file.ROI) nFiles]);
             allFocusMet =  zeros([size(allData(1).file.focusMet) nFiles]);
-            allFit = allFocusMet;
+            allFit = zeros([size(allData(1).file.fit) nFiles]);
             allNewOrder =  zeros([size(allData(1).file.neworder) nFiles]);
             allICorrF   =  zeros([size(allData(1).file.neworder) nFiles]);
             inFocus = allData(1).file.inFocus;
@@ -155,7 +155,8 @@ classdef MPPlaneCalibration < handle
             fields = fieldnames(obj.MPCalibrations);
             mov2Use = obj.MPCalibrations.(fields{idx});
             focusMet = mov2Use.cal.file.focusMet;
-            fit = mov2Use.cal.file.fit;
+            fit = mov2Use.cal.file.fit(:,2:2:end);
+            fitZ = mov2Use.cal.file.fit(:,1:2:end);
             ZPos = mov2Use.cal.file.Zpos;
             color = rand(8,3);
             
@@ -167,8 +168,8 @@ classdef MPPlaneCalibration < handle
             y = 1:height;
             for i = 1 : size(focusMet,2)
                 [~,idx] = max(fit(:,i));
-                scatter(ZPos(:)-mean(ZPos),focusMet(:,i),[],color(i,:),'filled')
-                plot(ZPos(:)-mean(ZPos),fit(:,i),'Color', color(i,:),'LineWidth',2.5,'HandleVisibility','off')
+                scatter(ZPos-mean(ZPos),focusMet(:,i),[],color(i,:),'filled')
+                plot(fitZ(:,i)-mean(ZPos),fit(:,i),'Color', color(i,:),'LineWidth',2.5,'HandleVisibility','off')
                
                 x = ones(1,length(y))*(FocusZ{i}-mean(ZPos));
                 plot(x(:),y(:),'k--','HandleVisibility','off');

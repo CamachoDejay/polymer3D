@@ -6,8 +6,7 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'D:\TmpData\Extended\Helix';
-ignoreF = 6;
+filePath = 'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\Spiral';
 dim = 'z';
 period = 20;
 idx2Plot = 3;
@@ -108,24 +107,29 @@ res = 50;
 [sx,sy,sz]= sphere(nfacets);
 figure
 hold on
-plot3(cSpiral(:,1),cSpiral(:,2),cSpiral(:,3),'LineWidth',3);
+plot3(cSpiral(:,1),cSpiral(:,2),cSpiral(:,3),'LineWidth',3,'Color','k');
 
-for i = 1:length(cSpiral(:,1))
-    Sx = sx*res+cSpiral(i,1);
-    Sy = sy*res+cSpiral(i,2);
-    Sz = sz*res+cSpiral(i,3);
-    surf(Sx,Sy,Sz)
-    
-end
+% for i = 1:length(cSpiral(:,1))
+%     Sx = sx*res+cSpiral(i,1);
+%     Sy = sy*res+cSpiral(i,2);
+%     Sz = sz*res+cSpiral(i,3);
+%     surf(Sx,Sy,Sz)
+%     
+% end
 hold on
 for i = 1: length(traces)
 
     cTrace = alignedTraces{i};  
-    scatter3(cTrace(:,1),cTrace(:,2),cTrace(:,3),10,cTrace(:,3),'filled');
+    scatter3(cTrace(:,1),cTrace(:,2),cTrace(:,3),5,cTrace(:,3),'filled');
     
 end
 colormap('jet')
 hold off
+view(3)
+xlim([-250 250])
+ylim([-250 250])
+axis image
+box on
 
 fprintf('The mean precision in\n x =%d, y=%d, z=%d\n',median(xPrec),median(yPrec),median(zPrec));
 fprintf('The mean accuracy in\n x =%d, y=%d, z=%d\n',median(xAcc),median(yAcc),median(zAcc));

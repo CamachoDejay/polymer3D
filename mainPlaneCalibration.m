@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Interleaved\2DCal';
+file.path  = 'F:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';

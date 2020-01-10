@@ -10,8 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'D:\TmpData\Extended\OD25\Z\mov_4';
-path2Cal  =  'D:\TmpData\Extended\2DCal';
+file.path =  'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\Spiral\mov_7';
+path2Cal  =  'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal';
 
 file.ext = '.ome.tif';
 
@@ -59,7 +59,7 @@ mpMov.giveInfo;
 
 mpMov.calibrate;
 %%
-mpMov.showFrame(25,5);
+mpMov.showFrame(5,5);
 %% Save Movie
 mpMov.saveMovie('gif',30,10,1)
 
