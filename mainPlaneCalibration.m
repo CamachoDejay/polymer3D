@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'F:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal';
+file.path  = 'F:\Boris\2019\ViscosityData\20190627\2D Cal\200 nm';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';
