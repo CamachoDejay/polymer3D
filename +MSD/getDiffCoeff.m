@@ -23,7 +23,7 @@ function D = getDiffCoeff(msd,fitRange,dim)
     tofit = msd(1:round(fitRange*length(msd)));
 
     tau   = 1:length(tofit);
-    f     = fit(tau(:),tofit(:),'a*x');
+    f     = fit(tau(:),tofit(:),'a*x+b');
     
     g = coeffvalues(f);
     D = g(1)/div;

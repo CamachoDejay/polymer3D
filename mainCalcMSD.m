@@ -3,14 +3,14 @@ clear ;
 close all;
 
 %% USER INPUT
-expTime = 0.01; %in sec
+expTime = 0.0033; %in sec
 T = 293; %temperature in Kelvin
-R = 0.55; %Radius of particle in um;
-fitRDiff = 0.03; %in Fraction of the data
+R = 0.030; %Radius of particle in um;
+fitRDiff = 0.05; %in Fraction of the data
 fitRConf = 0.1;%in Fraction of the data
-minSize = 100; %frames
+minSize = 50; %frames
 ext = '.mat';
-path = 'D:\Documents\Unif\PhD\2019-Data\Viscosity';
+path = 'D:\Documents\Unif\PhD\2019-Data\Viscosity\40nm';
 %% Loading
 folder = dir(path);
 idx = contains({folder.name},'trackResults.mat');
@@ -31,7 +31,7 @@ idx = allHeight>minSize;
 currMov = currMov(idx,1);
 allRes = struct('msdX',0,'msdY',0,'msdZ',0,'msdR',0,'tau',0,'DX',0,'DY',0,'DZ',0,'DR',0,...
     'nX',0,'nY',0,'nZ',0,'nR',0);
-allRes(length(currMov)).msdx = [];
+allRes(length(currMov)).msdX = [];
 
 for j = 1:length(currMov)
     currPart = currMov{j};
@@ -82,11 +82,11 @@ for j = 1:length(currMov)
     allRes(j).nY   = nY;
     allRes(j).nZ   = nZ;
     allRes(j).nR   = nR;
-
+    allRes(j).num  = length(msdx);
 end
 
 
 filename = [path filesep 'msdRes.mat'];
-save(filename,'allData');
+save(filename,'allRes');
 h = msgbox('Data succesfully saved');
 
