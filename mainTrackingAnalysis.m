@@ -6,7 +6,7 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\OD25\Z';
+filePath = 'D:\Documents\Unif\PhD\2019-Data\12 - Dec\18-19 No PSFE accuracy\Interleaved\Data\OD25\Z';
 dim = 'z';
 period = 20;
 minLength = 160;
@@ -153,13 +153,22 @@ fprintf('The FWHM for mean is %d nm based on %d traces\n',round(2*sqrt(2*log(2))
 fprintf('The average intensity is %d photons\n',intensity);
 fprintf('The average SNR is %d \n',SNR);
 
+step = 2;
 figure
 subplot(1,2,1)
-histogram(precPerStep)
+edges = min(precPerStep):step:max(precPerStep);
+histogram(precPerStep,edges)
+xlim([0 50])
+axis square
 title('Precision for best focus');
 subplot(1,2,2)
-histogram(accPerStep)
+edges = min(accPerStep):step*2:max(accPerStep);
+histogram(accPerStep,edges)
+xlim([-50 50])
+axis square
 title('Accuracy for best focus')
+disp(['Std accPerStep ', num2str(std(accPerStep))]);
+disp(['mean precPerStep ', num2str(mean(precPerStep))]);
 
 figure
 subplot(1,2,1)

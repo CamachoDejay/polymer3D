@@ -4,9 +4,9 @@ clc
 close all;
 %% get path to SRCalibration
 
-file.path = 'F:\Boris\2019\ViscosityData\20190627\2D Cal\200 nm';
+file.path = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Interleaved\SRCalTest';
 file.ext  = '.ome.tif';
-path2Cal  = 'F:\Boris\2019\ViscosityData\20190627\2D Cal\200 nm';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Interleaved\2DCal';
 
 
 %% Initialize a zCalibration Object
@@ -14,7 +14,7 @@ info.type = 'normal';
 info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod = 'Phasor';
-info.zMethod   = 'Intensity';
+info.zMethod   = 'PSFE';
 
 testSRCal = Core.SRCalibration(file,path2Cal,info);
 
@@ -24,7 +24,7 @@ testSRCal.retrieveSRCalMov;
 
 %% extract zData
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 60;
 detectParam.consThresh = 4;
 
 trackParam.commonPlanes = 2; 

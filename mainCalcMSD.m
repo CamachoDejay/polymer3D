@@ -3,14 +3,14 @@ clear ;
 close all;
 
 %% USER INPUT
-expTime = 0.0033; %in sec
+expTime = 0.01; %in sec
 T = 293; %temperature in Kelvin
-R = 0.030; %Radius of particle in um;
-fitRDiff = 0.05; %in Fraction of the data
+R = 0.554; %Radius of particle in um;
+fitRDiff = 0.1; %in Fraction of the data
 fitRConf = 0.1;%in Fraction of the data
 minSize = 50; %frames
 ext = '.mat';
-path = 'D:\Documents\Unif\PhD\2019-Data\Viscosity\40nm';
+path = 'D:\Documents\Unif\PhD\2019-Data\Viscosity\1000nm';
 %% Loading
 folder = dir(path);
 idx = contains({folder.name},'trackResults.mat');

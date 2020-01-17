@@ -535,15 +535,33 @@ classdef MPSRCalMovie < Core.MPCalMovie
                     partData{i} = [];
                 end
                 
-                if length(data2Test.plane(data2Test.plane==8))<15   
-                   partData{i} = []; 
-                end
+                switch obj.info.zMethod
+                    
+                    case 'PSFE'
+                        testData = data2Test(data2Test.plane == 8,:);
+                        if or(isempty(testData.ellip>1),isempty(testData.ellip<1))
+                            partData{i} = [];
+                        end
+                        
+                        testData = data2Test(data2Test.plane == 1,:);
+                        if or(isempty(testData.ellip>1),isempty(testData.ellip<1))
+                            partData{i} = [];
+                        end
+                        
+                    case 'Intensity'
                 
-                
-                if length(data2Test.plane(data2Test.plane==1))<15
-                   partData{i} = []; 
-                end
-               
+                        if length(data2Test.plane(data2Test.plane==8))<15   
+                           partData{i} = []; 
+                         
+                        end
+                        error('Please Fix the code');
+
+                        if length(data2Test.plane(data2Test.plane==1))<15
+                           partData{i} = []; 
+                        end
+                    case '3DFit'
+                        error('Please Fix the code');
+                end               
             end
             %Deleting empty cells of the cell array
             partData(cellfun('isempty',partData)) = [];

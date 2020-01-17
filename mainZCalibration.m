@@ -5,22 +5,22 @@ close all;
 %% get path to zCalibration
 
 
-file.path = 'E:\Data\Leuven Data\2019\04 - April\4\ZCal 100';
+file.path = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Interleaved\ZCal - CS';
 file.ext  = '.ome.tif';
-path2Cal  = 'E:\Data\Leuven Data\2019\04 - April\4\2DCal';
+path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Interleaved\2DCal';
 
 
 detectParam.delta = 8;
-detectParam.chi2 = 40;
+detectParam.chi2 = 60;
 fitZParam.deg = 6;
 fitZParam.ellipRangeCal = [0.5 2]; %for calibration
 fitZParam.ellipRange = [0.65 1.54];%To be used for data (we do not want to use too large values==> edge planes)
 trackParam.euDistPx = 3; 
-trackParam.commonPlanes = 1; %1 for extended, 2 for interleaved
+trackParam.commonPlanes = 2; %1 for extended, 2 for interleaved
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod  = 'Phasor';
 info.zMethod    = 'Intensity';%or 'PSFE'
