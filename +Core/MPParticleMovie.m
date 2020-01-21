@@ -668,9 +668,9 @@ classdef MPParticleMovie < Core.MPMovie
             if testPlanes
                 %We check that there is no "Gap" in the plane configuration
                 %as it would not make sense.
-                testConsec = diff(planeConfig(~isnan(planeConfig)));
-                checkRes = all(testConsec==1);
-                
+%                 testConsec = diff(planeConfig(~isnan(planeConfig)));
+%                 checkRes = length(testConsec==1)>=2;
+                checkRes = true;
             else
                 
                 checkRes = false;

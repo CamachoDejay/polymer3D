@@ -4,14 +4,14 @@ clc
 close all;
 %% get path to SRCalibration
 
-file.path = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Interleaved\SRCalTest';
+file.path = 'D:\Dropbox\4Apr Data\2DCal';
 file.ext  = '.ome.tif';
-path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Interleaved\2DCal';
+path2Cal  = 'D:\Dropbox\4Apr Data\2DCal';
 
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod = 'Phasor';
 info.zMethod   = 'PSFE';
@@ -27,7 +27,7 @@ detectParam.delta = 6;
 detectParam.chi2 = 60;
 detectParam.consThresh = 4;
 
-trackParam.commonPlanes = 2; 
+trackParam.commonPlanes = 1; 
 trackParam.euDistPx = 3;
 
 testSRCal.retrieveSRCalData(detectParam,trackParam);

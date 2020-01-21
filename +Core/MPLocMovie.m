@@ -260,9 +260,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                         zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
                         zeros(size(frameData)),zeros(size(frameData)),'VariableNames',...
                         {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
-                    if i == 39
-                        disp('stop')
-                    end
+                  
                     for j = 1:length(frameData)
 
                         partData = frameData{j};

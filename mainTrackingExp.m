@@ -2,22 +2,22 @@ clc
 clear 
 close all;
 
-path2ZCal = [];
-path2SRCal = 'F:\Boris\2019\ViscosityData\20190627\2D Cal\200 nm';
+path2ZCal = 'D:\Dropbox\4Apr Data\ZCal CS';
+path2SRCal = 'D:\Dropbox\4Apr Data\2DCal';
 
-file.path  = 'F:\Boris\2019\ViscosityData\20190627\500nm-Fluo';
+file.path  = 'D:\Dropbox\4Apr Data\XYZ - OD35\X';
 file.ext   = '.ome.tif';
-path2Cal = 'F:\Boris\2019\ViscosityData\20190627\2D Cal\200 nm';
+path2Cal = 'D:\Dropbox\4Apr Data\2DCal';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 60;
 
 %% Storing info about the file
 info.type = 'normal'; %normal or transmission
-info.runMethod = 'run'; % load or run
+info.runMethod = 'load'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
-info.zMethod = 'Intensity'; %Intensity, 3DFit or PSFE
+info.zMethod = 'PSFE'; %Intensity, 3DFit or PSFE
 info.calibrate = false; %true to recalibrate;
 
 %% create experiments

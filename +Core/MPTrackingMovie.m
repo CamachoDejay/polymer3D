@@ -27,7 +27,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             assert(~isempty(obj.particles), 'No particles found, please run superResConsolidate method before doing ZzCalibrationration');
             assert(~isempty(obj.corrected),'Data needs to be corrected before tracking');
             
-            if or(and(obj.corrected.XY,obj.corrected.Z),isempty(obj.SRCal))
+            if or(~and(obj.corrected.XY,obj.corrected.Z),isempty(obj.SRCal))
                 
                 warning('Some corrections were not applied to the data');
             

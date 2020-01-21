@@ -539,12 +539,12 @@ classdef MPSRCalMovie < Core.MPCalMovie
                     
                     case 'PSFE'
                         testData = data2Test(data2Test.plane == 8,:);
-                        if or(isempty(testData.ellip>1),isempty(testData.ellip<1))
+                        if or(sum(testData.ellip>1)<5,sum(testData.ellip<1)<5)
                             partData{i} = [];
                         end
                         
                         testData = data2Test(data2Test.plane == 1,:);
-                        if or(isempty(testData.ellip>1),isempty(testData.ellip<1))
+                        if or(sum(testData.ellip>1)<5,sum(testData.ellip<1)<5)
                             partData{i} = [];
                         end
                         
