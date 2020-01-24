@@ -6,12 +6,12 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'D:\Documents\Unif\PhD\2019-Data\12 - Dec\18-19 No PSFE accuracy\Interleaved\Data\OD25\Z';
+filePath = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Extended\OD50\';
 dim = 'z';
 period = 20;
 minLength = 160;
 idx2Plot = 2;
-stepApplied = 100;
+stepApplied = 200;
 %% LOADING
 
 fileName = [filePath filesep 'trackResults.mat'];
@@ -167,7 +167,7 @@ histogram(accPerStep,edges)
 xlim([-50 50])
 axis square
 title('Accuracy for best focus')
-disp(['Std accPerStep ', num2str(std(accPerStep))]);
+disp(['Std accPerStep ', num2str(std(accPerStep(accPerStep<100)))]);
 disp(['mean precPerStep ', num2str(mean(precPerStep))]);
 
 figure
@@ -248,6 +248,7 @@ function [data2Plot] = getData2Plot(currTrace,dim,mot)
             data2Plot(:,1) = currTrace.z-mean(currTrace.z) + mean(currMot);
             data2Plot(:,2) = currTrace.zM-mean(currTrace.zM) + mean(currMot);
     end
+    data2Plot(:,3) = currTrace.t;
 
 end
 

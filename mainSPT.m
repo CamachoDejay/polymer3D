@@ -10,9 +10,8 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\Spiral\mov_7';
-path2Cal  =  'E:\Boris\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal';
-
+file.path =  'D:\Documents\Unif\PhD\2020-Data\01-Jan\Test\Particle 17';
+path2Cal  =  'D:\Documents\Unif\PhD\2020-Data\01-Jan\Test';
 file.ext = '.ome.tif';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
@@ -35,23 +34,10 @@ mov1.giveInfo;
 %mov2 = Core.Movie(path2zCal);
 %%
 
-mov1.saveMovie('mp4',10,5);
+%mov1.saveMovie('mp4',10,5);
 %% showFrame
-mov1.showFrame(1,5);
+%mov1.showFrame(1,5);
 %mov2.showFrame(51);
-%% Calib
-% calib = Core.MPCalibration(path2Cal,info);
-% 
-% calib.calc(4);
-
-calib = Core.MPPlaneCalibration(path2Cal,info);
-
-calib.retrieveMovies;
-calib.calcIndivCal; 
-calib.calcCombinedCal;
-
-calib.showCal(1)
-calib.offTarget;
 %% Calibrate
 info.runMethod = 'run';
 mpMov = Core.MPMovie(file,path2Cal,info);

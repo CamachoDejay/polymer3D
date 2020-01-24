@@ -57,7 +57,8 @@ end
 switch checkRes
     case 'Yes'
     case 'Fix'
-        error('Fixing synchronization is not ready yet, sorry for the inconvenience');
+        [frameInfo] = fixCamTiming(frameInfo);
+      %  error('Fixing synchronization is not ready yet, sorry for the inconvenience');
     case 'No'
         disp('If you are running folder analysis, please remove the file from the folder');
         disp(['The unsynced file is: ',movieInfo.Path]);
@@ -202,7 +203,7 @@ end
 function [checkRes] = checkFrameInfo(frameInfo)
     disp('checking Camera synchronization');
     frame2Comp = 10;
-    if size(frameInfo,1) < frame2Comp
+    if length(frameInfo) < frame2Comp
        
         frame2Comp = size(frameInfo,1);
         
@@ -216,7 +217,49 @@ function [checkRes] = checkFrameInfo(frameInfo)
     if all(test)
         checkRes = 'Yes';
     else
-        checkRes = questdlg('It seems like the camera are not properly synchronized, do you still want to proceed?','Question to user','Yes','fix','No','No');
-     
+        checkRes = 'Fix';
     end   
+end
+
+function [frameInfo] = fixCamTiming(frameInfo)
+    tmpInfo = frameInfo;
+    timing = [tmpInfo.time];
+    %Check that the timing is correct by taking the difference. Where the
+    %camera are synchronize it will give 0 and expTime if camera are
+    %asynchronize, it will be exptime everywhere in the bingging and the
+    %end
+    test = diff(timing);
+    %extract the indices of the desync part
+    idxStart = find(test<mean(test)/2,1,'first');
+    idxEnd  = find(test<mean(test)/2,1,'last');
+    %delete the data
+    tmpInfo([1:idxStart-1,idxEnd:end])=[];
+    
+    %check that we kept the same number of frame for the two cameras
+    camera = cellfun(@str2num,{tmpInfo.C});  
+    assert(sum(camera==0)==sum(camera==1),'Something went wrong when fixing the sync');
+    
+    newTiming = [tmpInfo.time];
+    %let us renumber the T after the deletion
+   if str2double(tmpInfo(1).T) ==0
+        refCam= camera(1);
+
+    elseif str2double(tmpInfo(2).T) ==0
+        refCam= camera(2);
+    end
+    for i = 1: length(tmpInfo)
+        
+        %if current index is not reference camera we need to fix things
+        
+        if camera(i) ~=refCam
+            idx2Correct = and(camera==refCam,abs(newTiming(i)-newTiming)<mean(test)/2);
+            tmpInfo(i).T = tmpInfo(idx2Correct).T;
+            
+        end
+        
+    end
+    
+    frameInfo = tmpInfo;
+    warning('There was some issues with the synchronization, we had to fixed the out of sync frames');
+
 end

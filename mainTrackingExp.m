@@ -5,12 +5,12 @@ close all;
 path2ZCal = 'D:\Dropbox\4Apr Data\ZCal CS';
 path2SRCal = 'D:\Dropbox\4Apr Data\2DCal';
 
-file.path  = 'D:\Dropbox\4Apr Data\XYZ - OD35\X';
+file.path  = 'D:\Dropbox\4Apr Data\XYZ - OD50\Z';
 file.ext   = '.ome.tif';
 path2Cal = 'D:\Dropbox\4Apr Data\2DCal';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2 = 60;
+detectParam.chi2 = 24;
 
 %% Storing info about the file
 info.type = 'normal'; %normal or transmission
