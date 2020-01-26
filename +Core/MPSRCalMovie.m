@@ -549,14 +549,17 @@ classdef MPSRCalMovie < Core.MPCalMovie
                         end
                         
                     case 'Intensity'
+                %code something where the max of phasor in plane8 is at
+                %least 5 point away from the limit !
                 
-                        if length(data2Test.plane(data2Test.plane==8))<15   
-                           partData{i} = []; 
+                        [~,idx] = max(data2Test(data2Test.plane==8,:).magX+data2Test(data2Test.plane==8,:).magY);
+                        if length(data2Test.plane(data2Test.plane==8))-idx<5 
+                            partData{i} = []; 
                          
                         end
-                        error('Please Fix the code');
-
-                        if length(data2Test.plane(data2Test.plane==1))<15
+                            [~,idx] = max(data2Test(data2Test.plane==1,:).magX+data2Test(data2Test.plane==1,:).magY);
+                        
+                        if idx<5
                            partData{i} = []; 
                         end
                     case '3DFit'
@@ -614,16 +617,7 @@ classdef MPSRCalMovie < Core.MPCalMovie
             
         end
         
-        function [idx] = findOptimalDefocusingInt(obj,dataPlaneA,dataPlaneB)
-            
-            if and(all(dataPlaneA.plane==2),all(dataPlaneA.partNum ==10))
-                disp('test');
-            end
-            
-            if and(all(dataPlaneB.plane==2),all(dataPlaneB.partNum ==10))
-                disp('test');
-            end
-             
+        function [idx] = findOptimalDefocusingInt(obj,dataPlaneA,dataPlaneB)          
                         
             framesA = dataPlaneA.frame;
             framesB = dataPlaneB.frame;
@@ -634,9 +628,9 @@ classdef MPSRCalMovie < Core.MPCalMovie
             magXB = dataPlaneB.magX(ismember(dataPlaneB.frame,commonFrame));
             [~,id] = min(abs(magXA-magXB));
             
-            frames2Use = dataPlaneA.frame(ismember(commonFrame,dataPlaneA.frame));
+       %     frames2Use = dataPlaneA.frame(ismember(commonFrame,dataPlaneA.frame));
             
-            idx = frames2Use(id);
+            idx = commonFrame(id);
             
         end
         function [SRCalibData,dataPerPlane] = getCalibData(obj,partData,idx2Frame)

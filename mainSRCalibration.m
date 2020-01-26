@@ -4,17 +4,16 @@ clc
 close all;
 %% get path to SRCalibration
 
-file.path = 'D:\Dropbox\4Apr Data\2DCal';
+file.path = 'D:\TmpData\Extended\2DCal';
 file.ext  = '.ome.tif';
-path2Cal  = 'D:\Dropbox\4Apr Data\2DCal';
-
+path2Cal  = 'D:\TmpData\Extended\2DCal';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'run';
+info.runMethod = 'load';
 info.frame2Load = 'all';
 info.fitMethod = 'Phasor';
-info.zMethod   = 'PSFE';
+info.zMethod   = 'Intensity';
 
 testSRCal = Core.SRCalibration(file,path2Cal,info);
 
