@@ -117,7 +117,7 @@ classdef MPPlaneCalibration < handle
                 allNewOrder(:,:,i) = allData(i).file.neworder; 
                 allICorrF(:,:,i)  = allData(i).file.Icorrf;   
                 tmp = cell2mat({allData(i).file.inFocus.zpos});
-                allRelZpos(:,i) = tmp-tmp(1);
+                allRelZpos(:,i) = tmp-tmp(5);
                 allZpos(:,i) = tmp;
  
             end

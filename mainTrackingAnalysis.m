@@ -6,12 +6,12 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Extended\OD50\';
+filePath = 'D:\Documents\Unif\PhD\2019-Data\12 - Dec\18-19 No PSFE accuracy\Interleaved\Data\OD45\Z';
 dim = 'z';
 period = 20;
 minLength = 160;
 idx2Plot = 2;
-stepApplied = 200;
+stepApplied = 100;
 %% LOADING
 
 fileName = [filePath filesep 'trackResults.mat'];

@@ -4,9 +4,9 @@ clc
 close all;
 %% get path to SRCalibration
 
-file.path = 'D:\TmpData\Extended\2DCal';
+file.path = 'D:\Documents\Unif\PhD\2020-Data\01-Jan\detection issues\2DCal';
 file.ext  = '.ome.tif';
-path2Cal  = 'D:\TmpData\Extended\2DCal';
+path2Cal  = 'D:\Documents\Unif\PhD\2020-Data\01-Jan\detection issues\2DCal';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';

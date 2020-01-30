@@ -100,7 +100,7 @@ classdef trackingMethod < handle
                     
                     nextPart = next{i};
                     %check focus is not more than one plane away
-                    roughcheck1 = squeeze(abs(current.plane(3)-nextPart.plane(3))<=2);
+                    roughcheck1 = squeeze(abs(current.plane(3)-nextPart.plane(3))<2);
 
                     if roughcheck1 ==0
                         %disp('Something is wrong your focus changed more than one plane between 2 frames');
@@ -112,22 +112,22 @@ classdef trackingMethod < handle
                             %disp('Less than 2 planes in common, breaking out');
                         else
 
-                                % Test Euclidian distance
-                                Thresh = trackParam.euDistPx; %in px
-                                [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row(commonPlanes(:,1)) current.col(commonPlanes(:,1))],...
-                                    [nextPart.row(commonPlanes(:,2)), nextPart.col(commonPlanes(:,2))],Thresh);
-                                
-                                if strcmp(zMethod,'PSFE')
-                                % Test ellipticity
-                                [checkRes2] = Core.MPParticleMovie.checkEllipticity(current.ellip(commonPlanes(:,1)),...
-                                    nextPart.ellip(commonPlanes(:,2)),direction);
-                                else
-                                    [checkRes2] = true(size(checkRes1));
-                                end
-                                %To be a particle, we want the position and ellipticity to be
-                                %consistent in at least 2 planes 
-                                isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes,...
-                                    length(find(checkRes2))>=nConsistentPlanes);
+                            % Test Euclidian distance
+                            Thresh = trackParam.euDistPx; %in px
+                            [checkRes1] = Core.MPParticleMovie.checkEuDist([current.row(commonPlanes(:,1)) current.col(commonPlanes(:,1))],...
+                                [nextPart.row(commonPlanes(:,2)), nextPart.col(commonPlanes(:,2))],Thresh);
+
+                            if strcmp(zMethod,'PSFE')
+                            % Test ellipticity
+                            [checkRes2] = Core.MPParticleMovie.checkEllipticity(current.ellip(commonPlanes(:,1)),...
+                                nextPart.ellip(commonPlanes(:,2)),direction);
+                            else
+                                [checkRes2] = true(size(checkRes1));
+                            end
+                            %To be a particle, we want the position and ellipticity to be
+                            %consistent in at least 2 planes 
+                            isPart(i) = and(length(find(checkRes1))>=nConsistentPlanes,...
+                                length(find(checkRes2))>=nConsistentPlanes);
 
                         end
                     end

@@ -10,7 +10,7 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'D:\Documents\Unif\PhD\2020-Data\01-Jan\Test\Particle 17';
+file.path =  'D:\TmpData\Extended\2DCal\mov_1';
 path2Cal  =  'D:\Documents\Unif\PhD\2020-Data\01-Jan\Test';
 file.ext = '.ome.tif';
 

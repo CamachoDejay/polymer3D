@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Extender\2Cal';
+file.path  = 'D:\Documents\Unif\PhD\2020-Data\01-Jan\detection issues\2DCal\';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';

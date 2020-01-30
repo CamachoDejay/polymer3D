@@ -28,7 +28,7 @@ function [ chData1c, chData2c ] = getChData( data1c, data2c, ROI )
         
         nChan = 1:size(ROI,1);
         chData1c = uint16(zeros(r_win,c_win,size(ROI,1)/2,N));
-        for i=1:nChan(length(nChan)/2)
+        for i=1:length(nChan)/2
             col1 = ROI(i,1); 
             col2 = ROI(i,1) + ROI(i,3) - 1;
             row1 = ROI(i,2);

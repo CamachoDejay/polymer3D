@@ -241,11 +241,11 @@ classdef MPParticleMovie < Core.MPMovie
                           switch obj.info.zMethod
                               case 'Intensity'
                                  %we do not do anythin at the moment.
-                                 focusMetric = abs(fCandMet.fMetric);
+                                 focusMetric = fCandMet.magX+fCandMet.magY;
                                  
                               case '3DFit'
                                  %we do not do anythin at the moment.
-                                 focusMetric = abs(fCandMet.fMetric);
+                                 focusMetric = fCandMet.magX+fCandMet.magY;
                               case 'PSFE' 
                                 [corrEllip, focusMetric] = Localization.calcFocusMetric(fCandMet.ellip,fCandMet.fMetric);
                           end
@@ -524,7 +524,7 @@ classdef MPParticleMovie < Core.MPMovie
                 next.ellip,direction);
             
             elseif or(strcmp(zMethod,'Intensity'),strcmp(zMethod,'3DFit'))
-                
+                %we do not test ellipticity here
                 checkRes2 = checkRes1;
                 
             else

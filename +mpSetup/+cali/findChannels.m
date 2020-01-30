@@ -6,40 +6,17 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
     %From Rafa:
     sig = im(20:end-20,:);
     sig = sig(:);
-    bg = im(:,980:1030);
+    bg = im(:,1000:1040);
     bg = bg(:);
     
-    %check that signal and background are somewhat separated
-    if abs(mean(bg)-mean(sig))<15
-        
-        binEdges = 1:max(max(im));
-        [N,edges] = histcounts(im,binEdges);
-        edges = double(edges(1:end-1));
-        N = movavg(N(:),'Linear',20);
-        pch = pchip(edges,N);
-        out = ppval(pch,edges);
-        maxList = findpeaks(out);
-        [Val,~] = maxk(maxList,2);
-        idx1 = edges(N==Val(1));
-        idx2 = edges(N==Val(2));
-        
-        M = (idx1+idx2)/2;
-        M1 = (idx1+M)/2;
-        M2 = (idx2+M)/2;
-
-        if idx1 >idx2
-
-            bg = im(im<M1);
-            sig = im(im>=M2);
-
-        elseif idx2>idx1
-            bg  = im(im<M2);
-            sig = im(im>=M1);
-        end
-    end
-
     tHold = Misc.tholdSigBg(bg,sig);
     im = im>tHold;
+    %remove small pixel
+    im = bwareaopen(im,21);
+    % Clean up boundary
+    se = strel('square',5);
+    im = imclose(im,se);
+    im = bwareaopen(im,16);
     
     switch nargin
         case 1
@@ -171,6 +148,14 @@ function ch_p = findCp(trace_in,sCase,nCP)
             end
         end
 
+    end
+    % we delete data up to 10 so if the change point happen at 10 most
+    % likely there was no change point.
+    if  upCP == 10
+        upCP =0;
+    end
+    if doCP == length(trace_in) - 10
+        doCP = length(trace_in)-1;
     end
     
     ch_p = [upCP+1, doCP+1];

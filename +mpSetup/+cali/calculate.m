@@ -45,19 +45,22 @@ if cal.flipCam2
     movC2 = flip(movC2,2);
 end
 
-% max projection image
-max_im1 = max(movC1,[],3);
-max_im2 = max(movC2,[],3);
+% % max projection image
+% max_im1 = max(movC1,[],3);
+% max_im2 = max(movC2,[],3);
+
+meanIm1 = mean(movC1,3);
+meanIm2 = mean(movC2,3);
 
 waitbar(.1,h,'Finding channels')
 % find channels
-[ chCentCam1, ~, commonW1 ] = mpSetup.cali.findChannels( max_im1, false, nChan );
-[ chCentCam2, ~, commonW2 ] = mpSetup.cali.findChannels( max_im2, false,nChan );
+[ chCentCam1, ~, commonW1 ] = mpSetup.cali.findChannels( meanIm1, false, nChan );
+[ chCentCam2, ~, commonW2 ] = mpSetup.cali.findChannels( meanIm2, false,nChan );
 
 waitbar(.2,h,'getting ROIs')
 % get ROI
 commonwin = min([commonW1; commonW2]);
-imS = size(max_im1);
+imS = size(meanIm1);
 [ cal.ROI ] = mpSetup.cali.defineROI( commonwin, chCentCam1, chCentCam2, imS );
 
 waitbar(.3,h,'getting channel data')
@@ -87,7 +90,7 @@ waitbar(.5,h,'getting new order for channels')
 
 waitbar(.7,h,'getting image shifts')
 % find image shift in order to have the same ROIs to a pixel resoltuon
-[ imShifts ] = mpSetup.cali.simpleImShift( cal.inFocus, chData1c, chData2c );
+[ imShifts ] = mpSetup.cali.simpleImShift2( cal.inFocus, chData1c, chData2c );
 
 waitbar(.8,h,'refining ROIs')
 % refine the ROIs to consider the shifts
@@ -95,20 +98,21 @@ waitbar(.8,h,'refining ROIs')
 
 figure()
 subplot(2,1,1)
-imagesc(max_im1)
+imagesc(meanIm1)
 axis image
 for i = 1:nChan
     rectangle('Position', cal.ROI(i,:))
 end
 title('Camera 1 with ROIs')
 subplot(2,1,2)
-imagesc(max_im2)
+imagesc(meanIm2)
 axis image
 for i = nChan+1:2*nChan
     rectangle('Position', cal.ROI(i,:))
 end
 title('Camera 2 with ROIs')
 
+mpSetup.cali.plotCal(meanIm1,meanIm2, cal.ROI);
 
 if cal.correctInt
     waitbar(.9,h,'Correcting intensity')
