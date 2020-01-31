@@ -10,7 +10,7 @@ path2Save = 'D:\Documents\Unif\PhD\Papers\04 - Particle Tracking\Figure';
 ext = '.gif';
 filename=sprintf('%s%s2PTrapping%s', path2Save,filesep,ext);
 
-minSize = 1;%number of frame the traces needs to last to be plotted.
+minSize = 20;%number of frame the traces needs to last to be plotted.
 expTime = 0.01; %sec
 sizeParticles = 200; % diameter in nm
 frameRate = 20;

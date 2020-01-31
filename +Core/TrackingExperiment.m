@@ -207,7 +207,8 @@ classdef TrackingExperiment < handle
                 currentTrackMov.applyZCal;
                 
                 %Plane consolidation
-                currentTrackMov.consolidatePlanes;
+                frames = 1:currentTrackMov.calibrated.nFrames;
+                currentTrackMov.consolidatePlanes(frames,detectParam.consThresh)
                 
                 %superResolve
                 currentTrackMov.superResolve;

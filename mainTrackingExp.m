@@ -15,11 +15,11 @@ detectParam.consThresh = 5;
 
 %% Storing info about the file
 info.type = 'normal'; %normal or transmission
-info.runMethod = 'run'; % load or run
+info.runMethod = 'load'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
 info.zMethod = 'Intensity'; %Intensity, 3DFit or PSFE
-info.calibrate = true; %true to recalibrate;
+info.calibrate = false; %true to recalibrate;
 
 %% create experiments
 

@@ -137,7 +137,7 @@ classdef SRCalibration < handle
                 
                 %plane consolidation
                 frames = 1:currMov.calibrated.nFrames;
-                currMov.consolidatePlanes(6,frames,detectParam.consThresh)
+                currMov.consolidatePlanes(frames,detectParam.consThresh)
                 
                 %getting Calibration data
                 [SRCalibData,dataPerPlane] = currMov.getSRCalData(trackParam);

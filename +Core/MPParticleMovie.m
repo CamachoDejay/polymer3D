@@ -171,7 +171,7 @@ classdef MPParticleMovie < Core.MPMovie
             end
         end
         
-        function consolidatePlanes(obj,roiSize,frames,consThresh)
+        function consolidatePlanes(obj,frames,consThresh)
             %Consolidation refers to connect molecules that were localized
             %at similar position in different plane on a single frame.
             assert(~isempty(obj.calibrated),'Data should be calibrated to consolidate');
@@ -188,25 +188,14 @@ classdef MPParticleMovie < Core.MPMovie
                     case 1
                         
                         frames = 1: obj.calibrated.nFrames;
-                        roiSize = 6;
                         disp('Running consolidation on every frame with roi of 6 pixel');
                         consThresh = 4;
                     case 2
-                        
-                        frames = 1: obj.calibrated.nFrames;
-                        disp('Running consolidation on every frame')
-                        consThresh = 4;
+                        [frames] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
+                        consThresh = 4;                       
                     case 3
-                        
                         [frames] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
-                        assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
-                        assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
-                        consThresh = 4;
-                    case 4
-                        [frames] = Core.Movie.checkFrame(frames,obj.raw.maxFrame(1));
-                        assert(min(size(roiSize))==1,'RoiSize is expected to be a single number')
-                        assert (isnumeric(roiSize),'RoiSize is expected to be a single number');
-                        
+                        assert(isnumeric(consThresh),'Consolidation threshold should be numeric');
                     otherwise
                         
                         error('Something wrong with number of input');
@@ -279,7 +268,6 @@ classdef MPParticleMovie < Core.MPMovie
                 particle.nParticles = nParticles;
                 particle.tPoint     = nFrames;
                 particle.idx2TP     = nonzeros(idx2TP);
-                particle.roiSize    = roiSize;
                 particle.Traces     = [];
                 particle.nTraces    = [];
                 
