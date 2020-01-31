@@ -29,11 +29,11 @@ function [rConf] = getConfRad(msd,fitRange,expTime)
     
      fit = invExp(fPar,domain);
      
-     figure
-     plot(domain,toFit)
-     hold on
-     plot(domain,fit)
-     
+%      figure
+%      plot(domain,toFit)
+%      hold on
+%      plot(domain,fit)
+%      
      rConf = sqrt(fPar(1)+fPar(2));
 
 end
