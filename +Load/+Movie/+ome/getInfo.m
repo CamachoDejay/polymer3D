@@ -142,7 +142,7 @@ function [k1, k2, k3, k4, nFrames] = indexFrameHeader(frameHeader)
             duplicate = val(Ncount>2);
             nWrong = length(duplicate);
             disp([num2str(nWrong) ' wrong lines found']);
-            if nWrong > ceil(0.01*nFrames)
+            if nWrong > ceil(0.02*nFrames)
                 error('More than 1% of the data has mistakes, cannot pursue')
             end
             

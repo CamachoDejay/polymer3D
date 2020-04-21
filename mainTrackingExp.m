@@ -3,15 +3,15 @@ clear
 close all;
 
 path2ZCal = [];
-path2SRCal = 'D:\Documents\Unif\PhD\2020-Data\01-Jan\detection issues\2DCal';
+path2SRCal = 'F:\Boris - Leuven\2020\01-Jan\14 - Trapping\2D cal';
 
-file.path  = 'D:\Documents\Unif\PhD\2020-Data\01-Jan\detection issues';
+file.path  = 'F:\Boris - Leuven\2020\01-Jan\14 - Trapping\Incorporation 2000mW\toKeep';
 file.ext   = '.ome.tif';
-path2Cal = 'D:\Documents\Unif\PhD\2020-Data\01-Jan\detection issues\2DCal';
+path2Cal = 'F:\Boris - Leuven\2020\01-Jan\14 - Trapping\2D cal';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2 = 40;
-detectParam.consThresh = 5;
+detectParam.chi2 = 80;
+detectParam.consThresh = 4;
 
 %% Storing info about the file
 info.type = 'normal'; %normal or transmission
@@ -31,12 +31,12 @@ trackingExp.retrieveMovies;
 
 %% test detection parameters
 frame = 20;
-testMov = trackingExp.trackMovies.mov2;
+testMov = trackingExp.trackMovies.mov1;
 testMov.findCandidatePos(detectParam,frame);
 testMov.showCandidate(frame);
 
 %% get TrackingData
-trackParam.radius  = 1000;
+trackParam.radius  = 2000;
 trackParam.memory  = 3;
 
 val2Use = 'bestFocus';

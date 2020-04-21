@@ -3,13 +3,15 @@ clc
 close all
 %% User input
 delta = 50;% in px Size of the ROI around particles detected(radius 50 = 100x100 pixel
-nParticles = 4;%number of particles expected in the movie has to be exact
+nParticles = 6;%number of particles expected in the movie has to be exact
+width = 5; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
+
 pxSize = 95;%in nm
 minDist = 6; %in pixels (min distant expected between particles
 scaleBar = 2; %in um
 tail = 20;%Length of the tail in frames, for plotting the traces on top of the movie
 frameRate = 30; %for saving the movie
-info.type = 'Transmission';%Transmission or normal movie
+info.type = 'normal';%Transmission or normal movie
 toAnalyze = '.ome.tif';%accepted: .mp4, .ome.tif, folder. (folder that contain folders of .ome.tif.
 outputFolder = 'Results';%name of the folder to output the results
 %% Loading
@@ -50,7 +52,8 @@ allData(size(folder2Mov,2)).locPos = [];
 
 for i =1: size(folder2Mov,2)
     
-    currentPath = folder2Mov(i).folder;
+    file.path = folder2Mov(i).folder;
+    file.ext  = '.ome.tif';
     switch toAnalyze
         case '.mp4'
             p2file = [folder2Mov(i).folder filesep folder2Mov(i).name];
@@ -63,7 +66,7 @@ for i =1: size(folder2Mov,2)
                 fullStackIn(:,:,j) = rgb2gray(frame);%extract the intensity data from frames
             end
         otherwise
-            myMov = Core.Movie(currentPath,info,'.tif');%Create Movie Object
+            myMov = Core.Movie(file,info);%Create Movie Object
             fullStack = myMov.getFrame(1);%extract first frame
             frame = fullStack.Cam1;
             %check if cropping is necessary
@@ -100,7 +103,7 @@ for i =1: size(folder2Mov,2)
     %% Cropping Movie
     %crop the desired region around the center of mass of particles located
     %using delta provided by user
-    fullStackIn = fullStackIn(cropPos(1)-delta:cropPos(1)+delta, cropPos(2)-delta:cropPos(2)+delta,:);
+    %fullStackIn = fullStackIn(cropPos(1)-delta:cropPos(1)+delta, cropPos(2)-delta:cropPos(2)+delta,:);
     %% Fitting
     
     nFrames = size(fullStackIn,3);
@@ -123,7 +126,7 @@ for i =1: size(folder2Mov,2)
         x0 = pos(:,2);
         y0 = pos(:,1);
         %Multiple gaussian fitting occurs here
-        [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame,x0,y0,dom,nParticles); 
+        [gPar,resnorm,res] = Localization.Gauss.MultipleFitting(currentFrame,x0,y0,dom,nParticles,width); 
         g = reshape(gPar(5:end),[2,nParticles]);
         g = g';
         unSortedData = [unSortedData; g zeros(size(g,1),1) ones(size(g,1),1)*j  ];

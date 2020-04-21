@@ -32,6 +32,10 @@ currMov = currMov(idx,1);
 allRes = struct('msdX',0,'msdY',0,'msdZ',0,'msdR',0,'tau',0,'DX',0,'DY',0,'DZ',0,'DR',0,...
     'nX',0,'nY',0,'nZ',0,'nR',0);
 allRes(length(currMov)).msdX = [];
+maxLength = max(allHeight);
+allMSDX = zeros(length(currMov),maxLength-1);
+allMSDY = allMSDX;
+allMSDZ = allMSDY;
 
 for j = 1:length(currMov)
     currPart = currMov{j};
@@ -42,12 +46,14 @@ for j = 1:length(currMov)
 
     %in X
     msdx = MSD.calc(coord(:,1)/10^3,'3D');%convert to um;
+    allMSDX(j,1:length(msdx)) = msdx;
     DX   = MSD.getDiffCoeff(msdx,fitRDiff,'1D');
     DX   = DX/expTime;%convert from frame to s-1
     nX    = MSD.getViscosity(DX,R);
 
     %inY
     msdy = MSD.calc(coord(:,2)/10^3,'3D');%convert to um;
+    allMSDY(j,1:length(msdy)) = msdy;
     DY   = MSD.getDiffCoeff(msdy,fitRDiff,'1D');
     DY   = DY/expTime;%convert from frame to s-1
     nY   = MSD.getViscosity(DY,R);
@@ -55,6 +61,7 @@ for j = 1:length(currMov)
 
     %inZ
     msdz = MSD.calc(coord(:,3)/10^3,'3D');%convert to um;
+    allMSDZ(j,1:length(msdz)) = msdz;
     DZ   = MSD.getDiffCoeff(msdz,fitRDiff,'1D');
     DZ   = DZ/expTime;%convert from frame to s-1
     nZ   = MSD.getViscosity(DZ,R);
