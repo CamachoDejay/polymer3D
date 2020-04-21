@@ -122,7 +122,12 @@ for i =1: size(folder2Mov,2)
         currentFrame = double(fullStackIn(:,:,j));
         %inital detection of particles on currentFrame
         [pos] = goldProj.nMaxDetection (currentFrame,nParticles,minDist);
- 
+%         
+%         figure(1)
+%         imagesc(currentFrame)
+%         hold on
+%         scatter(pos(:,2),pos(:,1));
+%  
         x0 = pos(:,2);
         y0 = pos(:,1);
         %Multiple gaussian fitting occurs here
@@ -130,6 +135,12 @@ for i =1: size(folder2Mov,2)
         g = reshape(gPar(5:end),[2,nParticles]);
         g = g';
         unSortedData = [unSortedData; g zeros(size(g,1),1) ones(size(g,1),1)*j  ];
+        
+%         figure(1)
+%         imagesc(currentFrame)
+%         hold on
+%         scatter(g(:,1),g(:,2));
+%         
         
         %Generate an image of the Fit to be able to plot in case we want to
         %check
@@ -142,7 +153,7 @@ for i =1: size(folder2Mov,2)
         
         if j>1
             %Tracking based on MSD minimization 
-            newOrder = goldProj.simpleTracking(gPar(5:end),prevPos);
+            newOrder = goldProj.simpleTracking(gPar(5:end),prevPos,'2D');
             %reshaping to format the final data and sorting with new order
             gPos = reshape(gPar(5:end),[2,nParticles]);
             gPos = gPos(:,newOrder);
@@ -167,11 +178,11 @@ for i =1: size(folder2Mov,2)
         waitbar(j/nFrames,h,'Fitting Data')
     end
     %save data to the current folder being analyze
-    filename = [currentPath filesep 'LocalizationData.mat'];
+    filename = [file.path filesep 'LocalizationData.mat'];
     save(filename,'data2Store');
     %store data in allData
     allData(i).locPos = data2Store;
-    allData(i).fileName = currentPath;
+    allData(i).fileName = file.path;
     %clear waitbar
     close(h);
     
@@ -192,12 +203,12 @@ for i =1: size(folder2Mov,2)
     ylabel('Y Position (nm)')
     title('All localized spot');
     %save the figure in the current folder path
-    filename = [currentPath filesep 'LocalizationDensity.fig'];
+    filename = [file.path filesep 'LocalizationDensity.fig'];
     saveas(Fig,filename);
     
 %% MovieMaker
 %save a movie where the traces is displayed on top of the image
-filename = [currentPath filesep 'TrackMovie.gif'];
+filename = [file.path filesep 'TrackMovie.gif'];
 goldProj.makeTraceMovie(data2Store,fullStackIn,filename,frameRate,scaleBar,tail);
 
 end

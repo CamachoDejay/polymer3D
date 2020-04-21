@@ -294,9 +294,9 @@ classdef Movie < handle
             Pos = wait(h2);%store positions of the rectangle
             delete(h2);%remove the rectangle from the image
             
-            if Pos(3) ~= Pos(4)
-                Pos(3:4) = min(Pos(3:4));
-            end
+           % if Pos(3) ~= Pos(4)
+            %    Pos(3:4) = min(Pos(3:4));
+            %end
             close(gcf)
             obj.info.ROI = Pos;
         end

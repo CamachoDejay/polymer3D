@@ -21,7 +21,7 @@ else
 end
 
 bkgub = 2*min(A(:));
-bkglb = 0.95*min(A(:));
+bkglb = 0.7*min(A(:));
 Bkg0 = median(A(:));
 % PSFMicroscope=350; %nm
 % PSF=PSFMicroscope/160/2.355; %pixel
