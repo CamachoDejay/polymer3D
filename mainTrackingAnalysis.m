@@ -6,7 +6,7 @@ close all;
 clc;
 %% USER INPUT
 
-filePath = 'D:\Documents\Unif\PhD\2019-Data\12 - Dec\18-19 No PSFE accuracy\Interleaved\Data\OD45\Z';
+filePath = 'D:\Documents\Unif\PhD\2019-Data\04 - Apr\Extended\OD50\Z';
 dim = 'z';
 period = 20;
 minLength = 160;
@@ -138,8 +138,7 @@ precision  = nanmean(precPerTrace);
 accuracyM = nanmean(abs(accMPerTrace-stepSize));
 precisionM  = nanmean(precMPerTrace);
 
-intensity  = nanmean(intPerTrace);
-SNR        = nanmean(SNRPerTrace);
+
 
 
 fprintf('The average tracking precision for best focus is %d nm based on %d traces\n',round(precision),counter);
@@ -149,9 +148,6 @@ fprintf('The FWHM for best focus is %d nm based on %d traces\n',round(2*sqrt(2*l
 fprintf('The average tracking precision for mean is %d nm based on %d traces\n',round(precisionM),counter);
 fprintf('The average tracking accuracy for mean is %d nm  based on %d traces\n',round(accuracyM),counter);
 fprintf('The FWHM for mean is %d nm based on %d traces\n',round(2*sqrt(2*log(2))*precisionM),counter)
-
-fprintf('The average intensity is %d photons\n',intensity);
-fprintf('The average SNR is %d \n',SNR);
 
 step = 2;
 figure
@@ -167,8 +163,15 @@ histogram(accPerStep,edges)
 xlim([-50 50])
 axis square
 title('Accuracy for best focus')
-disp(['Std accPerStep ', num2str(std(accPerStep(accPerStep<100)))]);
-disp(['mean precPerStep ', num2str(mean(precPerStep))]);
+
+intensity  = nanmedian(intPerTrace);
+SNR        = nanmedian(SNRPerTrace);
+fprintf('The average intensity is %d +- %d \n',intensity,nanstd(intPerTrace));
+fprintf('The average SNR is %d \n',SNR);
+
+
+fprintf('Std accPerStep: %d \n', std(accPerStep(accPerStep<100)));
+fprintf('mean precPerStep: %d +- %d\n ', median(precPerStep),std(precPerStep));
 
 figure
 subplot(1,2,1)

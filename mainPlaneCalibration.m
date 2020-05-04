@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PhD\2020-Data\01-Jan\detection issues\2DCal\';
+file.path  = 'F:\Boris - Leuven\2020\05-May\20XObj';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';

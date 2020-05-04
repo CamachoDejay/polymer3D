@@ -230,8 +230,8 @@ function [frameInfo] = fixCamTiming(frameInfo)
     %end
     test = diff(timing);
     %extract the indices of the desync part
-    idxStart = find(test<mean(test)/2,1,'first');
-    idxEnd  = find(test<mean(test)/2,1,'last');
+    idxStart = find(test<mean(test),1,'first');
+    idxEnd  = find(test<mean(test),1,'last');
     %delete the data
     tmpInfo([1:idxStart-1,idxEnd:end])=[];
     
@@ -243,17 +243,24 @@ function [frameInfo] = fixCamTiming(frameInfo)
     %let us renumber the T after the deletion
    if str2double(tmpInfo(1).T) ==0
         refCam= camera(1);
+        modifier = 0;
 
     elseif str2double(tmpInfo(2).T) ==0
         refCam= camera(2);
-    end
+        modifier = 1;
+   end
+
+    currT = '0';
     for i = 1: length(tmpInfo)
         
         %if current index is not reference camera we need to fix things
-        
         if camera(i) ~=refCam
-            idx2Correct = and(camera==refCam,abs(newTiming(i)-newTiming)<mean(test)/2);
-            tmpInfo(i).T = tmpInfo(idx2Correct).T;
+        
+            % prev: abs(newTiming(i)-newTiming)<mean(test)
+            tmpInfo(i).T = currT;
+        else
+            cT = str2double(tmpInfo(i).T) + modifier;
+            currT = num2str(cT);
             
         end
         

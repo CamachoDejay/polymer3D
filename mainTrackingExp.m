@@ -3,14 +3,14 @@ clear
 close all;
 
 path2ZCal = [];
-path2SRCal = 'F:\Boris - Leuven\2020\01-Jan\14 - Trapping\2D cal';
+path2SRCal = [];
 
-file.path  = 'F:\Boris - Leuven\2020\01-Jan\14 - Trapping\Incorporation 2000mW\toKeep';
+file.path  = 'D:\Dropbox\DDM - Data\500\500nmInfDil-DarkField-DDM_10ms';
 file.ext   = '.ome.tif';
-path2Cal = 'F:\Boris - Leuven\2020\01-Jan\14 - Trapping\2D cal';
+path2Cal = 'D:\Dropbox\DDM - Data\500\2DCalNew';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2 = 80;
+detectParam.chi2 = 60;
 detectParam.consThresh = 4;
 
 %% Storing info about the file
@@ -36,7 +36,7 @@ testMov.findCandidatePos(detectParam,frame);
 testMov.showCandidate(frame);
 
 %% get TrackingData
-trackParam.radius  = 2000;
+trackParam.radius  = 1000;
 trackParam.memory  = 3;
 
 val2Use = 'bestFocus';
