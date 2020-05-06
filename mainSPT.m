@@ -10,9 +10,9 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'F:\Boris - Leuven\2019\04 - Apr\4 Extended\2DCal\2DCalExtendedConf_1';
-path2Cal  =  'F:\Boris - Leuven\2019\04 - Apr\4 Extended\2DCal\2DCalExtendedConf_1';
-file.ext = '.ome.tif';
+file.path =  'D:\Documents\Unif\PhD\2020-Data\05-May\NCTU\mov';
+path2Cal  =  [];
+file.ext = '.mpg';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -36,13 +36,13 @@ mov1.giveInfo;
 
 %mov1.saveMovie('mp4',10,5);
 %% showFrame
-%mov1.showFrame(1,5);
+mov1.showFrame(1,5);
 %mov2.showFrame(51);
 %% Calibrate
 info.runMethod = 'run';
 mpMov = Core.MPMovie(file,path2Cal,info);
 mpMov.giveInfo;
-
+%%
 mpMov.calibrate;
 %%
 mpMov.showFrame(5,5);

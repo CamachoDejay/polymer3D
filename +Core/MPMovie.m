@@ -415,6 +415,15 @@ classdef MPMovie < Core.Movie
                         
                         %saving data per plane and info to cal
                         [calib] = obj.saveCalibrated(data,endFrame,isTransmission,MP);
+                        
+                    case '.mpg'
+                        MP = false;%not a multiplane data
+                        [movC1] = Load.Movie.mpg.getFrame(obj.raw.fullPath,cFrame);
+                        %reformat in X,Y,P,T format for the saveCalibrated
+                        %part
+                        data(:,:,1,1:size(movC1,3)) = uint32(movC1);
+                        isTransmission = false;
+                        [calib] = obj.saveCalibrated(data,endFrame,isTransmission,MP);
                 end
             end
             
@@ -455,7 +464,13 @@ classdef MPMovie < Core.Movie
                 
                 calib.nFrames = maxFrame;
                 t = Tiff(fPathTiff, 'a');
-                t = dataStorage.writeTiff(t,data2Store,16);
+                
+                if isa(data2Store,'uint32')
+                    t = dataStorage.writeTiff(t,data2Store,32);
+                else
+                    t = dataStorage.writeTiff(t,data2Store,16);
+                end
+                
                 t.close;
                 
                 %We also write a few info about the calibrated data in a

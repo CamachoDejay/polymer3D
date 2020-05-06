@@ -7,7 +7,7 @@ nFrames = length(idx);
 %Create a bioformat reader
 imReader = bfGetReader(path);
 
-frame =zeros(imReader.getSizeY,imReader.getSizeX,nFrames);
+frame = zeros(imReader.getSizeY,imReader.getSizeX,nFrames);
 %data is read as series of image that contain only one plane so we first
 %need to set the series to the correct frame and then get the current
 %plane:

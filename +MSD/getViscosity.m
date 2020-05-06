@@ -5,9 +5,9 @@
 %
 % OUTPUT:
 %   -  n: Viscosity in centipoise
-function [n] = getViscosity(D,r)
+function [n] = getViscosity(D,r,T)
 
-    n = ((4.11*10^(-21))/(6*pi*r*10^(-6)*D*10^(-12)))*1000;%in cp
+    n = ((1.380649*10^(-23)*T)/(6*pi*r*10^(-6)*D*10^(-12)))*1000;%in cp
 
 
 end

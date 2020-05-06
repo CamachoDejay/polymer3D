@@ -3,19 +3,19 @@ clear
 close all;
 
 path2ZCal = [];
-path2SRCal = [];
+path2SRCal = 'F:\Boris - Leuven\2019\ViscosityData\20190627\2D Cal\200 nm';
 
-file.path  = 'D:\Dropbox\DDM - Data\500\500nmInfDil-DarkField-DDM_10ms';
+file.path  = 'F:\Boris - Leuven\2019\ViscosityData\20190627\500nm-Fluo';
 file.ext   = '.ome.tif';
-path2Cal = 'D:\Dropbox\DDM - Data\500\2DCalNew';
+path2Cal = 'F:\Boris - Leuven\2019\ViscosityData\20190627\2D Cal\200 nm';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2 = 60;
+detectParam.chi2 =60;
 detectParam.consThresh = 4;
 
 %% Storing info about the file
 info.type = 'normal'; %normal or transmission
-info.runMethod = 'load'; % load or run
+info.runMethod = 'run'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
 info.zMethod = 'Intensity'; %Intensity, 3DFit or PSFE

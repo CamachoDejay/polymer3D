@@ -4,13 +4,12 @@ close all;
 
 %% USER INPUT
 expTime = 0.01; %in sec
-T = 293; %temperature in Kelvin
-R = 0.554; %Radius of particle in um;
-fitRDiff = 0.1; %in Fraction of the data
-fitRConf = 0.1;%in Fraction of the data
-minSize = 50; %frames
+T = 296; %temperature in Kelvin
+R = 0.286; %Radius of particle in um;
+fitRDiff = 4; %in nuber of data
+minSize = 100; %frames
 ext = '.mat';
-path = 'D:\Documents\Unif\PhD\2019-Data\Viscosity\1000nm';
+path = 'D:\Documents\Unif\PhD\2019-Data\Viscosity\500nm-2';
 %% Loading
 folder = dir(path);
 idx = contains({folder.name},'trackResults.mat');
@@ -23,8 +22,6 @@ name = fieldnames(tmpData);
 data = tmpData.(name{1});
 
 %% Processing
-
-
 currMov =  data(1).traces;
 allHeight = cellfun(@height,currMov(:,1));
 idx = allHeight>minSize;
@@ -49,14 +46,14 @@ for j = 1:length(currMov)
     allMSDX(j,1:length(msdx)) = msdx;
     DX   = MSD.getDiffCoeff(msdx,fitRDiff,'1D');
     DX   = DX/expTime;%convert from frame to s-1
-    nX    = MSD.getViscosity(DX,R);
+    nX    = MSD.getViscosity(DX,R,T);
 
     %inY
     msdy = MSD.calc(coord(:,2)/10^3,'3D');%convert to um;
     allMSDY(j,1:length(msdy)) = msdy;
     DY   = MSD.getDiffCoeff(msdy,fitRDiff,'1D');
     DY   = DY/expTime;%convert from frame to s-1
-    nY   = MSD.getViscosity(DY,R);
+    nY   = MSD.getViscosity(DY,R,T);
 
 
     %inZ
@@ -64,14 +61,14 @@ for j = 1:length(currMov)
     allMSDZ(j,1:length(msdz)) = msdz;
     DZ   = MSD.getDiffCoeff(msdz,fitRDiff,'1D');
     DZ   = DZ/expTime;%convert from frame to s-1
-    nZ   = MSD.getViscosity(DZ,R);
+    nZ   = MSD.getViscosity(DZ,R,T);
 
 
     %inR
     msdr = MSD.calc(coord/10^3,'3D');%convert to um;
     DR   = MSD.getDiffCoeff(msdr,fitRDiff,'3D');
     DR   = DR/expTime;%convert from frame to s-1
-    nR   = MSD.getViscosity(DR,R);
+    nR   = MSD.getViscosity(DR,R,T);
 
     allRes(j).msdX = msdx;% in um^2
     allRes(j).msdY = msdy;
