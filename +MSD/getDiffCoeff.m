@@ -4,7 +4,7 @@
 % fitRange is a integer, how many data point to be consider for the fit
 % dim is the dimension in which MSD was calculated (1D,2D or 3D)
 
-function D = getDiffCoeff(msd,fitRange,dim)
+function D = getDiffCoeff(msd,tau,fitRange,dim)
     
     switch dim
         case '1D'
@@ -21,8 +21,7 @@ function D = getDiffCoeff(msd,fitRange,dim)
   %  assert(and(fitRange<=1,isnumeric(fitRange)),'fit Range needs to be numerical between 0 and 1');
     
     tofit = msd(1:fitRange);
-
-    tau   = 1:length(tofit);
+    tau   = tau(1:fitRange);
     f     = fit(tau(:),tofit(:),'a*x+b');
     
     g = coeffvalues(f);

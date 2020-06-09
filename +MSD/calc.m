@@ -1,4 +1,4 @@
-function [MSD,D] = calc(coord,dimension)
+function [MSD,D] = calc(coord)
 % the function gives the distance ('D') between each point and
 % mean-squre-dispracement ('MSD')
 %
@@ -22,16 +22,6 @@ switch dim
         
         error('unexpected dimension for the vector')
         
-end
-
-if strcmp(dimension,'2D')
-    
-    coord(:,3) = 0;
-    
-elseif strcmp(dimension,'3D')
-    
-    assert(size(coord,2) ==3,'error with the dimension of the vector, expected 3D vector');
-    
 end
 
 %%%Fist calculate distance between each frame

@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'F:\Boris - Leuven\2020\05-May\20XObj';
+file.path  = 'D:\Dropbox\IsotropicDiff\2DCalNew';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';

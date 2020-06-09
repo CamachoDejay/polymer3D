@@ -10,9 +10,9 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'D:\Documents\Unif\PhD\2020-Data\05-May\NCTU\mov';
-path2Cal  =  [];
-file.ext = '.mpg';
+file.path =  'F:\Boris - Leuven\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal\mov_4';
+path2Cal  =  'F:\Boris - Leuven\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal';
+file.ext = '.ome.tif';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';

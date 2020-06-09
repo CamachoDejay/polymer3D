@@ -3,14 +3,14 @@ clear
 close all;
 
 path2ZCal = [];
-path2SRCal = 'F:\Boris - Leuven\2019\ViscosityData\20190627\2D Cal\200 nm';
+path2SRCal = [];
 
-file.path  = 'F:\Boris - Leuven\2019\ViscosityData\20190627\500nm-Fluo';
+file.path  = 'D:\Dropbox\IsotropicDiff\500nmInfDil-Fluo-DDM_10ms';
 file.ext   = '.ome.tif';
-path2Cal = 'F:\Boris - Leuven\2019\ViscosityData\20190627\2D Cal\200 nm';
+path2Cal = 'D:\Dropbox\IsotropicDiff\2DCalNew';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2 =60;
+detectParam.chi2  = 120;
 detectParam.consThresh = 4;
 
 %% Storing info about the file

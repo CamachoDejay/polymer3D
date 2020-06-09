@@ -210,7 +210,7 @@ classdef MPParticleMovie < Core.MPMovie
                 h = waitbar(0,'Consolidating candidate ...');
                 
                 %Consolidation occurs here
-                for i = 1 : 1:nFrames
+                for i = 1 :nFrames
                     disp(['Consolidating frame ' num2str(i) ' / ' num2str(nFrames)]);
                     idx = frames(i);
                     %#1 Extract localized Position for specific frame

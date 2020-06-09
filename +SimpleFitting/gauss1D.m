@@ -21,7 +21,7 @@ domain =domain(:);
 lb        = [abs(domain(1)-domain(2))/10     min(domain)-0.1*max(abs(domain))     0        0];
 ub        = [abs(domain(1)-domain(2))*20     max(domain)+0.1*max(abs(domain))     3*val      val];
 initguess = [      sigGuess                  muGuess                          val-min(A) min(A)];
-
-FitPar=lsqcurvefit(@SimpleFitting.gaussian,initguess,domain,A,lb,ub);
+opts = optimset('Display','off');
+FitPar=lsqcurvefit(@SimpleFitting.gaussian,initguess,domain,A,lb,ub,opts);
 
 Fit=FitPar(3)*exp(-((domain-FitPar(2))./(sqrt(2).*FitPar(1))).^2)+FitPar(4);
