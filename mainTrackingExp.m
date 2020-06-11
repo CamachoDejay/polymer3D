@@ -5,17 +5,17 @@ close all;
 path2ZCal = [];
 path2SRCal = [];
 
-file.path  = 'D:\Dropbox\IsotropicDiff\500nmInfDil-Fluo-DDM_10ms';
+file.path  = 'F:\Boris - Leuven\2019\12 - December\18-19 Precision no PSFE\Extended\test-SI paper';
 file.ext   = '.ome.tif';
-path2Cal = 'D:\Dropbox\IsotropicDiff\2DCalNew';
+path2Cal = 'F:\Boris - Leuven\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2  = 120;
+detectParam.chi2  = 60;
 detectParam.consThresh = 4;
 
 %% Storing info about the file
 info.type = 'normal'; %normal or transmission
-info.runMethod = 'run'; % load or run
+info.runMethod = 'load'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
 info.zMethod = 'Intensity'; %Intensity, 3DFit or PSFE
@@ -30,7 +30,7 @@ trackingExp = Core.TrackingExperiment(file,path2Cal,info,path2SRCal,path2ZCal);
 trackingExp.retrieveMovies;
 
 %% test detection parameters
-frame = 20;
+frame =100;
 testMov = trackingExp.trackMovies.mov1;
 testMov.findCandidatePos(detectParam,frame);
 testMov.showCandidate(frame);

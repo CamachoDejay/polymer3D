@@ -262,6 +262,9 @@ classdef MPLocMovie < Core.MPParticleMovie
                         {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
                   
                     for j = 1:length(frameData)
+                        if j == 100
+                            disp('stop')
+                        end
 
                         partData = frameData{j};
 
@@ -738,20 +741,20 @@ classdef MPLocMovie < Core.MPParticleMovie
         end
         function [Mag] = getZPhasorMag(partData,ROIRad,volIm)
 
-        %Possible improvement : Translate the coordinate of the best
-        %focus into the otherplanes to extract the exact value where
-        %the PSF should be taken    
-        imSize = size(volIm);
-        pos = [round(nanmean(partData.row)),round(nanmean(partData.col))];
+            %Possible improvement : Translate the coordinate of the best
+            %focus into the otherplanes to extract the exact value where
+            %the PSF should be taken    
+            imSize = size(volIm);
+            pos = [round(nanmean(partData.row)),round(nanmean(partData.col))];
 
-        ROIs = Misc.getROIs(pos,ROIRad,imSize(1:2));
+            ROIs = Misc.getROIs(pos,ROIRad,imSize(1:2));
 
-        ROI = volIm(ROIs(1):ROIs(2),ROIs(3):ROIs(4),:);
+            ROI = volIm(ROIs(1):ROIs(2),ROIs(3):ROIs(4),:);
 
-        Mag = struct('x',zeros(1,size(ROI,3)),'y',zeros(1,size(ROI,3)));
-        for i =1:size(ROI,3)
-            [~,~,~,Mag(i).x,Mag(i).y] = Localization.phasor(ROI(:,:,i));
-        end
+            Mag = struct('x',zeros(1,size(ROI,3)),'y',zeros(1,size(ROI,3)));
+            for i =1:size(ROI,3)
+                [~,~,~,Mag(i).x,Mag(i).y] = Localization.phasor(ROI(:,:,i));
+            end
 
         end 
 
