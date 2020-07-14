@@ -19,13 +19,13 @@ globXq = linspace(double(minX),double(maxX),length(allX)*3);
 sigVq = interp1(double(sigCDF.x),double(sigCDF.y),globXq);
 bgVq  = interp1(double(bgCCDF.x),double(bgCCDF.y),globXq);
 diffVq = abs(sigVq-bgVq);
-
-if mean(sigCDF.x(sigCDF.y>0.95))>2*max(bg)
-    tHold = max(bg);
-else
-    [~,idx] = nanmin(diffVq);
-    tHold = globXq(idx);
-end
+%not sure what was this for:
+% if mean(sigCDF.x(sigCDF.y>0.95))>2*max(bg)
+%     tHold = max(bg);
+% else
+[~,idx] = nanmin(diffVq);
+tHold = globXq(idx);
+%end
 
 end
 

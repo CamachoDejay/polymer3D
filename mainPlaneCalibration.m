@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'D:\Dropbox\IsotropicDiff\2DCalNew';
+file.path  = 'D:\Dropbox\test Johannes\2DCal Isuue';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';

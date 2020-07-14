@@ -5,11 +5,11 @@ close all;
 %% USER INPUT
 expTime = 0.01; %in sec
 T = 296.15; %temperature in Kelvin
-R = 0.554; %Radius of particle in um;
+R = 0.285; %Radius of particle in um;
 fitRDiff = 4; %in nuber of data
 minSize = 50; %frames
 ext = '.mat';
-path = 'D:\Documents\Unif\PhD\2019-Data\Viscosity\1000nm';
+path = 'F:\Boris - Leuven\Sergey\2019\DDM - Data\500\500nmInfDil-BrightField-DDM_10ms';
 %% Loading
 folder = dir(path);
 idx = contains({folder.name},'trackResults.mat');

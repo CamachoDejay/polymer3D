@@ -10,7 +10,7 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'F:\Boris - Leuven\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal\mov_4';
+file.path =  'F:\Boris - Leuven\2019\12 - December\18-19 Precision no PSFE\Extended\OD25\X\mov_2';
 path2Cal  =  'F:\Boris - Leuven\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal';
 file.ext = '.ome.tif';
 
@@ -31,6 +31,7 @@ info.zMethod = 'Intensity';
 %% create a Movie Object
 mov1 = Core.Movie(file,info);
 mov1.giveInfo;
+
 %mov2 = Core.Movie(path2zCal);
 %%
 

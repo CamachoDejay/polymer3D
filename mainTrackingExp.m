@@ -5,16 +5,16 @@ close all;
 path2ZCal = [];
 path2SRCal = [];
 
-file.path  = 'F:\Boris - Leuven\2019\12 - December\18-19 Precision no PSFE\Extended\test-SI paper';
+file.path  = 'F:\Boris - Leuven\Sergey\2019\DDM - Data\500\500nmInfDil-BrightField-DDM_10ms';
 file.ext   = '.ome.tif';
-path2Cal = 'F:\Boris - Leuven\2019\12 - December\18-19 Precision no PSFE\Extended\2DCal';
+path2Cal = 'F:\Boris - Leuven\Sergey\2019\DDM - Data\500\2DCalNew';
 dimension = '3D';
 detectParam.delta = 6;
 detectParam.chi2  = 60;
 detectParam.consThresh = 4;
 
 %% Storing info about the file
-info.type = 'normal'; %normal or transmission
+info.type = 'transmission'; %normal or transmission
 info.runMethod = 'load'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
@@ -51,7 +51,7 @@ traces = trackingExp.getTraces3D;
 
 %% Get MSD
 
-[MSD,~] = trackingExp.getMSD(dimension);
+%[MSD,~] = trackingExp.getMSD(dimension);
 %% show traces
 
 trackingExp.showTraces(1);

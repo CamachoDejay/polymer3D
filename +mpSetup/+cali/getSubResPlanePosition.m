@@ -6,7 +6,7 @@ guess.sig = 1;
 zFocus = zeros(1,size(focusMet,2));
 
 % Find the half max value.
-halfMax = (min(focusMet) + max(focusMet)) / 2;
+halfMax = (min(focusMet) + max(focusMet)) / 4;
 % Find where the data first drops below half the max.
 index1 = find(focusMet >= halfMax, 1, 'first');
 % Find where the data last rises above half the max.
