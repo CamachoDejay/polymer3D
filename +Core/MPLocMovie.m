@@ -236,7 +236,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 
         function superResolve(obj)
             disp('super resolving positions ... ');
-            
+           
             %Check if some particle were super resolved already:
             [run,SRList] = obj.existZResParticles(obj.info.runMethod,obj.raw.movInfo.Path,'.mat');
            
@@ -252,6 +252,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                         {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
                 nFrames = length(data2Resolve);
                 h = waitbar(0,'SuperResolving position...');
+                
                 for i = 1:nFrames
 
                     frameData = data2Resolve{i};
@@ -323,6 +324,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             
             obj.particles.SRList = SRList;
             particle = obj.particles;
+          
             %Save the data
             fileName = sprintf('%s%sparticle.mat',obj.raw.movInfo.Path,'\');
             save(fileName,'particle');
