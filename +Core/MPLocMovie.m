@@ -248,74 +248,87 @@ classdef MPLocMovie < Core.MPParticleMovie
                 SRList = table(zeros(nParticles,1),...
                         zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
                         zeros(nParticles,1), zeros(nParticles,1), zeros(nParticles,1),...
-                        zeros(nParticles,1), zeros(nParticles,1),'VariableNames',...
-                        {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
+                        zeros(nParticles,1), zeros(nParticles,1),zeros(nParticles,1),...
+                        'VariableNames',...
+                        {'row','col','z','rowM','colM','zM','adjR','intensity','SNR','t'});
                 nFrames = length(data2Resolve);
                 h = waitbar(0,'SuperResolving position...');
+                profile('on')
                 for i = 1:nFrames
-
+                  
                     frameData = data2Resolve{i};
                     frameData2Store = table(zeros(size(frameData)),...
                         zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
                         zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
-                        zeros(size(frameData)),zeros(size(frameData)),'VariableNames',...
-                        {'row','col','z','rowM','colM','zM','intensity','SNR','t'});
-                  
-                    for j = 1:length(frameData)
-                        if j == 100
-                            disp('stop')
+                        zeros(size(frameData)),zeros(size(frameData)),zeros(size(frameData)),...
+                        'VariableNames',...
+                        {'row','col','z','rowM','colM','zM','adjR','intensity','SNR','t'});
+                    
+                    if strcmp(obj.info.zMethod,'PSFE')
+                        for j = 1:length(frameData)
+                            partData = frameData{j};
+                            [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}));
+                            frameData2Store(j,{'row','col','z','rowM','colM','zM'}) = data;
+                            frameData2Store.intensity(j) = partData.intensity(3);
+                            frameData2Store.SNR(j) = partData.SNR(3);
+                            frameData2Store.t(j) = i;
                         end
+                        
+                    else
+                        
+                        fData = obj.getFrame(i);
+                        ROIRad = ceil(obj.info.FWHM_px/2+1);
+                        
+                        for j = 1:length(frameData)
+                            partData = frameData{j};
+                            
+                            switch obj.info.zMethod
+                                case 'Intensity'
+                                    if nPlanes ==1
+                                        row  = partData.row(3)*pxSize;
+                                        col  = partData.col(3)*pxSize;
+                                        z    = partData.z(3);
+                                        rowM = partData.row(3)*pxSize;
+                                        colM = partData.col(3)*pxSize;
+                                        zM   = partData.z(3);
+                                        data = table(row,col,z,rowM,colM,zM,...
+                           'VariableNames',{'row','col','z','rowM','colM','zM'});
 
-                        partData = frameData{j};
+                                    else
+                         
+                                        partVolIm = obj.getPartVolIm(partData,ROIRad,fData);
+                                        [data] = obj.resolveXYZInt(partData(:,{'row','col','z','ellip','plane'}),partVolIm);
 
-                        switch obj.info.zMethod
-                            case 'Intensity'
-                                if nPlanes ==1
-                                    row  = partData.row(3)*pxSize;
-                                    col  = partData.col(3)*pxSize;
-                                    z    = partData.z(3);
-                                    rowM = partData.row(3)*pxSize;
-                                    colM = partData.col(3)*pxSize;
-                                    zM   = partData.z(3);
-                                    data = table(row,col,z,rowM,colM,zM,...
-                       'VariableNames',{'row','col','z','rowM','colM','zM'});
+                                    end
 
-                                else
+                                case '3DFit'
+                                    if nPlanes ==1
+                                        row  = partData.row(3)*pxSize;
+                                        col  = partData.col(3)*pxSize;
+                                        z    = partData.z(3);
+                                        rowM = partData.row(3)*pxSize;
+                                        colM = partData.col(3)*pxSize;
+                                        zM   = partData.z(3);
+                                        data = table(row,col,z,rowM,colM,zM,...
+                           'VariableNames',{'row','col','z','rowM','colM','zM'});
 
-                                fData = obj.getFrame(i);
-                                [data] = obj.resolveXYZInt(partData(:,{'row','col','z','ellip','plane'}),fData);
-                                end
-                            case '3DFit'
-                                if nPlanes ==1
-                                    row  = partData.row(3)*pxSize;
-                                    col  = partData.col(3)*pxSize;
-                                    z    = partData.z(3);
-                                    rowM = partData.row(3)*pxSize;
-                                    colM = partData.col(3)*pxSize;
-                                    zM   = partData.z(3);
-                                    data = table(row,col,z,rowM,colM,zM,...
-                       'VariableNames',{'row','col','z','rowM','colM','zM'});
+                                    else
+                                        [data] = obj.resolveXYZ3DFit(partData(:,{'row','col','z','ellip','plane'}),fData);
+                                    end
+                            end
 
-                                else
+                            frameData2Store(j,{'row','col','z','rowM','colM','zM','adjR'}) = data;
+                            frameData2Store.intensity(j) = partData.intensity(3);
+                            frameData2Store.SNR(j) = partData.SNR(3);
+                            frameData2Store.t(j) = i;
 
-                                fData = obj.getFrame(i);
-                                [data] = obj.resolveXYZ3DFit(partData(:,{'row','col','z','ellip','plane'}),fData);
-                                end
-
-                            case 'PSFE'
-                                [data] = obj.resolveXYZ(partData(:,{'row','col','z','ellip','plane'}));
                         end
-
-                        frameData2Store(j,{'row','col','z','rowM','colM','zM'}) = data;
-                        frameData2Store.intensity(j) = partData.intensity(3);
-                        frameData2Store.SNR(j) = partData.SNR(3);
-                        frameData2Store.t(j) = i;
-
                     end
                 startIdx = find(SRList.row==0,1);   
                 SRList(startIdx:startIdx+height(frameData2Store)-1,:) = frameData2Store;   
                 waitbar(i/nFrames,h,['SuperResolving positions: frame ' num2str(i) '/' num2str(nFrames) ' done']);
                 end
+                profile('viewer')
                 close(h);
                 %clean up the list
                 SRList(isnan(SRList.row),:) = [];
@@ -325,6 +338,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             particle = obj.particles;
             %Save the data
             fileName = sprintf('%s%sparticle.mat',obj.raw.movInfo.Path,'\');
+            profile('off')
             save(fileName,'particle');
             disp('========> DONE ! <=========');
             
@@ -566,25 +580,40 @@ classdef MPLocMovie < Core.MPParticleMovie
             
         end
          
-        function [data] = resolveXYZInt(obj,partData,frameData)
-           
+        function [data] = resolveXYZInt(obj,partData,partVolIm)
+          
             pxSize = obj.info.pxSize;
-            ROIRad = ceil(obj.info.FWHM_px/2+1);
-            planes  = partData(~isnan(partData.plane),:).plane;
-
+          
             bf = partData.plane(3);
             planePos = obj.calibrated.oRelZPos;
             
+            
             %Get ROI XZ, YZ scaled to same pixel size
-            [Mag] = Core.MPLocMovie.getZPhasorMag(partData,ROIRad,frameData);
+            [Mag] = Core.MPLocMovie.getZPhasorMag(partVolIm);
 
             domain = planePos;
             data   = [Mag.x]+[Mag.y];
             guess.sig = 2*obj.info.FWHM_px*pxSize/1000;
             guess.mu  = planePos(bf);
-            [Res,fit] = SimpleFitting.gauss1D(data,domain,guess);
-
-            z = Res(2);
+            guess.A   = max(data)-min(data);
+           
+%             [Res,fitData] = SimpleFitting.gauss1D(data,domain,guess);
+%             RMS = sqrt(sum((data(:)-fitData(:)).^2)/length(data));
+%             adjR = 1 - RMS.^2/var(data);
+%           
+            
+            params = [guess.sig guess.mu guess.A min(data)];
+         
+            fun = @(x) SimpleFitting.minGauss1D(domain,data,x);
+            opt = optimset('Display','off');
+            % then we can do:
+            [out, RMSD] = fminsearch(fun,params,opt);
+            %normalize RMSD with mean data
+            adjR = 1 - RMSD.^2/var(data);
+            
+            %[~, gaussFit] = SimpleFitting.minGauss1D(domain,data,out);
+      
+            z = out(2);
             %if the z position is out of bound we do not consider the data
             if or(z<min(domain),z>max(domain))
                 z   = NaN;                           
@@ -594,9 +623,7 @@ classdef MPLocMovie < Core.MPParticleMovie
                 rowM = NaN;
                 colM = NaN;
             else
-
                 z = z*1000;
-
                 row = partData.row(3)*pxSize;
                 col = partData.col(3)*pxSize;
                 zM = z;                      
@@ -606,26 +633,18 @@ classdef MPLocMovie < Core.MPParticleMovie
             end
            
             %store the data
-            data = table(row,col,z,rowM,colM,zM,...
-                   'VariableNames',{'row','col','z','rowM','colM','zM'});
+            data = table(row,col,z,rowM,colM,zM,adjR,...
+                   'VariableNames',{'row','col','z','rowM','colM','zM','adjR'});
             
+   
         end
         
-        function [data] = resolveXYZ3DFit(obj,partData,frameData)
+        function [data] = resolveXYZ3DFit(obj,partData,ROI)
              
             pxSize = obj.info.pxSize;
-            ROIRad = ceil(obj.info.FWHM_px/2+1);
-
             bf = partData.plane(3);
             planePos = obj.calibrated.oRelZPos;
-            
-            imSize = size(frameData);
-            pos = [round(nanmean(partData.row)),round(nanmean(partData.col))];
 
-            ROIs = Misc.getROIs(pos,ROIRad,imSize(1:2));
-
-            ROI = frameData(ROIs(1):ROIs(2),ROIs(3):ROIs(4),:);
-            
             x0 = mean([ROIs(3) ROIs(4)])*pxSize;
             y0 = mean([ROIs(1) ROIs(2)])*pxSize;
       
@@ -646,8 +665,6 @@ classdef MPLocMovie < Core.MPParticleMovie
             %Multiple gaussian fitting occurs here
             [gPar,resnorm,res] = Localization.Gauss.MultipleGFit3D(ROI,x0,y0,z0,dom,1,width);
             z = gPar(:,7);
-            
-           
 
             if or(z<min(planePos*1000),z>max(planePos*1000))
                 z   = NaN;                     
@@ -739,24 +756,30 @@ classdef MPLocMovie < Core.MPParticleMovie
                      
             end
         end
-        function [Mag] = getZPhasorMag(partData,ROIRad,volIm)
+        function [Mag] = getZPhasorMag(ROI)
 
             %Possible improvement : Translate the coordinate of the best
             %focus into the otherplanes to extract the exact value where
             %the PSF should be taken    
-            imSize = size(volIm);
-            pos = [round(nanmean(partData.row)),round(nanmean(partData.col))];
-
-            ROIs = Misc.getROIs(pos,ROIRad,imSize(1:2));
-
-            ROI = volIm(ROIs(1):ROIs(2),ROIs(3):ROIs(4),:);
-
+           
             Mag = struct('x',zeros(1,size(ROI,3)),'y',zeros(1,size(ROI,3)));
             for i =1:size(ROI,3)
                 [~,~,~,Mag(i).x,Mag(i).y] = Localization.phasor(ROI(:,:,i));
             end
 
-        end 
+        end
+        
+        function [partVolIm] = getPartVolIm(partData,ROIRad,volIm)
+            %Extract data from particle in the 8 planes
+            imSize = size(volIm);
+            
+            pos = [round(nanmean(partData.row)),round(nanmean(partData.col))];
+
+            ROIs = Misc.getROIs(pos,ROIRad,imSize(1:2));
+
+            partVolIm = volIm(ROIs(1):ROIs(2),ROIs(3):ROIs(4),:);
+            
+        end
 
     end
 end
