@@ -4,13 +4,13 @@ clc
 close all;
 %% get path to SRCalibration
 
-file.path = 'D:\Documents\Unif\PhD\2020-Data\01-Jan\detection issues\2DCal';
+file.path = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Movies boris\2Dcal';
 file.ext  = '.ome.tif';
-path2Cal  = 'D:\Documents\Unif\PhD\2020-Data\01-Jan\detection issues\2DCal';
+path2Cal  = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Movies boris\2Dcal';
 
 %% Initialize a zCalibration Object
 info.type = 'normal';
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.frame2Load = 'all';
 info.fitMethod = 'Phasor';
 info.zMethod   = 'Intensity';

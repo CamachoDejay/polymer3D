@@ -3,23 +3,23 @@ clear
 close all;
 
 path2ZCal = [];
-path2SRCal = [];
+path2SRCal = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Trapping First Test\2DCal';
 
-file.path  = 'F:\Boris - Leuven\Sergey\2019\DDM - Data\500\500nmInfDil-BrightField-DDM_10ms';
+file.path  = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Trapping First Test\50nmStep-6W-2';
 file.ext   = '.ome.tif';
-path2Cal = 'F:\Boris - Leuven\Sergey\2019\DDM - Data\500\2DCalNew';
+path2Cal = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Trapping First Test\2DCal';
 dimension = '3D';
 detectParam.delta = 6;
-detectParam.chi2  = 60;
+detectParam.chi2  = 80;
 detectParam.consThresh = 4;
 
 %% Storing info about the file
-info.type = 'transmission'; %normal or transmission
-info.runMethod = 'load'; % load or run
+info.type = 'normal'; %normal or transmission
+info.runMethod = 'run'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
 info.zMethod = 'Intensity'; %Intensity, 3DFit or PSFE
-info.calibrate = false; %true to recalibrate;
+info.calibrate = true; %true to recalibrate;
 
 %% create experiments
 
@@ -30,13 +30,13 @@ trackingExp = Core.TrackingExperiment(file,path2Cal,info,path2SRCal,path2ZCal);
 trackingExp.retrieveMovies;
 
 %% test detection parameters
-frame =100;
+frame =99;
 testMov = trackingExp.trackMovies.mov1;
 testMov.findCandidatePos(detectParam,frame);
 testMov.showCandidate(frame);
 
 %% get TrackingData
-trackParam.radius  = 1000;
+trackParam.radius  = 500;
 trackParam.memory  = 3;
 
 val2Use = 'bestFocus';

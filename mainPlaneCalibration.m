@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'D:\Dropbox\test Johannes\2DCal Isuue';
+file.path  = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Movies boris\2Dcal';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';

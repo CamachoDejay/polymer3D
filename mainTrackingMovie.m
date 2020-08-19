@@ -6,12 +6,12 @@ clear;
 path2ZCal = [];
 path2SRCal = [];
 
-file.path = 'C:\Users\Boris\Documents\MATLAB\data\Multiplane\ZPos\200 Fluo\Atempt_9';
+file.path = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Movies boris\2Dcal\2Dcal__1';
 file.ext  = '.ome.tif';
-path2Cal  ='C:\Users\Boris\Documents\MATLAB\data\Multiplane\2DCal';
+path2Cal  ='D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Movies boris\2Dcal';
 
 detectParam.delta = 6;
-detectParam.chi2 = 40;
+detectParam.chi2 = 60;
 roiRad = 7;
 info.runMethod = 'load';
 info.type = 'normal';
@@ -25,8 +25,8 @@ MPTrackMov.giveInfo
 
 %% test detection
 
- MPTrackMov.findCandidatePos(detectParam,1);
- MPTrackMov.showCandidate(1);
+ MPTrackMov.findCandidatePos(detectParam,78);
+ MPTrackMov.showCandidate(78);
 
 %% Detection
 %find candidate

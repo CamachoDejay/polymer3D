@@ -6,9 +6,9 @@ close all
 
 %% User input
 
-path2Save = 'D:\Documents\Unif\PhD\Papers\04 - Particle Tracking\Figure';
+path2Save = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Movies boris\X Motion';
 ext = '.gif';
-filename=sprintf('%s%s2PTrapping%s', path2Save,filesep,ext);
+filename=sprintf('%s%sdata%s', path2Save,filesep,ext);
 
 minSize = 20;%number of frame the traces needs to last to be plotted.
 expTime = 0.01; %sec
