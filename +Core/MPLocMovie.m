@@ -587,7 +587,6 @@ classdef MPLocMovie < Core.MPParticleMovie
             bf = partData.plane(3);
             planePos = obj.calibrated.oRelZPos;
             
-            
             %Get ROI XZ, YZ scaled to same pixel size
             [Mag] = Core.MPLocMovie.getZPhasorMag(partVolIm);
 
@@ -601,7 +600,6 @@ classdef MPLocMovie < Core.MPParticleMovie
 %             RMS = sqrt(sum((data(:)-fitData(:)).^2)/length(data));
 %             adjR = 1 - RMS.^2/var(data);
 %           
-            
             params = [guess.sig guess.mu guess.A min(data)];
          
             fun = @(x) SimpleFitting.minGauss1D(domain,data,x);
@@ -610,7 +608,7 @@ classdef MPLocMovie < Core.MPParticleMovie
             [out, RMSD] = fminsearch(fun,params,opt);
             %normalize RMSD with mean data
             adjR = 1 - RMSD.^2/var(data);
-            
+
             %[~, gaussFit] = SimpleFitting.minGauss1D(domain,data,out);
       
             z = out(2);
