@@ -6,9 +6,9 @@ path2ZCal = [];
 path2SRCal = [];
 
 %file info
-file.path  = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Fitting speed test\data';
+file.path  = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Elastic polymer\Mov1 - Good';
 file.ext   = '.ome.tif';
-path2Cal = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Fitting speed test\2DCal';
+path2Cal = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Johannes\Elastic polymer\2DCal';
 dimension = '3D';
 
 %detection parameter
