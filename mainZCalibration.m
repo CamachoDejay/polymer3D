@@ -11,7 +11,7 @@ path2Cal  = 'D:\Dropbox\4Apr Data\2DCal';
 
 
 detectParam.delta = 8;
-detectParam.chi2 = 100;
+detectParam.chi2 = 80;
 fitZParam.deg = 6;
 fitZParam.ellipRangeCal = [0.5 2]; %for calibration
 fitZParam.ellipRange = [0.65 1.54];%To be used for data (we do not want to use too large values==> edge planes)

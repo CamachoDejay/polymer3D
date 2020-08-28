@@ -1,17 +1,23 @@
 clc 
 clear 
 close all;
-
+%calibration info
 path2ZCal = [];
 path2SRCal = [];
 
+%file info
 file.path  = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Fitting speed test\data';
 file.ext   = '.ome.tif';
 path2Cal = 'D:\Documents\Unif\PhD\2020-Data\08 - August\Fitting speed test\2DCal';
 dimension = '3D';
+
+%detection parameter
 detectParam.delta = 6;
 detectParam.chi2  = 80;
 detectParam.consThresh = 4;
+%tracking parameter
+trackParam.radius  = 500;%nm
+trackParam.memory  = 3;
 
 %% Storing info about the file
 info.type = 'normal'; %normal or transmission
@@ -36,8 +42,7 @@ testMov.findCandidatePos(detectParam,frame);
 testMov.showCandidate(frame);
 
 %% get TrackingData
-trackParam.radius  = 500;
-trackParam.memory  = 3;
+
 
 val2Use = 'bestFocus';
 trackingExp.retrieveTrackData(detectParam,trackParam);
