@@ -1,4 +1,4 @@
-# README #
+# Tracking in 3D #
 
 This repository holds all of the codes used in [insert Link to paper]. The way the data is processed is entirely described in the supplementary information of the articles.
 
@@ -112,6 +112,24 @@ We advice to left the parameter as default, you only need to provide the file.pa
 The path you give in File.path in *mainZCalibration* needs to be place in path2ZCal in *mainTrackingExp.m* after succesful Zcalibration.
 
 Once you perform all the calibrations, you can follow the 2D part for the use of *mainTrackingExp.m* ! Remember that only the 2D Calibration is really mandatory and that is valid only for multiplane data. Confocal or other type of microscopy do not need to calibrate the position of the planes since you input it as a zstack parameter but we cant handle that type of data at the moment, please contact us for help.
+
+
+# Output Data
+Coordinate of the detected particles before and after fitting are saved in the subfolder of the respective movie. If you are only interested in localizing and not tracking you can therefore use this .mat file to process your data further.
+
+The tracked particles for the movie in all subfolder is saved in the main folder as trackResults.mat. It contains a structure containing info about the parameter used, the path where of the data from which it was taken and the traces.
+The traces are contain in a cell array as follow:
+
+1) First column:
+1 cell for each trace containing a table with the x,y,z coordinate and other intermediate results, once loaded into matlab it can be access as follow:
+trackRes.trace{i,1}.row
+trackRes.trace{i,1}.col
+trackRes.trace{i,1}.z
+
+where row index correspond to y, col index corresponds to x, and i correspond to the index of the trace you want to extract.
+
+2) Second column:
+Contains the index to which movie the particle belong so if you would ever run different condition together or want to compare different movies from the same condition you can do it by separating the particle list according to the movie they were taken from.
 
 
 ### Contribution guidelines ###
