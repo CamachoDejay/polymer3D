@@ -1,6 +1,6 @@
 # README #
 
-This repository holds all of the codes used in [insert Link to paper].
+This repository holds all of the codes used in [insert Link to paper]. The way the data is processed is entirely described in the supplementary information of the articles.
 
 ### What is this repository for? ###
 
@@ -8,7 +8,7 @@ Tracking particles in three-dimension. The software allows for tracking particle
 
 ### How do I get set up? ###
 
-You will need to install bio-format f
+You will need to install bio-format for some of the extension (.his) see https://www.openmicroscopy.org/bio-formats/downloads/ where you can download the matlab toolbox.
 
 #### 2D time-series ####
 If you're data is composed of a time-series of 2D images (standard widefield or confocal microscope), the main code you will be using is the *mainTrackingExp.m*.
@@ -111,9 +111,7 @@ We advice to left the parameter as default, you only need to provide the file.pa
 
 The path you give in File.path in *mainZCalibration* needs to be place in path2ZCal in *mainTrackingExp.m* after succesful Zcalibration.
 
-
 Once you perform all the calibrations, you can follow the 2D part for the use of *mainTrackingExp.m* ! Remember that only the 2D Calibration is really mandatory and that is valid only for multiplane data. Confocal or other type of microscopy do not need to calibrate the position of the planes since you input it as a zstack parameter but we cant handle that type of data at the moment, please contact us for help.
-
 
 
 ### Contribution guidelines ###
