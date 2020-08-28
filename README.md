@@ -131,11 +131,6 @@ where row index correspond to y, col index corresponds to x, and i correspond to
 2) Second column:
 Contains the index to which movie the particle belong so if you would ever run different condition together or want to compare different movies from the same condition you can do it by separating the particle list according to the movie they were taken from.
 
-
-### Contribution guidelines ###
-
-///////////////////////////////
-
-### Who do I talk to? ###
+# Who do I talk to? 
 
 If you have any problem just contact Boris Louis (Boris.louis@kuleuven.be) or Rafael Camacho (rafael.camacho@gu.se)
