@@ -34,7 +34,7 @@ function [frameInfo,totFrame] = combineFrameInfo(frameInfo)
             
             cFrameInfo = cFrameInfo(sortIdx);
             if i>1
-                if cFrameInfo(1).T < tmp(end).T
+                if str2double(cFrameInfo(1).T) < str2double(tmp(end).T)
                     dataSorted = dataSorted + (i-1)*(maxFr);
                     dataSorted = num2cell(dataSorted);
                     dataSorted = cellfun(@num2str,dataSorted,'UniformOutput',false);
