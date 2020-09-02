@@ -251,30 +251,33 @@ classdef Movie < handle
             ext = obj.raw.movInfo.ext;
             
             switch ext
-                case '.his'
-                    [movC1] = Load.Movie.his.getFrame(obj.raw.fullPath,idx);
-                    data.Cam1 = movC1;
                 case '.ome.tif'
                     %LoadCam
                     [movC1,movC2,~] = Load.Movie.ome.load(obj.raw.frameInfo,obj.raw.movInfo,idx);
                     movC2 = fliplr(movC2);
-                    if isfield(obj.info,'ROI')
-                        
-                        ROI = round(obj.info.ROI);
-                        data.Cam1 = movC1(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3),:);
-                        
-                    else
-                        
-                        data.Cam1 = movC1;
-                        data.Cam2 = movC2;
-                        
-                    end
-                case '.mpg'
-                    [movC1] = Load.Movie.mpg.getFrame(obj.raw.fullPath,idx);
+                if isfield(obj.info,'ROI')
+
+                    ROI = round(obj.info.ROI);
+                    data.Cam1 = movC1(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1)+ROI(3),:);
+
+                else
+
+                    data.Cam1 = movC1;
+                    data.Cam2 = movC2;
+
+                end
+                
+                otherwise
+                    
+                    obj.checkExtension(ext);
+                    %we remove the '.' from the extension name so we can
+                    %use the name to call the appropriate loading function
+                    
+                    extName = strrep(ext,'.','');
+                    %call the approprate load function to get the frame
+                    movC1 = Load.Movie.(extName).getFrame(obj.raw.fullPath,idx);
                     data.Cam1 = movC1;
                     
-                otherwise
-                    error('WTF Unknown extension, should have broken before !!!')
             end
             
             
@@ -449,14 +452,10 @@ classdef Movie < handle
                         movInfo.maxFrame = totFrame;
 
                     end
-                    
-                case '.his'
-                   
-                    [frameInfo,movInfo] = Load.Movie.his.getInfo(fullPath);
-                    
-                case '.mpg'
-                    [frameInfo,movInfo] = Load.Movie.mpg.getInfo(fullPath);
-                    
+                otherwise
+                    extName = strrep(ext,'.','');  
+                    [frameInfo,movInfo] = Load.Movie.(extName).getInfo(fullPath);
+                                  
             end
             movInfo.ext = ext;
             movInfo.indivFrame = movInfo.maxFrame;
@@ -465,7 +464,7 @@ classdef Movie < handle
         
         function checkExtension(ext)
             ext = lower(ext);
-            extensionList = {'.his','.ome.tif','.mpg'};
+            extensionList = {'.his','.ome.tif','.mpg','.spe'};
             
             check = contains(extensionList,ext);
             

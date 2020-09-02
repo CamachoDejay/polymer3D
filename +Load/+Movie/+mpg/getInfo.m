@@ -28,3 +28,4 @@ function [frameInfo,movInfo] = getInfo(path2File)
     movInfo.Cam = Cam;
     movInfo.expT = expT;
     movInfo.maxFrame = maxFrame;
+end

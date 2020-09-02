@@ -10,9 +10,9 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'D:\Documents\Unif\PhD\2020-Data\testDDM\FluoData\500nmFluo1in10_1';
-path2Cal  =  'D:\Documents\Unif\PhD\2020-Data\testDDM\2DCall';
-file.ext = '.ome.tif';
+file.path =  'D:\Documents\Unif\PhD\2020-Data\09 - Sep\testData';
+path2Cal  =  [];
+file.ext = '.SPE';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
