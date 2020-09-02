@@ -395,35 +395,33 @@ classdef MPMovie < Core.Movie
                 end
                 %change behavior depending on extension:
                 switch obj.raw.movInfo.ext
-                    case '.his'
-                        MP = false;%not a multiplane data
-                        [movC1] = Load.Movie.his.getFrame(obj.raw.fullPath,cFrame);
-                        %reformat in X,Y,P,T format for the saveCalibrated
-                        %part
-                        data(:,:,1,1:size(movC1,3)) = uint16(movC1);
-                        isTransmission = false;
-                        [calib] = obj.saveCalibrated(data,endFrame,isTransmission,MP);
-                        
                     case '.ome.tif'
                         assert(~isempty(obj.cal2D.file),'no calibration file provided, cannot calibrate');
                         MP = true;
                         % load the raw data
                         [ movC1, movC2] = Load.Movie.ome.load( frameInfo, movInfo, cFrame );
-                        
+
                         %applying the calibration
                         [data,isTransmission] = mpSetup.cali.apply( movC1, movC2, obj.cal2D.file );
-                        
+
                         %saving data per plane and info to cal
                         [calib] = obj.saveCalibrated(data,endFrame,isTransmission,MP);
                         
-                    case '.mpg'
+                    otherwise
+                        extName = strrep(obj.raw.movInfo.ext,'.','');
+                        
                         MP = false;%not a multiplane data
-                        [movC1] = Load.Movie.mpg.getFrame(obj.raw.fullPath,cFrame);
+                        [movC1] = Load.Movie.(extName).getFrame(obj.raw.fullPath,cFrame);
                         %reformat in X,Y,P,T format for the saveCalibrated
                         %part
-                        data(:,:,1,1:size(movC1,3)) = uint32(movC1);
+                        if extName == 'mpg' %#ok<BDSCA>
+                            data(:,:,1,1:size(movC1,3)) = uint32(movC1);
+                        else
+                            data(:,:,1,1:size(movC1,3)) = uint16(movC1);
+                        end
                         isTransmission = false;
                         [calib] = obj.saveCalibrated(data,endFrame,isTransmission,MP);
+                       
                 end
             end
             
