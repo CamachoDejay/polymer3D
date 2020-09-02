@@ -73,7 +73,7 @@ methods
         
         
         
-        function  LoadAllFrames(obj)
+        function  LoadAllFrames(obj,driftCorr)
         % Loads all data. Stops if it almost runs out of memory ,- when the
         % amount of memory left is less then 2 GB, in order to leave some
         % of it for other operations. 
@@ -100,13 +100,29 @@ methods
                        ZeroFrame = shiftdim(ZeroFrame,1);        
                     end
                     
-                    obj.AllFrames{i}= ZeroFrame(:,:,4);    
+                    obj.AllFrames{i}= ZeroFrame;  
+                    
                 else
                     obj.DDMInfo.nFrames = i-1;
                     warning(['Not enough RAM to load all of the '  num2str(obj.DDM.nFrames) 'frames. Loaded only ' num2str(i-1)] )
                     break;
                 end
-            end           
+            end 
+            %TODO: Fix data
+            correlationInfo.corrSz = 100; %in px. Radius of the ROI used for correlation
+            %correlation function
+            correlationInfo.driftPeriod = 1; %in Frame, Number of frame that are averaged
+            %for driftCalculation ==> 1 mean that drift is calculated for each frame
+            scalingFactor = 1;%Used for interpolation in sub-pixel Drift correction 
+            %objects of interest
+            
+            
+            if driftCorr
+                [corrData,~] = PreProcess.CorrelationDrift(obj.AllFrames,scalingFactor,correlationInfo);
+
+                obj.AllFrames = corrData;
+            end
+            
         end
         
         
