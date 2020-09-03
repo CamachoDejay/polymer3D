@@ -57,7 +57,7 @@ methods
                 subplot(2,NumPlots,[1 NumPlots])
                 xAxis = time(1):(time(end)/(5*length(time))):time(end);
                 
-                scatter(time,DDMSignal,50,'MarkerFaceColor',colors(i,:),'MarkerEdgeColor',colors(i,:));
+                scatter(time,DDMSignal,5,'MarkerFaceColor',colors(i,:),'MarkerEdgeColor',colors(i,:));
                 hold on
                 plot(xAxis,f(xAxis).*max(DDMSignal),'Color',colors(i,:));
                 catch

@@ -38,7 +38,7 @@ function colors = getColorFromCmap(cMap,n)
         nIdx = ceil(n/size(colorArray,1));
         nColorArray = zeros(size(colorArray,1)*nIdx,size(colorArray,2));
         for i =1:nIdx
-           nColorArray((i-1)*size(colorArray,1)+1:i*size(colorArray)) = ...
+           nColorArray((i-1)*size(colorArray,1)+1:i*size(colorArray),:) = ...
                colorArray; 
         end
         

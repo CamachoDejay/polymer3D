@@ -61,7 +61,6 @@ methods
             z = 0;   
             end
                 
-                
             [X,Y,Z] = meshgrid(x{2},x{1},z);
             RadialValueInQSpace = sqrt(X.^2 + Y.^2 + Z.^2);
             ValidIndeces =  Z./sqrt(X.^2 + Y.^2 + Z.^2)<abs(cosd(critangle));
@@ -77,6 +76,26 @@ methods
         % Loads all data. Stops if it almost runs out of memory ,- when the
         % amount of memory left is less then 2 GB, in order to leave some
         % of it for other operations. 
+            
+            h = questdlg('Do you want to use a ROI?','Question to user','Yes','No', 'Yes');
+            
+            if strcmp(h,'Yes')
+                figure
+                frame = obj.getFrame(1);
+                imagesc(frame(:,:,1))
+                test = drawrectangle();
+                ROI  = round(test.Position);
+                if mod(ROI(3),2) ==0
+                    ROI(3) = ROI(3)-1;
+                end
+                if mod(ROI(4),2) ==0
+                    ROI(4) = ROI(4)-1;
+                end
+                
+            else
+                ROI = [1,1,size(frame1,1),size(frame1,2)];
+            end
+            
         
             obj.AllFrames = cell(1,obj.DDMInfo.nFrames);
             for i=1:obj.DDMInfo.nFrames 
@@ -108,20 +127,23 @@ methods
                     break;
                 end
             end 
-            %TODO: Fix data
             correlationInfo.corrSz = 100; %in px. Radius of the ROI used for correlation
             %correlation function
             correlationInfo.driftPeriod = 1; %in Frame, Number of frame that are averaged
             %for driftCalculation ==> 1 mean that drift is calculated for each frame
             scalingFactor = 1;%Used for interpolation in sub-pixel Drift correction 
             %objects of interest
-            
-            
+
             if driftCorr
                 [corrData,~] = PreProcess.CorrelationDrift(obj.AllFrames,scalingFactor,correlationInfo);
-
-                obj.AllFrames = corrData;
+               
             end
+            dim = size(corrData);
+            %apply ROI
+            for i = 1:dim(end)
+               corrData{i} = corrData{i}(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:); 
+            end
+            obj.AllFrames = corrData;
             
         end
         
@@ -201,8 +223,10 @@ methods
                 while ~isempty(FoundRadii)
                     R = R+BinSize;
                     
-                    FoundRadii = find(R-BinSize<=RadialValueInQSpace & RadialValueInQSpace<=R &  ValidRange );
-                    
+                    FoundRadii = find(RadialValueInQSpace>=R-BinSize & RadialValueInQSpace<R &  ValidRange );
+                    %@Sergey: This should be faster than using find and
+                    %give the same results ! 
+                    %AvgFFT(RadialValueInQSpace>=R-BinSize & RadialValueInQSpace<R &  ValidRange);
                     AverageDDMValueAtR(next,:) = [R ,  mean(AvgFFT(FoundRadii),'all')];
                     next = next+1;
                 end

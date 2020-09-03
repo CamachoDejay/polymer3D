@@ -47,7 +47,7 @@ if scalingFactor>1
     im_In = imresize(im_In,scalingFactor);
 end
 
-correctedStack = cell(size(im_In));
+correctedStack = cell(1,size(im_In,3));
 Drift=zeros(size(imCropped,3),2);
 
 for i=1:floor(size(imCropped,3)/driftPeriod)
