@@ -84,19 +84,12 @@ methods
                 
                 imagesc(frame(:,:,1))
                 test = drawrectangle();
-                ROI  = round(test.Position);
-                if mod(ROI(3),2) ==0
-                    ROI(3) = ROI(3)-1;
-                end
-                if mod(ROI(4),2) ==0
-                    ROI(4) = ROI(4)-1;
-                end
-                
+                ROI  = round(test.Position);    
             else
-                ROI = [1,1,size(frame,1),size(frame,2)];
+                ROI = [];
+                
             end
-            
-        
+                   
             obj.AllFrames = cell(1,obj.DDMInfo.nFrames);
             for i=1:obj.DDMInfo.nFrames 
                 if rem(i,50)==0
@@ -115,6 +108,7 @@ methods
                     for k=1:length(size(ZeroFrame))
                        if mod(size(ZeroFrame,1),2) == 1 
                            ZeroFrame = ZeroFrame(2:end,:,:);
+                           
                        end
                        ZeroFrame = shiftdim(ZeroFrame,1);        
                     end
@@ -138,6 +132,20 @@ methods
                 [corrData,~] = PreProcess.CorrelationDrift(obj.AllFrames,scalingFactor,correlationInfo);
                
             end
+            
+            if isempty(ROI)
+               ROI = [1 1 size(corrData{1},2),size(corrData{1},1)];
+            end
+            
+            %Fix ROI
+            if mod(ROI(3),2) ==0
+                ROI(3) = ROI(3)-1;
+            end
+            
+            if mod(ROI(4),2) ==0
+                ROI(4) = ROI(4)-1;
+            end
+            
             dim = size(corrData);
             %apply ROI
             for i = 1:dim(end)
