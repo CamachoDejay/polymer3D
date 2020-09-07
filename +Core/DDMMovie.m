@@ -78,10 +78,10 @@ methods
         % of it for other operations. 
             
             h = questdlg('Do you want to use a ROI?','Question to user','Yes','No', 'Yes');
-            
+            frame = obj.getFrame(1);
             if strcmp(h,'Yes')
                 figure
-                frame = obj.getFrame(1);
+                
                 imagesc(frame(:,:,1))
                 test = drawrectangle();
                 ROI  = round(test.Position);
@@ -93,7 +93,7 @@ methods
                 end
                 
             else
-                ROI = [1,1,size(frame1,1),size(frame1,2)];
+                ROI = [1,1,size(frame,1),size(frame,2)];
             end
             
         
