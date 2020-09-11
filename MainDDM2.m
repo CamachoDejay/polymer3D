@@ -11,8 +11,8 @@ info.runMethod = 'load'; % load or run
 info.calibrate = false; %true to recalibrate;
 
 %% Input For DDM 
-DDMInfo.nFrames = 5000;% number of frames to load into memory
-DDMInfo.FramesToAnalyze = 500 ; %Number of frames to analyze
+DDMInfo.nFrames = 100;% number of frames to load into memory
+DDMInfo.FramesToAnalyze = 50 ; %Number of frames to analyze
 DDMInfo.PixelSize = 0.2;
 
 DDMMovie = Core.DDMMovie(file,path2Cal,info,DDMInfo);
@@ -20,8 +20,9 @@ DDMMovie.calibrate();
 DDMMovie.LoadAllFrames(correctDrift);
 
 %% Extract DDM signal 
+tic 
 DDMMovie.main('NumBins',50);
-
+toc
 %% Fitting DDM Result
 ToFit = Core.FitDDMMovie(DDMMovie.DDMOutput,'a*(1-exp(-x/b))+c');          
 ToFit.FitDDMData;
