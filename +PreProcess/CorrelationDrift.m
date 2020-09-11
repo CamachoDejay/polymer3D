@@ -15,10 +15,14 @@ driftPeriod = correlationInfo.driftPeriod;
 
 frame1 = im_In(:,:,1);
 
-[X,Y] = meshgrid(1:size(frame1,2),1:size(frame1,1));
-
-xIdx = round(sum(sum(X.*frame1))/sum(frame1(:)));
-yIdx = round(sum(sum(Y.*frame1))/sum(frame1(:))); 
+%find center of data
+BW = imbinarize(uint16(frame1));
+cent = regionprops(BW,'centroid');
+tmp = [cent.Centroid];
+coord(:,1) = tmp(1:2:end);
+coord(:,2) = tmp(2:2:end);
+xIdx = round(mean(coord(:,1)));
+yIdx = round(mean(coord(:,2)));
 
 %Crop the image to save computing time in the correlation
 lb = [xIdx - corrSz + 1, yIdx - corrSz + 1];
