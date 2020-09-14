@@ -265,7 +265,7 @@ classdef MPMovie < Core.Movie
                 data = zeros(obj.calibrated.Height,obj.calibrated.Width,numel(fieldsN));
                 for i = 1:numel(fieldsN)
                     %Load plane
-                    [mov] = Load.Movie.tif.getframes(obj.calibrated.filePath.(fieldsN{i}),idx);
+                    [mov] = Load.Movie.tif.getFrame(obj.calibrated.filePath.(fieldsN{i}),idx);
                     data(:,:,i) = mov;
                     
                 end
