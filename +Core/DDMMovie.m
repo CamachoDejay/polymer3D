@@ -22,7 +22,8 @@ methods
 
              try
                  gpuDevice;
-                 obj.IsCudaDevice = true;         
+                 obj.IsCudaDevice = true;
+                 reset(gpudev)
              catch
                  obj.IsCudaDevice = false;
              end
@@ -31,17 +32,7 @@ methods
         
 
 
-%%  Analysis
-
-
-
-
-      
-
-        
-        
-
-        
+%%  Analysis        
         function  [RadialValueInQSpace,ValidIndeces]=Get3DGrid(obj,sizes,critangle)
             
         % Prepares the grid for 3d averaging, with proper values for the
@@ -65,11 +56,6 @@ methods
             RadialValueInQSpace = sqrt(X.^2 + Y.^2 + Z.^2);
             ValidIndeces =  Z./sqrt(X.^2 + Y.^2 + Z.^2)<abs(cosd(critangle));
         end
-        
-        
-        
-
-        
         
         
         function  LoadAllFrames(obj,driftCorr)
@@ -107,9 +93,9 @@ methods
                 user = memory;
                 if  user.MemAvailableAllArrays>1e+09
                     try
-                    ZeroFrame= single(obj.getFrame(i));
+                    ZeroFrame= uint16(obj.getFrame(i));
                     catch
-                    ZeroFrame= single(obj.getFrame(i).Cam1);
+                    ZeroFrame= uint16(obj.getFrame(i).Cam1);
                     end
                     close all
 
@@ -156,14 +142,29 @@ methods
             if mod(ROI(4),2) ==0
                 ROI(4) = ROI(4)-1;
             end
-            
-           % dim = size(corrData);
+           
             corrData = corrData(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:);
-%             %apply ROI
-%             for i = 1:dim(end)
-%                corrData{i} = corrData{i}(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:); 
-%             end
-            obj.AllFrames = single(corrData);
+
+%           %Dirty resizing to power of 2 for more efficient fft
+            %here we limit to 512x512 which is 2^9 
+            pow2D1 = nextpow2(size(corrData,1));
+            pow2D2 = nextpow2(size(corrData,2));
+            
+            if pow2D1<=9
+                corrData = cat(1,corrData,zeros(2^pow2D1-size(corrData,1),size(corrData,2),size(corrData,3)));
+            end
+            if pow2D1>9
+                corrData = corrData(1:2^9,:,:);
+            end
+             if pow2D2<=9
+                corrData = cat(2,corrData,zeros(size(corrData,1),2^pow2D2-size(corrData,2),size(corrData,3)));
+            end
+            if pow2D2>9
+                corrData = corrData(1:2^9,:,:);
+            end
+            
+        
+            obj.AllFrames = uint16(corrData);
             
         end
         
@@ -173,39 +174,36 @@ methods
             
             %if we have 4D Data
             if length(dim) ==4
-                
+                 Frame1 = obj.AllFrames(:,:,:,1:end-dt);
+                 Frame2 = obj.AllFrames(:,:,:,dt+1:end);
                 if obj.IsCudaDevice==1
-
-                    Frame1 = gpuArray(obj.AllFrames(:,:,:,1:end-dt));
-                    Frame2 = gpuArray(obj.AllFrames(:,:,:,dt+1:end));
-
+                    
+                    FrameDelta = gpuArray(Frame1-Frame2);
+                        
                 else
-
-                    Frame1 = obj.AllFrames(:,:,1:end-dt);
-                    Frame2 = obj.AllFrames(:,:,dt+1:end);
-
+                    
+                    FrameDelta = Frame1 - Frame2;
+                    
                 end
                 clear Frame1 Frame2
-                FrameDelta = Frame1-Frame2;
+ 
                 AvgFFT = mean(abs(fftshift(fftshift(fftshift(fft(fft(fft(FrameDelta,dim(1),1),dim(2),2),dim(3),3),1),2),3)).^2,4);
             
             
             elseif length(dim) ==3
-                
+                Frame1 = obj.AllFrames(:,:,1:end-dt);
+                Frame2 = obj.AllFrames(:,:,dt+1:end);
                 if obj.IsCudaDevice==1
                     
-                    Frame1 = gpuArray(obj.AllFrames(:,:,1:end-dt));
-                    Frame2 = gpuArray(obj.AllFrames(:,:,dt+1:end));
+                    FrameDelta = gpuArray(Frame1-Frame2);
                         
                 else
                     
-                    Frame1 = obj.AllFrames(:,:,1:end-dt);
-                    Frame2 = obj.AllFrames(:,:,dt+1:end);
+                    FrameDelta = Frame1 - Frame2;
                     
                 end
-                
-                FrameDelta = Frame1-Frame2;
                 clear Frame1 Frame2
+                
                 try %try running on GPU
                     AvgFFT = mean(abs(fftshift(fftshift(fft(fft(FrameDelta,dim(1),1),dim(2),2),1),2)).^2,3);
                 catch %if running out of memory
@@ -246,7 +244,7 @@ methods
             
             %Generate struct grid for n-D averaging
 
-            for dt=1:obj.DDMInfo.FramesToAnalyze
+            for dt=1:obj.DDMInfo.dt
                       
                 %!!! The mean is now included in calculate delta function    
                 AvgFFT = obj.CalculateDelta(dt); 
@@ -255,7 +253,7 @@ methods
                 DDMOutput(:,1) =[NaN ; RadiallyAveragedDDMSignal(:,1)];
                 DDMOutput(:,end+1) = [dt ; RadiallyAveragedDDMSignal(:,2)];
                 
-                disp([ num2str(dt) '/' num2str(obj.DDMInfo.FramesToAnalyze) ' Frames done'] );
+                disp([ num2str(dt) '/' num2str(obj.DDMInfo.dt) ' Frames done'] );
                 
             end
             close all
