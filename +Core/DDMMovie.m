@@ -46,9 +46,9 @@ methods
             
         % Prepares the grid for 3d averaging, with proper values for the
         % wavectors.
-            try
+            if length(obj.calibrated.oRelZPos) >1
               zpixel = abs(mean(diff(obj.calibrated.oRelZPos)));     
-            catch
+            else
               zpixel = 1;   
             end
 
@@ -219,7 +219,14 @@ methods
             addOptional(p, 'NumBins', 200);
             addOptional(p, 'CriticalAngle',0);
             parse(p,varargin{:});
-            FrameSize = p.Results.ROI(:,3)'+p.Results.Padsize;
+            
+            ROI = p.Results.ROI;
+            critAngle = p.Results.CriticalAngle;
+            
+            if length(size(obj.AllFrames))==3
+                ROI(:,3) = [1 1 1];
+            end
+            FrameSize = ROI'+p.Results.Padsize;
 
             DDMOutput = [];
             
@@ -231,7 +238,7 @@ methods
                 %!!! The mean is now included in calculate delta function    
                 AvgFFT = obj.CalculateDelta(dt); 
                 
-                RadiallyAveragedDDMSignal=  obj.AverageRadialy3D(AvgFFT,p.Results.NumBins,FrameSize, p.Results.CriticalAngle);
+                RadiallyAveragedDDMSignal=  obj.AverageRadialy3D(AvgFFT,p.Results.NumBins,FrameSize, critAngle);
                 DDMOutput(:,1) =[NaN ; RadiallyAveragedDDMSignal(:,1)];
                 DDMOutput(:,end+1) = [dt ; RadiallyAveragedDDMSignal(:,2)];
                 
