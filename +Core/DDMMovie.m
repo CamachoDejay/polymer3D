@@ -163,16 +163,16 @@ methods
 %             for i = 1:dim(end)
 %                corrData{i} = corrData{i}(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:); 
 %             end
-            obj.AllFrames = corrData;
+            obj.AllFrames = single(corrData);
             
         end
         
         
         function AvgFFT =  CalculateDelta(obj,dt)
-            FrameSize = size(obj.AllFrames);
+            dim = size(obj.AllFrames);
             
             %if we have 4D Data
-            if length(FrameSize) ==4
+            if length(dim) ==4
                 
                 if obj.IsCudaDevice==1
 
@@ -185,12 +185,12 @@ methods
                     Frame2 = obj.AllFrames(:,:,dt+1:end);
 
                 end
-                
+                clear Frame1 Frame2
                 FrameDelta = Frame1-Frame2;
-                AvgFFT = mean(abs(fftshift(fftshift(fftshift(fft(fft(fft(FrameDelta,dim(1),1),dim(2),2),dim(3),3),1),2),3)).^2,3);
+                AvgFFT = mean(abs(fftshift(fftshift(fftshift(fft(fft(fft(FrameDelta,dim(1),1),dim(2),2),dim(3),3),1),2),3)).^2,4);
             
             
-            elseif length(FrameSize) ==3
+            elseif length(dim) ==3
                 
                 if obj.IsCudaDevice==1
                     
@@ -205,8 +205,19 @@ methods
                 end
                 
                 FrameDelta = Frame1-Frame2;
-                
-                AvgFFT = mean(abs(fftshift(fftshift(fft2(FrameDelta),1),2)).^2,3);  
+                clear Frame1 Frame2
+                try %try running on GPU
+                    AvgFFT = mean(abs(fftshift(fftshift(fft(fft(FrameDelta,dim(1),1),dim(2),2),1),2)).^2,3);
+                catch %if running out of memory
+                    %we stop running on GPU
+                    obj.IsCudaDevice = 0;
+                    Frame1 = obj.AllFrames(:,:,1:end-dt);
+                    Frame2 = obj.AllFrames(:,:,dt+1:end);
+                    FrameDelta = Frame1-Frame2;
+                    clear Frame1 Frame2
+                    AvgFFT = mean(abs(fftshift(fftshift(fft2(FrameDelta),1),2)).^2,3);
+                    warning('not enough memory, not running on GPU')
+                end
             end
         end        
             

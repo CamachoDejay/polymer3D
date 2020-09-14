@@ -22,7 +22,7 @@ DDMMovie.LoadAllFrames(correctDrift);
 %% Extract DDM signal 
 tic 
 profile('on')
-DDMMovie.main('NumBins',50);
+DDMMovie.main('NumBins',200);
 toc
 profile('viewer')
 %% Fitting DDM Result
