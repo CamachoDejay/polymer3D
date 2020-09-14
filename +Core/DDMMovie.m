@@ -139,11 +139,13 @@ methods
 
             if driftCorr
                 [corrData,~] = PreProcess.CorrelationDrift(obj.AllFrames,scalingFactor,correlationInfo);
+            else
+                corrData = obj.AllFrames;
                
             end
             
             if isempty(ROI)
-               ROI = [1 1 size(corrData{1},2),size(corrData{1},1)];
+               ROI = [1 1 size(corrData,2),size(corrData,1)];
             end
             
             %Fix ROI
