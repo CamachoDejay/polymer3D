@@ -89,8 +89,17 @@ methods
                 ROI = [];
                 
             end
-                   
-            obj.AllFrames = cell(1,obj.DDMInfo.nFrames);
+            dim = size(frame);
+            if mod(dim(1),2) == 1
+                dim(1) = dim(1)-1;
+            end
+            if mod(dim(2),2) == 1
+                dim(2) = dim(2)-1;
+            end
+            
+            
+            obj.AllFrames = zeros(dim(1),dim(2),obj.DDMInfo.nFrames);
+            
             for i=1:obj.DDMInfo.nFrames 
                 if rem(i,50)==0
                     disp([num2str(i) ' frames loaded']);
@@ -113,7 +122,7 @@ methods
                        ZeroFrame = shiftdim(ZeroFrame,1);        
                     end
                     
-                    obj.AllFrames{i}= ZeroFrame;  
+                    obj.AllFrames(:,:,i)= ZeroFrame;  
                     
                 else
                     obj.DDMInfo.nFrames = i-1;
@@ -146,40 +155,66 @@ methods
                 ROI(4) = ROI(4)-1;
             end
             
-            dim = size(corrData);
-            %apply ROI
-            for i = 1:dim(end)
-               corrData{i} = corrData{i}(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:); 
-            end
+           % dim = size(corrData);
+            corrData = corrData(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:);
+%             %apply ROI
+%             for i = 1:dim(end)
+%                corrData{i} = corrData{i}(ROI(2):ROI(2)+ROI(4),ROI(1):ROI(1) + ROI(3),:); 
+%             end
             obj.AllFrames = corrData;
             
         end
         
         
-       function AvgFFT =  CalculateDelta(obj,AvgFFT,FrameSize,dt,ROI)
-            for t=1:obj.DDMInfo.nFrames-dt-1
-                if obj.IsCudaDevice==1
-                    FrameDelta =gpuArray(obj.AllFrames{t+dt}(ROI(1,1):ROI(1,2),ROI(2,1):ROI(2,2),ROI(3,1):ROI(3,2))-obj.AllFrames{t}(ROI(1,1):ROI(1,2),ROI(2,1):ROI(2,2),ROI(3,1):ROI(3,2))); 
-                else
-                    FrameDelta =(obj.AllFrames{t+dt}(ROI(1,1):ROI(1,2),ROI(2,1):ROI(2,2),ROI(3,1):ROI(3,2))-obj.AllFrames{t}(ROI(1,1):ROI(1,2),ROI(2,1):ROI(2,2),ROI(3,1):ROI(3,2)));  
-                end
-
-                FrameDelta = abs( fftshift(fftn(FrameDelta-mean(FrameDelta,'all'),[FrameSize(1),FrameSize(2),FrameSize(3)]))).^2;                  
-                AvgFFT = AvgFFT + FrameDelta;                                            
-            end
-        end 
-        
-       
-        
+        function AvgFFT =  CalculateDelta(obj,dt)
+            FrameSize = size(obj.AllFrames);
             
-        
+            %if we have 4D Data
+            if length(FrameSize) ==4
+                
+                if obj.IsCudaDevice==1
+
+                    Frame1 = gpuArray(obj.AllFrames(:,:,:,1:end-dt));
+                    Frame2 = gpuArray(obj.AllFrames(:,:,:,dt+1:end));
+
+                else
+
+                    Frame1 = obj.AllFrames(:,:,1:end-dt);
+                    Frame2 = obj.AllFrames(:,:,dt+1:end);
+
+                end
+                
+                FrameDelta = Frame1-Frame2;
+                AvgFFT = mean(abs(fftshift(fftshift(fftshift(fft(fft(fft(FrameDelta,dim(1),1),dim(2),2),dim(3),3),1),2),3)).^2,3);
+            
+            
+            elseif length(FrameSize) ==3
+                
+                if obj.IsCudaDevice==1
+                    
+                    Frame1 = gpuArray(obj.AllFrames(:,:,1:end-dt));
+                    Frame2 = gpuArray(obj.AllFrames(:,:,dt+1:end));
+                        
+                else
+                    
+                    Frame1 = obj.AllFrames(:,:,1:end-dt);
+                    Frame2 = obj.AllFrames(:,:,dt+1:end);
+                    
+                end
+                
+                FrameDelta = Frame1-Frame2;
+                
+                AvgFFT = mean(abs(fftshift(fftshift(fft2(FrameDelta),1),2)).^2,3);  
+            end
+        end        
+            
         function  DDMOutput = main(obj,varargin)
          
             %Parse inputs conditionally
             p = inputParser;  
-            addOptional(p, 'ROI',  [1, size(obj.AllFrames{1},1), size(obj.AllFrames{1},1);  %Default ROI as image size
-                                    1, size(obj.AllFrames{1},2), size(obj.AllFrames{1},2);
-                                    1 ,size(obj.AllFrames{1},3) ,size(obj.AllFrames{1},3)]);
+            addOptional(p, 'ROI',  [1, size(obj.AllFrames,1), size(obj.AllFrames,1);  %Default ROI as image size
+                                    1, size(obj.AllFrames,2), size(obj.AllFrames,2);
+                                    1 ,size(obj.AllFrames,3) ,size(obj.AllFrames,3)]);
             addOptional(p, 'Padsize',zeros(1, 3));
             addOptional(p, 'NumBins', 200);
             addOptional(p, 'CriticalAngle',0);
@@ -192,14 +227,9 @@ methods
             %Generate struct grid for n-D averaging
 
             for dt=1:obj.DDMInfo.FramesToAnalyze
-                
-                if obj.IsCudaDevice==1
-                    AvgFFT = zeros(FrameSize(1),FrameSize(2),FrameSize(3),'gpuArray');
-                else
-                    AvgFFT = zeros(FrameSize(1),FrameSize(2),FrameSize(3));
-                end
-                    
-                AvgFFT = obj.CalculateDelta(AvgFFT,FrameSize,dt, p.Results.ROI)./(obj.DDMInfo.nFrames-dt); 
+                      
+                %!!! The mean is now included in calculate delta function    
+                AvgFFT = obj.CalculateDelta(dt); 
                 
                 RadiallyAveragedDDMSignal=  obj.AverageRadialy3D(AvgFFT,p.Results.NumBins,FrameSize, p.Results.CriticalAngle);
                 DDMOutput(:,1) =[NaN ; RadiallyAveragedDDMSignal(:,1)];
@@ -212,8 +242,6 @@ methods
             DDMOutput =  obj.ConvertOutput(DDMOutput);
             obj.DDMOutput = DDMOutput;
         end
-        
-        
         
         function AverageDDMValueAtR = AverageRadialy3D(obj, AvgFFT,NumBins,FrameSize,critangle)
             
@@ -238,11 +266,8 @@ methods
                     AverageDDMValueAtR(next,:) = [R ,  mean(AvgFFT(FoundRadii),'all')];
                     next = next+1;
                 end
-            
-
         end
-
-     
+   
 end 
 methods(Static)
     

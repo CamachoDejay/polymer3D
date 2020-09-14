@@ -21,8 +21,10 @@ DDMMovie.LoadAllFrames(correctDrift);
 
 %% Extract DDM signal 
 tic 
+profile('on')
 DDMMovie.main('NumBins',50);
 toc
+profile('viewer')
 %% Fitting DDM Result
 ToFit = Core.FitDDMMovie(DDMMovie.DDMOutput,'a*(1-exp(-x/b))+c');          
 ToFit.FitDDMData;
