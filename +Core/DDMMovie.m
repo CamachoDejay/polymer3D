@@ -171,7 +171,6 @@ methods
         
         function AvgFFT =  CalculateDelta(obj,dt)
             dim = size(obj.AllFrames);
-            mode = 'normal'; %or 'fast'
             
             %if we have 4D Data
             if length(dim) ==4
@@ -190,54 +189,38 @@ methods
  
                 AvgFFT = mean(abs(fftshift(fftshift(fftshift(fft(fft(fft(FrameDelta,dim(1),1),dim(2),2),dim(3),3),1),2),3)).^2,4);
             
-            
             elseif length(dim) ==3
+
+                Frame1 = obj.AllFrames(:,:,1:end-dt);
+                Frame2 = obj.AllFrames(:,:,dt+1:end);
                 
-                switch mode
-                    
-                    case 'normal'
-                        AvgFFT = zeros(size(obj.AllFrames,1),size(obj.AllFrames,2));
-                        for t=1:obj.DDMInfo.nFrames-dt
-                            if obj.IsCudaDevice==1
-                                FrameDelta = gpuArray(obj.AllFrames(:,:,t+dt)-obj.AllFrames(:,:,t)); 
-                            else
-                                FrameDelta = obj.AllFrames(:,:,t+dt)-obj.AllFrames(:,:,t);  
-                            end
+                if obj.IsCudaDevice==1
 
-                            FrameDelta = abs( fftshift(fftn(FrameDelta,[dim(1),dim(2),1]))).^2;                  
-                            AvgFFT = AvgFFT + FrameDelta;                                            
-                        end
-                        AvgFFT = AvgFFT./obj.DDMInfo.nFrames-dt;
-                        
-                    case 'fast'
-                        Frame1 = obj.AllFrames(:,:,1:end-dt);
-                        Frame2 = obj.AllFrames(:,:,dt+1:end);
-                        if obj.IsCudaDevice==1
+                    FrameDelta = gpuArray(Frame2-Frame1);
 
-                            FrameDelta = gpuArray(Frame2-Frame1);
+                else
 
-                        else
+                    FrameDelta = Frame2 - Frame1;
 
-                            FrameDelta = Frame2 - Frame1;
-
-                        end
-                        clear Frame1 Frame2
-
-                        try %try running on GPU
-                            AvgFFT = mean(abs(fftshift(fftshift(fft(fft(FrameDelta,dim(1),1),dim(2),2),1),2)).^2,3);
-                        catch %if running out of memory
-                            %we stop running on GPU
-                            obj.IsCudaDevice = 0;
-                            Frame1 = obj.AllFrames(:,:,1:dim(3)-dt);
-                            Frame2 = obj.AllFrames(:,:,dt+1:dim(3));
-                            FrameDelta = Frame2-Frame1;
-                            clear Frame1 Frame2
-                            AvgFFT = mean(abs(fftshift(fftshift(fft2(FrameDelta),1),2)).^2,3);
-                            warning('not enough memory, not running on GPU')
-                        end
                 end
+                clear Frame1 Frame2
+
+                try %try running on GPU
+                    AvgFFT = mean(abs(fftshift(fftshift(fft(fft(FrameDelta,dim(1),1),dim(2),2),1),2)).^2,3);
+                catch %if running out of memory
+                    %we stop running on GPU
+                    obj.IsCudaDevice = 0;
+                    Frame1 = obj.AllFrames(:,:,1:dim(3)-dt);
+                    Frame2 = obj.AllFrames(:,:,dt+1:dim(3));
+                    FrameDelta = Frame2-Frame1;
+                    clear Frame1 Frame2
+                    AvgFFT = mean(abs(fftshift(fftshift(fft2(FrameDelta),1),2)).^2,3);
+                    warning('not enough memory, not running on GPU')
+                end
+                
             end
-        end        
+        end
+               
             
         function  DDMOutput = main(obj,varargin)
          
