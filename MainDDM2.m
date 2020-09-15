@@ -1,7 +1,7 @@
 file.ext   = '.tif';
 path2Cal =  [];
 dimension = '3D';
-file.path  = ['D:\Documents\Unif\PhD\2020-Data\09 - Sep\DDMTest' ];
+file.path  = ['D:\Documents\Unif\PhD\2020-Data\09 - Sep\simBlinking\mov2' ];
 correctDrift = false;
 
 

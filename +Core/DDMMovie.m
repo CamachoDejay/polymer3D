@@ -46,9 +46,9 @@ methods
             
         % Prepares the grid for 3d averaging, with proper values for the
         % wavectors.
-            try
+            if length(obj.calibrated.oRelZPos)>1
               zpixel = abs(mean(diff(obj.calibrated.oRelZPos)));     
-            catch
+            else
               zpixel = 1;   
             end
 
@@ -56,9 +56,9 @@ methods
                 x{i} = 2*pi*(-round(sizes(i)/2):1:round(sizes(i)/2)-1)*1/obj.DDMInfo.PixelSize*1/sizes(i);
             end
             if sizes(end)~=1
-            z = 2*pi*(-round(sizes(end)/2):1:round(sizes(end)/2)-1)*(1/zpixel)*1/sizes(end);
+                z = 2*pi*(-round(sizes(end)/2):1:round(sizes(end)/2)-1)*(1/zpixel)*1/sizes(end);
             else
-            z = 0;   
+                z = 0;   
             end
                 
             [X,Y,Z] = meshgrid(x{2},x{1},z);
