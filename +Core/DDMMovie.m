@@ -21,9 +21,9 @@ methods
              obj.DDMInfo = DDMInfo;
 
              try
-                 gpuDevice;
+                 g = gpuDevice;
                  obj.IsCudaDevice = true;
-                 reset(gpudev)
+                 reset(g)
              catch
                  obj.IsCudaDevice = false;
              end
@@ -238,9 +238,9 @@ methods
             critAngle = p.Results.CriticalAngle;
             
             if length(size(obj.AllFrames))==3
-                ROI(:,3) = [1 1 1];
+                ROI(3,:) = [1 1 1];
             end
-            FrameSize = ROI'+p.Results.Padsize;
+            FrameSize = ROI(:,3)'+p.Results.Padsize;
 
             DDMOutput = [];
             

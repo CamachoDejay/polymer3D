@@ -5,7 +5,7 @@ clc;
 file.ext   = '.tif';
 path2Cal =  [];
 dimension = '3D';
-file.path  = ['D:\Documents\Unif\PhD\2020-Data\09 - Sep\DDMTest' ];
+file.path  = ['D:\Documents\Unif\PhD\2020-Data\09 - Sep\simBlinking' ];
 correctDrift = false;
 
 
@@ -17,7 +17,7 @@ info.calibrate = false; %true to recalibrate;
 %% Input For DDM 
 DDMInfo.nFrames = 500;% number of frames to load into memory
 DDMInfo.dt = 200 ; %Number of frames to analyze
-DDMInfo.PixelSize = 0.095;
+DDMInfo.PixelSize = 0.1;
 
 DDMMovie = Core.DDMMovie(file,path2Cal,info,DDMInfo);
 DDMMovie.calibrate();
