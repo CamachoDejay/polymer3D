@@ -130,7 +130,8 @@ methods
 
             if driftCorr
                 [corrData,~] = PreProcess.CorrelationDrift(obj.AllFrames,scalingFactor,correlationInfo);
-               
+            else
+                corrData = obj.AllFrames;
             end
             
             if isempty(ROI)

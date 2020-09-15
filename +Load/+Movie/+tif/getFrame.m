@@ -1,4 +1,4 @@
-function [ mov ] = getframes( path2file, frames )
+function [ mov ] = getFrame( path2file, frames )
 %GETFRAMES Summary of this function goes here
 %   Detailed explanation goes here
 

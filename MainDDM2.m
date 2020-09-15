@@ -1,8 +1,8 @@
-file.ext   = '.spe';
+file.ext   = '.tif';
 path2Cal =  [];
 dimension = '3D';
-file.path  = ['D:\Documents\Unif\PhD\2020-Data\09 - Sep\FilmBlinking\mov1' ];
-correctDrift = true;
+file.path  = ['D:\Documents\Unif\PhD\2020-Data\09 - Sep\DDMTest' ];
+correctDrift = false;
 
 
 %% Storing info about the file
@@ -11,8 +11,8 @@ info.runMethod = 'load'; % load or run
 info.calibrate = false; %true to recalibrate;
 
 %% Input For DDM 
-DDMInfo.nFrames = 100;% number of frames to load into memory
-DDMInfo.FramesToAnalyze = 50 ; %Number of frames to analyze
+DDMInfo.nFrames = 500;% number of frames to load into memory
+DDMInfo.FramesToAnalyze = 200 ; %Number of frames to analyze
 DDMInfo.PixelSize = 0.2;
 
 DDMMovie = Core.DDMMovie(file,path2Cal,info,DDMInfo);
@@ -21,7 +21,7 @@ DDMMovie.LoadAllFrames(correctDrift);
 
 %% Extract DDM signal 
 tic 
-DDMMovie.main('NumBins',50);
+DDMMovie.main('NumBins',100);
 toc
 %% Fitting DDM Result
 ToFit = Core.FitDDMMovie(DDMMovie.DDMOutput,'a*(1-exp(-x/b))+c');          
