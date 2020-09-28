@@ -204,19 +204,13 @@ classdef Movie < handle
                 currentIM = frame.(fNames{idx2Data(i)});
                 subplot(nImages,1,i)
                 hold on
-                if strcmp(obj.info.type,'transmission')
-                    colormap('gray');
-                    %calculate reflectance (somehow better than absorbance)
-                    %currentIM = imcomplement(currentIM);
-                else
-                    colormap('jet');
-                end
-                
+                colormap('gray')
+                                
                 imagesc(currentIM)
                 %scalebar
-                x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
-                y = ones(1,length(x))*0.05*size(currentIM,2);
-                text(mean(x),mean(y)-0.05*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',14);
+                x = size(currentIM,2)-scaleBarPx-(0.02*size(currentIM,2)):size(currentIM,2)-0.02*size(currentIM,2);
+                y = ones(1,length(x))*0.02*size(currentIM,2);
+                text(mean(x),mean(y)+0.1*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',10);
                 plot(x,y,'-w','LineWidth',5);
                 
                 caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
@@ -308,56 +302,85 @@ classdef Movie < handle
             obj.info.ROI = Pos;
         end
         
-        function saveMovie(obj,ext,frameRate,scaleBar,plane)
+        function saveMovie(obj,ext,frameRate,scaleBar)
             
             switch nargin
                 case 3
                     scaleBar = 1;%µm
-                case 4
-                    
-                    plane = [];
-                    
-                case 5
-                    
-                    plane = [];
-                    
+                
             end
             maxFrames = obj.raw.movInfo.maxFrame(1);
+            pxSize = obj.info.pxSize/1000;%in µm
+            scaleBarPx = scaleBar/pxSize;
             frames = obj.info.frame2Load;
             [frames] = Core.Movie.checkFrame(frames,maxFrames);
             nFrames = length(frames);
             path2File = obj.raw.movInfo.Path;
             filename=sprintf('%s%sfullMovie.%s', path2File,'\',ext);
             
-            for j = 1:nFrames
-                if ~isempty(plane)
-                    Fig = obj.showFrame(j,scaleBar,plane);
-                else
-                    Fig = obj.showFrame(j,scaleBar);
-                end
-                
-                frame = getframe(Fig);
-                switch ext
-                    case 'mp4'
-                        mov(j) = frame;
-                    case 'gif'
-                        
-                        im = frame2im(frame);
-                        [imind,cm] = rgb2ind(im,256);
-                        
-                        if j == 1
-                            
-                            imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
-                            
-                        else
-                            
-                            imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
-                            
-                        end
-                        
-                end
-            end
+            %load data
+            data = obj.getFrame;
             
+             assert(isstruct(data),'Error unknown data format, data should be a struct');
+            
+            fNames = fieldnames(data);
+            idx2Empty = structfun(@isempty, data);
+            idx2Data = find(idx2Empty==0);
+            nImages = length(idx2Data);
+            h = figure(1);
+            h.Position = [512 150 512 460 ];
+            for j = 1:nFrames
+                for i = 1:nImages
+
+                    h.Name = sprintf('Frame %d',j);
+                    currentIM = data.(fNames{idx2Data(i)});
+                    subplot(nImages,1,i)
+                    hold on
+                    colormap('gray')
+
+                    imagesc(currentIM(:,:,j))
+                    %scalebar
+                    x = size(currentIM,2)-scaleBarPx-(0.02*size(currentIM,2)):size(currentIM,2)-0.02*size(currentIM,2);
+                    y = ones(1,length(x))*0.02*size(currentIM,2);
+                    text(mean(x),mean(y)+0.1*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',10);
+                    plot(x,y,'-w','LineWidth',5);
+
+                    caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
+                    %removing tick and add title
+                    a = gca;
+                    a.XTickLabel = [];
+                    a.YTickLabel = [];
+                    %a.GridColor = [1 1 1];
+
+                    set(a,'position',[0 0.5-0.5*(double(i==2)) 1 0.4],'units','normalized')
+                    axis image;
+                    title({fNames{i}, sprintf('Frame %d',j)});
+
+                    hold off
+                                 
+                end
+                frame = getframe(h);
+                    switch ext
+                        case 'mp4'
+                            mov(j) = frame;
+                        case 'gif'
+
+                            im = frame2im(frame);
+                            [imind,cm] = rgb2ind(im,256);
+
+                            if j == 1
+
+                                imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'loopcount',inf);
+
+                            else
+
+                                imwrite(imind,cm,filename,'gif','DelayTime',1/frameRate, 'writemode','append');
+
+                            end
+
+                    end
+                clf;
+            end            
             if strcmp(ext,'mp4')
                 v = VideoWriter(filename,'MPEG-4');
                 v.FrameRate = frameRate;

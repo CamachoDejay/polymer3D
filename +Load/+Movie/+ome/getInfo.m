@@ -57,7 +57,13 @@ end
 switch checkRes
     case 'Yes'
     case 'Fix'
-        [frameInfo] = fixCamTiming(frameInfo);
+        try
+            [frameInfo] = fixCamTiming(frameInfo);
+        catch
+            warning('on')
+            warning('Something went wrong when trying to fix camera sync, no fix was apply');
+            warning('off');
+        end
       %  error('Fixing synchronization is not ready yet, sorry for the inconvenience');
     case 'No'
         disp('If you are running folder analysis, please remove the file from the folder');
