@@ -29,19 +29,7 @@ methods
 
         end
         
-
-
 %%  Analysis
-
-
-
-
-      
-
-        
-        
-
-        
         function  [RadialValueInQSpace,ValidIndeces]=Get3DGrid(obj,sizes,critangle)
             
         % Prepares the grid for 3d averaging, with proper values for the
@@ -66,12 +54,7 @@ methods
             ValidIndeces =  Z./sqrt(X.^2 + Y.^2 + Z.^2)<abs(cosd(critangle));
         end
         
-        
-        
 
-        
-        
-        
         function  LoadAllFrames(obj,driftCorr)
         % Loads all data. Stops if it almost runs out of memory ,- when the
         % amount of memory left is less then 2 GB, in order to leave some

@@ -3,12 +3,12 @@ clear
 close all;
 %calibration info
 path2ZCal = [];
-path2SRCal = [];
+path2SRCal = 'D:\Documents\Unif\PhD\2020-Data\09 - Sep\Johannes\2DCal';
 
 %file info
-file.path  = 'D:\Documents\Unif\PhD\2020-Data\09 - Sep';
-file.ext   = '.SPE';
-path2Cal = [];
+file.path  = 'D:\Documents\Unif\PhD\2020-Data\09 - Sep\Johannes\mov2';
+file.ext   = '.ome.tif';%.tif,%.mpg%.his%.spe
+path2Cal = 'D:\Documents\Unif\PhD\2020-Data\09 - Sep\Johannes\2DCal';
 dimension = '3D';
 
 %detection parameter

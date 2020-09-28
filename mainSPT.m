@@ -10,9 +10,9 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'D:\Documents\Unif\PhD\2020-Data\09 - Sep\testData';
+file.path =  'D:\Documents\Unif\PhD\2020-Data\09 - Sep\Johannes\mov2\5k_1mg_ratiobeads_4W_20steps 50 nm__2';
 path2Cal  =  [];
-file.ext = '.SPE';
+file.ext = '.ome.tif';
 
 % path2zCal = '..\data\Multiplane\ZCalibration\BeadsZCalibration_1';
 % path2File = '..\data\Multiplane\TL\TL-OD2-200msExposure_1';
@@ -35,7 +35,7 @@ mov1.giveInfo;
 %mov2 = Core.Movie(path2zCal);
 %%
 
-%mov1.saveMovie('mp4',10,5);
+mov1.saveMovie('gif',10,5);%gif
 %% showFrame
 mov1.showFrame(1,5);
 %mov2.showFrame(51);
