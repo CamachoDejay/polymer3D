@@ -181,7 +181,7 @@ classdef Movie < handle
             
         end
         
-        function h = showFrame(obj,idx,scaleBar)
+        function h = showFrame(obj,idx,scaleBar,IScale)
             
             %To display a frame as a figure
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
@@ -212,8 +212,8 @@ classdef Movie < handle
                 y = ones(1,length(x))*0.02*size(currentIM,2);
                 text(mean(x),mean(y)+0.1*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',10);
                 plot(x,y,'-w','LineWidth',5);
-                
-                caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
+                ax = gca;
+                caxis(ax,[min(min(min(currentIM))), IScale*max(max(max(currentIM)))]);
                 %removing tick and add title
                 a = gca;
                 a.XTickLabel = [];
@@ -302,12 +302,14 @@ classdef Movie < handle
             obj.info.ROI = Pos;
         end
         
-        function saveMovie(obj,ext,frameRate,scaleBar)
+        function saveMovie(obj,ext,frameRate,scaleBar,IScale)
             
             switch nargin
                 case 3
                     scaleBar = 1;%µm
-                
+                    IScale = 1;
+                case 4
+                     IScale = 1;
             end
             maxFrames = obj.raw.movInfo.maxFrame(1);
             pxSize = obj.info.pxSize/1000;%in µm
@@ -321,7 +323,7 @@ classdef Movie < handle
             %load data
             data = obj.getFrame;
             
-             assert(isstruct(data),'Error unknown data format, data should be a struct');
+            assert(isstruct(data),'Error unknown data format, data should be a struct');
             
             fNames = fieldnames(data);
             idx2Empty = structfun(@isempty, data);
@@ -345,7 +347,7 @@ classdef Movie < handle
                     text(mean(x),mean(y)+0.1*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',10);
                     plot(x,y,'-w','LineWidth',5);
 
-                    caxis([min(min(min(currentIM))), max(max(max(currentIM)))]);
+                    caxis([min(min(min(currentIM))), IScale*max(max(max(currentIM)))]);
                     %removing tick and add title
                     a = gca;
                     a.XTickLabel = [];

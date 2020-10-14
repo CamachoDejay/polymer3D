@@ -10,7 +10,7 @@ clc
 addpath(genpath('Ext'));
 
 % path to the callibration
-file.path =  'D:\Documents\Unif\PhD\2020-Data\09 - Sep\Johannes\mov2\5k_1mg_ratiobeads_4W_20steps 50 nm__2';
+file.path =  'D:\Documents\Unif\PhD\2020-Data\10 - Oct\Johannes\trap site__1 movie';
 path2Cal  =  [];
 file.ext = '.ome.tif';
 
@@ -35,7 +35,7 @@ mov1.giveInfo;
 %mov2 = Core.Movie(path2zCal);
 %%
 
-mov1.saveMovie('gif',10,10);
+mov1.saveMovie('gif',10,10,0.8);
 %% showFrame
 mov1.showFrame(1,10);
 %mov2.showFrame(51);
