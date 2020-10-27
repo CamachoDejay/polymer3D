@@ -189,14 +189,25 @@ classdef MPPlaneCalibration < handle
         
         function [camConfig] = determineCAMConfig(obj)
         relZPos = cell2mat({obj.cal.file.inFocus.relZPos});
+        cams    = cell2mat({obj.cal.file.inFocus.cam});
+        
+        meanCam1 = mean(relZPos(cams==1));
+        meanCam2 = mean(relZPos(cams==2));
+        
+        dCam     = abs(meanCam1-meanCam2)*1000;
+        
         relZPos = relZPos(obj.cal.file.neworder);
-        planeDist = abs(mean(diff(relZPos)))*1000;
-        minDist = min(abs(relZPos(2:end)))*1000;
-        if planeDist > 350
+        minDist = min(abs(diff(relZPos(2:end))))*1000;
+        %If distance between camera center is above 500 nm, most likely is
+        %full cam
+        if dCam > 500
             camConfig = 'fullRange';
-        elseif and(minDist>100, planeDist>200)
+        %if minDist is relatively large and dCam is small it is probably
+        %interleaved
+        elseif and(minDist>80, dCam <300)
             camConfig = 'interleaved';
-        elseif minDist<100
+        %if minDist is small then probably equal
+        elseif minDist<80
             camConfig = 'equal';
         else
             error('Something is wrong with your distance between planes')
