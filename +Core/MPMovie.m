@@ -231,7 +231,7 @@ classdef MPMovie < Core.Movie
                 
                 imagesc(currentIM)
                 ax = gca;
-                caxis(ax,[min(min(min(frame))), IScale*max(max(max(frame)))]);
+                caxis(ax,[min(min(min(frame))), max(max(max(frame)))]);
                 
                 hold on
                 x = size(currentIM,2)-scaleBarPx-(0.05*size(currentIM,2)):size(currentIM,2)-0.05*size(currentIM,2);
