@@ -40,3 +40,44 @@ data = myMovie.cropAllFrames(pos);
 
 %% play around with data
 
+fr = data(:,:,:,1);
+%fr = imgaussfilt3(fr,[2 2 1]);
+fr = fr./median(median(fr,1),2);
+
+BW = fr>1.2;
+
+BW = bwareaopen(BW,100);
+
+figure
+imagesc(BW(:,:,4))
+
+I = regionprops3(BW,'Volume','VoxelIDXList');
+
+newImage = zeros(size(BW));
+
+[val,idx] = max([I.Volume]);
+pxList = I.VoxelIdxList{idx};
+
+newImage(pxList) = 1;
+
+figure
+for i = 1:size(newImage,3)
+   subplot(2,4,i)
+   imagesc(newImage(:,:,i))
+   axis image
+end
+
+%clean data
+kernel = ones(3)/4;
+for i = 1:size(newImage,3)
+   cBW = newImage(:,:,8);
+   cBW = bwareaopen(cBW,4);
+   cBW = imfill(cBW,'holes');
+   
+   blurryImage = conv2(single(cBW),kernel, 'same');
+   binary    = blurryImage >0.5;
+    
+    
+end
+
+
