@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PhD\2020-Data\10 - Oct\Johannes\Calibration2\2d cali_12.5_';
+file.path  = 'C:\Users\Calculation2\Desktop\2d';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';

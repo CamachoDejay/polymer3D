@@ -170,7 +170,7 @@ classdef MPMovie < Core.Movie
                 otherwise
                     error('Not enough input argument');
             end
-            
+            IScale = 1;
             %Adapted method from the Core.Movie one, its behavior changed
             %depending on whether the data has been calibrated or not.
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
