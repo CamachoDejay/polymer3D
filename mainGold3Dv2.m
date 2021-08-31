@@ -5,8 +5,8 @@ close all
 
 %% User input
 
-path2Cal  = 'D:\Documents\Unif\PhD\2019-Data\08 - Aug\test3D Fitting\2DCal';
-file.path = 'D:\Documents\Unif\PhD\2019-Data\09 - Sep\2P';
+path2Cal  = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 10 set (no silica\2DCal';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 10 set (no silica\test';
 file.ext  = '.ome.tif';
 
 focusPlane = 4;%=2 af

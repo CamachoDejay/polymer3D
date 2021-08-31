@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PhD\2020-Data\10 - Oct\Johannes\Calibration2\2d cali_12.5_';
+file.path  = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 10 set (no silica\2DCal';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'load';
@@ -26,6 +26,6 @@ calib.retrieveMovies;
 calib.calcIndivCal; 
 calib.calcCombinedCal;
 
-calib.showCal(1)
+calib.showCal(2)
 calib.offTarget;
 calib.save;

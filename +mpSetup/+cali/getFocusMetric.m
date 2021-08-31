@@ -15,7 +15,9 @@ function [ focus_met, in_focus, fit ] = getFocusMetric( chData1c, chData2c, Z1, 
         in_focus(i).cam   =  1;
         in_focus(i).ch    =  i;
         % get image sequence for 2 channels to compare
-        tmp=squeeze(chData1c(:,:,i,:));
+        %remove border pixel due to bug with one data set, should not
+        %affect others
+        tmp=squeeze(chData1c(10:end-10,10:end-10,i,:));
         
         % see when each channel is in focus
         %focus_met(:,i) = squeeze(mean(max(tmp)));
@@ -30,7 +32,7 @@ function [ focus_met, in_focus, fit ] = getFocusMetric( chData1c, chData2c, Z1, 
         in_focus(i).cam   =  2;
         in_focus(i).ch    =  i-nChan;
         % get image sequence for 2 channels to compare
-        tmp=squeeze(chData2c(:,:,i-nChan,:));
+        tmp=squeeze(chData2c(10:end-10,10:end-10,i-nChan,:));
         
         % see when each channel is in focus
         %focus_met(:,i) = squeeze(mean(max(tmp)));
