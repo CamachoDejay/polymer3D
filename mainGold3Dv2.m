@@ -10,9 +10,9 @@ file.path = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 1
 file.ext  = '.ome.tif';
 
 focusPlane = 4;%=2 af
-width.xy = 3; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
-width.z  = 4;%see above
-nParticles = 2;%number of particles expected in the movie has to be exact
+width.xy = 0; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
+width.z  = 0; %see above
+nParticles = 1;%number of particles expected in the movie has to be exact
 minDist = 3; %in pixels (min distant expected between particles
 pxSize = 95;%in nm
 cropRadius = 30; %cut the frame to reduce the amount of data to be fitted
@@ -227,3 +227,18 @@ trackRes = allData;
 filename = [file.path filesep 'trackRes.mat'];
 save(filename,'trackRes');
 h = msgbox('Data succesfully saved');
+
+%% Calculate trapping stiffness
+
+[trackRes(:).Stiffxy] = deal(0);
+[trackRes(:).Stiffz] = deal(0);
+T = 298; 
+
+for i=1:length(trackRes)
+    [xy] = [trackRes(i).traces{1,1}.row,trackRes(i).traces{1,1}.col]/1000000000;
+    [z] = [trackRes(i).traces{1,1}.z]/1000000000;
+    
+    trackRes(i).Stiffxy = mean(MSD.getTrapStiffness(xy,T));
+    trackRes(i).Stiffz = MSD.getTrapStiffness(z,T);  
+end
+
