@@ -77,7 +77,6 @@ for i = 1:size(newImage,3)
    blurryImage = conv2(single(cBW),kernel, 'same');
    binary    = blurryImage >0.5;
     
-    
 end
 
 
