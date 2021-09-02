@@ -1,4 +1,4 @@
-function [ imShifts ] = simpleImShift2( inFocus, cam1, cam2)
+function [ finalShifts ] = simpleImShift2( inFocus, cam1, cam2)
 %SIMPLEIMSHIFT fast im shift calculation at the pixel resolution
 %   spatial cross-correlation algorithm to determine shift of coordinates
     nPlanes = length(inFocus);
@@ -21,10 +21,11 @@ function [ imShifts ] = simpleImShift2( inFocus, cam1, cam2)
     bw = imdilate(bw,se);
     
     for chIdx = 1:nPlanes-1
-        
+        %get the idx to the plane in order (1-2, 2-3,3-4...)
         idxPlane1 = [inFocus.globalch]==chIdx;
         idxPlane2 = [inFocus.globalch]==chIdx+1;
-        
+        %get the plane where there both equally focus from the mean of
+        %their focus and extract the camera
         focus     = round((inFocus(idxPlane1).frame+inFocus(idxPlane2).frame)/2);
         camIdx1 = inFocus(idxPlane1).cam;
         camIdx2 = inFocus(idxPlane2).cam;
@@ -46,12 +47,15 @@ function [ imShifts ] = simpleImShift2( inFocus, cam1, cam2)
         % applying the mask
         res    = res.*bw;
         % finding shift
+%         [mrow,mcol] = find(res==max(res(:)));
+%         mrow = mrow-size(imCh1,1);
+%         mcol = mcol-size(imCh1,2);
         [~,m_corr] = max(res(:));
-        [mx,my]=ind2sub(size(res),m_corr);
-        mx=-mx+size(imCh1,1);
-        my=-my+size(imCh1,2);
-        % storing the shifts
-        imShifts(chIdx,:) = [mx my];
+        [mrow,mcol]=ind2sub(size(res),m_corr);
+        mrow=-mrow+size(imCh1,1);
+        mcol=-mcol+size(imCh1,2);
+         % storing the shifts
+        imShifts(chIdx,:) = [mrow mcol];
         
        
         
@@ -74,7 +78,7 @@ function [ imShifts ] = simpleImShift2( inFocus, cam1, cam2)
         
     end
     %reorder shifts
-    imShifts([inFocus.globalch],:) = tmpImShifts;
-
+    %imShifts([inFocus.globalch],:) = tmpImShifts;
+    finalShifts = tmpImShifts([inFocus.globalch],:);
 end
 

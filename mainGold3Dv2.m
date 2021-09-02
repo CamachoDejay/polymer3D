@@ -5,14 +5,14 @@ close all
 
 %% User input
 
-path2Cal  = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 10 set (no silica\2DCal';
-file.path = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 10 set (no silica\test';
+path2Cal  = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2DCal';
+file.path = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 10 set (no silica\';
 file.ext  = '.ome.tif';
 
 focusPlane = 4;%=2 af
-width.xy = 0; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
-width.z  = 0; %see above
-nParticles = 1;%number of particles expected in the movie has to be exact
+width.xy = 3; %for fitting (3 for 200nm beads, 400 nm beads to be determined, 0 to let the code find the width)
+width.z  = 6; %see above
+nParticles = 2;%number of particles expected in the movie has to be exact
 minDist = 3; %in pixels (min distant expected between particles
 pxSize = 95;%in nm
 cropRadius = 30; %cut the frame to reduce the amount of data to be fitted
@@ -89,14 +89,15 @@ for i = 1:length(fields)
     %calculate center of mass of particles position for cropping later
     cropPos = round(mean(pos,1));
     %plot to check that the max detection worked
-    
+    %test realignment
+   
     %crop and show the cropping so user can see if it is okay
     testFrame = testFrame(cropPos(:,1)-cropRadius:cropPos(:,1)+cropRadius,...
             cropPos(:,2)-cropRadius:cropPos(:,2)+cropRadius,:);
     figure
     imagesc(testFrame(:,:,focusPlane))
     hold on
-    plot(pos(:,2),pos(:,1),'r+')
+    plot(pos(:,2)-cropPos(:,2)+cropRadius+1,pos(:,1)-cropPos(:,1)+cropRadius+1,'r+')
     
     
     %% Fitting
@@ -122,17 +123,63 @@ for i = 1:length(fields)
         currentFrame = double(currMov.getFrame(j));
         currentFrame = currentFrame(cropPos(:,1)-cropRadius:cropPos(:,1)+cropRadius,...
             cropPos(:,2)-cropRadius:cropPos(:,2)+cropRadius,:);
+        if j ==1
+            refFrame = currentFrame(:,:,focusPlane);
+            shifts = zeros(size(currentFrame,3),2);
+            for k = 1:size(testFrame,3)
+               cFrame = currentFrame(:,:,k);
+               [c] = normxcorr2(refFrame,cFrame);
+               [ypeak,xpeak] = find(c==max(c(:)));
+               yoffSet = ypeak-size(cFrame,1);
+               xoffSet = xpeak-size(cFrame,2);
+               %Test that the code works as intended
+%                test1= circshift(currentFrame(:,:,k),-xoffSet,2);
+%                test1= circshift(test1,-yoffSet,1);
+%                [c] = normxcorr2(refFrame,test1);
+%                [ypeak,xpeak] = find(c==max(c(:)));
+%                yoffSet = ypeak-size(cFrame,1);
+%                xoffSet = xpeak-size(cFrame,2);
+               shifts(k,:) = [yoffSet,xoffSet];
+               
+
+            end
+        end
+        for k = 1:size(currentFrame,3)
+            currentFrame(:,:,k) = circshift(currentFrame(:,:,k),-shifts(k,2),2);
+            currentFrame(:,:,k) = circshift(currentFrame(:,:,k),-shifts(k,1),1);
+        end
         %inital detection of particles on currentFrame
         [pos] = goldProj.nMaxDetection (currentFrame(:,:,focusPlane),nParticles,minDist);
  
         x0 = pos(:,2);
         y0 = pos(:,1);
-        [~,idx] = max(max(max(currentFrame)));
+        %check at the z dependence of gradient, sharp focus leads to high
+        %gradient
+        focusMet = squeeze(mean(max(imgradient3(currentFrame))));
+        [~,idx] = max(focusMet);
         z0 = ones(size(x0))*idx;
         
         %Multiple gaussian fitting occurs here
-        [gPar,resnorm,res] = Localization.Gauss.MultipleGFit3D(currentFrame,x0,y0,z0,dom,nParticles,width); 
+        [gPar,resnorm,res,fit] = Localization.Gauss.MultipleGFit3D(currentFrame,x0,y0,z0,dom,nParticles,width); 
         
+         if j==1
+           figure
+           subplot(2,3,1)
+           imagesc(squeeze(max(currentFrame,[],3)))
+           subplot(2,3,2)
+           imagesc(squeeze(max(currentFrame,[],1)))
+           subplot(2,3,3)
+           imagesc(squeeze(max(currentFrame,[],2)))
+           subplot(2,3,4)
+           imagesc(squeeze(max(fit,[],3)))
+           subplot(2,3,5)
+           imagesc(squeeze(max(fit,[],1)))
+           subplot(2,3,6)
+           imagesc(squeeze(max(fit,[],2)))
+           
+        end
+        
+
         widths.xy(j) = gPar(2);
         widths.z(j) = gPar(3);
         g = reshape(gPar(5:end),[3,nParticles]);

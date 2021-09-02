@@ -208,7 +208,7 @@ end
 
 function [checkRes] = checkFrameInfo(frameInfo)
     disp('checking Camera synchronization');
-    frame2Comp = 10;
+    frame2Comp = 20;
     if length(frameInfo) < frame2Comp
        
         frame2Comp = size(frameInfo,1);
@@ -218,9 +218,11 @@ function [checkRes] = checkFrameInfo(frameInfo)
     matC = cellfun(@str2num,cellC);
     %We check the first 20 frames as they should be perfectly synchronized
     %if camera sync was properly used.
-    test = abs(diff(matC(1:frame2Comp)));
+    testData = matC(1:frame2Comp);
     
-    if all(test)
+    test = (sum(testData(1:2:end))+sum(testData(2:2:end))) == frame2Comp/2;
+
+    if test
         checkRes = 'Yes';
     else
         checkRes = 'Fix';

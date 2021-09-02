@@ -99,7 +99,7 @@ classdef Movie < handle
                 inform.type = 'normal';
             end
             
-            if ~isfield(inform,'type')
+            if ~isfield(inform,'fitMethod')
                 disp('no fitMethod was provided, using Phasor');
                 inform.fitMethod = 'Phasor';
             end
@@ -112,6 +112,10 @@ classdef Movie < handle
             if ~isfield(inform,'calibrate')
                 disp('no calibration information was provided, no recalibration will be perform');
                 inform.calibrate = false;
+            end
+            
+            if isfield(obj.info,'frame2Load')
+                inform = rmfield(inform,'frame2Load');
             end
             
             names = fieldnames(inform);

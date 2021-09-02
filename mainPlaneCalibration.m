@@ -14,10 +14,10 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 10 set (no silica\2DCal';
+file.path  = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2DCal';
 
 file.ext   = '.ome.tif';
-info.runMethod = 'load';
+info.runMethod = 'run';
 info.nChan = 4;
 %% 
 calib = Core.MPPlaneCalibration(file,info);

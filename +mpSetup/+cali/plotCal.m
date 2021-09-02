@@ -1,5 +1,5 @@
 function plotCal(ch1,ch2,ROI)
-disp('test');
+
 figure
 for i= 1:4
 subplot(2,4,i)

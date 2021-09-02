@@ -4,13 +4,13 @@ function [ ROI ] = refineROI( ROI, im_shifts )
     
     row_w = ROI(1,4);
     col_w = ROI(1,3);
-
+    %get min and max imShift for row
     mars = max(im_shifts(:,1));
     mirs = min(im_shifts(:,1));
-    
+    %get in and max imShift for Col
     macs = max(im_shifts(:,2));
     mics = min(im_shifts(:,2));
-    
+    %calculate the width 
     row_w = row_w - mars + mirs;
     col_w = col_w - macs + mics;
     

@@ -90,7 +90,7 @@ waitbar(.5,h,'getting new order for channels')
 
 waitbar(.7,h,'getting image shifts')
 % find image shift in order to have the same ROIs to a pixel resoltuon
-[ imShifts ] = mpSetup.cali.simpleImShift2( cal.inFocus, chData1c, chData2c );
+[ imShifts ] = mpSetup.cali.simpleImShift( cal.inFocus, chData1c, chData2c );
 
 waitbar(.8,h,'refining ROIs')
 % refine the ROIs to consider the shifts
