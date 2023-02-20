@@ -189,7 +189,7 @@ classdef Movie < handle
             
             %To display a frame as a figure
             assert(length(idx)==1,'Error too many frame requested, please load one at a time');
-            pxSize = obj.info.pxSize/1000;%in µm
+            pxSize = obj.info.pxSize/1000;%in ï¿½m
             scaleBarPx = scaleBar/pxSize;
             [idx] = Core.Movie.checkFrame(idx,obj.raw.maxFrame(1));
             [frame] = getFrame(obj,idx);
@@ -214,7 +214,7 @@ classdef Movie < handle
                 %scalebar
                 x = size(currentIM,2)-scaleBarPx-(0.02*size(currentIM,2)):size(currentIM,2)-0.02*size(currentIM,2);
                 y = ones(1,length(x))*0.02*size(currentIM,2);
-                text(mean(x),mean(y)+0.1*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',10);
+                text(mean(x),mean(y)+0.1*size(currentIM,1),[num2str(scaleBar) ' ï¿½m'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',10);
                 plot(x,y,'-w','LineWidth',5);
                 ax = gca;
                 caxis(ax,[min(min(min(currentIM))), IScale*max(max(max(currentIM)))]);
@@ -310,13 +310,13 @@ classdef Movie < handle
             
             switch nargin
                 case 3
-                    scaleBar = 1;%µm
+                    scaleBar = 1;%ï¿½m
                     IScale = 1;
                 case 4
                      IScale = 1;
             end
             maxFrames = obj.raw.movInfo.maxFrame(1);
-            pxSize = obj.info.pxSize/1000;%in µm
+            pxSize = obj.info.pxSize/1000;%in ï¿½m
             scaleBarPx = scaleBar/pxSize;
             frames = obj.info.frame2Load;
             [frames] = Core.Movie.checkFrame(frames,maxFrames);
@@ -348,7 +348,7 @@ classdef Movie < handle
                     %scalebar
                     x = size(currentIM,2)-scaleBarPx-(0.02*size(currentIM,2)):size(currentIM,2)-0.02*size(currentIM,2);
                     y = ones(1,length(x))*0.02*size(currentIM,2);
-                    text(mean(x),mean(y)+0.1*size(currentIM,1),[num2str(scaleBar) ' µm'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',10);
+                    text(mean(x),mean(y)+0.1*size(currentIM,1),[num2str(scaleBar) ' ï¿½m'],'HorizontalAlignment','center','Color','white','fontWeight','bold','fontSize',10);
                     plot(x,y,'-w','LineWidth',5);
 
                     caxis([min(min(min(currentIM))), IScale*max(max(max(currentIM)))]);
@@ -527,4 +527,3 @@ classdef Movie < handle
     end
     
 end
-

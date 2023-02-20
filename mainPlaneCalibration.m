@@ -14,7 +14,7 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2DCal';
+file.path  = 'D:\Documents\Unif\PhD\2020-Data\2Dcali';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'run';

@@ -6,11 +6,21 @@ guess.sig = 1;
 zFocus = zeros(1,size(focusMet,2));
 
 % Find the half max value.
-halfMax = (min(focusMet) + max(focusMet)) / 4;
+halfMax = (min(focusMet) + max(focusMet)) / 2;
+
+
 % Find where the data first drops below half the max.
-index1 = find(focusMet >= halfMax, 1, 'first');
+beforeMax = flipud(focusMet(1:id));
+afterMax  = focusMet(id:end);
+
+id1 = find(beforeMax<=halfMax,1,'first');
+index1 = id-id1;
+%index1 = find(focusMet >= halfMax, 1, 'first');
 % Find where the data last rises above half the max.
-index2 = find(focusMet>= halfMax, 1, 'last');
+id2 = find(afterMax<=halfMax,1,"first");
+index2 = id+id2;
+
+%index2 = find(focusMet>= halfMax, 1, 'last');
 
 fwhmx = ZPos(index2) - ZPos(index1);
 
@@ -24,5 +34,4 @@ focMet2Use = focusMet(range,:);
 zFocus = out(2);
 Fit(:,1) = ZPos2Use;
 Fit(:,2) = SimpleFitting.gaussian(out,ZPos2Use);
-
 
