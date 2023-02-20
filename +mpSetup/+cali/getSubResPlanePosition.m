@@ -1,5 +1,9 @@
 function [ zFocus, Fit ] = getSubResPlanePosition(focusMet, ZPos)
 
+%temporary fix
+focusMet(1:2) = mean(focusMet(3:5));
+focusMet(end-1:end) = mean(focusMet(end-5:end-3));
+
 [val,id] = max(focusMet);
 guess.mu = ZPos(id);
 guess.sig = 1;
@@ -8,12 +12,14 @@ zFocus = zeros(1,size(focusMet,2));
 % Find the half max value.
 halfMax = (min(focusMet) + max(focusMet)) / 2;
 
-
 % Find where the data first drops below half the max.
 beforeMax = flipud(focusMet(1:id));
 afterMax  = focusMet(id:end);
 
 id1 = find(beforeMax<=halfMax,1,'first');
+if isempty(id1)
+    id1 = 1;
+end
 index1 = id-id1;
 %index1 = find(focusMet >= halfMax, 1, 'first');
 % Find where the data last rises above half the max.
@@ -34,4 +40,5 @@ focMet2Use = focusMet(range,:);
 zFocus = out(2);
 Fit(:,1) = ZPos2Use;
 Fit(:,2) = SimpleFitting.gaussian(out,ZPos2Use);
+
 
