@@ -378,14 +378,14 @@ classdef TrackingExperiment < handle
             end   
         end
         
-        function showRMSD(obj)
-            RMSD = obj.MSD;
+        function showMSD(obj)
+            MSD = obj.MSD;
             
             figure()
             hold on
             
-            for i = 1:length(RMSD)
-                currentMSD = RMSD{i};
+            for i = 1:length(MSD)
+                currentMSD = MSD{i};
                 plot(currentMSD)
             end
                        

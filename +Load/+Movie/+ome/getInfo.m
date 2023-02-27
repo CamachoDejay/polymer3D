@@ -57,13 +57,16 @@ end
 switch checkRes
     case 'Yes'
     case 'Fix'
-        try
-            [frameInfo] = fixCamTiming(frameInfo);
-        catch
-            warning('on')
-            warning('Something went wrong when trying to fix camera sync, no fix was apply');
-            warning('off');
-        end
+        %try
+        [frameInfo] = fixCamTiming(frameInfo); 
+        warning('on')
+        warning('Found some synchronization issue and fixed them');
+        warning('off')
+%         catch
+%             warning('on')
+%             warning('Something went wrong when trying to fix camera sync, no fix was apply');
+%             warning('off');
+%         end
       %  error('Fixing synchronization is not ready yet, sorry for the inconvenience');
     case 'No'
         disp('If you are running folder analysis, please remove the file from the folder');
@@ -208,7 +211,7 @@ end
 
 function [checkRes] = checkFrameInfo(frameInfo)
     disp('checking Camera synchronization');
-    frame2Comp = 20;
+    frame2Comp = 10;
     if length(frameInfo) < frame2Comp
        
         frame2Comp = size(frameInfo,1);
@@ -218,11 +221,9 @@ function [checkRes] = checkFrameInfo(frameInfo)
     matC = cellfun(@str2num,cellC);
     %We check the first 20 frames as they should be perfectly synchronized
     %if camera sync was properly used.
-    testData = matC(1:frame2Comp);
+    test = abs(diff(matC(1:frame2Comp)));
     
-    test = (sum(testData(1:2:end))+sum(testData(2:2:end))) == frame2Comp/2;
-
-    if test
+    if all(test)
         checkRes = 'Yes';
     else
         checkRes = 'Fix';
@@ -260,19 +261,44 @@ function [frameInfo] = fixCamTiming(frameInfo)
 
     currT = '0';
     for i = 1: length(tmpInfo)
-        
         %if current index is not reference camera we need to fix things
         if camera(i) ~=refCam
         
             % prev: abs(newTiming(i)-newTiming)<mean(test)
             tmpInfo(i).T = currT;
-        else
             cT = str2double(tmpInfo(i).T) + modifier;
             currT = num2str(cT);
+        else
+            
             
         end
         
     end
+    
+    % test that the camera are indeed synchroneous
+    maxT = str2double(tmpInfo(end).T);
+    for i = 0:maxT
+        
+        idx = strcmp({tmpInfo.T},{num2str(i)});
+        
+        camDiff = {tmpInfo(idx).C};
+        
+        %test cam diff
+        %#1 we test that there is only 2 camera frames
+        assert(length(camDiff)<=2,'More than two camera for a single frame')
+        %#2 
+        assert(~strcmp(camDiff{1}, camDiff{2}),'The two cameras corresponding to the same time point are not different')
+        
+        %test timing difference
+        camTiming = {tmpInfo(idx).time};
+        
+        assert(abs(camTiming{1} - camTiming{2}) < 3, 'Camera delay bigger than 2ms after fixing, something is wrong')
+        
+        
+    end
+    
+    
+    
     
     frameInfo = tmpInfo;
     warning('There was some issues with the synchronization, we had to fixed the out of sync frames');
