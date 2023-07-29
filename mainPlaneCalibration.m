@@ -14,11 +14,11 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PhD\2020-Data\2Dcali';
+file.path  = 'D:\Documents\Unif\PostDoc\Projects\Multiplane\4-plane_sample_stack\4-plane_sample_stack';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'run';
-info.nChan = 4;
+info.nChan = 2;
 %% 
 calib = Core.MPPlaneCalibration(file,info);
 
@@ -26,6 +26,6 @@ calib.retrieveMovies;
 calib.calcIndivCal; 
 calib.calcCombinedCal;
 
-calib.showCal(2)
+calib.showCal(1)
 calib.offTarget;
 calib.save;

@@ -259,19 +259,32 @@ function [frameInfo] = fixCamTiming(frameInfo)
         modifier = 1;
    end
 
-    currT = '0';
-    for i = 1: length(tmpInfo)
-        %if current index is not reference camera we need to fix things
-        if camera(i) ~=refCam
+    idxRefCam = find(strcmp({tmpInfo.C},num2str(refCam))==1);
+    for i = 1: length(idxRefCam)
+        currRefId = idxRefCam(i);
+        currT = tmpInfo(currRefId).T;
+        %get the time of the ref camera for the current frame
+        timeCurrRef = tmpInfo(currRefId).time;
+
+        %find another frame with similar timing
+        id = find((abs([tmpInfo.time]-timeCurrRef))<4);
+        assert(length(id) == 2, 'couldnt find 2 frames for that time point');
+
+        id = id(id~= currRefId);
+        tmpInfo(id).T = currT;
         
-            % prev: abs(newTiming(i)-newTiming)<mean(test)
-            tmpInfo(i).T = currT;
-            cT = str2double(tmpInfo(i).T) + modifier;
-            currT = num2str(cT);
-        else
-            
-            
-        end
+        %previous version:
+%         %if current index is not reference camera we need to fix things
+%         if camera(i) ~=refCam
+%         
+%             % prev: abs(newTiming(i)-newTiming)<mean(test)
+%             tmpInfo(i).T = currT;
+%             
+%         else
+%             %if it is the ref camera then currT becomes the camera
+%             currT = tmpInfo(i).T;
+%             
+%         end
         
     end
     
@@ -292,7 +305,7 @@ function [frameInfo] = fixCamTiming(frameInfo)
         %test timing difference
         camTiming = {tmpInfo(idx).time};
         
-        assert(abs(camTiming{1} - camTiming{2}) < 3, 'Camera delay bigger than 2ms after fixing, something is wrong')
+        assert(abs(camTiming{1} - camTiming{2}) < 4, 'Camera delay bigger than 4ms after fixing, something is wrong')
         
         
     end

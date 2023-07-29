@@ -10,10 +10,10 @@ end
 % number of frames
 N = size(cam1,4);
 % intensity per channel
-I = zeros(8,N);
+I = zeros(size(cam1,3)+size(cam2,3),N);
 % calculating mean int of each channel for each frame
-I(1:4,:) = mean(mean(cam1,2),1);
-I(5:8,:) = mean(mean(cam2,2),1);
+I(1:size(cam1,3),:) = mean(mean(cam1,2),1);
+I(size(cam1,3)+1:size(cam1,3)+size(cam2,3),:) = mean(mean(cam2,2),1);
    
 % to avoid problems with bleaching I can calculate Int differences between
 % channels by using the frame where both channels are almost in focus. 
@@ -32,10 +32,10 @@ commonF = round(focus(1:end-1)+dF./2);
 % calculate intensity correction
 % Icor contains the reference channel, the channel to transform, the frame
 % used and the correction factor.
-Icor = ones(8,4);
+Icor = ones(length(focus),4);
 Icor(1,1) = idx(1);
 Icor(1,2) = idx(1);
-for i = 2:8
+for i = 2:length(focus)
     % index of the first channel
     idx1 = idx(i-1);
     % index of the second channel

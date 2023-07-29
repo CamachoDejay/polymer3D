@@ -16,7 +16,7 @@ R = 0.125; %Radius of particle in um;
 fitRDiff = 0.05; %in Fraction of the data
 fitRConf = 0.1;%in Fraction of the data
 ext = '.mat';
-path = 'D:\Documents\Unif\PhD\2019-Data\09 - Sep\2P';
+path = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 10 set (no silica';
 
 %% Loading
 folder = dir(path);

@@ -112,12 +112,12 @@ classdef MPPlaneCalibration < handle
             for i = 1:nFiles
                 
                 allROI(:,:,i) = allData(i).file.ROI;
-                allFocusMet(:,:,i) = allData(i).file.focusMet;
-                allFit(:,:,i) = allData(i).file.fit;
-                allNewOrder(:,:,i) = allData(i).file.neworder; 
+              %  allFocusMet(:,:,i) = allData(i).file.focusMet;
+                %allFit(:,:,i) = allData(i).file.fit;
+                %allNewOrder(:,:,i) = allData(i).file.neworder; 
                 allICorrF(:,:,i)  = allData(i).file.Icorrf;   
                 tmp = cell2mat({allData(i).file.inFocus.zpos});
-                allRelZpos(:,i) = tmp-tmp(5);
+                allRelZpos(:,i) = tmp-mean(tmp);
                 allZpos(:,i) = tmp;
  
             end
