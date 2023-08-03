@@ -6,9 +6,9 @@ path2ZCal = [];
 path2SRCal = [];
 
 %file info
-file.path  = 'F:\Aaron\20230616 Dye-particle tracking\DyePS new\1-10000\test';
+file.path  = 'D:\Documents\Unif\PostDoc\Projects\Multiplane\4-plane_sample_stack\4-plane_sample_stack';
 file.ext   = '.ome.tif';
-path2Cal = 'F:\Aaron\20230619 2D calibration';
+path2Cal = 'D:\Documents\Unif\PostDoc\Projects\Multiplane\4-plane_sample_stack\4-plane_sample_stack';
 dimension = '3D';
 
 %detection parameter

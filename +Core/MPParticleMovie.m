@@ -876,7 +876,7 @@ classdef MPParticleMovie < Core.MPMovie
                     delta, size(planeData,2), size(planeData,1));
                 ROI = planeData(roi_lims(3):roi_lims(4),roi_lims(1):roi_lims(2));
                 roiSize = size(ROI);
-                if roiSize(1)==roiSize(2)
+                if and(roiSize(1)==roiSize(2),mod(roiSize(1),2)==1)
                     if strcmpi(obj.info.fitMethod,'phasor')
                         %Phasor fitting to get x,y,e
                         [row,col,e,magX,magY] = Localization.phasor(ROI);
