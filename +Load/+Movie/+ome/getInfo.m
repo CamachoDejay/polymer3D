@@ -79,6 +79,15 @@ end
 movieInfo.isZStack = size(unique({frameInfo.T}),2)==1;
 movieInfo.Cam      = str2double(unique({frameInfo.C}));
 movieInfo.expT = frameInfo(1).expT;
+% get timing between frames
+time = [frameInfo.time];
+t1   = time(1:2:end);
+t2 =   time(2:2:end);
+assert(length(t1) == length(t2),'timing of each camera have different sizes');
+timing = mean([t1;t2],1);
+timing = timing-timing(1);
+movieInfo.timing= timing;
+
 switch movieInfo.isZStack
     case 0
         for i = 1: size(movieInfo.Cam,2)

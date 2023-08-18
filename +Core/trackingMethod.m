@@ -273,9 +273,10 @@ classdef trackingMethod < handle
             AllFieldName{end+1} = 'NumParticle';
             input_data = table2array(input_data);
             ALLDataConverted = cell(ImMax,1);
-
+            %careful here the indexes denominate time but if data is added
+            %time may change position
             for i=1:ImMax         
-                    ALLDataConverted{i} =input_data(input_data(:,end)==i,:);
+                    ALLDataConverted{i} =input_data(input_data(:,10)==i,:);
             end
 
         end

@@ -48,6 +48,10 @@ classdef MPTrackingMovie < Core.MPLocMovie
            
             DataToTrack = obj.particles.SRList;
             ImMax = max(DataToTrack.t);
+            % get the timing of each frame
+            timing = obj.raw.movInfo.timing;
+            allTimes = timing(DataToTrack.t);
+            DataToTrack.rT = allTimes(:);
             %Converts data
             [ToTrack,AllField] = Core.trackingMethod.ConvertData(DataToTrack,ImMax);
             count = 0; 
@@ -147,7 +151,7 @@ classdef MPTrackingMovie < Core.MPLocMovie
             end
             close(h);
             AllParticles = cell(1,TrackedData_maxid);
-
+            
             TrackedData = Core.trackingMethod.ConvertFinalOutput( TrackedData_data,AllParticles,AllField);
             
             obj.particles.traces = TrackedData;
