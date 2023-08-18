@@ -795,7 +795,8 @@ classdef MPParticleMovie < Core.MPMovie
             assert(isstruct(detectParam),'Detection parameter should be a struct with two fields');
             nFrames = length(frames);
             currentCandidate = obj.candidatePos;
-            
+            detectionMethod = obj.info.detectionMethod;
+
             if(isempty(currentCandidate))
                 
                 candidate = cell(obj.calibrated.nFrames,1);
@@ -805,6 +806,7 @@ classdef MPParticleMovie < Core.MPMovie
                 candidate = currentCandidate;
                 
             end
+           
             
             %parameter for localization
             FWHM_pix = obj.info.FWHM_px;
@@ -821,19 +823,45 @@ classdef MPParticleMovie < Core.MPMovie
                 
                 for j = 1:nPlanes
                     currentIM = volIm(:,:,j);
+
                     %localization occurs here
-                    [ pos, meanFAR, ~ ] = Localization.smDetection(currentIM,...
-                        delta, FWHM_pix, chi2 );
-                    if ~isempty(pos)
-                        startIdx = find(position.row==0,1,'First');
-                        if isempty(startIdx)
-                            startIdx = length(position.row)+1;
-                        end
-                        pos(:,3) = meanFAR;
-                        pos(:,4) = j;
-                        position(startIdx:startIdx+size(pos,1)-1,:) = array2table(pos);
-                    else
-                    end
+                     switch detectionMethod 
+                        case 'MaxLR'
+                            [ pos, meanFAR, ~ ] = Localization.smDetection(currentIM,...
+                                delta, FWHM_pix, chi2 );
+                            if ~isempty(pos)
+                                startIdx = find(position.row==0,1,'First');
+                                if isempty(startIdx)
+                                    startIdx = length(position.row)+1;
+                                end
+                                pos(:,3) = meanFAR;
+                                pos(:,4) = j;
+                                position(startIdx:startIdx+size(pos,1)-1,:) = array2table(pos);
+                            else
+                            end
+                         case 'Intensity'
+                             
+                             bwImage = imbinarize(currentIM./max(currentIM(:)));
+                             bwImage = bwareaopen(bwImage,8);
+                             SE = strel('disk',3);
+                             bwImage = imopen(bwImage,SE);
+
+                             [ctr] = regionprops(bwImage,'Centroid');
+
+                             pos = cat(1,ctr.Centroid);
+                             if ~isempty(pos)
+                                startIdx = find(position.row==0,1,'First');
+                                if isempty(startIdx)
+                                    startIdx = length(position.row)+1;
+                                end
+                                 pos = flip(pos,2);
+                                 pos(:,3) = NaN;
+                                 pos(:,4) = j;
+                                 position(startIdx:startIdx+size(pos,1)-1,:) = array2table(pos);
+                             end
+
+                     end
+                           
                 end
                 
                 idx = find(position.row==0,1,'First');

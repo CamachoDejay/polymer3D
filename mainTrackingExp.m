@@ -6,14 +6,14 @@ path2ZCal = [];
 path2SRCal = [];
 
 %file info
-file.path  = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\1P data\22 nm silica';
+file.path  = 'E:\Results\SPT speed\After alignment\pH 11';
 file.ext   = '.ome.tif';
-path2Cal = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2DCal';
+path2Cal = 'E:\Results\SPT speed\2D cal ALL\28072023 2d cal (definitivo)';
 dimension = '3D';
 
 %detection parameter
 detectParam.delta = 6;
-detectParam.chi2  = 60;
+detectParam.chi2  = 100;
 detectParam.consThresh = 4;
 %tracking parameter
 trackParam.radius  = 1000;%nm
@@ -25,6 +25,7 @@ info.runMethod = 'load'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
 info.zMethod = 'Intensity'; %Intensity, 3DFit or PSFE
+info.detectionMethod = 'Intensity'; %MaxLR (for maximum likehood ratio) %Intensity
 info.calibrate = false; %true to recalibrate;
 
 %% create experiments
@@ -36,7 +37,7 @@ trackingExp = Core.TrackingExperiment(file,path2Cal,info,path2SRCal,path2ZCal);
 trackingExp.retrieveMovies;
 
 %% test detection parameters
-frame =50;
+frame =300;
 testMov = trackingExp.trackMovies.mov1;
 testMov.findCandidatePos(detectParam,frame);
 testMov.showCandidate(frame);
