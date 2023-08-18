@@ -6,7 +6,7 @@ close all;
 expTime = 0.01; %in sec
 T = 296.15; %temperature in Kelvin
 R = 0.285; %Radius of particle in um;
-fitRDiff = 4; %in nuber of data
+fitRDiff = 4; %in number of data
 minSize = 50; %frames
 ext = '.mat';
 path = 'F:\Boris - Leuven\Sergey\2019\DDM - Data\500\500nmInfDil-BrightField-DDM_10ms';
@@ -27,7 +27,8 @@ allHeight = cellfun(@height,currMov(:,1));
 idx = allHeight>minSize;
 currMov = currMov(idx,1);
 allRes = struct('msdX',0,'msdY',0,'msdZ',0,'msdR',0,'tau',0,'DX',0,'DY',0,'DZ',0,'DR',0,...
-    'nX',0,'nY',0,'nZ',0,'nR',0);
+    'nX',0,'nY',0,'nZ',0,'nR',0,'aX',0,'aY',0,'aZ',0,'aR',0,'vX',0,'vY',0,...
+    'vZ',0,'vR',0);
 allRes(length(currMov)).msdX = [];
 maxLength = max(allHeight);
 allMSDX = zeros(length(currMov),maxLength-1);
@@ -46,25 +47,37 @@ for i = 1:length(currMov)
     tau = (1:length(msdx))'*expTime;
     allMSDX(i,1:length(msdx)) = msdx;
     DX   = MSD.getDiffCoeff(msdx,tau,fitRDiff,'1D');
-    nX    = MSD.getViscosity(DX,R,T);
+    nX   = MSD.getViscosity(DX,R,T);z
+    aX   = MSD.getDiffTypeAlpha(msdx,expTime);
+    vX   = abs(coord(1,1) - coord(end,1))/10^3/(length(coord)*expTime); %um/s
 
     %inY
     msdy = MSD.calc(coord(:,2)/10^3);%convert to um;
     allMSDY(i,1:length(msdy)) = msdy;
     DY   = MSD.getDiffCoeff(msdy,tau,fitRDiff,'1D');
     nY   = MSD.getViscosity(DY,R,T);
+    aY   = MSD.getDiffTypeAlpha(msdy,expTime);
+    vY   = abs(coord(1,2) - coord(end,2))/10^3/(length(coord)*expTime); %um/s
 
     %inZ
     msdz = MSD.calc(coord(:,3)/10^3);%convert to um;
     allMSDZ(i,1:length(msdz)) = msdz;
     DZ   = MSD.getDiffCoeff(msdz,tau,fitRDiff,'1D');
     nZ   = MSD.getViscosity(DZ,R,T);
+    aZ   = MSD.getDiffTypeAlpha(msdz,expTime);
+    vZ   = abs(coord(1,3) - coord(end,3))/10^3/(length(coord)*expTime); %um/s
+
 
     %inR
     msdr = MSD.calc(coord/10^3);%convert to um;
     allMSDR(i,1:length(msdr)) = msdr;
     DR   = MSD.getDiffCoeff(msdr,tau,fitRDiff,'3D');
     nR   = MSD.getViscosity(DR,R,T);
+    aR   = MSD.getDiffTypeAlpha(msdr,expTime);
+    dR   = sqrt((coord(1,1)-coord(end,1))^2 + (coord(1,2)-coord(end,2))^2 +...
+        (coord(1,3)-coord(end,3))^2);
+    vR = dR/10^3/(length(coord)*expTime); %um/s
+
 
     allRes(i).msdX = msdx;% in um^2
     allRes(i).msdY = msdy;
@@ -82,6 +95,18 @@ for i = 1:length(currMov)
     allRes(i).nY   = nY;
     allRes(i).nZ   = nZ;
     allRes(i).nR   = nR;
+    
+    allRes(i).aX   = aX;
+    allRes(i).aY   = aY;
+    allRes(i).aZ   = aZ;
+    allRes(i).aR   = aR;
+    
+    allRes(i).vX   = vX;
+    allRes(i).vY   = vY;
+    allRes(i).vZ   = vZ;
+    allRes(i).vR   = vR;
+    
+    
     allRes(i).num  = length(msdx);
 end
 

@@ -60,7 +60,7 @@ for i = 1: size(data,2)
         n   = MSD.getViscosity(D,R);
         
         alpha = MSD.getDiffTypeAlpha(msd,expTime);
-        if alpha < 1
+        if alpha < 0.9
             rConf = MSD.getConfRad(msd,fitRConf,expTime);
         else
             rConf = NaN;

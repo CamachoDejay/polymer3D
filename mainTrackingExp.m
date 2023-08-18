@@ -6,9 +6,9 @@ path2ZCal = [];
 path2SRCal = [];
 
 %file info
-file.path  = 'D:\Documents\Unif\PostDoc\Projects\Multiplane\4-plane_sample_stack\4-plane_sample_stack';
+file.path  = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\1P data\22 nm silica';
 file.ext   = '.ome.tif';
-path2Cal = 'D:\Documents\Unif\PostDoc\Projects\Multiplane\4-plane_sample_stack\4-plane_sample_stack';
+path2Cal = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2DCal';
 dimension = '3D';
 
 %detection parameter
@@ -21,11 +21,11 @@ trackParam.memory  = 3;
 
 %% Storing info about the file
 info.type = 'normal'; %normal or transmission
-info.runMethod = 'run'; % load or run
+info.runMethod = 'load'; % load or run
 info.frame2Load = 'all'; % 'all' or a range of number e.g. 1:100
 info.fitMethod  = 'Phasor'; %Phasor or Gauss (need to be the same as ZCal if using PSFE
 info.zMethod = 'Intensity'; %Intensity, 3DFit or PSFE
-info.calibrate = true; %true to recalibrate;
+info.calibrate = false; %true to recalibrate;
 
 %% create experiments
 
