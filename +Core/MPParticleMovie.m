@@ -676,7 +676,9 @@ classdef MPParticleMovie < Core.MPMovie
             colPos = center(2);
             %we integrate at 3*sigma (take ROI
             roiSignal = ceil(sig);
-            
+            if roiSignal(1) > center-1
+                roiSignal = [center-1 center-1];
+            end
             %get the idx for the ROI to integrate
             rowIdx = rowPos-roiSignal(1):rowPos+roiSignal(1);
             colIdx = colPos-roiSignal(2):colPos+roiSignal(2);
@@ -842,11 +844,12 @@ classdef MPParticleMovie < Core.MPMovie
                          case 'Intensity'
                              
                              bwImage = imbinarize(currentIM./max(currentIM(:)));
-                             bwImage = bwareaopen(bwImage,8);
-                             SE = strel('disk',3);
+                             
+                             SE = strel('disk',5);
                              bwImage = imopen(bwImage,SE);
-
-                             [ctr] = regionprops(bwImage,'Centroid');
+                             bwImage = bwareaopen(bwImage,300);
+    
+                             [ctr] = regionprops(bwImage,'Area','Centroid');
 
                              pos = cat(1,ctr.Centroid);
                              if ~isempty(pos)

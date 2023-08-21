@@ -197,7 +197,7 @@ classdef TrackingExperiment < handle
                 currentTrackMov.findCandidatePos(detectParam);
                 
                 %SR fitting
-                currentTrackMov.SRLocalizeCandidate;
+                currentTrackMov.SRLocalizeCandidate(detectParam.detla);
                 refPlane = round(currentTrackMov.calibrated.nPlanes/2);
                 rot = true;
                 %apply SRCal
