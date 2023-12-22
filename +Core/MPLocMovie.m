@@ -291,8 +291,9 @@ classdef MPLocMovie < Core.MPParticleMovie
                                         rowM = partData.row(3)*pxSize;
                                         colM = partData.col(3)*pxSize;
                                         zM   = partData.z(3);
-                                        data = table(row,col,z,rowM,colM,zM,...
-                           'VariableNames',{'row','col','z','rowM','colM','zM'});
+                                        adjR = 0; 
+                                        data = table(row,col,z,rowM,colM,zM,adjR,...
+                           'VariableNames',{'row','col','z','rowM','colM','zM','adjR'});
 
                                     else
                          

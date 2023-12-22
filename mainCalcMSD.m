@@ -49,7 +49,7 @@ for i = 1:length(currMov)
     DX   = MSD.getDiffCoeff(msdx,tau,fitRDiff,'1D');
     nX   = MSD.getViscosity(DX,R,T);z
     aX   = MSD.getDiffTypeAlpha(msdx,expTime);
-    vX   = abs(coord(1,1) - coord(end,1))/10^3/(length(coord)*expTime); %um/s
+    vX   = coord(1,1) - coord(end,1)/10^3/(length(coord)*expTime); %um/s
 
     %inY
     msdy = MSD.calc(coord(:,2)/10^3);%convert to um;
@@ -57,7 +57,7 @@ for i = 1:length(currMov)
     DY   = MSD.getDiffCoeff(msdy,tau,fitRDiff,'1D');
     nY   = MSD.getViscosity(DY,R,T);
     aY   = MSD.getDiffTypeAlpha(msdy,expTime);
-    vY   = abs(coord(1,2) - coord(end,2))/10^3/(length(coord)*expTime); %um/s
+    vY   = coord(1,2) - coord(end,2)/10^3/(length(coord)*expTime); %um/s
 
     %inZ
     msdz = MSD.calc(coord(:,3)/10^3);%convert to um;
@@ -65,7 +65,7 @@ for i = 1:length(currMov)
     DZ   = MSD.getDiffCoeff(msdz,tau,fitRDiff,'1D');
     nZ   = MSD.getViscosity(DZ,R,T);
     aZ   = MSD.getDiffTypeAlpha(msdz,expTime);
-    vZ   = abs(coord(1,3) - coord(end,3))/10^3/(length(coord)*expTime); %um/s
+    vZ   = coord(1,3) - coord(end,3)/10^3/(length(coord)*expTime); %um/s
 
 
     %inR

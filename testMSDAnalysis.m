@@ -10,13 +10,14 @@ clc ;
 clear ;
 close all;
 %% USER INPUT
-expTime = 0.01; %in sec
+expTime = 0.02; %in sec
 T = 293; %temperature in Kelvin
-R = 0.125; %Radius of particle in um;
-fitRDiff = 0.05; %in Fraction of the data
+R = 0.075; %Radius of particle in um;
+fitRDiff = 4; %in Fraction of the data
 fitRConf = 0.1;%in Fraction of the data
+minSize = 10;
 ext = '.mat';
-path = 'D:\Documents\Unif\PhD\2021-Data\08 - August\Gold Particle code\2P 10 set (no silica';
+path = 'E:\Results\SPT trapping\Trapping 640\pH 3';
 
 %% Loading
 folder = dir(path);
@@ -30,15 +31,19 @@ name = fieldnames(tmpData);
 data = tmpData.(name{1});
 
 %% Processing
+currMov =  data(1).traces;
+allHeight = cellfun(@height,currMov(:,1));
+idx = allHeight>minSize;
+currMov = currMov(idx,1);
 
 for i = 1: size(data,2)
-    currMov =  data(i).traces;
-    
+   
+    warning('only analyzing 2D now')
     %get CM of all particles
-    coord = zeros(length(currMov),3);
+    coord = zeros(length(currMov),2);
     for j = 1:length(currMov)
         
-        coord(j,:) = [mean(currMov{j}.col),mean(currMov{j}.row),mean(currMov{j}.z)];
+        coord(j,:) = [mean(currMov{j}.col),mean(currMov{j}.row)];%,mean(currMov{j}.z)];
                 
     end
     CM = mean(coord,1);
@@ -50,17 +55,17 @@ for i = 1: size(data,2)
     for j = 1:length(currMov)
         currPart = currMov{j};
         
-        coord = [currPart.col, currPart.row, currPart.z];
+        coord = [currPart.col, currPart.row];
         
         coord = coord-CM;
         
-        msd = MSD.calc(coord/10^3,'3D');%convert to um;
-        D   = MSD.getDiffCoeff(msd,fitRDiff,'3D');
+        msd = MSD.calc(coord/10^3);%convert to um;
+        D   = MSD.getDiffCoeff(msd,1:length(msd),fitRDiff,'2D');
         D   = D/expTime;%convert from frame to s-1
-        n   = MSD.getViscosity(D,R);
+        n   = MSD.getViscosity(D,R,T);
         
         alpha = MSD.getDiffTypeAlpha(msd,expTime);
-        if alpha < 0.9
+        if alpha < 1
             rConf = MSD.getConfRad(msd,fitRConf,expTime);
         else
             rConf = NaN;

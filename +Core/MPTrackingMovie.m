@@ -49,7 +49,11 @@ classdef MPTrackingMovie < Core.MPLocMovie
             DataToTrack = obj.particles.SRList;
             ImMax = max(DataToTrack.t);
             % get the timing of each frame
-            timing = obj.raw.movInfo.timing;
+            if ~isfield(obj.raw.movInfo,'timing')
+                timing = ((1:ImMax)-1)*obj.raw.movInfo.expT;
+            else
+                timing = obj.raw.movInfo.timing;
+            end
             allTimes = timing(DataToTrack.t);
             DataToTrack.rT = allTimes(:);
             %Converts data
