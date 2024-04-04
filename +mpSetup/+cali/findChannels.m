@@ -4,10 +4,9 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
 %camera and then use simple integration to find the areas of fluorescence
 %and background
     %From Rafa:
-    ctr = size(im,2)/2;
     sig = im(20:end-20,:);
     sig = sig(:);
-    bg = im(:,ctr-10:ctr+10);
+    bg = im(:,1000:1040);
     bg = bg(:);
     
     tHold = Misc.tholdSigBg(bg,sig);
@@ -23,9 +22,8 @@ function [ chC, bgC, common_w ] = findChannels( im, doFigure,nChan )
         case 1
             doFigure = false;
     end
-    if size(im,2)~=2048
-        warning('unexpected movie size, are you working with the sCMOS?')
-    end
+    
+    assert(size(im,2)==2048, 'unexpected movie size, are you working with the sCMOS?')
     % integration over the cols, here we expect to find 4 channels
     s1 = sum(im,1);
     % find change points between fluorescence and bg
