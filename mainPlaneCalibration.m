@@ -14,11 +14,11 @@ clear
 close all
 clc
 
-file.path  = 'D:\Documents\Unif\PostDoc\Projects\Multiplane\4-plane_sample_stack\4-plane_sample_stack';
+file.path  = 'F:\03-Mars\21 - Tracking on Quadrupole\2DCal\test';
 
 file.ext   = '.ome.tif';
 info.runMethod = 'run';
-info.nChan = 2;
+info.nChan = 4;
 %% 
 calib = Core.MPPlaneCalibration(file,info);
 
